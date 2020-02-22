@@ -1,9 +1,10 @@
-name: Test
+name: Build and test
 
 on: [push]
 
 jobs:
-  build:
+  build-and-test:
+    name: Build and test
 
     runs-on: ubuntu-latest
 
@@ -26,6 +27,9 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Build
+        run: make build
 
       - name: Test
         run: make test
