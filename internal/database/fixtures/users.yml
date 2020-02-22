@@ -1,0 +1,11 @@
+- id: 1
+  name: user1
+  params:
+    telegramId: 31337
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 2
+  name: user2
+  params:
+    telegramId: 31338
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
