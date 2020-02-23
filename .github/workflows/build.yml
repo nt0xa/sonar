@@ -40,3 +40,8 @@ jobs:
         env:
           SONAR_DB: 'postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres_test?sslmode=disable'
 
+      - name: Code coverage
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.out
