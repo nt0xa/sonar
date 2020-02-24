@@ -1,5 +1,0 @@
-FROM alpine:latest
-RUN apk add --no-cache ca-certificates
-COPY server /usr/local/bin
-EXPOSE 53/udp 25 80 443
-CMD ["server"]
