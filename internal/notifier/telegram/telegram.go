@@ -56,7 +56,7 @@ func New(cfg *Config) (*Notifier, error) {
 	return &Notifier{tg}, nil
 }
 
-func (n *Notifier) Notify(e *notifier.Event, p *database.Payload) error {
+func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Payload) error {
 
 	var header, body bytes.Buffer
 
@@ -86,7 +86,7 @@ func (n *Notifier) Notify(e *notifier.Event, p *database.Payload) error {
 
 	if len(header.String()+body.String()) < maxMessageSize {
 		// Send as message.
-		msg = tgbotapi.NewMessage(p.UserID, header.String()+body.String())
+		msg = tgbotapi.NewMessage(u.Params.TelegramID, header.String()+body.String())
 		msg.ParseMode = tgbotapi.ModeHTML
 		msg.DisableWebPagePreview = true
 	} else {
@@ -97,7 +97,7 @@ func (n *Notifier) Notify(e *notifier.Event, p *database.Payload) error {
 			Size:   -1,
 		}
 
-		msg := tgbotapi.NewDocumentUpload(p.UserID, rdr)
+		msg := tgbotapi.NewDocumentUpload(u.Params.TelegramID, rdr)
 		msg.Caption = header.String()
 		msg.ParseMode = tgbotapi.ModeHTML
 	}
