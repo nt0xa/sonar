@@ -30,7 +30,7 @@ docker_image_major = ${docker_image}:${version_major}
 
 .PHONY: docker-login
 docker-login:
-	@docker login --user ${docker_login} --password ${docker_password} ${docker_registry}
+	@docker login --username ${docker_login} --password ${docker_password} ${docker_registry}
 
 .PHONY: docker-build
 docker-build:
