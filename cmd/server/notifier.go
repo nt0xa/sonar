@@ -92,8 +92,14 @@ func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.
 				continue
 			}
 
+			u, err := db.UsersGetByID(p.UserID)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
 			for _, n := range ns {
-				if err := n.Notify(&e, p); err != nil {
+				if err := n.Notify(&e, u, p); err != nil {
 					log.Println(err)
 					continue
 				}
