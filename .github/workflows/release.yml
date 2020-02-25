@@ -1,0 +1,45 @@
+name: release
+
+on:
+  create:
+    tags:
+      - v*
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Fetch history
+      run: git fetch --prune --unshallow
+
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13.x
+
+    - name: Setup env
+      run: |
+        echo ::set-env name=GOPATH::$(go env GOPATH)
+        echo ::add-path::$(go env GOPATH)/bin
+
+    - name: Install deps
+      run: |
+        go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
+
+    - name: Generate changelog
+      run: make changelog
+
+    - name: Publish docker image
+      run: make docker-release docker_login=bizonebot docker_password=${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Github release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: CHANGELOG.md
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
