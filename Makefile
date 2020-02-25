@@ -37,6 +37,7 @@ docker-build:
 	@docker build --build-arg go_version=${go_version} --tag ${docker_image} .
 
 .PHONY: docker-push
+docker-push:
 	@docker tag ${docker_image} ${docker_image_patch}
 	@docker tag ${docker_image} ${docker_image_minor}
 	@docker tag ${docker_image} ${docker_image_major}
