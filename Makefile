@@ -1,7 +1,7 @@
 project = sonar
 owner = bi-zone
 build = $(shell git rev-parse --short HEAD)
-version = $(shell git describe --tags)
+version = $(shell git describe --tags | cut -c 2-)
 version_patch = ${version}
 version_minor = $(shell echo ${version} | cut -d '.' -f1-2)
 version_major = $(shell echo ${version} | cut -d '.' -f1)
@@ -104,4 +104,12 @@ migrations-pack:
 		-o ${migrations}/bindata.go \
 		${migrations}/...
 	@go fmt ${migrations}
+
+#
+# Changelog
+#
+
+.PHONY: changelog
+changelog:
+	@git-chglog --config .github/git-chglog.yml --output CHANGELOG.md v${version}
 
