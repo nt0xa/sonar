@@ -62,6 +62,13 @@ coverage:
 coverage-html:
 	@go tool cover -html=coverage.out
 
+.PHONY: mocks
+mock: mock-server
+
+.PHONY: mock-server
+mock-server:
+	@mockgen -source pkg/server/server.go > pkg/server/mock_server/mock_server.go
+
 #
 # Migrations
 #

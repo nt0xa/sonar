@@ -121,7 +121,8 @@ func main() {
 	dnsStarted.Add(1)
 
 	go func() {
-		srv := dns.NewServer(":53", cfg.Domain, net.ParseIP(cfg.IP), handlerFunc,
+		srv := dns.New(":53", cfg.Domain, net.ParseIP(cfg.IP),
+			dns.NotifyRequestFunc(AddProtoEvent("DNS", events)),
 			dns.NotifyStartedFunc(func() {
 				dnsStarted.Done()
 			}))

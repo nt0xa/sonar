@@ -105,8 +105,29 @@ func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.
 	return nil
 }
 
+// TODO: remove after refactoring
 func AddEvent(events chan<- notifier.Event) server.HandlerFunc {
 	return func(remoteAddr net.Addr, proto string, data []byte) {
+
+		s := string(data)
+
+		if !utils.StringPrintable(s) {
+			s = utils.HexDump(data)
+		}
+
+		events <- notifier.Event{
+			Protocol:   proto,
+			Data:       s,
+			RawData:    data,
+			RemoteAddr: remoteAddr,
+			ReceivedAt: time.Now(),
+		}
+	}
+}
+
+// TODO: use for all after refactoring
+func AddProtoEvent(proto string, events chan<- notifier.Event) server.NotifyRequestFunc {
+	return func(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
 
 		s := string(data)
 

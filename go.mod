@@ -4,11 +4,13 @@ go 1.13
 
 require (
 	github.com/cenkalti/backoff/v3 v3.1.1 // indirect
+	github.com/fatih/structs v1.1.0
 	github.com/go-acme/lego/v3 v3.2.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.1.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/go-testfixtures/testfixtures v2.5.1+incompatible
 	github.com/golang-migrate/migrate/v4 v4.7.0
+	github.com/golang/mock v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
