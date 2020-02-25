@@ -16,5 +16,5 @@ type Event struct {
 }
 
 type Notifier interface {
-	Notify(*Event, *database.Payload) error
+	Notify(*Event, *database.User, *database.Payload) error
 }
