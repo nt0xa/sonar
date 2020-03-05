@@ -60,7 +60,7 @@ func TestDNS(t *testing.T) {
 					LocalAddr: remoteAddr,
 				},
 			}
-			in, _, err := c.Exchange(msg, "127.0.0.1:53")
+			in, _, err := c.Exchange(msg, "127.0.0.1:1053")
 			require.NoError(t, err)
 			require.NotNil(t, in)
 			assert.Len(t, in.Answer, len(tt.answersContains))
@@ -93,7 +93,7 @@ func TestDNS_TXT(t *testing.T) {
 	}
 
 	c := &dns.Client{}
-	in, _, err := c.Exchange(msg, "127.0.0.1:53")
+	in, _, err := c.Exchange(msg, "127.0.0.1:1053")
 	require.NoError(t, err)
 	require.NotNil(t, in)
 	require.Len(t, in.Answer, 2)
@@ -111,7 +111,7 @@ func TestDNS_TXT(t *testing.T) {
 	err = srv.CleanUp("sonar.local", "", "")
 	require.NoError(t, err)
 
-	in, _, err = c.Exchange(msg, "127.0.0.1:53")
+	in, _, err = c.Exchange(msg, "127.0.0.1:1053")
 	require.NoError(t, err)
 	require.NotNil(t, in)
 	require.Len(t, in.Answer, 0)

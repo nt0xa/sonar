@@ -34,7 +34,7 @@ func setupGlobals() error {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	srv = dns.New(":53", "sonar.local", net.IPv4(127, 0, 0, 1),
+	srv = dns.New(":1053", "sonar.local", net.IPv4(127, 0, 0, 1),
 		dns.NotifyStartedFunc(func() {
 			wg.Done()
 		}))
