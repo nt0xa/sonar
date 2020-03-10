@@ -2,21 +2,25 @@ package http
 
 import (
 	"bytes"
+	"errors"
 	"regexp"
 	"strconv"
 )
+
+var ErrNoMoreData = errors.New("no more data")
 
 var (
 	contentLengthRegexp = regexp.MustCompile(`(?im)^Content-Length:\s+(\d+)\s+$`)
 )
 
-type HTTPScanner struct {
+type Scanner struct {
 	body   bool
 	length int
 	end    bool
 }
 
-func (s *HTTPScanner) Scan(data []byte, atEOF bool) (int, []byte, error) {
+func (s *Scanner) Scan(data []byte, atEOF bool) (int, []byte, error) {
+
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
@@ -26,7 +30,6 @@ func (s *HTTPScanner) Scan(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	if !s.body && contentLengthRegexp.Match(data) {
-		// TODO: last header
 		m := contentLengthRegexp.FindAllStringSubmatch(string(data), 1)
 		l, _ := strconv.ParseUint(m[0][1], 10, 64)
 		s.body = true
