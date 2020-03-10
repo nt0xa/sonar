@@ -174,7 +174,7 @@ func main() {
 			// Obtain new certificate
 			newCert, err := certmgr.Obtain(domains)
 			if err != nil {
-				log.Fatalf("Fail to obtain new certificate: %w", err)
+				log.Fatalf("Fail to obtain new certificate: %v", err)
 			}
 
 			cert = newCert
@@ -183,7 +183,7 @@ func main() {
 			// Try to renew cert
 			newCert, err := certmgr.Renew(domains)
 			if err != nil {
-				log.Fatalf("Fail to renew cert: %w", err)
+				log.Fatalf("Fail to renew cert: %v", err)
 			}
 
 			if newCert != nil {
@@ -212,7 +212,8 @@ func main() {
 	//
 
 	go func() {
-		srv := http.NewServer(":80", handlerFunc)
+		srv := http.New(":80",
+			http.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTP handler: %s", err.Error())
@@ -225,7 +226,9 @@ func main() {
 	//
 
 	go func() {
-		srv := http.NewServer(":443", handlerFunc, http.TLSConfig(tlsConfig))
+		srv := http.New(":443",
+			http.NotifyRequestFunc(AddProtoEvent("HTTPS", events)),
+			http.TLSConfig(tlsConfig))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTPS handler: %s", err.Error())

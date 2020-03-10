@@ -43,29 +43,30 @@ func (c *Conn) Close() error {
 }
 
 type Listener struct {
-	Addr           string
-	Handler        Handler
-	IdleTimeout    time.Duration
-	SessionTimeout time.Duration
-	TLSConfig      *tls.Config
-	IsTLS          bool
+	Addr              string
+	Handler           Handler
+	IdleTimeout       time.Duration
+	SessionTimeout    time.Duration
+	TLSConfig         *tls.Config
+	IsTLS             bool
+	NotifyStartedFunc func()
 
 	listener net.Listener
 }
 
-func (s *Listener) Listen() error {
+func (l *Listener) Listen() error {
 
 	var (
 		err      error
 		listener net.Listener
 	)
 
-	log.Printf("starting listener on %v", s.Addr)
+	log.Printf("starting listener on %v", l.Addr)
 
-	if s.IsTLS && s.TLSConfig != nil {
-		listener, err = tls.Listen("tcp", s.Addr, s.TLSConfig)
+	if l.IsTLS && l.TLSConfig != nil {
+		listener, err = tls.Listen("tcp", l.Addr, l.TLSConfig)
 	} else {
-		listener, err = net.Listen("tcp", s.Addr)
+		listener, err = net.Listen("tcp", l.Addr)
 	}
 
 	if err != nil {
@@ -74,7 +75,11 @@ func (s *Listener) Listen() error {
 
 	defer listener.Close()
 
-	s.listener = listener
+	l.listener = listener
+
+	if l.NotifyStartedFunc != nil {
+		l.NotifyStartedFunc()
+	}
 
 	for {
 
@@ -88,16 +93,16 @@ func (s *Listener) Listen() error {
 
 		c := &Conn{
 			Conn:          conn,
-			idleTimeout:   s.IdleTimeout,
+			idleTimeout:   l.IdleTimeout,
 			maxReadBuffer: 1 << 20,
 		}
 
-		if err := c.SetDeadline(time.Now().Add(s.IdleTimeout)); err != nil {
+		if err := c.SetDeadline(time.Now().Add(l.IdleTimeout)); err != nil {
 			return err
 		}
 
 		go func() {
-			if err := s.handle(c); err != nil {
+			if err := l.handle(c); err != nil {
 				log.Printf("fail to handle connection %v (%v)", err, c.RemoteAddr())
 			}
 		}()
@@ -117,5 +122,4 @@ func (l *Listener) handle(conn *Conn) error {
 	defer cancel()
 
 	return l.Handler.Handle(ctx, conn)
-
 }

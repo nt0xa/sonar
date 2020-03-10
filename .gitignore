@@ -4,12 +4,11 @@ cmd/server/server
 # macOS
 .DS_Store
 
-# TLS
-*.pem
-*.crt
-
 # SQL
 *.sql
 
 # Tests
 coverage.out
+
+# Secrets
+.env
