@@ -47,11 +47,7 @@ func (s *Server) ListenAndServe() error {
 		IdleTimeout:       s.options.idleTimeout,
 		SessionTimeout:    s.options.sessionTimeout,
 		NotifyStartedFunc: s.options.notifyStartedFunc,
-	}
-
-	if s.options.tlsConfig != nil {
-		l.IsTLS = true
-		l.TLSConfig = s.options.tlsConfig
+		TLSConfig:         s.options.tlsConfig,
 	}
 
 	return l.Listen()

@@ -106,7 +106,6 @@ func main() {
 
 	events := make(chan notifier.Event, 100)
 	defer close(events)
-	handlerFunc := AddEvent(events)
 	go ProcessEvents(events, db, ns)
 
 	//
@@ -241,7 +240,10 @@ func main() {
 
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
-		srv := smtp.NewServer(":25", cfg.Domain, handlerFunc, smtp.TLSConfig(tlsConfig))
+		srv := smtp.New(":25", cfg.Domain,
+			smtp.NotifyRequestFunc(AddProtoEvent("SMTP", events)),
+			smtp.TLSConfig(tlsConfig),
+			smtp.StartTLS(true))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start SMTP handler: %s", err.Error())
