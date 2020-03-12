@@ -48,7 +48,6 @@ type Listener struct {
 	IdleTimeout       time.Duration
 	SessionTimeout    time.Duration
 	TLSConfig         *tls.Config
-	IsTLS             bool
 	NotifyStartedFunc func()
 
 	listener net.Listener
@@ -63,7 +62,7 @@ func (l *Listener) Listen() error {
 
 	log.Printf("starting listener on %v", l.Addr)
 
-	if l.IsTLS && l.TLSConfig != nil {
+	if l.TLSConfig != nil {
 		listener, err = tls.Listen("tcp", l.Addr, l.TLSConfig)
 	} else {
 		listener, err = net.Listen("tcp", l.Addr)
