@@ -37,7 +37,7 @@ type Session struct {
 	domain    string
 	tlsConfig *tls.Config
 
-	onclose func(Data, []byte)
+	onclose func(Data, []byte, map[string]interface{})
 
 	lines   chan string
 	rdy     chan struct{}
@@ -89,7 +89,8 @@ func (s *Session) start(ctx context.Context) error {
 
 	if s.onclose != nil {
 		defer func() {
-			s.onclose(s.data, s.conv.Bytes())
+			meta := make(map[string]interface{})
+			s.onclose(s.data, s.conv.Bytes(), meta)
 		}()
 	}
 
@@ -284,7 +285,7 @@ func (s *Session) handleStartTLS(args string) error {
 	return nil
 }
 
-func (s *Session) onClose(f func(Data, []byte)) {
+func (s *Session) onClose(f func(Data, []byte, map[string]interface{})) {
 	s.onclose = f
 }
 

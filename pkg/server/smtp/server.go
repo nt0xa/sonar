@@ -1,20 +1,18 @@
 package smtp
 
 import (
-	"errors"
+	"context"
 
 	"github.com/bi-zone/sonar/pkg/listener"
-	"github.com/bi-zone/sonar/pkg/server"
 )
 
 type Server struct {
-	addr        string
-	domain      string
-	options     *options
-	handlerFunc server.HandlerFunc
+	addr    string
+	domain  string
+	options *options
 }
 
-func NewServer(addr, domain string, handlerFunc server.HandlerFunc, opts ...Option) *Server {
+func New(addr, domain string, opts ...Option) *Server {
 	options := defaultOptions
 
 	for _, fopt := range opts {
@@ -22,33 +20,42 @@ func NewServer(addr, domain string, handlerFunc server.HandlerFunc, opts ...Opti
 	}
 
 	return &Server{
-		addr:        addr,
-		domain:      domain,
-		options:     &options,
-		handlerFunc: handlerFunc,
+		addr:    addr,
+		domain:  domain,
+		options: &options,
 	}
 }
 
-func (srv *Server) ListenAndServe() error {
+func (s *Server) SetOption(opt Option) {
+	opt(s.options)
+}
+
+func (s *Server) ListenAndServe() error {
 	l := &listener.Listener{
-		Addr: srv.addr,
-		Handler: &Handler{
-			handlerFunc: srv.handlerFunc,
-			domain:      srv.domain,
-			tlsConfig:   srv.options.tlsConfig,
-		},
-		IdleTimeout:    srv.options.idleTimeout,
-		SessionTimeout: srv.options.sessionTimeout,
+		Addr:              s.addr,
+		Handler:           s,
+		IdleTimeout:       s.options.idleTimeout,
+		SessionTimeout:    s.options.sessionTimeout,
+		NotifyStartedFunc: s.options.notifyStartedFunc,
 	}
 
-	if srv.options.isTLS && srv.options.tlsConfig == nil {
-		return errors.New("invalid TLS config")
-	}
-
-	if srv.options.tlsConfig != nil {
-		l.IsTLS = srv.options.isTLS
-		l.TLSConfig = srv.options.tlsConfig
+	// With STARTTLS TLS connection is established during the session
+	// after "STARTTLS" command, so we don't need TLS listener here
+	if s.options.tlsConfig != nil && !s.options.startTLS {
+		l.TLSConfig = s.options.tlsConfig
 	}
 
 	return l.Listen()
+}
+
+func (s *Server) Handle(ctx context.Context, conn *listener.Conn) error {
+	sess := newSession(conn, s.domain, s.options.tlsConfig)
+
+	sess.onClose(func(data Data, log []byte, meta map[string]interface{}) {
+		if s.options.notifyRequestFunc != nil {
+			s.options.notifyRequestFunc(conn.RemoteAddr(), log, meta)
+		}
+	})
+
+	return sess.start(ctx)
 }
