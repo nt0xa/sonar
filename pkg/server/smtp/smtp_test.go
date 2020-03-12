@@ -74,6 +74,8 @@ func setupGlobals() error {
 		return errors.New("timeout waiting for server to start")
 	}
 
+	time.Sleep(3 * time.Second)
+
 	return nil
 }
 

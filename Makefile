@@ -52,7 +52,7 @@ docker-release: docker-login docker-build docker-push
 
 .PHONY: test
 test:
-	@go test ./... -v -coverprofile coverage.out
+	@go test ./... -v -test.parallel 1 -coverprofile coverage.out
 
 .PHONY: coverage
 coverage:
