@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/smtp"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -126,6 +127,8 @@ func TestSMTP(t *testing.T) {
 			require.NoError(st, err)
 
 			c.Quit()
+
+			time.Sleep(time.Microsecond * 500)
 		})
 	}
 }
