@@ -78,14 +78,14 @@ func main() {
 	// Interfaces
 	//
 
-	is, err := GetEnabledInterfaces(&cfg.Interface, db, cfg.Domain)
+	controllers, err := GetEnabledControllers(&cfg.Controller, db, cfg.Domain)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, i := range is {
+	for _, c := range controllers {
 		go func() {
-			if err := i.Start(); err != nil {
+			if err := c.Start(); err != nil {
 				log.Fatal(err)
 			}
 		}()
@@ -95,7 +95,7 @@ func main() {
 	// Notifiers
 	//
 
-	ns, err := GetEnabledNotifiers(&cfg.Notifier)
+	notifiers, err := GetEnabledNotifiers(&cfg.Notifier)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func main() {
 
 	events := make(chan notifier.Event, 100)
 	defer close(events)
-	go ProcessEvents(events, db, ns)
+	go ProcessEvents(events, db, notifiers)
 
 	//
 	// DNS

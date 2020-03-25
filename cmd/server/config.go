@@ -15,8 +15,8 @@ type Config struct {
 
 	TLS TLSConfig `json:"tls"`
 
-	Interface InterfaceConfig `json:"interface"`
-	Notifier  NotifierConfig  `json:"notifier"`
+	Controller ControllerConfig `json:"controller"`
+	Notifier   NotifierConfig   `json:"notifier"`
 }
 
 type TLSConfig struct {
@@ -63,7 +63,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.Domain, validation.Required, is.Domain),
 		validation.Field(&c.IP, validation.Required, is.IPv4),
 		validation.Field(&c.TLS),
-		validation.Field(&c.Interface),
+		validation.Field(&c.Controller),
 		validation.Field(&c.Notifier),
 	)
 }
