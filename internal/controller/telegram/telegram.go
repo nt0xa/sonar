@@ -15,8 +15,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/iface"
 )
 
 var (
@@ -35,9 +35,9 @@ type Bot struct {
 	admin  int64
 }
 
-var _ iface.Interface = &Bot{}
+var _ controller.Controller = &Bot{}
 
-func New(cfg *Config, db *database.DB, domain string) (iface.Interface, error) {
+func New(cfg *Config, db *database.DB, domain string) (controller.Controller, error) {
 	client := http.DefaultClient
 
 	// Proxy

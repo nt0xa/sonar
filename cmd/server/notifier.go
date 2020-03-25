@@ -1,7 +1,5 @@
 package main
 
-// TODO: make interface
-
 import (
 	"fmt"
 	"net"
@@ -42,7 +40,7 @@ func (c NotifierConfig) Validate() error {
 }
 
 func GetEnabledNotifiers(cfg *NotifierConfig) ([]notifier.Notifier, error) {
-	ns := make([]notifier.Notifier, 0)
+	nn := make([]notifier.Notifier, 0)
 
 	var (
 		n   notifier.Notifier
@@ -61,10 +59,10 @@ func GetEnabledNotifiers(cfg *NotifierConfig) ([]notifier.Notifier, error) {
 			return nil, fmt.Errorf("fail to create notifier %v: %w", name, err)
 		}
 
-		ns = append(ns, n)
+		nn = append(nn, n)
 	}
 
-	return ns, nil
+	return nn, nil
 }
 
 func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.Notifier) error {
