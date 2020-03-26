@@ -9,12 +9,12 @@ import (
 )
 
 type Payload struct {
-	ID        int64          `db:"id"`
-	UserID    int64          `db:"user_id"`
-	Subdomain string         `db:"subdomain"`
-	Name      string         `db:"name"`
-	Handlers  pq.StringArray `db:"handlers"`
-	CreatedAt time.Time      `db:"created_at"`
+	ID        int64          `db:"id"         json:"-"`
+	UserID    int64          `db:"user_id"    json:"-"`
+	Subdomain string         `db:"subdomain"  json:"subdomain"`
+	Name      string         `db:"name"       json:"name"`
+	Handlers  pq.StringArray `db:"handlers"   json:"handlers,omitempty"`
+	CreatedAt time.Time      `db:"created_at" json:"createdAt"`
 }
 
 func (db *DB) PayloadsCreate(o *Payload) error {
@@ -30,6 +30,18 @@ func (db *DB) PayloadsCreate(o *Payload) error {
 	}
 
 	return nstmt.QueryRowx(o).Scan(&o.ID)
+}
+
+func (db *DB) PayloadGetByID(id int64) (*Payload, error) {
+	var o Payload
+
+	err := db.Get(&o, "SELECT * FROM payloads WHERE id = $1", id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &o, nil
 }
 
 func (db *DB) PayloadsGetBySubdomain(subdomain string) (*Payload, error) {
