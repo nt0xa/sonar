@@ -67,12 +67,24 @@ func main() {
 	}
 
 	// Create admin user
-	if _, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
-		// There is no admin yet
-		u := &database.User{Name: "admin"}
-		if err := db.UsersCreate(u); err != nil {
+	admin := &database.User{Name: "admin", Params: database.UserParams{
+		TelegramID: cfg.Controller.Telegram.Admin,
+		APIToken:   cfg.Controller.API.Admin,
+	}}
+
+	if u, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
+		// There is no admin yet - create one
+		if err := db.UsersCreate(admin); err != nil {
 			log.Fatal(err)
 		}
+	} else if err == nil {
+		// Admin user exists - update
+		admin.ID = u.ID
+		if err := db.UsersUpdate(admin); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal(err)
 	}
 
 	//

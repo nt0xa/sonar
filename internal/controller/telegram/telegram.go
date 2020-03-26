@@ -60,21 +60,6 @@ func New(cfg *Config, db *database.DB, domain string) (controller.Controller, er
 
 	}
 
-	// Admin
-	if cfg.Admin != 0 {
-		u, err := db.UsersGetByName("admin")
-
-		if err != nil {
-			return nil, fmt.Errorf("telegram: fail to get admin user from db: %w", err)
-		}
-
-		u.Params.TelegramID = cfg.Admin
-
-		if err := db.UsersUpdate(u); err != nil {
-			return nil, fmt.Errorf("telegram: fail to set admin id in db: %w", err)
-		}
-	}
-
 	tg, err := tgbotapi.NewBotAPIWithClient(cfg.Token, client)
 	if err != nil {
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
