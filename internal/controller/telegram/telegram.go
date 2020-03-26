@@ -23,9 +23,16 @@ var (
 	helpMessage = "" +
 		"`/new <name>` - create new payload\n" +
 		"`/del <name>` - delete payload\n" +
-		"`/list <substr>` - list your payloads which contains `<substr>`\n"
+		"`/list <substr>` - list your payloads which contains `<substr>`\n" +
+		"`/me` - user info\n"
 	listPayloadTemplate = template.Must(template.New("msg").
 				Parse(`<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ .Domain }}</code>`))
+
+	meTemplate = template.Must(template.New("msg").
+			Parse(`
+<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>
+<b>API token:</b> <code>{{ .APIToken }}</code>
+`))
 )
 
 type Bot struct {
@@ -51,21 +58,6 @@ func New(cfg *Config, db *database.DB, domain string) (controller.Controller, er
 			Proxy: http.ProxyURL(proxyURL),
 		}
 
-	}
-
-	// Admin
-	if cfg.Admin != 0 {
-		u, err := db.UsersGetByName("admin")
-
-		if err != nil {
-			return nil, fmt.Errorf("telegram: fail to get admin user from db: %w", err)
-		}
-
-		u.Params.TelegramID = cfg.Admin
-
-		if err := db.UsersUpdate(u); err != nil {
-			return nil, fmt.Errorf("telegram: fail to set admin id in db: %w", err)
-		}
 	}
 
 	tg, err := tgbotapi.NewBotAPIWithClient(cfg.Token, client)
@@ -108,6 +100,9 @@ func (b *Bot) Start() error {
 
 		case strings.HasPrefix(cmd, "/list"):
 			err = b.checkUser(chatID, cmd, b.listCmd)
+
+		case strings.HasPrefix(cmd, "/me"):
+			err = b.checkUser(chatID, cmd, b.meCmd)
 
 		// Admin commans
 		case strings.HasPrefix(cmd, "/useradd"):
@@ -280,6 +275,22 @@ func (b *Bot) listCmd(chatID int64, cmd string, u *database.User) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.DisableWebPagePreview = true
+
+	if _, err := b.tg.Send(msg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (b *Bot) meCmd(chatID int64, cmd string, u *database.User) error {
+	var tpl bytes.Buffer
+
+	if err := meTemplate.Execute(&tpl, u.Params); err != nil {
+		return err
+	}
+	msg := tgbotapi.NewMessage(chatID, strings.TrimPrefix(tpl.String(), "\n"))
+	msg.ParseMode = tgbotapi.ModeHTML
 
 	if _, err := b.tg.Send(msg); err != nil {
 		return err

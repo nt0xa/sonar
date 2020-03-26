@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/bi-zone/sonar/internal/utils"
 )
 
 type User struct {
@@ -16,7 +18,8 @@ type User struct {
 }
 
 type UserParams struct {
-	TelegramID int64 `json:"telegramId"`
+	TelegramID int64  `json:"telegramId,omitempty"`
+	APIToken   string `json:"apiToken,omitempty"`
 }
 
 func (p UserParams) Value() (driver.Value, error) {
@@ -35,6 +38,14 @@ func (p *UserParams) Scan(value interface{}) error {
 func (db *DB) UsersCreate(o *User) error {
 
 	o.CreatedAt = time.Now()
+
+	if o.Params.APIToken == "" {
+		token, err := utils.GenerateRandomString(16)
+		if err != nil {
+			return err
+		}
+		o.Params.APIToken = token
+	}
 
 	nstmt, err := db.PrepareNamed(
 		"INSERT INTO users (name, params, created_at) VALUES(:name, :params, :created_at) RETURNING id")

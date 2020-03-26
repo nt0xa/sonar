@@ -2,10 +2,19 @@
   name: user1
   params:
     telegramId: 31337
+    apiToken: 50c862e41d059eeca13adc7b276b46b7
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
   name: user2
   params:
     telegramId: 31338
+    apiToken: 7001f2d819d3d5fb0b1fd75dd38eb34e
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 3
+  name: admin
+  params:
+    telegramId: 1337
+    apiToken: a33bfdbfb3c62feb7ea59314dbd17426
   created_at: RAW=NOW() AT TIME ZONE 'UTC'

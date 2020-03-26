@@ -26,7 +26,8 @@ type NotifierConfig struct {
 
 func (c NotifierConfig) Validate() error {
 	rules := make([]*validation.FieldRules, 0)
-	rules = append(rules, validation.Field(&c.Enabled, validation.Each(validation.In("telegram"))))
+	rules = append(rules, validation.Field(&c.Enabled,
+		validation.Each(validation.In("telegram"))))
 
 	for _, name := range c.Enabled {
 		switch name {

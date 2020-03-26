@@ -13,6 +13,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
+	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/migrations"
 	"github.com/bi-zone/sonar/internal/notifier"
@@ -66,29 +67,24 @@ func main() {
 	}
 
 	// Create admin user
-	if _, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
-		// There is no admin yet
-		u := &database.User{Name: "admin"}
-		if err := db.UsersCreate(u); err != nil {
+	admin := &database.User{Name: "admin", Params: database.UserParams{
+		TelegramID: cfg.Controller.Telegram.Admin,
+		APIToken:   cfg.Controller.API.Admin,
+	}}
+
+	if u, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
+		// There is no admin yet - create one
+		if err := db.UsersCreate(admin); err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	//
-	// Interfaces
-	//
-
-	controllers, err := GetEnabledControllers(&cfg.Controller, db, cfg.Domain)
-	if err != nil {
+	} else if err == nil {
+		// Admin user exists - update
+		admin.ID = u.ID
+		if err := db.UsersUpdate(admin); err != nil {
+			log.Fatal(err)
+		}
+	} else {
 		log.Fatal(err)
-	}
-
-	for _, c := range controllers {
-		go func() {
-			if err := c.Start(); err != nil {
-				log.Fatal(err)
-			}
-		}()
 	}
 
 	//
@@ -204,6 +200,23 @@ func main() {
 		tlsConfig = &tls.Config{
 			GetCertificate: kpr.GetCertificateFunc(),
 		}
+	}
+
+	//
+	// Controllers
+	//
+
+	controllers, err := GetEnabledControllers(&cfg.Controller, db, log, tlsConfig, cfg.Domain)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, c := range controllers {
+		go func(c controller.Controller) {
+			if err := c.Start(); err != nil {
+				log.Fatal(err)
+			}
+		}(c)
 	}
 
 	//
