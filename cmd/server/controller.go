@@ -47,10 +47,13 @@ func GetEnabledControllers(cfg *ControllerConfig, db *database.DB, log *logrus.L
 
 	for _, name := range cfg.Enabled {
 		switch name {
+
 		case "telegram":
 			c, err = telegram.New(&cfg.Telegram, db, domain)
+
 		case "api":
 			c, err = api.New(&cfg.API, db, log, tlsConfig)
+
 		default:
 			return nil, fmt.Errorf("unknown interface %v", name)
 		}

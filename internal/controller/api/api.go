@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/sirupsen/logrus"
 )
 
 type API struct {
