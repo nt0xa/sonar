@@ -8,6 +8,8 @@
 // internal/database/migrations/000003_user_params.up.sql (65B)
 // internal/database/migrations/000004_user_id_serial.down.sql (76B)
 // internal/database/migrations/000004_user_id_serial.up.sql (114B)
+// internal/database/migrations/000005_generate_api_token.down.sql (50B)
+// internal/database/migrations/000005_generate_api_token.up.sql (165B)
 
 package migrations
 
@@ -27,7 +29,7 @@ import (
 func bindataRead(data []byte, name string) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %v", name, err)
+		return nil, fmt.Errorf("read %q: %w", name, err)
 	}
 
 	var buf bytes.Buffer
@@ -35,7 +37,7 @@ func bindataRead(data []byte, name string) ([]byte, error) {
 	clErr := gz.Close()
 
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %v", name, err)
+		return nil, fmt.Errorf("read %q: %w", name, err)
 	}
 	if clErr != nil {
 		return nil, err
@@ -91,7 +93,7 @@ func _000001_initial_schemaDownSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000001_initial_schema.down.sql", size: 60, mode: os.FileMode(0644), modTime: time.Unix(1582370862, 0)}
+	info := bindataFileInfo{name: "000001_initial_schema.down.sql", size: 60, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf9, 0x38, 0x93, 0xb3, 0x78, 0x3b, 0x41, 0x13, 0x87, 0x46, 0x1e, 0xc1, 0x23, 0x8d, 0x4b, 0x40, 0x62, 0x91, 0x7e, 0xf5, 0x52, 0x5a, 0xcf, 0xdd, 0x91, 0x6, 0xca, 0xee, 0x4f, 0x7a, 0x20, 0xcf}}
 	return a, nil
 }
@@ -111,7 +113,7 @@ func _000001_initial_schemaUpSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000001_initial_schema.up.sql", size: 384, mode: os.FileMode(0644), modTime: time.Unix(1582370860, 0)}
+	info := bindataFileInfo{name: "000001_initial_schema.up.sql", size: 384, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5a, 0x6, 0x56, 0xde, 0x79, 0xfb, 0xfd, 0xd8, 0x33, 0x1a, 0x39, 0xe7, 0x99, 0xe0, 0x66, 0x90, 0x43, 0xab, 0x4f, 0xf6, 0x10, 0x31, 0x62, 0xc, 0x8, 0x8f, 0x47, 0x15, 0xd8, 0xbe, 0x1, 0x69}}
 	return a, nil
 }
@@ -131,7 +133,7 @@ func _000002_payload_handlersDownSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000002_payload_handlers.down.sql", size: 43, mode: os.FileMode(0644), modTime: time.Unix(1582218733, 0)}
+	info := bindataFileInfo{name: "000002_payload_handlers.down.sql", size: 43, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x70, 0x73, 0x53, 0x5a, 0xf9, 0x18, 0x34, 0x97, 0x1b, 0x21, 0x4d, 0x80, 0x54, 0x4c, 0x7c, 0x80, 0xad, 0xcf, 0x8f, 0x86, 0x37, 0x5d, 0xfd, 0x31, 0xc1, 0x1d, 0x7d, 0x79, 0x91, 0x7f, 0xf8, 0x5a}}
 	return a, nil
 }
@@ -151,7 +153,7 @@ func _000002_payload_handlersUpSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000002_payload_handlers.up.sql", size: 49, mode: os.FileMode(0644), modTime: time.Unix(1582288262, 0)}
+	info := bindataFileInfo{name: "000002_payload_handlers.up.sql", size: 49, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8d, 0x72, 0xcf, 0x83, 0x13, 0x89, 0xb4, 0x67, 0x4f, 0xb5, 0xa2, 0x2d, 0xea, 0xfe, 0x86, 0x13, 0xef, 0x93, 0x8d, 0x3c, 0x5b, 0xa5, 0x26, 0x8c, 0xfa, 0x6b, 0xc4, 0xbb, 0xe5, 0xe, 0x57, 0x54}}
 	return a, nil
 }
@@ -171,7 +173,7 @@ func _000003_user_paramsDownSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000003_user_params.down.sql", size: 38, mode: os.FileMode(0644), modTime: time.Unix(1582369619, 0)}
+	info := bindataFileInfo{name: "000003_user_params.down.sql", size: 38, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x24, 0x87, 0x4e, 0xb0, 0x37, 0xb4, 0x75, 0x2f, 0x27, 0xb0, 0x7c, 0x34, 0xc4, 0x6b, 0xb4, 0xf0, 0x8c, 0x43, 0x97, 0xa8, 0x5d, 0x5b, 0xa8, 0xec, 0x83, 0x21, 0xff, 0x6e, 0x2d, 0x40, 0x8d, 0x17}}
 	return a, nil
 }
@@ -191,7 +193,7 @@ func _000003_user_paramsUpSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000003_user_params.up.sql", size: 65, mode: os.FileMode(0644), modTime: time.Unix(1582371772, 0)}
+	info := bindataFileInfo{name: "000003_user_params.up.sql", size: 65, mode: os.FileMode(0644), modTime: time.Unix(1582372276, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2c, 0xf6, 0x8b, 0xa3, 0xc5, 0xd6, 0x68, 0x59, 0x17, 0xde, 0xc5, 0x79, 0xfb, 0x76, 0xf, 0xf5, 0xf8, 0x66, 0x78, 0x7c, 0x50, 0xc6, 0xfc, 0x28, 0x60, 0xd1, 0x12, 0x2c, 0x4, 0x70, 0xdc, 0x26}}
 	return a, nil
 }
@@ -211,7 +213,7 @@ func _000004_user_id_serialDownSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000004_user_id_serial.down.sql", size: 76, mode: os.FileMode(0644), modTime: time.Unix(1582289605, 0)}
+	info := bindataFileInfo{name: "000004_user_id_serial.down.sql", size: 76, mode: os.FileMode(0644), modTime: time.Unix(1585237765, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xee, 0xc2, 0x8d, 0x57, 0xd0, 0x34, 0xff, 0xa0, 0xcf, 0x9c, 0xad, 0x42, 0x80, 0xa8, 0xc1, 0xc6, 0x3a, 0xf7, 0x7d, 0xf6, 0xba, 0xb6, 0xd7, 0x32, 0x76, 0xe2, 0x51, 0xbd, 0x3, 0x6d, 0x79, 0xd3}}
 	return a, nil
 }
@@ -231,8 +233,48 @@ func _000004_user_id_serialUpSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "000004_user_id_serial.up.sql", size: 114, mode: os.FileMode(0644), modTime: time.Unix(1582370865, 0)}
+	info := bindataFileInfo{name: "000004_user_id_serial.up.sql", size: 114, mode: os.FileMode(0644), modTime: time.Unix(1585237769, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd9, 0x63, 0x16, 0x54, 0xe7, 0xf1, 0xc4, 0x1b, 0x40, 0xa6, 0x5c, 0x37, 0x23, 0xb0, 0x58, 0xc3, 0x90, 0xb6, 0xde, 0x5, 0x4f, 0xe0, 0xdc, 0xa6, 0xf2, 0xf2, 0x20, 0xc8, 0x66, 0xc0, 0xe4, 0xaf}}
+	return a, nil
+}
+
+var __000005_generate_api_tokenDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x0a\x0d\x70\x71\x0c\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x08\x76\x0d\x51\x28\x48\x2c\x4a\xcc\x2d\x56\xb0\x85\x31\x94\x75\x15\xd4\xab\x13\x0b\x32\x43\xf2\xb3\x53\xf3\x6a\xd5\xad\xb9\x00\x01\x00\x00\xff\xff\xde\x98\xfd\x94\x32\x00\x00\x00")
+
+func _000005_generate_api_tokenDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__000005_generate_api_tokenDownSql,
+		"000005_generate_api_token.down.sql",
+	)
+}
+
+func _000005_generate_api_tokenDownSql() (*asset, error) {
+	bytes, err := _000005_generate_api_tokenDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "000005_generate_api_token.down.sql", size: 50, mode: os.FileMode(0644), modTime: time.Unix(1585237904, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x66, 0xfd, 0x81, 0x3a, 0xdc, 0x2, 0x8a, 0x5, 0xc2, 0x36, 0x73, 0x63, 0x71, 0xb9, 0x45, 0x40, 0x1d, 0xad, 0x82, 0x32, 0xa4, 0xec, 0xa9, 0x13, 0x9f, 0xeb, 0xac, 0xaa, 0xdd, 0x4f, 0x8c, 0x44}}
+	return a, nil
+}
+
+var __000005_generate_api_tokenUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x0a\x0d\x70\x71\x0c\x71\x55\x28\x2d\x4e\x2d\x2a\x56\x08\x76\x0d\x51\x28\x48\x2c\x4a\xcc\x2d\x56\xb0\x85\x31\x6a\x6a\x14\xb2\x8a\xf3\xf3\x92\xe2\x93\x4a\x33\x73\x52\xe2\xf3\x93\xb2\x52\x93\x4b\x34\xd4\x13\x0b\x32\x43\xf2\xb3\x53\xf3\xd4\x75\x14\x52\xf3\x92\xf3\x53\x52\x35\xd2\x53\xf3\xe2\x8b\x12\xf3\x52\xf2\x73\xe3\x93\x2a\x4b\x52\x8b\x35\x0c\xcd\x34\x75\x14\xd4\x33\x52\x2b\xd4\x35\x35\x15\xc2\x3d\x5c\x83\x5c\x15\xfc\xfc\xe1\x16\xd8\x2b\x20\xcc\x50\xf0\x0f\x82\x0a\xeb\xda\x21\x89\x7a\x06\x2b\xf8\x85\xfa\xf8\x58\x73\x01\x02\x00\x00\xff\xff\x99\x39\xf7\x81\xa5\x00\x00\x00")
+
+func _000005_generate_api_tokenUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__000005_generate_api_tokenUpSql,
+		"000005_generate_api_token.up.sql",
+	)
+}
+
+func _000005_generate_api_tokenUpSql() (*asset, error) {
+	bytes, err := _000005_generate_api_tokenUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "000005_generate_api_token.up.sql", size: 165, mode: os.FileMode(0644), modTime: time.Unix(1585237896, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x77, 0x80, 0x1c, 0xd9, 0x61, 0x8, 0x40, 0x55, 0xb9, 0x22, 0x41, 0xe7, 0x92, 0x1b, 0xc1, 0x1c, 0xb4, 0x91, 0x71, 0x28, 0x1e, 0x56, 0xfd, 0xb7, 0x15, 0x76, 0x31, 0x7a, 0x1b, 0x4a, 0xf2, 0xcc}}
 	return a, nil
 }
 
@@ -327,14 +369,16 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"000001_initial_schema.down.sql":   _000001_initial_schemaDownSql,
-	"000001_initial_schema.up.sql":     _000001_initial_schemaUpSql,
-	"000002_payload_handlers.down.sql": _000002_payload_handlersDownSql,
-	"000002_payload_handlers.up.sql":   _000002_payload_handlersUpSql,
-	"000003_user_params.down.sql":      _000003_user_paramsDownSql,
-	"000003_user_params.up.sql":        _000003_user_paramsUpSql,
-	"000004_user_id_serial.down.sql":   _000004_user_id_serialDownSql,
-	"000004_user_id_serial.up.sql":     _000004_user_id_serialUpSql,
+	"000001_initial_schema.down.sql":     _000001_initial_schemaDownSql,
+	"000001_initial_schema.up.sql":       _000001_initial_schemaUpSql,
+	"000002_payload_handlers.down.sql":   _000002_payload_handlersDownSql,
+	"000002_payload_handlers.up.sql":     _000002_payload_handlersUpSql,
+	"000003_user_params.down.sql":        _000003_user_paramsDownSql,
+	"000003_user_params.up.sql":          _000003_user_paramsUpSql,
+	"000004_user_id_serial.down.sql":     _000004_user_id_serialDownSql,
+	"000004_user_id_serial.up.sql":       _000004_user_id_serialUpSql,
+	"000005_generate_api_token.down.sql": _000005_generate_api_tokenDownSql,
+	"000005_generate_api_token.up.sql":   _000005_generate_api_tokenUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -378,14 +422,16 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"000001_initial_schema.down.sql":   &bintree{_000001_initial_schemaDownSql, map[string]*bintree{}},
-	"000001_initial_schema.up.sql":     &bintree{_000001_initial_schemaUpSql, map[string]*bintree{}},
-	"000002_payload_handlers.down.sql": &bintree{_000002_payload_handlersDownSql, map[string]*bintree{}},
-	"000002_payload_handlers.up.sql":   &bintree{_000002_payload_handlersUpSql, map[string]*bintree{}},
-	"000003_user_params.down.sql":      &bintree{_000003_user_paramsDownSql, map[string]*bintree{}},
-	"000003_user_params.up.sql":        &bintree{_000003_user_paramsUpSql, map[string]*bintree{}},
-	"000004_user_id_serial.down.sql":   &bintree{_000004_user_id_serialDownSql, map[string]*bintree{}},
-	"000004_user_id_serial.up.sql":     &bintree{_000004_user_id_serialUpSql, map[string]*bintree{}},
+	"000001_initial_schema.down.sql":     &bintree{_000001_initial_schemaDownSql, map[string]*bintree{}},
+	"000001_initial_schema.up.sql":       &bintree{_000001_initial_schemaUpSql, map[string]*bintree{}},
+	"000002_payload_handlers.down.sql":   &bintree{_000002_payload_handlersDownSql, map[string]*bintree{}},
+	"000002_payload_handlers.up.sql":     &bintree{_000002_payload_handlersUpSql, map[string]*bintree{}},
+	"000003_user_params.down.sql":        &bintree{_000003_user_paramsDownSql, map[string]*bintree{}},
+	"000003_user_params.up.sql":          &bintree{_000003_user_paramsUpSql, map[string]*bintree{}},
+	"000004_user_id_serial.down.sql":     &bintree{_000004_user_id_serialDownSql, map[string]*bintree{}},
+	"000004_user_id_serial.up.sql":       &bintree{_000004_user_id_serialUpSql, map[string]*bintree{}},
+	"000005_generate_api_token.down.sql": &bintree{_000005_generate_api_tokenDownSql, map[string]*bintree{}},
+	"000005_generate_api_token.up.sql":   &bintree{_000005_generate_api_tokenUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
