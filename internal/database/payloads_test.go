@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
 )
@@ -38,6 +39,26 @@ func TestPayloadsCreate_Duplicate(t *testing.T) {
 
 	err := db.PayloadsCreate(o)
 	assert.Error(t, err)
+}
+
+func TestPayloadGetByID_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.PayloadGetByID(1)
+	require.NoError(t, err)
+	require.NotNil(t, o)
+	assert.Equal(t, "payload1", o.Name)
+}
+
+func TestPayloadGetByID_NotExist(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.PayloadGetByID(1337)
+	assert.Error(t, err)
+	assert.Nil(t, o)
+	assert.Error(t, err, sql.ErrNoRows.Error())
 }
 
 func TestPayloadsGetBySubdomain_Success(t *testing.T) {
