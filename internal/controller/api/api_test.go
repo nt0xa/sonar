@@ -146,8 +146,6 @@ func teardown(t *testing.T) {}
 func heDefault(t *testing.T) *httpexpect.Expect {
 	printers := make([]httpexpect.Printer, 0)
 
-	printers = append(printers, httpexpect.NewCompactPrinter(t))
-
 	if verbose {
 		printers = append(printers, httpexpect.NewCurlPrinter(t))
 		printers = append(printers, httpexpect.NewDebugPrinter(t, true))
