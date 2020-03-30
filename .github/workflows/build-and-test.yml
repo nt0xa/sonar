@@ -1,4 +1,4 @@
-name: build
+name: Build and test
 
 on:
   pull_request:
@@ -7,9 +7,7 @@ on:
       - master
 
 jobs:
-  build:
-    name: Build and test
-
+  build_and_test:
     runs-on: ubuntu-latest
 
     services:
