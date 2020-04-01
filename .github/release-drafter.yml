@@ -6,10 +6,10 @@ template: |
   $CHANGES
 categories:
   - title: 'Features'
-    label: 'type: feature'
+    label: 'feature'
   - title: 'Bug Fixes'
-    label: 'type: bug'
+    label: 'fix'
   - title: 'Documentation'
-    label: 'type: docs'
+    label: 'documentation'
   - title: 'Maintenance'
-    label: 'type: maintenance'
+    label: 'maintenance'
