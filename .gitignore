@@ -4,9 +4,6 @@ cmd/server/server
 # macOS
 .DS_Store
 
-# SQL
-*.sql
-
 # Tests
 coverage.out
 

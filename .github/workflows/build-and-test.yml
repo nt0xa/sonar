@@ -36,7 +36,8 @@ jobs:
       - name: Test
         run: make test
         env:
-          SONAR_DB: 'postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres_test?sslmode=disable'
+          SONAR_DB_DSN: 'postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres_test?sslmode=disable'
+          SONAR_DB_MIGRATIONS: internal/database/migrations
 
       - name: Code coverage
         uses: codecov/codecov-action@v1

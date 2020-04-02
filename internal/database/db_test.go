@@ -2,7 +2,6 @@ package database_test
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 )
 
 var (
@@ -36,20 +34,24 @@ func TestMain(m *testing.M) {
 }
 
 func setupGlobals() error {
-	dsn, ok := os.LookupEnv("SONAR_DB")
-	if !ok {
-		return errors.New("empty SONAR_DB")
+	cfg := &database.Config{
+		DSN:        os.Getenv("SONAR_DB_DSN"),
+		Migrations: "migrations",
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return err
 	}
 
 	var err error
 
-	db, err = database.New(dsn)
+	db, err = database.New(cfg)
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")
 	}
 
-	if err := migrations.Up(dsn); err != nil {
-		log.Fatal(err)
+	if err := db.Migrate(); err != nil {
+		return errors.Wrap(err, "fail to apply migrations")
 	}
 
 	fixtures, err = testfixtures.NewFolder(db.DB.DB,

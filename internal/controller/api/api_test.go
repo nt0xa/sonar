@@ -9,12 +9,12 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/controller/api"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 )
 
 // Flags
@@ -69,17 +69,23 @@ const (
 func Setup() error {
 	var err error
 
-	dsn := os.Getenv("SONAR_DB")
-
-	// Create DB
-	db, err = database.New(dsn)
-	if err != nil {
-		return err
+	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
+	if !ok {
+		return errors.New("empty SONAR_DB_DSN")
 	}
 
-	// Apply DB migrations
-	if err := migrations.Up(dsn); err != nil {
-		return err
+	// DB
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "../../database/migrations",
+	})
+	if err != nil {
+		return errors.Wrap(err, "fail to init db")
+	}
+
+	// Migrations
+	if err := db.Migrate(); err != nil {
+		return errors.Wrap(err, "fail to apply migrations")
 	}
 
 	// Load DB fixtures
