@@ -9,6 +9,7 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
@@ -68,12 +69,23 @@ const (
 func Setup() error {
 	var err error
 
-	dsn := os.Getenv("SONAR_DB")
+	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
+	if !ok {
+		return errors.New("empty SONAR_DB_DSN")
+	}
 
-	// Create DB
-	db, err = database.New(dsn)
+	// DB
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "internal/database/migrations",
+	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fail to init db")
+	}
+
+	// Migrations
+	if err := db.Migrate(); err != nil {
+		return errors.Wrap(err, "fail to apply migrations")
 	}
 
 	// Load DB fixtures

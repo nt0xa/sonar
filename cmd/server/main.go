@@ -10,8 +10,6 @@ import (
 	"time"
 
 	legolog "github.com/go-acme/lego/v3/log"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
@@ -59,25 +57,12 @@ func main() {
 	// DB
 	//
 
-	db, err := database.New(cfg.DB.DSN)
+	db, err := database.New(&cfg.DB)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Migrations
-	driver, err := postgres.WithInstance(db.DB.DB, &postgres.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	migrations, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", cfg.DB.Migrations),
-		"postgres", driver)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := migrations.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := db.Migrate(); err != nil {
 		log.Fatal(err)
 	}
 

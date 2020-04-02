@@ -33,11 +33,6 @@ jobs:
       - name: Build
         run: make build
 
-      - name: Apply migrations
-        run: |
-          make migrations-deps
-          make migrations-up
-
       - name: Test
         run: make test
         env:

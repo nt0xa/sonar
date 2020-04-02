@@ -41,9 +41,16 @@ func setupGlobals() error {
 
 	var err error
 
-	db, err = database.New(dsn)
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "internal/database/migrations",
+	})
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")
+	}
+
+	if err := db.Migrate(); err != nil {
+		return errors.Wrap(err, "fail to apply migrations")
 	}
 
 	fixtures, err = testfixtures.NewFolder(db.DB.DB,
