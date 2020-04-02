@@ -14,7 +14,6 @@ import (
 
 	"github.com/bi-zone/sonar/internal/controller/api"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 )
 
 // Flags
@@ -74,11 +73,6 @@ func Setup() error {
 	// Create DB
 	db, err = database.New(dsn)
 	if err != nil {
-		return err
-	}
-
-	// Apply DB migrations
-	if err := migrations.Up(dsn); err != nil {
 		return err
 	}
 

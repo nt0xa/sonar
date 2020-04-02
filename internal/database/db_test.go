@@ -2,7 +2,6 @@ package database_test
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 )
 
 var (
@@ -46,10 +44,6 @@ func setupGlobals() error {
 	db, err = database.New(dsn)
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")
-	}
-
-	if err := migrations.Up(dsn); err != nil {
-		log.Fatal(err)
 	}
 
 	fixtures, err = testfixtures.NewFolder(db.DB.DB,

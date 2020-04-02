@@ -15,7 +15,6 @@ import (
 
 	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 	"github.com/bi-zone/sonar/internal/notifier"
 	"github.com/bi-zone/sonar/pkg/certmanager"
 	"github.com/bi-zone/sonar/pkg/server/dns"
@@ -59,10 +58,6 @@ func main() {
 
 	db, err := database.New(cfg.DB)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := migrations.Up(cfg.DB); err != nil {
 		log.Fatal(err)
 	}
 

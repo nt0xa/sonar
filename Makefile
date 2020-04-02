@@ -104,14 +104,6 @@ migrations-drop:
 migrations-force:
 	@migrate -path ${migrations} -database ${db_url} force ${v}
 
-.PHONY: migrations-pack
-migrations-pack:
-	@go-bindata -pkg migrations \
-		-ignore ".*\.go" \
-		-prefix ${migrations} \
-		-o ${migrations}/bindata.go \
-		${migrations}/...
-	@go fmt ${migrations}
 
 #
 # Changelog
