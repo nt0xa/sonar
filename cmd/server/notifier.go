@@ -11,7 +11,6 @@ import (
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/notifier"
 	"github.com/bi-zone/sonar/internal/notifier/telegram"
-	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/pkg/server"
 )
 
@@ -113,15 +112,9 @@ func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.
 func AddProtoEvent(proto string, events chan<- notifier.Event) server.NotifyRequestFunc {
 	return func(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
 
-		s := string(data)
-
-		if !utils.StringPrintable(s) {
-			s = utils.HexDump(data)
-		}
-
 		events <- notifier.Event{
 			Protocol:   proto,
-			Data:       s,
+			Data:       string(data),
 			RawData:    data,
 			RemoteAddr: remoteAddr,
 			ReceivedAt: time.Now(),

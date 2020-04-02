@@ -6,11 +6,13 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"unicode/utf8"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/notifier"
+	"github.com/bi-zone/sonar/internal/utils"
 )
 
 const maxMessageSize = 4096
@@ -60,49 +62,62 @@ func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Paylo
 
 	var header, body bytes.Buffer
 
-	data := struct {
+	headerData := struct {
 		Name       string
 		Protocol   string
 		RemoteAddr string
 		ReceivedAt string
-		Data       string
 	}{
 		p.Name,
 		e.Protocol,
 		e.RemoteAddr.String(),
 		e.ReceivedAt.Format("15:04:05 01.01.2006"),
-		e.Data,
 	}
 
-	if err := messageHeaderTemplate.Execute(&header, data); err != nil {
+	if err := messageHeaderTemplate.Execute(&header, headerData); err != nil {
 		return fmt.Errorf("telegram message header render error: %w", err)
 	}
 
-	if err := messageBodyTemplate.Execute(&body, data); err != nil {
+	var data string
+
+	if e.Protocol == "DNS" {
+		data = utils.HexDump(e.RawData)
+	} else {
+		data = e.Data
+	}
+
+	bodyData := struct {
+		Data string
+	}{
+		data,
+	}
+
+	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {
 		return fmt.Errorf("telegram message body render error: %w", err)
 	}
 
-	var msg tgbotapi.MessageConfig
+	var message tgbotapi.Chattable
 
-	if len(header.String()+body.String()) < maxMessageSize {
+	if len(header.String()+body.String()) < maxMessageSize && utf8.ValidString(body.String()) {
 		// Send as message.
-		msg = tgbotapi.NewMessage(u.Params.TelegramID, header.String()+body.String())
+		msg := tgbotapi.NewMessage(u.Params.TelegramID, header.String()+body.String())
 		msg.ParseMode = tgbotapi.ModeHTML
 		msg.DisableWebPagePreview = true
+		message = msg
 	} else {
 		// Send as document.
-		rdr := tgbotapi.FileReader{
-			Name:   "log.txt",
-			Reader: bytes.NewReader([]byte(e.Data)),
-			Size:   -1,
+		doc := tgbotapi.FileBytes{
+			Name:  "log.txt",
+			Bytes: e.RawData,
 		}
 
-		msg := tgbotapi.NewDocumentUpload(u.Params.TelegramID, rdr)
+		msg := tgbotapi.NewDocumentUpload(u.Params.TelegramID, doc)
 		msg.Caption = header.String()
 		msg.ParseMode = tgbotapi.ModeHTML
+		message = msg
 	}
 
-	if _, err := n.tg.Send(msg); err != nil {
+	if _, err := n.tg.Send(message); err != nil {
 		return fmt.Errorf("telegram message send error: %w", err)
 	}
 
