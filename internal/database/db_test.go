@@ -34,9 +34,9 @@ func TestMain(m *testing.M) {
 }
 
 func setupGlobals() error {
-	dsn, ok := os.LookupEnv("SONAR_DB")
+	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
 	if !ok {
-		return errors.New("empty SONAR_DB")
+		return errors.New("empty SONAR_DB_DSN")
 	}
 
 	var err error

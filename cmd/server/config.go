@@ -9,14 +9,19 @@ import (
 )
 
 type Config struct {
-	DB     string `json:"db"`
-	Domain string `json:"domain"`
-	IP     string `json:"ip"`
+	DB     DBConfig `json:"db"`
+	Domain string   `json:"domain"`
+	IP     string   `json:"ip"`
 
 	TLS TLSConfig `json:"tls"`
 
 	Controller ControllerConfig `json:"controller"`
 	Notifier   NotifierConfig   `json:"notifier"`
+}
+
+type DBConfig struct {
+	DSN        string `json:"dsn"`
+	Migrations string `json:"migrations" default:"/opt/app/migrations"`
 }
 
 type TLSConfig struct {

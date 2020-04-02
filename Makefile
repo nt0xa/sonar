@@ -74,7 +74,7 @@ mock-server:
 #
 
 migrations = ./internal/database/migrations
-db_url = ${SONAR_DB}
+db_url = ${SONAR_DB_DSN}
 
 .PHONY: migrations-create
 migrations-create:
