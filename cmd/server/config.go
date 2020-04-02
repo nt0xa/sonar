@@ -6,12 +6,14 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+
+	"github.com/bi-zone/sonar/internal/database"
 )
 
 type Config struct {
-	DB     string `json:"db"`
-	Domain string `json:"domain"`
-	IP     string `json:"ip"`
+	DB     database.Config `json:"db"`
+	Domain string          `json:"domain"`
+	IP     string          `json:"ip"`
 
 	TLS TLSConfig `json:"tls"`
 
@@ -59,7 +61,7 @@ func validateDirectory(value interface{}) error {
 
 func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
-		validation.Field(&c.DB, validation.Required),
+		validation.Field(&c.DB),
 		validation.Field(&c.Domain, validation.Required, is.Domain),
 		validation.Field(&c.IP, validation.Required, is.IPv4),
 		validation.Field(&c.TLS),

@@ -10,12 +10,12 @@ import (
 	"time"
 
 	legolog "github.com/go-acme/lego/v3/log"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
 	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/migrations"
 	"github.com/bi-zone/sonar/internal/notifier"
 	"github.com/bi-zone/sonar/pkg/certmanager"
 	"github.com/bi-zone/sonar/pkg/server/dns"
@@ -57,12 +57,12 @@ func main() {
 	// DB
 	//
 
-	db, err := database.New(cfg.DB)
+	db, err := database.New(&cfg.DB)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := migrations.Up(cfg.DB); err != nil {
+	if err := db.Migrate(); err != nil {
 		log.Fatal(err)
 	}
 
