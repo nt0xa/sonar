@@ -76,10 +76,6 @@ mock-server:
 migrations = ./internal/database/migrations
 db_url = ${SONAR_DB_DSN}
 
-.PHONY: migrations-deps
-migrations-deps:
-	@go get -tags 'postgres' -u github.com/golang-migrate/migrate/cmd/migrate
-
 .PHONY: migrations-create
 migrations-create:
 	@migrate create -ext sql -dir ${migrations} -seq ${name}
