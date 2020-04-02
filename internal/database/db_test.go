@@ -34,17 +34,18 @@ func TestMain(m *testing.M) {
 }
 
 func setupGlobals() error {
-	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
-	if !ok {
-		return errors.New("empty SONAR_DB_DSN")
+	cfg := &database.Config{
+		DSN:        os.Getenv("SONAR_DB_DSN"),
+		Migrations: "migrations",
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return err
 	}
 
 	var err error
 
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "migrations",
-	})
+	db, err = database.New(cfg)
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")
 	}
