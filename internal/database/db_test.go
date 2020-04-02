@@ -43,7 +43,7 @@ func setupGlobals() error {
 
 	db, err = database.New(&database.Config{
 		DSN:        dsn,
-		Migrations: "internal/database/migrations",
+		Migrations: "migrations",
 	})
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")

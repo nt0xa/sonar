@@ -77,7 +77,7 @@ func Setup() error {
 	// DB
 	db, err = database.New(&database.Config{
 		DSN:        dsn,
-		Migrations: "internal/database/migrations",
+		Migrations: "../../database/migrations",
 	})
 	if err != nil {
 		return errors.Wrap(err, "fail to init db")
