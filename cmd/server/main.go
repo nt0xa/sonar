@@ -14,9 +14,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bi-zone/sonar/internal/controller"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/notifier"
+	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/pkg/certmanager"
 	"github.com/bi-zone/sonar/pkg/server/dns"
 	"github.com/bi-zone/sonar/pkg/server/http"
@@ -68,8 +67,8 @@ func main() {
 
 	// Create admin user
 	admin := &database.User{Name: "admin", Params: database.UserParams{
-		TelegramID: cfg.Controller.Telegram.Admin,
-		APIToken:   cfg.Controller.API.Admin,
+		TelegramID: cfg.Modules.Telegram.Admin,
+		APIToken:   cfg.Modules.API.Admin,
 	}}
 
 	if u, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
@@ -88,21 +87,11 @@ func main() {
 	}
 
 	//
-	// Notifiers
-	//
-
-	notifiers, err := GetEnabledNotifiers(&cfg.Notifier)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//
 	// Events
 	//
 
-	events := make(chan notifier.Event, 100)
+	events := make(chan database.Event, 100)
 	defer close(events)
-	go ProcessEvents(events, db, notifiers)
 
 	//
 	// DNS
@@ -203,29 +192,11 @@ func main() {
 	}
 
 	//
-	// Controllers
-	//
-
-	controllers, err := GetEnabledControllers(&cfg.Controller, db, log, tlsConfig, cfg.Domain)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, c := range controllers {
-		go func(c controller.Controller) {
-			if err := c.Start(); err != nil {
-				log.Fatal(err)
-			}
-		}(c)
-	}
-
-	//
 	// HTTP
 	//
 
 	go func() {
-		srv := http.New(":80",
-			http.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
+		srv := http.New(":80", http.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTP handler: %s", err.Error())
@@ -262,6 +233,27 @@ func main() {
 			log.Fatalf("Failed start SMTP handler: %s", err.Error())
 		}
 	}()
+
+	//
+	// Modules
+	//
+
+	controllers, notifiers, err := modules.Init(&cfg.Modules, db, log, tlsConfig, cfg.Domain)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Start controllers
+	for _, c := range controllers {
+		go func(c modules.Controller) {
+			if err := c.Start(); err != nil {
+				log.Fatal(err)
+			}
+		}(c)
+	}
+
+	// Process events
+	go ProcessEvents(events, db, notifiers)
 
 	// Wait forever
 	select {}

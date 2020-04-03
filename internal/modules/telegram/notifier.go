@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"net/http"
-	"net/url"
 	"unicode/utf8"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/notifier"
 	"github.com/bi-zone/sonar/internal/utils"
 )
 
@@ -28,37 +25,7 @@ var (
 `))
 )
 
-type Notifier struct {
-	tg *tgbotapi.BotAPI
-}
-
-// Check that Notifier implements notifier.Notifier interface
-var _ notifier.Notifier = &Notifier{}
-
-func New(cfg *Config) (*Notifier, error) {
-	client := http.DefaultClient
-
-	if cfg.Proxy != "" {
-		proxyURL, err := url.Parse(cfg.Proxy)
-		if err != nil {
-			return nil, fmt.Errorf("invalid proxy url: %w", err)
-		}
-
-		client.Transport = &http.Transport{
-			Proxy: http.ProxyURL(proxyURL),
-		}
-
-	}
-
-	tg, err := tgbotapi.NewBotAPIWithClient(cfg.Token, client)
-	if err != nil {
-		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
-	}
-
-	return &Notifier{tg}, nil
-}
-
-func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Payload) error {
+func (tg *Telegram) Notify(e *database.Event, u *database.User, p *database.Payload) error {
 
 	var header, body bytes.Buffer
 
@@ -75,7 +42,7 @@ func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Paylo
 	}
 
 	if err := messageHeaderTemplate.Execute(&header, headerData); err != nil {
-		return fmt.Errorf("telegram message header render error: %w", err)
+		return fmt.Errorf("message header render error: %w", err)
 	}
 
 	var data string
@@ -93,7 +60,7 @@ func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Paylo
 	}
 
 	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {
-		return fmt.Errorf("telegram message body render error: %w", err)
+		return fmt.Errorf("message body render error: %w", err)
 	}
 
 	var message tgbotapi.Chattable
@@ -117,8 +84,8 @@ func (n *Notifier) Notify(e *notifier.Event, u *database.User, p *database.Paylo
 		message = msg
 	}
 
-	if _, err := n.tg.Send(message); err != nil {
-		return fmt.Errorf("telegram message send error: %w", err)
+	if _, err := tg.api.Send(message); err != nil {
+		return fmt.Errorf("send message error: %w", err)
 	}
 
 	return nil

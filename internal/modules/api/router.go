@@ -14,18 +14,18 @@ import (
 	"github.com/bi-zone/sonar/internal/utils"
 )
 
-func (a *API) Router() http.Handler {
+func (api *API) Router() http.Handler {
 
 	r := chi.NewRouter()
 
-	r.Use(checkAuth(a.db, a.log))
+	r.Use(checkAuth(api.db, api.log))
 
 	r.Route("/payloads", func(r chi.Router) {
-		r.Get("/", listPayloads(a.db, a.log))
-		r.Post("/", createPayload(a.db, a.log))
+		r.Get("/", listPayloads(api.db, api.log))
+		r.Post("/", createPayload(api.db, api.log))
 		r.Route("/{payloadName}", func(r chi.Router) {
-			r.Use(setPayload(a.db, a.log))
-			r.Delete("/", deletePayload(a.db, a.log))
+			r.Use(setPayload(api.db, api.log))
+			r.Delete("/", deletePayload(api.db, api.log))
 		})
 	})
 
