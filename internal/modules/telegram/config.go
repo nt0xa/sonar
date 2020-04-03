@@ -5,10 +5,9 @@ import (
 )
 
 type Config struct {
-	Admin  int64  `json:"admin"`
-	Token  string `json:"token"`
-	Proxy  string `json:"proxy"`
-	Domain string `json:"domain" envconfig:"DOMAIN"`
+	Admin int64  `json:"admin"`
+	Token string `json:"token"`
+	Proxy string `json:"proxy"`
 }
 
 func (c Config) Validate() error {
