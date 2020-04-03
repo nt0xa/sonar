@@ -1,16 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"regexp"
 	"time"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/notifier"
-	"github.com/bi-zone/sonar/internal/notifier/telegram"
+	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/pkg/server"
 )
 
@@ -18,54 +14,7 @@ var (
 	subdomainRegexp = regexp.MustCompile("[a-f0-9]{8}")
 )
 
-type NotifierConfig struct {
-	Enabled  []string        `json:"enabled"`
-	Telegram telegram.Config `json:"telegram"`
-}
-
-func (c NotifierConfig) Validate() error {
-	rules := make([]*validation.FieldRules, 0)
-	rules = append(rules, validation.Field(&c.Enabled,
-		validation.Each(validation.In("telegram"))))
-
-	for _, name := range c.Enabled {
-		switch name {
-
-		case "telegram":
-			rules = append(rules, validation.Field(&c.Telegram))
-		}
-	}
-
-	return validation.ValidateStruct(&c, rules...)
-}
-
-func GetEnabledNotifiers(cfg *NotifierConfig) ([]notifier.Notifier, error) {
-	nn := make([]notifier.Notifier, 0)
-
-	var (
-		n   notifier.Notifier
-		err error
-	)
-
-	for _, name := range cfg.Enabled {
-		switch name {
-		case "telegram":
-			n, err = telegram.New(&cfg.Telegram)
-		default:
-			return nil, fmt.Errorf("unknown notifier %v", name)
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("fail to create notifier %v: %w", name, err)
-		}
-
-		nn = append(nn, n)
-	}
-
-	return nn, nil
-}
-
-func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.Notifier) error {
+func ProcessEvents(events <-chan database.Event, db *database.DB, ns []modules.Notifier) error {
 	for e := range events {
 
 		seen := make(map[string]struct{})
@@ -109,10 +58,10 @@ func ProcessEvents(events <-chan notifier.Event, db *database.DB, ns []notifier.
 	return nil
 }
 
-func AddProtoEvent(proto string, events chan<- notifier.Event) server.NotifyRequestFunc {
+func AddProtoEvent(proto string, events chan<- database.Event) server.NotifyRequestFunc {
 	return func(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
 
-		events <- notifier.Event{
+		events <- database.Event{
 			Protocol:   proto,
 			Data:       string(data),
 			RawData:    data,
