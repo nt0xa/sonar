@@ -8,6 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/modules"
 )
 
 type Config struct {
@@ -17,8 +18,7 @@ type Config struct {
 
 	TLS TLSConfig `json:"tls"`
 
-	Controller ControllerConfig `json:"controller"`
-	Notifier   NotifierConfig   `json:"notifier"`
+	Modules modules.Config `json:"modules"`
 }
 
 type TLSConfig struct {
@@ -65,8 +65,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.Domain, validation.Required, is.Domain),
 		validation.Field(&c.IP, validation.Required, is.IPv4),
 		validation.Field(&c.TLS),
-		validation.Field(&c.Controller),
-		validation.Field(&c.Notifier),
+		validation.Field(&c.Modules),
 	)
 }
 

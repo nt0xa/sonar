@@ -13,8 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/controller/api"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/modules/api"
 )
 
 // Flags

@@ -18,8 +18,8 @@ type User struct {
 }
 
 type UserParams struct {
-	TelegramID int64  `json:"telegramId,omitempty"`
-	APIToken   string `json:"apiToken,omitempty"`
+	TelegramID int64  `json:"telegram.id,omitempty"`
+	APIToken   string `json:"api.token,omitempty"`
 }
 
 func (p UserParams) Value() (driver.Value, error) {

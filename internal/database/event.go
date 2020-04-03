@@ -1,10 +1,8 @@
-package notifier
+package database
 
 import (
 	"net"
 	"time"
-
-	"github.com/bi-zone/sonar/internal/database"
 )
 
 type Event struct {
@@ -13,8 +11,4 @@ type Event struct {
 	RawData    []byte
 	RemoteAddr net.Addr
 	ReceivedAt time.Time
-}
-
-type Notifier interface {
-	Notify(*Event, *database.User, *database.Payload) error
 }
