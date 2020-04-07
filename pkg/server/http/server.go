@@ -4,13 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/rand"
 	"crypto/tls"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 
+	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/pkg/listener"
 )
 
@@ -107,7 +106,7 @@ func (s *Server) Handle(ctx context.Context, conn *listener.Conn) error {
 
 func (s *Server) sendResponse(w *bufio.Writer) error {
 
-	rnd, err := generateRandomString(8)
+	rnd, err := utils.GenerateRandomString(8)
 	if err != nil {
 		return err
 	}
@@ -125,14 +124,4 @@ func (s *Server) sendResponse(w *bufio.Writer) error {
 	}
 
 	return w.Flush()
-}
-
-func generateRandomString(n int) (string, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(b), nil
 }
