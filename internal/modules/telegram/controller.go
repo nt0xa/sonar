@@ -2,9 +2,7 @@ package telegram
 
 import (
 	"bytes"
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
@@ -14,6 +12,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/utils"
 )
 
 var (
@@ -130,7 +129,7 @@ func (tg *Telegram) helpCmd(chatID int64, cmd string, u *database.User) error {
 }
 
 func (tg *Telegram) newCmd(chatID int64, cmd string, u *database.User) error {
-	subdomain, err := GenerateRandomString(4)
+	subdomain, err := utils.GenerateRandomString(4)
 	if err != nil {
 		return ErrInternal.SetError(err)
 	}
@@ -333,14 +332,4 @@ func (tg *Telegram) userDelCmd(chatID int64, cmd string, adm *database.User) err
 	}
 
 	return nil
-}
-
-func GenerateRandomString(n int) (string, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(b), nil
 }
