@@ -188,6 +188,7 @@ func main() {
 		// Load TLS certificate
 		tlsConfig = &tls.Config{
 			GetCertificate: kpr.GetCertificateFunc(),
+			NextProtos:     []string{"http/1.1"},
 		}
 	}
 
