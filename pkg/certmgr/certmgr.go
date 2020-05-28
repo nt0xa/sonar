@@ -12,7 +12,7 @@ import (
 	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/go-acme/lego/v3/registration"
 
-	"github.com/bi-zone/sonar/internal/certmgr/storage"
+	"github.com/bi-zone/sonar/pkg/certmgr/storage"
 )
 
 type CertMgr struct {

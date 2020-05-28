@@ -8,7 +8,7 @@ import (
 	"github.com/go-acme/lego/v3/registration"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/bi-zone/sonar/internal/certmgr/storage"
+	"github.com/bi-zone/sonar/pkg/certmgr/storage"
 )
 
 func Test_Account(t *testing.T) {

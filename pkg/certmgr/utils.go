@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bi-zone/sonar/internal/certmgr/storage"
 	"github.com/go-acme/lego/v3/certcrypto"
 	"github.com/go-acme/lego/v3/lego"
 	"github.com/go-acme/lego/v3/registration"
+
+	"github.com/bi-zone/sonar/pkg/certmgr/storage"
 )
 
 func newAccount(email string, keyType certcrypto.KeyType) (*storage.Account, error) {

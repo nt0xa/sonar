@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/certmgr"
+	"github.com/bi-zone/sonar/pkg/certmgr"
 	"github.com/bi-zone/sonar/pkg/server/dns"
 )
 
@@ -23,7 +23,6 @@ var (
 	testEmail      = "user@example.com"
 	testDomains    = []string{"sonar.test"}
 	testOptions    = []certmgr.Option{
-		certmgr.CADirURL("https://localhost:14000/dir"),
 		certmgr.CAInsecure(true),
 		certmgr.RenewInterval(time.Second * 3),
 	}
@@ -89,7 +88,14 @@ func TestCertMgr(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
+	caDirURL := os.Getenv("CERTMGR_CA_DIR_URL")
+
+	if caDirURL == "" {
+		t.Fatal("Empty CERTMGR_CA_DIR_URL")
+	}
+
 	options := testOptions
+	options = append(options, certmgr.CADirURL(caDirURL))
 	options = append(options, certmgr.NotifyReadyFunc(func() {
 		wg.Done()
 	}))
