@@ -81,7 +81,7 @@ func (cm *CertMgr) Start() error {
 	}
 
 	// Load account from storage or create a new one
-	acc, err := cm.getOrCreateAccount()
+	acc, err := cm.loadOrCreateAccount()
 	if err != nil {
 		return fmt.Errorf("fail to load/create account: %w", err)
 	}
@@ -154,7 +154,7 @@ func (cm *CertMgr) obtainCertificate(acc registration.User) (*tls.Certificate, e
 	return &cert, nil
 }
 
-func (cm *CertMgr) getOrCreateAccount() (*storage.Account, error) {
+func (cm *CertMgr) loadOrCreateAccount() (*storage.Account, error) {
 	var (
 		acc *storage.Account
 		err error
