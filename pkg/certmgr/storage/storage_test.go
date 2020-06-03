@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/certmgr/storage"
+	"github.com/bi-zone/sonar/pkg/certmgr/storage"
 )
 
 func setup(t *testing.T) {

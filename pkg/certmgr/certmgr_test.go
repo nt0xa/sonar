@@ -1,7 +1,6 @@
 package certmgr_test
 
 import (
-	"crypto/x509"
 	"fmt"
 	"io"
 	"log"
@@ -11,10 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-acme/lego/v3/certcrypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/pkg/certmgr"
+	"github.com/bi-zone/sonar/pkg/certmgr/storage"
 	"github.com/bi-zone/sonar/pkg/server/dns"
 )
 
@@ -25,9 +26,12 @@ var (
 	testOptions    = []certmgr.Option{
 		certmgr.CAInsecure(true),
 		certmgr.RenewInterval(time.Second * 3),
+		certmgr.KeyType(certcrypto.EC256),
+		certmgr.RenewThreshold(30 * 24 * time.Hour),
 	}
 
 	dnsServer *dns.Server
+	strg      *storage.Storage
 )
 
 func TestMain(m *testing.M) {
@@ -73,6 +77,9 @@ func teardownGlobals() error {
 
 func setup(t *testing.T) {
 	err := os.MkdirAll(testStorageDir, 0700)
+	require.NoError(t, err)
+
+	strg, err = storage.New(testStorageDir)
 	require.NoError(t, err)
 }
 
@@ -122,13 +129,16 @@ func TestCertMgr(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
-	x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+	assert.True(t, cert.Leaf.NotBefore.Before(time.Now()))
+	assert.True(t, cert.Leaf.NotAfter.After(time.Now()))
+
+	certStrg, err := strg.LoadCertificate()
 	require.NoError(t, err)
 
-	assert.True(t, x509Cert.NotBefore.Before(time.Now()))
-	assert.True(t, x509Cert.NotAfter.After(time.Now()))
-	fmt.Println(x509Cert.NotAfter)
+	// Compare with certificate from storage
+	assert.True(t, certStrg.Leaf.Equal(cert.Leaf))
 
+	// Change time so that cert is expired
 	var once sync.Once
 	cm.SetOption(certmgr.TestOnlyTimeNow(func() time.Time {
 		timeDiff := time.Duration(0)
@@ -145,11 +155,14 @@ func TestCertMgr(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cert)
 
-	newX509Cert, err := x509.ParseCertificate(newCert.Certificate[0])
+	assert.False(t, newCert.Leaf.Equal(cert.Leaf))
+	assert.True(t, newCert.Leaf.NotBefore.After(cert.Leaf.NotBefore))
+
+	newCertStrg, err := strg.LoadCertificate()
 	require.NoError(t, err)
 
-	assert.False(t, newX509Cert.Equal(x509Cert))
-	assert.True(t, newX509Cert.NotBefore.After(x509Cert.NotBefore))
+	// Compare with certificate from storage
+	assert.True(t, newCertStrg.Leaf.Equal(newCert.Leaf))
 }
 
 func Copy(src, dst string) error {
