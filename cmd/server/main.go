@@ -1,22 +1,18 @@
 package main
 
 import (
-	"crypto/tls"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net"
 	"sync"
-	"time"
 
-	legolog "github.com/go-acme/lego/v3/log"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/modules"
-	"github.com/bi-zone/sonar/pkg/certmanager"
+	"github.com/bi-zone/sonar/internal/tls"
 	"github.com/bi-zone/sonar/pkg/server/dns"
 	"github.com/bi-zone/sonar/pkg/server/http"
 	"github.com/bi-zone/sonar/pkg/server/smtp"
@@ -114,7 +110,7 @@ func main() {
 		dnsProvider = srv
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start DNS handler: %s", err.Error())
+			log.Fatalf("Failed to start DNS handler: %v", err.Error())
 		}
 
 	}()
@@ -123,72 +119,27 @@ func main() {
 	// TLS
 	//
 
-	var tlsConfig *tls.Config
+	// Wait for DNS server to start, because we need to
+	// use it as DNS challenge provider for Let's Encrypt
+	dnsStarted.Wait()
 
-	switch cfg.TLS.Type {
-	case "custom":
-		cert, err := tls.LoadX509KeyPair(cfg.TLS.Custom.Cert, cfg.TLS.Custom.Key)
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsProvider)
+	if err != nil {
+		log.Fatalf("Failed to init TLS: %v", err)
+	}
+
+	go func() {
+		err := tls.Start()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to start TLS: %v", err)
 		}
-		tlsConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
+	}()
 
-	case "letsencrypt":
-		legolog.Logger = log
-		domains := []string{
-			cfg.Domain,                      // domain itseld
-			fmt.Sprintf("*.%s", cfg.Domain), // wildcard
-		}
+	tls.Wait()
 
-		// Wait for DNS server to start
-		dnsStarted.Wait()
-
-		certmgr, err := certmanager.New(cfg.TLS.LetsEncrypt.Directory,
-			cfg.TLS.LetsEncrypt.Email, dnsProvider)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Try to load existing certificate and key
-		cert, err := certmgr.LoadX509KeyPair(domains)
-		if err != nil {
-
-			// Obtain new certificate
-			newCert, err := certmgr.Obtain(domains)
-			if err != nil {
-				log.Fatalf("Fail to obtain new certificate: %v", err)
-			}
-
-			cert = newCert
-		} else {
-
-			// Try to renew cert
-			newCert, err := certmgr.Renew(domains)
-			if err != nil {
-				log.Fatalf("Fail to renew cert: %v", err)
-			}
-
-			if newCert != nil {
-				cert = newCert
-			}
-		}
-
-		kpr := &keypairReloader{cert: cert}
-
-		// Auto renew certificates
-		ticker := time.NewTicker(12 * time.Hour)
-		go func() {
-			for range ticker.C {
-				renewCertificate(certmgr, kpr, domains)
-			}
-		}()
-
-		// Load TLS certificate
-		tlsConfig = &tls.Config{
-			GetCertificate: kpr.GetCertificateFunc(),
-		}
+	tlsConfig, err := tls.GetConfig()
+	if err != nil {
+		log.Fatalf("Failed to get TLS config: %v", err)
 	}
 
 	//
