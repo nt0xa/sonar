@@ -10,6 +10,7 @@ import (
 	"github.com/go-acme/lego/v3/certificate"
 	"github.com/go-acme/lego/v3/challenge"
 	"github.com/go-acme/lego/v3/challenge/dns01"
+	"github.com/go-acme/lego/v3/log"
 	"github.com/go-acme/lego/v3/registration"
 
 	"github.com/bi-zone/sonar/pkg/certmgr/storage"
@@ -28,6 +29,8 @@ type CertMgr struct {
 
 	mu   sync.RWMutex
 	once sync.Once
+
+	log StdLogger
 }
 
 func New(root string, email string, domains []string, provider challenge.Provider,
@@ -38,7 +41,7 @@ func New(root string, email string, domains []string, provider challenge.Provide
 		opt(&options)
 	}
 
-	s, err := storage.New(root)
+	strg, err := storage.New(root)
 
 	if err != nil {
 		return nil, fmt.Errorf("fail to create storage: %w", err)
@@ -48,9 +51,13 @@ func New(root string, email string, domains []string, provider challenge.Provide
 		email:    email,
 		domains:  domains,
 		options:  &options,
-		storage:  s,
+		storage:  strg,
 		provider: provider,
+		log:      options.log,
 	}
+
+	// Set lego logger
+	log.Logger = options.log
 
 	return cm, nil
 }
