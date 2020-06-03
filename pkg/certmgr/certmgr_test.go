@@ -1,10 +1,7 @@
 package certmgr_test
 
 import (
-	"fmt"
 	"io"
-	"log"
-	"net"
 	"os"
 	"sync"
 	"testing"
@@ -16,7 +13,6 @@ import (
 
 	"github.com/bi-zone/sonar/pkg/certmgr"
 	"github.com/bi-zone/sonar/pkg/certmgr/storage"
-	"github.com/bi-zone/sonar/pkg/server/dns"
 )
 
 var (
@@ -30,50 +26,8 @@ var (
 		certmgr.RenewThreshold(30 * 24 * time.Hour),
 	}
 
-	dnsServer *dns.Server
-	strg      *storage.Storage
+	strg *storage.Storage
 )
-
-func TestMain(m *testing.M) {
-	if err := setupGlobals(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	if err := teardownGlobals(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	os.Exit(ret)
-}
-
-func setupGlobals() error {
-	dnsStarted := sync.WaitGroup{}
-	dnsStarted.Add(1)
-
-	go func() {
-		srv := dns.New(":53", testDomains[0], net.ParseIP("127.0.0.1"),
-			dns.NotifyStartedFunc(func() {
-				dnsStarted.Done()
-			}))
-
-		dnsServer = srv
-
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start DNS handler: %s", err.Error())
-		}
-
-	}()
-
-	return nil
-}
-
-func teardownGlobals() error {
-	return nil
-}
 
 func setup(t *testing.T) {
 	err := os.MkdirAll(testStorageDir, 0700)
@@ -86,6 +40,16 @@ func setup(t *testing.T) {
 func teardown(t *testing.T) {
 	err := os.RemoveAll(testStorageDir)
 	require.NoError(t, err)
+}
+
+type MockProvider struct{}
+
+func (m *MockProvider) Present(domain, token, keyAuth string) error {
+	return nil
+}
+
+func (m *MockProvider) CleanUp(domain, token, keyAuth string) error {
+	return nil
 }
 
 func TestCertMgr(t *testing.T) {
@@ -107,14 +71,12 @@ func TestCertMgr(t *testing.T) {
 		wg.Done()
 	}))
 
-	cm, err := certmgr.New(testStorageDir, testEmail, testDomains,
-		dnsServer, options...)
+	cm, err := certmgr.New(testStorageDir, testEmail, testDomains, &MockProvider{}, options...)
 	require.NoError(t, err)
 	require.NotNil(t, cm)
 
 	go func() {
 		err := cm.Start()
-		fmt.Println(err)
 		if err != nil {
 			wg.Done()
 		}
@@ -149,7 +111,7 @@ func TestCertMgr(t *testing.T) {
 	}))
 
 	// Wait for certificate to renew
-	time.Sleep(time.Second * 20)
+	time.Sleep(time.Second * 5)
 
 	newCert, err := tlsConf.GetCertificate(nil)
 	require.NoError(t, err)
