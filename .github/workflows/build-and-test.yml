@@ -19,7 +19,24 @@ jobs:
           POSTGRES_DB: postgres_test # "_test" is required for fixtures
         ports:
           - 5432/tcp
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      pebble:
+        image: letsencrypt/pebble:latest
+        env:
+          PEBBLE_VA_NOSLEEP: 1
+          PEBBLE_VA_ALWAYS_VALID: 1
+        ports:
+          - 14000/tcp
+        options: >-
+          --health-cmd 'wget -O- --no-check-certificate https://localhost:14000/dir'
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Install Golang
@@ -38,6 +55,7 @@ jobs:
         env:
           SONAR_DB_DSN: 'postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres_test?sslmode=disable'
           SONAR_DB_MIGRATIONS: internal/database/migrations
+          CERTMGR_CA_DIR_URL: 'https://localhost:${{ job.services.pebble.ports[14000] }}/dir'
 
       - name: Code coverage
         uses: codecov/codecov-action@v1
