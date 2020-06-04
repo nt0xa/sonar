@@ -1,11 +1,17 @@
 # Binary
 cmd/server/server
+server
 
 # macOS
 .DS_Store
 
 # Tests
 coverage.out
+letsencrypt/
 
 # Secrets
 .env
+env
+
+# Misc
+docker-compose.yml
