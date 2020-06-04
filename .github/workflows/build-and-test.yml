@@ -32,11 +32,6 @@ jobs:
           PEBBLE_VA_ALWAYS_VALID: 1
         ports:
           - 14000/tcp
-        options: >-
-          --health-cmd 'wget -O- --no-check-certificate https://localhost:14000/dir'
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Install Golang
