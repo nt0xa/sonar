@@ -1,4 +1,4 @@
-package certstorage
+package storage
 
 import (
 	"crypto"
@@ -6,16 +6,15 @@ import (
 	"github.com/go-acme/lego/v3/registration"
 )
 
-// Account represents a users local saved credentials
 type Account struct {
 	Email        string                 `json:"email"`
 	Registration *registration.Resource `json:"registration"`
-	Key          crypto.PrivateKey
+	Key          crypto.PrivateKey      `json:"-"`
 }
 
-/** Implementation of the registration.User interface **/
+/* Implementation of the registration.User interface */
 
-// GetEmail returns the email address for the account
+// GetEmail returns the email address for the account.
 func (a *Account) GetEmail() string {
 	return a.Email
 }
@@ -25,7 +24,7 @@ func (a *Account) GetPrivateKey() crypto.PrivateKey {
 	return a.Key
 }
 
-// GetRegistration returns the server registration
+// GetRegistration returns the server registration.
 func (a *Account) GetRegistration() *registration.Resource {
 	return a.Registration
 }
