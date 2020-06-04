@@ -77,6 +77,19 @@ func Test_SaveLoadAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, accSave, *accLoad)
+
+	// Remove account file
+	err = os.Remove("test/account.json")
+	require.NoError(t, err)
+
+	_, err = s.LoadAccount()
+	assert.Error(t, err)
+
+	// Remove root directory
+	err = os.RemoveAll("test")
+
+	err = s.SaveAccount(&accSave)
+	assert.Error(t, err)
 }
 
 func Test_SaveLoadCert(t *testing.T) {
@@ -86,8 +99,39 @@ func Test_SaveLoadCert(t *testing.T) {
 	s, err := storage.New("test")
 	require.NoError(t, err)
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	cert, err := genCert()
 	require.NoError(t, err)
+
+	err = s.SaveCertificate(cert)
+	require.NoError(t, err)
+
+	certLoad, err := s.LoadCertificate()
+	require.NoError(t, err)
+
+	assert.NotNil(t, certLoad.Leaf)
+
+	assert.Equal(t, cert.Certificate[0], certLoad.Certificate[0])
+	assert.Equal(t, cert.PrivateKey, certLoad.PrivateKey)
+
+	// Remove key file
+	err = os.Remove("test/tls.key")
+	require.NoError(t, err)
+
+	_, err = s.LoadCertificate()
+	assert.Error(t, err)
+
+	// Remove root directory
+	err = os.RemoveAll("test")
+
+	err = s.SaveCertificate(cert)
+	assert.Error(t, err)
+}
+
+func genCert() (*tls.Certificate, error) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
 
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
@@ -103,25 +147,26 @@ func Test_SaveLoadCert(t *testing.T) {
 	}
 
 	certDerBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
 	certPemBytes := &bytes.Buffer{}
 	err = pem.Encode(certPemBytes, &pem.Block{Type: "CERTIFICATE", Bytes: certDerBytes})
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
 	keyPemBytes := &bytes.Buffer{}
 	err = pem.Encode(keyPemBytes, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
 	cert, err := tls.X509KeyPair(certPemBytes.Bytes(), keyPemBytes.Bytes())
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
-	err = s.SaveCertificate(&cert)
-	require.NoError(t, err)
-
-	certLoad, err := s.LoadCertificate()
-	require.NoError(t, err)
-
-	assert.Equal(t, certDerBytes, certLoad.Certificate[0])
-	assert.Equal(t, key, certLoad.PrivateKey)
+	return &cert, nil
 }
