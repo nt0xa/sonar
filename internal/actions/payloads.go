@@ -7,36 +7,39 @@ import (
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/utils"
+	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/bi-zone/sonar/internal/utils/logger"
 )
 
-type NewPayloadParams struct {
+type CreatePayloadParams struct {
 	Name string
 }
 
-func (p *NewPayloadParams) Validate() error {
+type CreatePayloadResult = *database.Payload
+
+func (p CreatePayloadParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required))
 }
 
-func NewPayloadAction(db *database.DB, log logger.StdLogger) *Action {
+func CreatePayloadAction(db *database.DB, log logger.StdLogger) *Action {
 	return &Action{
-		Params: &NewPayloadParams{},
-		Execute: func(u *database.User, params interface{}) (*ActionResult, error) {
-			var p *NewPayloadParams
+		Params: &CreatePayloadParams{},
+		Execute: func(u *database.User, params interface{}) (interface{}, error) {
+			var p *CreatePayloadParams
 
-			p, ok := params.(*NewPayloadParams)
+			p, ok := params.(*CreatePayloadParams)
 			if !ok {
-				return nil, castError
+				return nil, ErrParamsCast
 			}
 
 			if _, err := db.PayloadsGetByUserAndName(u.ID, p.Name); err != sql.ErrNoRows {
-				return nil, ErrConflict("you already have payload with name %q", p.Name)
+				return nil, errors.Conflictf("you already have payload with name %q", p.Name)
 			}
 
 			subdomain, err := utils.GenerateRandomString(4)
 			if err != nil {
-				return nil, ErrInternal(err)
+				return nil, errors.Internal(err)
 			}
 
 			payload := &database.Payload{
@@ -47,10 +50,10 @@ func NewPayloadAction(db *database.DB, log logger.StdLogger) *Action {
 
 			err = db.PayloadsCreate(payload)
 			if err != nil {
-				return nil, ErrInternal(err)
+				return nil, errors.Internal(err)
 			}
 
-			return &ActionResult{Data: payload}, nil
+			return CreatePayloadResult(payload), nil
 		},
 	}
 }
@@ -59,7 +62,9 @@ type DeletePayloadParams struct {
 	Name string
 }
 
-func (p *DeletePayloadParams) Validate() error {
+type DeletePayloadResult = *MessageResult
+
+func (p DeletePayloadParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required))
 }
@@ -67,45 +72,57 @@ func (p *DeletePayloadParams) Validate() error {
 func DeletePayloadAction(db *database.DB, log logger.StdLogger) *Action {
 	return &Action{
 		Params: &DeletePayloadParams{},
-		Execute: func(u *database.User, params interface{}) (*ActionResult, error) {
+		Execute: func(u *database.User, params interface{}) (interface{}, error) {
 			var p *DeletePayloadParams
+
+			p, ok := params.(*DeletePayloadParams)
+			if !ok {
+				return nil, ErrParamsCast
+			}
 
 			payload, err := db.PayloadsGetByUserAndName(u.ID, p.Name)
 			if err == sql.ErrNoRows {
-				return nil, ErrNotFound("you don't have payload with name %q", p.Name)
+				return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
 			} else if err != nil {
-				return nil, ErrInternal(err)
+				return nil, errors.Internal(err)
 			}
 
 			if err := db.PayloadsDelete(payload.ID); err != nil {
-				return nil, ErrInternal(err)
+				return nil, errors.Internal(err)
 			}
 
-			return &ActionResult{Message: "payload deleted"}, nil
+			return &MessageResult{Message: "payload deleted"}, nil
 		},
 	}
 }
 
 type ListPayloadsParams struct {
-	PartName string
+	Name string
 }
 
-func (p *ListPayloadsParams) Validate() error {
+type ListPayloadsResult = []*database.Payload
+
+func (p ListPayloadsParams) Validate() error {
 	return nil
 }
 
 func ListPayloadsAction(db *database.DB, log logger.StdLogger) *Action {
 	return &Action{
 		Params: &ListPayloadsParams{},
-		Execute: func(u *database.User, params interface{}) (*ActionResult, error) {
+		Execute: func(u *database.User, params interface{}) (interface{}, error) {
 			var p *ListPayloadsParams
 
-			payloads, err := db.PayloadsFindByUserAndName(u.ID, p.PartName)
-			if err != nil {
-				return nil, ErrInternal(err)
+			p, ok := params.(*ListPayloadsParams)
+			if !ok {
+				return nil, ErrParamsCast
 			}
 
-			return &ActionResult{Data: payloads}, nil
+			payloads, err := db.PayloadsFindByUserAndName(u.ID, p.Name)
+			if err != nil {
+				return nil, errors.Internal(err)
+			}
+
+			return ListPayloadsResult(payloads), nil
 		},
 	}
 }
