@@ -21,7 +21,7 @@ type Notifier interface {
 }
 
 func Init(cfg *Config, db *database.DB, log *logrus.Logger, tls *tls.Config,
-	actions *actions.Actions, domain string) ([]Controller, []Notifier, error) {
+	actions actions.Actions, domain string) ([]Controller, []Notifier, error) {
 
 	controllers := make([]Controller, 0)
 	notifiers := make([]Notifier, 0)
@@ -35,7 +35,7 @@ func Init(cfg *Config, db *database.DB, log *logrus.Logger, tls *tls.Config,
 		switch name {
 
 		case "telegram":
-			m, err = telegram.New(&cfg.Telegram, db, domain)
+			m, err = telegram.New(&cfg.Telegram, db, actions, domain)
 
 		case "api":
 			m, err = api.New(&cfg.API, db, log, tls, actions)
