@@ -9,29 +9,15 @@ type MessageResult struct {
 	Message string
 }
 
-type Actions struct {
-	Payloads PayloadsActions
+type Actions interface {
+	PayloadsActions
 }
 
-type PayloadsActions struct {
-	Create CreatePayloadAction
-	Delete DeletePayloadAction
-	List   ListPayloadsAction
-}
-
-type commonDeps struct {
+type actions struct {
 	db  *database.DB
 	log logger.StdLogger
 }
 
 func New(db *database.DB, log logger.StdLogger) Actions {
-	deps := commonDeps{db, log}
-
-	return Actions{
-		Payloads: PayloadsActions{
-			Create: NewCreatePayloadAction(deps),
-			Delete: NewDeletePayloadAction(deps),
-			List:   NewListPayloadsAction(deps),
-		},
-	}
+	return &actions{db, log}
 }

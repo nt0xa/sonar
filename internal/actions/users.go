@@ -17,19 +17,9 @@ func (p CreateUserParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type CreateUserAction struct {
-	commonDeps
-}
-
-func NewCreateUserAction(deps commonDeps) CreateUserAction {
-	return CreateUserAction{
-		commonDeps: deps,
-	}
-}
-
 type CreateUserResult = *database.User
 
-func (act *CreateUserAction) Execute(p CreateUserParams) (CreateUserResult, error) {
+func (act *actions) CreateUser(p CreateUserParams) (CreateUserResult, error) {
 	user := &database.User{
 		Name:   p.Name,
 		Params: p.Params,

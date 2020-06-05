@@ -10,6 +10,12 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
+type PayloadsActions interface {
+	CreatePayload(*database.User, CreatePayloadParams) (CreatePayloadResult, error)
+	DeletePayload(*database.User, DeletePayloadParams) (DeletePayloadResult, error)
+	ListPayloads(*database.User, ListPayloadsParams) (ListPayloadsResult, error)
+}
+
 //
 // Create
 //
@@ -23,19 +29,9 @@ func (p CreatePayloadParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type CreatePayloadAction struct {
-	commonDeps
-}
-
-func NewCreatePayloadAction(deps commonDeps) CreatePayloadAction {
-	return CreatePayloadAction{
-		commonDeps: deps,
-	}
-}
-
 type CreatePayloadResult = *database.Payload
 
-func (act *CreatePayloadAction) Execute(u *database.User, p CreatePayloadParams) (CreatePayloadResult, error) {
+func (act *actions) CreatePayload(u *database.User, p CreatePayloadParams) (CreatePayloadResult, error) {
 
 	if _, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("you already have payload with name %q", p.Name)
@@ -73,19 +69,9 @@ func (p DeletePayloadParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type DeletePayloadAction struct {
-	commonDeps
-}
-
-func NewDeletePayloadAction(deps commonDeps) DeletePayloadAction {
-	return DeletePayloadAction{
-		commonDeps: deps,
-	}
-}
-
 type DeletePayloadResult = *MessageResult
 
-func (act *DeletePayloadAction) Execute(u *database.User, p DeletePayloadParams) (DeletePayloadResult, error) {
+func (act *actions) DeletePayload(u *database.User, p DeletePayloadParams) (DeletePayloadResult, error) {
 	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
@@ -112,19 +98,9 @@ func (p ListPayloadsParams) Validate() error {
 	return nil
 }
 
-type ListPayloadsAction struct {
-	commonDeps
-}
-
-func NewListPayloadsAction(deps commonDeps) ListPayloadsAction {
-	return ListPayloadsAction{
-		commonDeps: deps,
-	}
-}
-
 type ListPayloadsResult = []*database.Payload
 
-func (act *ListPayloadsAction) Execute(u *database.User, p ListPayloadsParams) (ListPayloadsResult, error) {
+func (act *actions) ListPayloads(u *database.User, p ListPayloadsParams) (ListPayloadsResult, error) {
 
 	payloads, err := act.db.PayloadsFindByUserAndName(u.ID, p.Name)
 	if err != nil {
