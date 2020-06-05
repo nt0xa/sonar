@@ -1,17 +1,23 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/sirupsen/logrus"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/utils"
+	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/bi-zone/sonar/internal/utils/parse"
+)
+
+type paramsPlacement int
+
+const (
+	inQuery paramsPlacement = iota
+	inBody
+	inPath
 )
 
 func (api *API) Router() http.Handler {
@@ -21,121 +27,77 @@ func (api *API) Router() http.Handler {
 	r.Use(checkAuth(api.db, api.log))
 
 	r.Route("/payloads", func(r chi.Router) {
-		r.Get("/", listPayloads(api.db, api.log))
-		r.Post("/", createPayload(api.db, api.log))
-		r.Route("/{payloadName}", func(r chi.Router) {
-			r.Use(setPayload(api.db, api.log))
-			r.Delete("/", deletePayload(api.db, api.log))
+		r.Get("/", api.handler(api.actions.Payloads.List, inQuery, http.StatusOK))
+		r.Post("/", api.handler(api.actions.Payloads.Create, inBody, http.StatusCreated))
+		r.Route("/{name}", func(r chi.Router) {
+			r.Delete("/", api.handler(api.actions.Payloads.Delete, inPath, http.StatusNoContent))
 		})
 	})
 
 	return r
 }
 
-func listPayloads(db *database.DB, log *logrus.Logger) http.HandlerFunc {
-
-	type Response = []*database.Payload
-
+func (api *API) handler(action *actions.Action, params paramsPlacement, status int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u, ok := r.Context().Value(userKey).(*database.User)
 		if !ok {
-			handleError(log, w, r, NewError(500).SetError(errGetUser))
+			handleError(api.log, w, r, errors.Internalf("no %q key in context", userKey))
 			return
 		}
 
-		pp, err := db.PayloadsFindByUserID(u.ID)
+		p := action.Params
+
+		if p == nil {
+			handleError(api.log, w, r, errors.Internalf("nil params"))
+			return
+		}
+
+		switch params {
+
+		case inBody:
+			rdr := http.MaxBytesReader(w, r.Body, 1024*1024)
+
+			if err := parse.JSON(rdr, p); err != nil {
+				handleError(api.log, w, r, errors.BadFormatf("json: %s", err))
+				return
+			}
+
+		case inQuery:
+			if err := api.decoder.Decode(p, r.URL.Query()); err != nil {
+				handleError(api.log, w, r, errors.BadFormatf("query: %s", err))
+				return
+			}
+
+		case inPath:
+			if err := pathDecode(r, p); err != nil {
+				handleError(api.log, w, r, errors.BadFormatf("path: %s", err))
+				return
+			}
+		}
+
+		if err := p.Validate(); err != nil {
+			handleError(api.log, w, r, errors.Validation(err))
+			return
+		}
+
+		res, err := action.Execute(u, p)
 		if err != nil {
-			handleError(log, w, r, NewError(500).SetError(errGetUser))
+			handleError(api.log, w, r, err)
 			return
 		}
 
-		var res Response = pp
+		if res == nil {
+			w.WriteHeader(status)
+			return
+		}
+
+		if _, ok := res.(*actions.MessageResult); ok {
+			w.WriteHeader(status)
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(res)
-	}
-}
-
-func createPayload(db *database.DB, log *logrus.Logger) http.HandlerFunc {
-
-	type Request struct {
-		Name string `json:"name"`
-	}
-
-	type Response = *database.Payload
-
-	validate := func(req Request) error {
-		return validation.ValidateStruct(&req,
-			validation.Field(&req.Name, validation.Required))
-	}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req Request
-
-		if err, msg := parseJSON(w, r, &req); err != nil {
-			handleError(log, w, r, NewError(400).SetMessage(msg))
-			return
-		}
-
-		if err := validate(req); err != nil {
-			handleError(log, w, r, NewError(400).SetErrors(err))
-			return
-		}
-
-		u, ok := r.Context().Value(userKey).(*database.User)
-		if !ok {
-			handleError(log, w, r, NewError(500).SetError(errGetUser))
-			return
-		}
-
-		if _, err := db.PayloadsGetByUserAndName(u.ID, req.Name); err != sql.ErrNoRows {
-			handleError(log, w, r, NewError(409).
-				SetMessage(fmt.Sprintf("You already have payload with name %q", req.Name)))
-			return
-		}
-
-		subdomain, err := utils.GenerateRandomString(4)
-		if err != nil {
-			handleError(log, w, r, NewError(500).SetError(err))
-			return
-		}
-
-		p := &database.Payload{
-			UserID:    u.ID,
-			Subdomain: subdomain,
-			Name:      req.Name,
-		}
-
-		err = db.PayloadsCreate(p)
-		if err != nil {
-			handleError(log, w, r, NewError(500).SetError(err))
-			return
-		}
-
-		var res Response = p
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(res)
-	}
-}
-
-func deletePayload(db *database.DB, log *logrus.Logger) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		p, ok := r.Context().Value(payloadKey).(*database.Payload)
-		if !ok {
-			handleError(log, w, r, NewError(500).SetError(errGetPayload))
-			return
-		}
-
-		err := db.PayloadsDelete(p.ID)
-		if err != nil {
-			handleError(log, w, r, NewError(500).SetError(err))
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/modules/api"
 )
@@ -106,8 +107,11 @@ func Setup() error {
 	// Logger
 	log := logrus.New()
 
+	// Actions
+	actions := actions.New(db, log)
+
 	// API controller
-	api, err := api.New(cfg, db, log, nil)
+	api, err := api.New(cfg, db, log, nil, actions)
 	if err != nil {
 		return err
 	}
