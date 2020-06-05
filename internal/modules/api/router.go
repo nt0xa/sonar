@@ -12,7 +12,7 @@ func (api *API) Router() http.Handler {
 
 	r := chi.NewRouter()
 
-	r.Use(checkAuth(api.db, api.log))
+	r.Use(api.checkAuth())
 
 	r.Route("/payloads", func(r chi.Router) {
 		r.Get("/", api.listPayloads(api.actions.Payloads.List))
@@ -27,7 +27,7 @@ func (api *API) Router() http.Handler {
 
 func (api *API) createPayload(action actions.CreatePayloadAction) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUser(r)
+		u, err := getUser(r.Context())
 		if err != nil {
 			handleError(api.log, w, r, err)
 			return
@@ -52,7 +52,7 @@ func (api *API) createPayload(action actions.CreatePayloadAction) http.HandlerFu
 
 func (api *API) deletePayload(action actions.DeletePayloadAction) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUser(r)
+		u, err := getUser(r.Context())
 		if err != nil {
 			handleError(api.log, w, r, err)
 			return
@@ -77,7 +77,7 @@ func (api *API) deletePayload(action actions.DeletePayloadAction) http.HandlerFu
 
 func (api *API) listPayloads(action actions.ListPayloadsAction) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUser(r)
+		u, err := getUser(r.Context())
 		if err != nil {
 			handleError(api.log, w, r, err)
 			return
