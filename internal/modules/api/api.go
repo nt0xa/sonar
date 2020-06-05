@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/schema"
 	"github.com/sirupsen/logrus"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -17,13 +16,11 @@ type API struct {
 	db      *database.DB
 	log     *logrus.Logger
 	tls     *tls.Config
-	actions *actions.Actions
-
-	decoder *schema.Decoder
+	actions actions.Actions
 }
 
 func New(cfg *Config, db *database.DB, log *logrus.Logger,
-	tls *tls.Config, actions *actions.Actions) (*API, error) {
+	tls *tls.Config, actions actions.Actions) (*API, error) {
 
 	return &API{
 		cfg:     cfg,
@@ -31,7 +28,6 @@ func New(cfg *Config, db *database.DB, log *logrus.Logger,
 		log:     log,
 		tls:     tls,
 		actions: actions,
-		decoder: schema.NewDecoder(),
 	}, nil
 }
 

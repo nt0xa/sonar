@@ -42,3 +42,11 @@ func checkAuth(db *database.DB, log *logrus.Logger) func(http.Handler) http.Hand
 		})
 	}
 }
+
+func getUser(r *http.Request) (*database.User, error) {
+	u, ok := r.Context().Value(userKey).(*database.User)
+	if !ok {
+		return nil, errors.Internalf("no %q key in context", userKey)
+	}
+	return u, nil
+}
