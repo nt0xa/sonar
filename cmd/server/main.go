@@ -64,6 +64,7 @@ func main() {
 
 	// Create admin user
 	admin := &database.User{Name: "admin", Params: database.UserParams{
+		Admin:      true,
 		TelegramID: cfg.Modules.Telegram.Admin,
 		APIToken:   cfg.Modules.API.Admin,
 	}}
