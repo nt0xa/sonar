@@ -3,6 +3,9 @@ module github.com/bi-zone/sonar
 go 1.13
 
 require (
+	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/cenkalti/backoff/v3 v3.1.1 // indirect
@@ -18,6 +21,8 @@ require (
 	github.com/golang/mock v1.2.0
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/huandu/xstrings v1.3.1 // indirect
+	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0 // indirect
@@ -27,6 +32,7 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-oci8 v0.0.0-20190906045332-63b1f03e8cae // indirect
 	github.com/miekg/dns v1.1.24
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
