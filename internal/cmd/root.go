@@ -1,23 +1,30 @@
 package cmd
 
 import (
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
+	"context"
+
+	"github.com/Masterminds/sprig"
 	"github.com/spf13/cobra"
+
+	"github.com/bi-zone/sonar/internal/actions"
 )
 
-type ResultHandler func(*database.User, interface{})
+func init() {
+	cobra.AddTemplateFuncs(sprig.TxtFuncMap())
+}
 
-func RootCmd(actions actions.Actions, handler ResultHandler) *cobra.Command {
-	var root = &cobra.Command{
+type ResultHandler func(context.Context, interface{})
+
+func RootCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+	var cmd = &cobra.Command{
 		Use:   "sonarctl",
 		Short: "CLI to control your sonar server",
-		Run: func(cmd *cobra.Command, args []string) {
-			// Do Stuff Here
-		},
 	}
 
-	root.AddCommand(CreatePayloadCmd(actions, handler))
+	cmd.AddCommand(CreatePayloadCmd(acts, handler))
+	cmd.AddCommand(DeletePayloadCmd(acts, handler))
+	cmd.AddCommand(ListPayloadCmd(acts, handler))
+	cmd.AddCommand(UsersCmd(acts, handler))
 
-	return root
+	return cmd
 }

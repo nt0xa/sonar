@@ -7,19 +7,52 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func CreatePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
-	var p actions.CreatePayloadParams
+func UsersCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "users",
+		Short: "Manage users",
+		PersistentPreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
+			u, err := GetUser(cmd.Context())
+			if err != nil {
+				return errors.Internal(err)
+			}
+
+			if !u.Params.Admin {
+				return errors.Forbidden()
+			}
+
+			return nil
+		}),
+	}
+
+	cmd.AddCommand(CreateUserCmd(acts, handler))
+	cmd.AddCommand(DeleteUserCmd(acts, handler))
+
+	return cmd
+}
+
+func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+	var p actions.CreateUserParams
 
 	cmd := &cobra.Command{
 		Use:   "new NAME",
-		Short: "Create new payload",
-		Long:  "Create new payload identified by NAME",
+		Short: "Create new user",
+		Long:  "Create new user identified by NAME",
 		Args:  OneArg("NAME"),
 		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Name = args[0]
+
+			params, _ := cmd.Flags().GetStringToString("params")
+
+			if err := mapToStruct(params, &p.Params); err != nil {
+				return errors.Validation(err)
+			}
+
 			if err := p.Validate(); err != nil {
 				return errors.Validation(err)
 			}
+
 			return nil
 		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
@@ -28,7 +61,7 @@ func CreatePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Comman
 				return errors.Internal(err)
 			}
 
-			res, err := acts.CreatePayload(u, p)
+			res, err := acts.CreateUser(u, p)
 			if err != nil {
 				return errors.Internal(err)
 			}
@@ -39,22 +72,26 @@ func CreatePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Comman
 		}),
 	}
 
+	cmd.Flags().StringToStringP("params", "p", map[string]string{}, "User parameters")
+
 	return cmd
 }
 
-func DeletePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
-	var p actions.DeletePayloadParams
+func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+	var p actions.DeleteUserParams
 
 	cmd := &cobra.Command{
 		Use:   "del NAME",
-		Short: "Delete payload",
-		Long:  "Delete payload identified by NAME",
+		Short: "Delete user",
+		Long:  "Delete user identified by NAME",
 		Args:  OneArg("NAME"),
 		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Name = args[0]
+
 			if err := p.Validate(); err != nil {
 				return errors.Validation(err)
 			}
+
 			return nil
 		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
@@ -63,45 +100,7 @@ func DeletePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Comman
 				return errors.Internal(err)
 			}
 
-			res, err := acts.DeletePayload(u, p)
-			if err != nil {
-				return errors.Internal(err)
-			}
-
-			handler(cmd.Context(), res)
-
-			return nil
-		}),
-	}
-
-	return cmd
-}
-
-func ListPayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
-	var p actions.ListPayloadsParams
-
-	cmd := &cobra.Command{
-		Use:   "list SUBSTR",
-		Short: "List payloads",
-		Long:  "List payloads whose NAME contain SUBSTR",
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			if len(args) > 0 {
-				p.Name = args[0]
-			}
-
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-			return nil
-		}),
-		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return errors.Internal(err)
-
-			}
-
-			res, err := acts.ListPayloads(u, p)
+			res, err := acts.DeleteUser(u, p)
 			if err != nil {
 				return errors.Internal(err)
 			}
