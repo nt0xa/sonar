@@ -2,34 +2,57 @@ package telegram
 
 import (
 	"bytes"
-	"database/sql"
+	"context"
 	"fmt"
-	"html/template"
-	"log"
-	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/cmd"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/utils"
+	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 var (
-	helpMessage = "" +
-		"`/new <name>` - create new payload\n" +
-		"`/del <name>` - delete payload\n" +
-		"`/list <substr>` - list your payloads which contains `<substr>`\n" +
-		"`/me` - user info\n"
+	helpTemplate = `<code>{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}</code>`
 
-	listPayloadTemplate = template.Must(template.New("msg").
-				Parse("<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ .Domain }}</code>"))
+	usageTemplate = `<code>
+Usage:{{if .Runnable}}{{if .HasParent}}
+  {{.UseLine | replace "sonarctl " "/"}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+	{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command]{{end}}{{if gt (len .Aliases) 0}}
 
-	meTemplate = template.Must(template.New("msg").
-			Parse("" +
-			"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
-			"<b>API token:</b> <code>{{ .APIToken }}</code>",
-		))
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command] --help" for more information about a command.{{end}}
+</code>`
+
+	codeTemplate = tpl(`<code>{{ . }}</code>`)
+
+	listPayloadTemplate = tpl(`{{range .Payloads}}<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ $.Domain }}</code>
+{{else}}you don't have any payloads yet{{end}}`)
+
+	meTemplate = tpl("" +
+		"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
+		"<b>API token:</b> <code>{{ .APIToken }}</code>",
+	)
 )
 
 func (tg *Telegram) Start() error {
@@ -45,291 +68,116 @@ func (tg *Telegram) Start() error {
 	for update := range updates {
 		var err error
 
-		if update.Message == nil { // ignore any non-Message Updates
+		if update.Message == nil {
 			continue
 		}
 
-		cmd := update.Message.Text
 		chatID := update.Message.Chat.ID
+		text := update.Message.Text
 
-		switch {
-		case strings.HasPrefix(cmd, "/help"):
-			err = tg.checkUser(chatID, cmd, tg.helpCmd)
-
-		case strings.HasPrefix(cmd, "/new"):
-			err = tg.checkUser(chatID, cmd, tg.newCmd)
-
-		case strings.HasPrefix(cmd, "/del"):
-			err = tg.checkUser(chatID, cmd, tg.delCmd)
-
-		case strings.HasPrefix(cmd, "/list"):
-			err = tg.checkUser(chatID, cmd, tg.listCmd)
-
-		case strings.HasPrefix(cmd, "/me"):
-			err = tg.checkUser(chatID, cmd, tg.meCmd)
-
-		// Admin commans
-		case strings.HasPrefix(cmd, "/useradd"):
-			err = tg.checkAdmin(chatID, cmd, tg.userAddCmd)
-
-		case strings.HasPrefix(cmd, "/userdel"):
-			err = tg.checkAdmin(chatID, cmd, tg.userDelCmd)
-		}
-
-		if e, ok := err.(*Error); ok {
-			_, _ = tg.api.Send(tgbotapi.NewMessage(
-				chatID,
-				e.Msg,
-			))
+		u, err := tg.db.UsersGetByParams(&database.UserParams{TelegramID: chatID})
+		if err != nil {
+			tg.handleError(chatID, errors.Unauthorized())
 			continue
-		} else if err != nil {
-			log.Println(err)
 		}
 
-	}
-
-	return nil
-}
-
-type cmdFunc func(chatID int64, cmd string, u *database.User) error
-
-func (tg *Telegram) checkUser(chatID int64, cmd string, next cmdFunc) error {
-	u, err := tg.db.UsersGetByParams(&database.UserParams{TelegramID: chatID})
-
-	if err != nil {
-		return ErrUnauthorizedAccess
-	}
-
-	return next(chatID, cmd, u)
-}
-
-func (tg *Telegram) checkAdmin(chatID int64, cmd string, next cmdFunc) error {
-	if chatID != tg.cfg.Admin {
-		return nil
-	}
-
-	u, err := tg.db.UsersGetByParams(&database.UserParams{TelegramID: chatID})
-
-	if err != nil {
-		return ErrUnauthorizedAccess
-	}
-
-	return next(chatID, cmd, u)
-}
-
-func (tg *Telegram) helpCmd(chatID int64, cmd string, u *database.User) error {
-	msg := tgbotapi.NewMessage(chatID, helpMessage)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-
-	if _, err := tg.api.Send(msg); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	return nil
-}
-
-func (tg *Telegram) newCmd(chatID int64, cmd string, u *database.User) error {
-	subdomain, err := utils.GenerateRandomString(4)
-	if err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	args := strings.SplitN(cmd, " ", 2)
-
-	if len(args) != 2 || args[1] == "" {
-		return &Error{Msg: `Argument "name" is required`}
-	}
-
-	name := args[1]
-
-	if _, err := tg.db.PayloadsGetByUserAndName(u.ID, name); err != sql.ErrNoRows {
-		return &Error{Msg: fmt.Sprintf("You already have payload with name %q", name)}
-	}
-
-	p := &database.Payload{
-		UserID:    u.ID,
-		Subdomain: subdomain,
-		Name:      name,
-	}
-
-	if err := tg.db.PayloadsCreate(p); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	text := fmt.Sprintf("`%s.%s`", p.Subdomain, tg.domain)
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.DisableWebPagePreview = true
-
-	if _, err := tg.api.Send(msg); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	return nil
-}
-
-func (tg *Telegram) delCmd(chatID int64, cmd string, u *database.User) error {
-	args := strings.SplitN(cmd, " ", 2)
-
-	if len(args) < 2 || args[1] == "" {
-		return &Error{Msg: `Argument "name" is required`}
-	}
-
-	name := args[1]
-
-	p, err := tg.db.PayloadsGetByUserAndName(u.ID, name)
-	if err == sql.ErrNoRows {
-		return &Error{Msg: "Payload not found"}
-	} else if err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	if err := tg.db.PayloadsDelete(p.ID); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	if _, err := tg.api.Send(tgbotapi.NewMessage(
-		chatID,
-		"Payload deleted",
-	)); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	return nil
-}
-
-func (tg *Telegram) listCmd(chatID int64, cmd string, u *database.User) error {
-	name := ""
-	args := strings.SplitN(cmd, " ", 2)
-
-	if len(args) == 2 {
-		name = args[1]
-	}
-
-	pp, err := tg.db.PayloadsFindByUserAndName(u.ID, name)
-	if err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	if len(pp) == 0 {
-		return &Error{Msg: "You don't have any payloads yet"}
-	}
-
-	text := ""
-
-	for _, p := range pp {
-		var tpl bytes.Buffer
-
-		data := struct {
-			Name      string
-			Subdomain string
-			Domain    string
-		}{
-			p.Name,
-			p.Subdomain,
-			tg.domain,
+		if out, err := tg.handleCommand(u, text); err != nil {
+			tg.handleError(chatID, err)
+		} else if out != "" {
+			tg.htmlMessage(chatID, out)
 		}
-
-		if err := listPayloadTemplate.Execute(&tpl, data); err != nil {
-			return err
-		}
-		text += tpl.String() + "\n"
-	}
-
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapi.ModeHTML
-	msg.DisableWebPagePreview = true
-
-	if _, err := tg.api.Send(msg); err != nil {
-		return err
 	}
 
 	return nil
 }
 
-func (tg *Telegram) meCmd(chatID int64, cmd string, u *database.User) error {
+func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 	var tpl bytes.Buffer
 
-	if err := meTemplate.Execute(&tpl, u.Params); err != nil {
-		return err
+	u, err := cmd.GetUser(ctx)
+	if err != nil {
+		return
 	}
-	msg := tgbotapi.NewMessage(chatID, strings.TrimPrefix(tpl.String(), "\n"))
+
+	switch r := res.(type) {
+
+	case actions.CreatePayloadResult:
+		if err := codeTemplate.Execute(&tpl, fmt.Sprintf("%s.%s", r.Subdomain, tg.domain)); err != nil {
+			tg.handleError(u.Params.TelegramID, errors.Internal(err))
+			return
+		}
+
+	case actions.ListPayloadsResult:
+		data := struct {
+			Payloads actions.ListPayloadsResult
+			Domain   string
+		}{r, tg.domain}
+
+		if err := listPayloadTemplate.Execute(&tpl, data); err != nil {
+			tg.handleError(u.Params.TelegramID, errors.Internal(err))
+			return
+		}
+
+	case *actions.MessageResult:
+		if err := codeTemplate.Execute(&tpl, r.Message); err != nil {
+			tg.handleError(u.Params.TelegramID, errors.Internal(err))
+			return
+		}
+
+	}
+
+	tg.htmlMessage(u.Params.TelegramID, tpl.String())
+}
+
+func (tg *Telegram) handleError(chatID int64, err errors.Error) {
+	var tpl bytes.Buffer
+
+	if err := codeTemplate.Execute(&tpl, err.Error()); err != nil {
+		return
+	}
+
+	tg.htmlMessage(chatID, tpl.String())
+}
+
+func (tg *Telegram) handleCommand(u *database.User, text string) (string, errors.Error) {
+	// Prepare context
+	ctx := context.Background()
+	ctx = cmd.SetUser(ctx, u)
+
+	// Create root command
+	root := cmd.RootCmd(tg.actions, tg.handleResult)
+
+	// Set args
+	args := strings.Split(strings.TrimLeft(text, "/"), " ")
+	root.SetArgs(args)
+
+	// Set templates
+	root.SetHelpTemplate(helpTemplate)
+	root.SetUsageTemplate(usageTemplate)
+
+	// Set output
+	bb := &bytes.Buffer{}
+	root.SetErr(bb)
+	root.SetOut(bb)
+
+	// Execute command with context
+	if err := root.ExecuteContext(ctx); err != nil {
+		e, ok := err.(errors.Error)
+		if !ok {
+			return "", errors.Internal(err)
+		}
+
+		return "", e
+	}
+
+	return bb.String(), nil
+}
+
+func (tg *Telegram) htmlMessage(chatID int64, html string) {
+	msg := tgbotapi.NewMessage(
+		chatID,
+		html,
+	)
 	msg.ParseMode = tgbotapi.ModeHTML
-
-	if _, err := tg.api.Send(msg); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (tg *Telegram) userAddCmd(chatID int64, cmd string, adm *database.User) error {
-	args := strings.Split(cmd, " ")
-	if len(args) != 3 {
-		return &Error{Msg: "Invalid arguments count"}
-	}
-
-	var (
-		id  int64
-		err error
-	)
-
-	id, err = strconv.ParseInt(args[1], 10, 64)
-	if err != nil {
-		return &Error{Msg: "Invalid user id"}
-	}
-
-	u := &database.User{
-		Name: args[2],
-		Params: database.UserParams{
-			TelegramID: id,
-		},
-	}
-	if err := tg.db.UsersCreate(u); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	if _, err := tg.api.Send(tgbotapi.NewMessage(
-		chatID,
-		"user created",
-	)); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	return nil
-}
-
-func (tg *Telegram) userDelCmd(chatID int64, cmd string, adm *database.User) error {
-	args := strings.Split(cmd, " ")
-	if len(args) != 2 {
-		return &Error{Msg: "Invalid arguments count"}
-	}
-
-	var (
-		id  int64
-		err error
-	)
-
-	id, err = strconv.ParseInt(args[1], 10, 64)
-	if err != nil {
-		return &Error{Msg: "Invalid user id"}
-	}
-
-	u, err := tg.db.UsersGetByParams(&database.UserParams{TelegramID: id})
-	if err != nil {
-		return ErrNotFound
-	}
-
-	if err := tg.db.UsersDelete(u.ID); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	if _, err := tg.api.Send(tgbotapi.NewMessage(
-		chatID,
-		"user deleted",
-	)); err != nil {
-		return ErrInternal.SetError(err)
-	}
-
-	return nil
+	tg.api.Send(msg)
 }
