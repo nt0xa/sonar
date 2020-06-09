@@ -11,6 +11,7 @@ type MessageResult struct {
 
 type Actions interface {
 	PayloadsActions
+	UsersActions
 }
 
 type actions struct {

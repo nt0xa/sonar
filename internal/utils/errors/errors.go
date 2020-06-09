@@ -4,47 +4,74 @@ import (
 	"fmt"
 )
 
+type Error interface {
+	Message() string
+	Error() string
+}
+
 type BaseError struct {
-	Message string `json:"message"`
+	Msg string `json:"message"`
+	Det string `json:"details,omitempty"`
 }
 
 func (e *BaseError) Error() string {
-	return e.Message
+	return fmt.Sprintf("%s: %s", e.Msg, e.Det)
 }
+
+func (e *BaseError) Message() string {
+	return e.Msg
+}
+
+func (e *BaseError) Details() string {
+	return e.Det
+}
+
+//
+// Internal
+//
 
 type InternalError struct {
 	BaseError
 	Cause error `json:"-"`
 }
 
-func (e *InternalError) Error() string {
-	return fmt.Sprintf("%s: %+v", e.Message, e.Cause)
-}
-
-func Internal(err error) error {
+func Internal(err error) Error {
 	return &InternalError{
 		BaseError: BaseError{
-			Message: "internal error",
+			Msg: "internal error",
 		},
 		Cause: err,
 	}
 }
 
-func Internalf(format string, args ...interface{}) error {
-	return Internal(fmt.Errorf(format, args))
+func (e *InternalError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Msg, e.Cause)
 }
+
+func Internalf(format string, args ...interface{}) Error {
+	return Internal(fmt.Errorf(format, args...))
+}
+
+//
+// Bad format
+//
 
 type BadFormatError struct {
 	BaseError
 }
 
-func BadFormatf(format string, args ...interface{}) error {
+func BadFormatf(format string, args ...interface{}) Error {
 	return &BadFormatError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("bad format: %s", fmt.Sprintf(format, args...)),
+			Msg: "bad format",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
+
+//
+// Validation
+//
 
 type Errors map[string]error
 
@@ -62,86 +89,111 @@ type ValidationError struct {
 }
 
 func (e *ValidationError) Error() string {
-	return fmt.Sprintf("%s: %s", e.Message, e.Errors)
+	if e.Errors != nil {
+		return fmt.Sprintf("%s: %s", e.Msg, e.Errors)
+	}
+
+	return e.BaseError.Error()
 }
 
-func Validation(errs error) error {
+func Validation(errs error) Error {
 	return &ValidationError{
 		BaseError: BaseError{
-			Message: "validation failed",
+			Msg: "validation failed",
 		},
 		Errors: errs,
 	}
 }
 
-func Validationf(format string, args ...interface{}) error {
+func Validationf(format string, args ...interface{}) Error {
 	return &ValidationError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("validation failed: %s", fmt.Sprintf(format, args...)),
+			Msg: "validation failed",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
+
+//
+// Conflict
+//
 
 type ConflictError struct {
 	BaseError
 }
 
-func Conflictf(format string, args ...interface{}) error {
+func Conflictf(format string, args ...interface{}) Error {
 	return &ConflictError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("conflict: %s", fmt.Sprintf(format, args...)),
+			Msg: "conflict",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
+
+//
+// NotFound
+//
 
 type NotFoundError struct {
 	BaseError
 }
 
-func NotFoundf(format string, args ...interface{}) error {
+func NotFoundf(format string, args ...interface{}) Error {
 	return &NotFoundError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("not found: %s", fmt.Sprintf(format, args...)),
+			Msg: "not found",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
+
+//
+// Unauthorized
+//
 
 type UnauthorizedError struct {
 	BaseError
 }
 
-func Unauthorized() error {
+func Unauthorized() Error {
 	return &UnauthorizedError{
 		BaseError: BaseError{
-			Message: "unauthorized",
+			Msg: "unauthorized",
 		},
 	}
 }
 
-func Unauthorizedf(format string, args ...interface{}) error {
+func Unauthorizedf(format string, args ...interface{}) Error {
 	return &UnauthorizedError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("unauthorized: %s", fmt.Sprintf(format, args...)),
+			Msg: "unauthorized",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
+
+//
+// Forbidden
+//
 
 type ForbiddenError struct {
 	BaseError
 }
 
-func Forbidden() error {
+func Forbidden() Error {
 	return &ForbiddenError{
 		BaseError: BaseError{
-			Message: "access denied",
+			Msg: "forbidden",
 		},
 	}
 }
 
-func Forbiddenf(format string, args ...interface{}) error {
+func Forbiddenf(format string, args ...interface{}) Error {
 	return &ForbiddenError{
 		BaseError: BaseError{
-			Message: fmt.Sprintf("access denied: %s", fmt.Sprintf(format, args...)),
+			Msg: "forbidden",
+			Det: fmt.Sprintf(format, args...),
 		},
 	}
 }
