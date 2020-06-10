@@ -15,7 +15,7 @@ const (
 	userKey contextKey = "user"
 )
 
-func GetUser(ctx context.Context) (*database.User, error) {
+func GetUser(ctx context.Context) (*database.User, errors.Error) {
 	u, ok := ctx.Value(userKey).(*database.User)
 	if !ok {
 		return nil, errors.Internalf("no %q key in context", userKey)

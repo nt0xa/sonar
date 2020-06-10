@@ -35,7 +35,7 @@ type CreatePayloadResult = *database.Payload
 func (act *actions) CreatePayload(u *database.User, p CreatePayloadParams) (CreatePayloadResult, errors.Error) {
 
 	if _, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name); err != sql.ErrNoRows {
-		return nil, errors.Conflictf("you already have payload with name %q", p.Name)
+		return nil, errors.Conflictf("payload with name %q already exist", p.Name)
 	}
 
 	subdomain, err := utils.GenerateRandomString(4)

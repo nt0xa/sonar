@@ -58,12 +58,12 @@ func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
-				return errors.Internal(err)
+				return err
 			}
 
 			res, err := acts.CreateUser(u, p)
 			if err != nil {
-				return errors.Internal(err)
+				return err
 			}
 
 			handler(cmd.Context(), res)
@@ -97,12 +97,12 @@ func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
-				return errors.Internal(err)
+				return err
 			}
 
 			res, err := acts.DeleteUser(u, p)
 			if err != nil {
-				return errors.Internal(err)
+				return err
 			}
 
 			handler(cmd.Context(), res)
