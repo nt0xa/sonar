@@ -4,10 +4,18 @@ import (
 	"fmt"
 )
 
+//
+// Error
+//
+
 type Error interface {
 	Message() string
 	Error() string
 }
+
+//
+// BaseError
+//
 
 type BaseError struct {
 	Msg string `json:"message"`
@@ -15,6 +23,9 @@ type BaseError struct {
 }
 
 func (e *BaseError) Error() string {
+	if e.Det == "" {
+		return e.Msg
+	}
 	return fmt.Sprintf("%s: %s", e.Msg, e.Det)
 }
 
