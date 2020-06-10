@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"database/sql"
 	"fmt"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -27,6 +28,10 @@ func (p CreateUserParams) Validate() error {
 type CreateUserResult = *database.User
 
 func (act *actions) CreateUser(u *database.User, p CreateUserParams) (CreateUserResult, errors.Error) {
+	if _, err := act.db.UsersGetByName(p.Name); err != sql.ErrNoRows {
+		return nil, errors.Conflictf("user with name %q already exist", p.Name)
+	}
+
 	user := &database.User{
 		Name:   p.Name,
 		Params: p.Params,
