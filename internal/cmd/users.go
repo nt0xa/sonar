@@ -40,25 +40,17 @@ func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		Short: "Create new user",
 		Long:  "Create new user identified by NAME",
 		Args:  OneArg("NAME"),
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			p.Name = args[0]
-
-			params, _ := cmd.Flags().GetStringToString("params")
-
-			if err := mapToStruct(params, &p.Params); err != nil {
-				return errors.Validation(err)
-			}
-
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-
-			return nil
-		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
+			}
+
+			p.Name = args[0]
+
+			params, _ := cmd.Flags().GetStringToString("params")
+			if err := mapToStruct(params, &p.Params); err != nil {
+				return errors.BadFormat(err)
 			}
 
 			res, err := acts.CreateUser(u, p)
@@ -85,20 +77,13 @@ func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		Short: "Delete user",
 		Long:  "Delete user identified by NAME",
 		Args:  OneArg("NAME"),
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			p.Name = args[0]
-
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-
-			return nil
-		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
 			}
+
+			p.Name = args[0]
 
 			res, err := acts.DeleteUser(u, p)
 			if err != nil {

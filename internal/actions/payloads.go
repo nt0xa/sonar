@@ -34,6 +34,10 @@ type CreatePayloadResult = *database.Payload
 
 func (act *actions) CreatePayload(u *database.User, p CreatePayloadParams) (CreatePayloadResult, errors.Error) {
 
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
 	if _, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("payload with name %q already exist", p.Name)
 	}
@@ -73,6 +77,11 @@ func (p DeletePayloadParams) Validate() error {
 type DeletePayloadResult = *MessageResult
 
 func (act *actions) DeletePayload(u *database.User, p DeletePayloadParams) (DeletePayloadResult, errors.Error) {
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
 	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
@@ -102,6 +111,10 @@ func (p ListPayloadsParams) Validate() error {
 type ListPayloadsResult = []*database.Payload
 
 func (act *actions) ListPayloads(u *database.User, p ListPayloadsParams) (ListPayloadsResult, errors.Error) {
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
 
 	payloads, err := act.db.PayloadsFindByUserAndName(u.ID, p.Name)
 	if err != nil {

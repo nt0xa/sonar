@@ -28,6 +28,11 @@ func (p CreateUserParams) Validate() error {
 type CreateUserResult = *database.User
 
 func (act *actions) CreateUser(u *database.User, p CreateUserParams) (CreateUserResult, errors.Error) {
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
 	if _, err := act.db.UsersGetByName(p.Name); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
@@ -56,6 +61,11 @@ func (p DeleteUserParams) Validate() error {
 type DeleteUserResult = *MessageResult
 
 func (act *actions) DeleteUser(u *database.User, p DeleteUserParams) (DeleteUserResult, errors.Error) {
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
 	user := &database.User{
 		Name: p.Name,
 	}

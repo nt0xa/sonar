@@ -71,6 +71,15 @@ type BadFormatError struct {
 	BaseError
 }
 
+func BadFormat(err error) Error {
+	return &BadFormatError{
+		BaseError: BaseError{
+			Msg: "bad format",
+			Det: err.Error(),
+		},
+	}
+}
+
 func BadFormatf(format string, args ...interface{}) Error {
 	return &BadFormatError{
 		BaseError: BaseError{

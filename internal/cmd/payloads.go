@@ -15,18 +15,13 @@ func CreatePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Comman
 		Short: "Create new payload",
 		Long:  "Create new payload identified by NAME",
 		Args:  OneArg("NAME"),
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			p.Name = args[0]
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-			return nil
-		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
 			}
+
+			p.Name = args[0]
 
 			res, err := acts.CreatePayload(u, p)
 			if err != nil {
@@ -50,18 +45,13 @@ func DeletePayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Comman
 		Short: "Delete payload",
 		Long:  "Delete payload identified by NAME",
 		Args:  OneArg("NAME"),
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			p.Name = args[0]
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-			return nil
-		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
 			}
+
+			p.Name = args[0]
 
 			res, err := acts.DeletePayload(u, p)
 			if err != nil {
@@ -84,21 +74,14 @@ func ListPayloadCmd(acts actions.Actions, handler ResultHandler) *cobra.Command 
 		Use:   "list SUBSTR",
 		Short: "List payloads",
 		Long:  "List payloads whose NAME contain SUBSTR",
-		PreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			if len(args) > 0 {
-				p.Name = args[0]
-			}
-
-			if err := p.Validate(); err != nil {
-				return errors.Validation(err)
-			}
-			return nil
-		}),
 		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
+			}
 
+			if len(args) > 0 {
+				p.Name = args[0]
 			}
 
 			res, err := acts.ListPayloads(u, p)
