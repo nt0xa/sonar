@@ -92,7 +92,10 @@ func (tg *Telegram) Start() error {
 }
 
 func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
-	var tpl bytes.Buffer
+	var (
+		tpl bytes.Buffer
+		err error
+	)
 
 	u, err := cmd.GetUser(ctx)
 	if err != nil {
@@ -102,10 +105,7 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 	switch r := res.(type) {
 
 	case actions.CreatePayloadResult:
-		if err := codeTemplate.Execute(&tpl, fmt.Sprintf("%s.%s", r.Subdomain, tg.domain)); err != nil {
-			tg.handleError(u.Params.TelegramID, errors.Internal(err))
-			return
-		}
+		err = codeTemplate.Execute(&tpl, fmt.Sprintf("%s.%s", r.Subdomain, tg.domain))
 
 	case actions.ListPayloadsResult:
 		data := struct {
@@ -113,17 +113,18 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 			Domain   string
 		}{r, tg.domain}
 
-		if err := listPayloadTemplate.Execute(&tpl, data); err != nil {
-			tg.handleError(u.Params.TelegramID, errors.Internal(err))
-			return
-		}
+		err = listPayloadTemplate.Execute(&tpl, data)
+
+	case actions.CreateUserResult:
+		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("user %q created", r.Name))
 
 	case *actions.MessageResult:
-		if err := codeTemplate.Execute(&tpl, r.Message); err != nil {
-			tg.handleError(u.Params.TelegramID, errors.Internal(err))
-			return
-		}
+		tg.txtMessage(u.Params.TelegramID, r.Message)
+	}
 
+	if err != nil {
+		tg.handleError(u.Params.TelegramID, errors.Internal(err))
+		return
 	}
 
 	tg.htmlMessage(u.Params.TelegramID, tpl.String())
@@ -171,6 +172,14 @@ func (tg *Telegram) handleCommand(u *database.User, text string) (string, errors
 	}
 
 	return bb.String(), nil
+}
+
+func (tg *Telegram) txtMessage(chatID int64, txt string) {
+	msg := tgbotapi.NewMessage(
+		chatID,
+		txt,
+	)
+	tg.api.Send(msg)
 }
 
 func (tg *Telegram) htmlMessage(chatID int64, html string) {
