@@ -66,8 +66,9 @@ func (act *actions) DeleteUser(u *database.User, p DeleteUserParams) (DeleteUser
 		return nil, errors.Validation(err)
 	}
 
-	user := &database.User{
-		Name: p.Name,
+	user, err := act.db.UsersGetByName(p.Name)
+	if err != nil {
+		return nil, errors.NotFoundf("user with name %q not found", p.Name)
 	}
 
 	if err := act.db.UsersDelete(user.ID); err != nil {
