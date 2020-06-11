@@ -17,9 +17,11 @@ type User struct {
 	CreatedAt time.Time  `db:"created_at"`
 }
 
+// It is required to add omitempty because of UsersGetByParams func
 type UserParams struct {
-	TelegramID int64  `json:"telegram.id,omitempty"`
-	APIToken   string `json:"api.token,omitempty"`
+	Admin      bool   `json:"admin,omitempty"       mapstructure:"admin"`
+	TelegramID int64  `json:"telegram.id,omitempty" mapstructure:"telegram.id"`
+	APIToken   string `json:"api.token,omitempty"   mapstructure:"api.token"`
 }
 
 func (p UserParams) Value() (driver.Value, error) {

@@ -7,18 +7,20 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 )
 
 type Telegram struct {
-	api *tgbotapi.BotAPI
-	db  *database.DB
-	cfg *Config
+	api     *tgbotapi.BotAPI
+	db      *database.DB
+	cfg     *Config
+	actions actions.Actions
 
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, domain string) (*Telegram, error) {
+func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (*Telegram, error) {
 	client := http.DefaultClient
 
 	// Proxy
@@ -39,5 +41,5 @@ func New(cfg *Config, db *database.DB, domain string) (*Telegram, error) {
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
 
-	return &Telegram{tg, db, cfg, domain}, nil
+	return &Telegram{tg, db, cfg, actions, domain}, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
@@ -63,6 +64,7 @@ func main() {
 
 	// Create admin user
 	admin := &database.User{Name: "admin", Params: database.UserParams{
+		Admin:      true,
 		TelegramID: cfg.Modules.Telegram.Admin,
 		APIToken:   cfg.Modules.API.Admin,
 	}}
@@ -81,6 +83,12 @@ func main() {
 	} else {
 		log.Fatal(err)
 	}
+
+	//
+	// Actions
+	//
+
+	actions := actions.New(db, log)
 
 	//
 	// Events
@@ -189,7 +197,7 @@ func main() {
 	// Modules
 	//
 
-	controllers, notifiers, err := modules.Init(&cfg.Modules, db, log, tlsConfig, cfg.Domain)
+	controllers, notifiers, err := modules.Init(&cfg.Modules, db, log, tlsConfig, actions, cfg.Domain)
 	if err != nil {
 		log.Fatal(err)
 	}
