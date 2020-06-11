@@ -2,52 +2,54 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
 	"net/http"
-	"strings"
+
+	"github.com/go-chi/chi"
+	"github.com/gorilla/schema"
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/bi-zone/sonar/internal/utils/parse"
 )
 
-func parseJSON(w http.ResponseWriter, r *http.Request, dst interface{}) (error, string) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+var decoder = schema.NewDecoder()
 
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
+func fromPath(r *http.Request, dst interface{}) error {
+	pp := chi.RouteContext(r.Context()).URLParams
 
-	err := dec.Decode(&dst)
-	if err != nil {
-		var syntaxError *json.SyntaxError
-		var unmarshalTypeError *json.UnmarshalTypeError
+	pmap := make(map[string]string)
 
-		switch {
-		case errors.As(err, &syntaxError):
-			return err, fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
-
-		case errors.Is(err, io.ErrUnexpectedEOF):
-			return err, "Request body contains badly-formed JSON"
-
-		case errors.As(err, &unmarshalTypeError):
-			return err, fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-
-		case strings.HasPrefix(err.Error(), "json: unknown field "):
-			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			return err, fmt.Sprintf("Request body contains unknown field %s", fieldName)
-
-		case errors.Is(err, io.EOF):
-			return err, "Request body must not be empty"
-
-		case err.Error() == "http: request body too large":
-			return err, "Request body must not be larger than 1MB"
-
-		default:
-			return err, "Unknown error"
-		}
+	for i, name := range pp.Keys {
+		pmap[name] = pp.Values[i]
 	}
 
-	if dec.More() {
-		return errors.New("multple json objects"), "request body must only contain a single JSON object"
+	if err := mapstructure.Decode(pmap, dst); err != nil {
+		return errors.BadFormatf("path: %s", err)
 	}
 
-	return nil, ""
+	return nil
+}
+
+func fromQuery(r *http.Request, dst interface{}) error {
+	if err := decoder.Decode(dst, r.URL.Query()); err != nil {
+		return errors.BadFormatf("query: %s", err)
+	}
+
+	return nil
+}
+
+func fromJSON(r *http.Request, dst interface{}) error {
+	rdr := http.MaxBytesReader(nil, r.Body, 1024*1024)
+
+	if err := parse.JSON(rdr, dst); err != nil {
+		return errors.BadFormatf("json: %s", err)
+	}
+
+	return nil
+}
+
+func responseJSON(w http.ResponseWriter, res interface{}, status int) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(res)
 }

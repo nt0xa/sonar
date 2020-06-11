@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net/http/httptest"
@@ -9,10 +10,10 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/go-testfixtures/testfixtures"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/modules/api"
 )
@@ -80,12 +81,12 @@ func Setup() error {
 		Migrations: "../../database/migrations",
 	})
 	if err != nil {
-		return errors.Wrap(err, "fail to init db")
+		return fmt.Errorf("fail to init db: %w", err)
 	}
 
 	// Migrations
 	if err := db.Migrate(); err != nil {
-		return errors.Wrap(err, "fail to apply migrations")
+		return fmt.Errorf("fail to apply migrations: %w", err)
 	}
 
 	// Load DB fixtures
@@ -106,8 +107,11 @@ func Setup() error {
 	// Logger
 	log := logrus.New()
 
+	// Actions
+	actions := actions.New(db, log)
+
 	// API controller
-	api, err := api.New(cfg, db, log, nil)
+	api, err := api.New(cfg, db, log, nil, actions)
 	if err != nil {
 		return err
 	}

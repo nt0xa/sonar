@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
@@ -47,17 +46,17 @@ func setupGlobals() error {
 
 	db, err = database.New(cfg)
 	if err != nil {
-		return errors.Wrap(err, "fail to init db")
+		return fmt.Errorf("fail to init db: %w", err)
 	}
 
 	if err := db.Migrate(); err != nil {
-		return errors.Wrap(err, "fail to apply migrations")
+		return fmt.Errorf("fail to apply migrations: %w", err)
 	}
 
 	fixtures, err = testfixtures.NewFolder(db.DB.DB,
 		&testfixtures.PostgreSQL{}, "fixtures")
 	if err != nil {
-		return errors.Wrap(err, "fail to load fixtures")
+		return fmt.Errorf("fail to load fixtures: %w", err)
 	}
 
 	return nil
@@ -66,7 +65,7 @@ func setupGlobals() error {
 func teardownGlobals() error {
 	if db != nil {
 		if err := db.Close(); err != nil {
-			return errors.Wrap(err, "fail to close connection to database")
+			return fmt.Errorf("fail to close connection: %w", err)
 		}
 	}
 	return nil
