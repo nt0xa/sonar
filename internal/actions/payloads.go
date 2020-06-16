@@ -6,15 +6,15 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 type PayloadsActions interface {
-	CreatePayload(*database.User, CreatePayloadParams) (CreatePayloadResult, errors.Error)
-	DeletePayload(*database.User, DeletePayloadParams) (DeletePayloadResult, errors.Error)
-	ListPayloads(*database.User, ListPayloadsParams) (ListPayloadsResult, errors.Error)
+	CreatePayload(*models.User, CreatePayloadParams) (CreatePayloadResult, errors.Error)
+	DeletePayload(*models.User, DeletePayloadParams) (DeletePayloadResult, errors.Error)
+	ListPayloads(*models.User, ListPayloadsParams) (ListPayloadsResult, errors.Error)
 }
 
 //
@@ -30,9 +30,9 @@ func (p CreatePayloadParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type CreatePayloadResult = *database.Payload
+type CreatePayloadResult = *models.Payload
 
-func (act *actions) CreatePayload(u *database.User, p CreatePayloadParams) (CreatePayloadResult, errors.Error) {
+func (act *actions) CreatePayload(u *models.User, p CreatePayloadParams) (CreatePayloadResult, errors.Error) {
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -47,7 +47,7 @@ func (act *actions) CreatePayload(u *database.User, p CreatePayloadParams) (Crea
 		return nil, errors.Internal(err)
 	}
 
-	payload := &database.Payload{
+	payload := &models.Payload{
 		UserID:    u.ID,
 		Subdomain: subdomain,
 		Name:      p.Name,
@@ -76,7 +76,7 @@ func (p DeletePayloadParams) Validate() error {
 
 type DeletePayloadResult = *MessageResult
 
-func (act *actions) DeletePayload(u *database.User, p DeletePayloadParams) (DeletePayloadResult, errors.Error) {
+func (act *actions) DeletePayload(u *models.User, p DeletePayloadParams) (DeletePayloadResult, errors.Error) {
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -108,9 +108,9 @@ func (p ListPayloadsParams) Validate() error {
 	return nil
 }
 
-type ListPayloadsResult = []*database.Payload
+type ListPayloadsResult = []*models.Payload
 
-func (act *actions) ListPayloads(u *database.User, p ListPayloadsParams) (ListPayloadsResult, errors.Error) {
+func (act *actions) ListPayloads(u *models.User, p ListPayloadsParams) (ListPayloadsResult, errors.Error) {
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)

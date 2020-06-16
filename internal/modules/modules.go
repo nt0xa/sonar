@@ -8,6 +8,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/telegram"
 )
@@ -17,7 +18,7 @@ type Controller interface {
 }
 
 type Notifier interface {
-	Notify(*database.Event, *database.User, *database.Payload) error
+	Notify(*models.Event, *models.User, *models.Payload) error
 }
 
 func Init(cfg *Config, db *database.DB, log *logrus.Logger, tls *tls.Config,

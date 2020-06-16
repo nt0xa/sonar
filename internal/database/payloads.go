@@ -5,19 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/bi-zone/sonar/internal/models"
 )
 
-type Payload struct {
-	ID        int64          `db:"id"         json:"-"`
-	UserID    int64          `db:"user_id"    json:"-"`
-	Subdomain string         `db:"subdomain"  json:"subdomain"`
-	Name      string         `db:"name"       json:"name"`
-	Handlers  pq.StringArray `db:"handlers"   json:"handlers,omitempty"`
-	CreatedAt time.Time      `db:"created_at" json:"createdAt"`
-}
-
-func (db *DB) PayloadsCreate(o *Payload) error {
+func (db *DB) PayloadsCreate(o *models.Payload) error {
 
 	o.CreatedAt = time.Now()
 
@@ -32,8 +23,8 @@ func (db *DB) PayloadsCreate(o *Payload) error {
 	return nstmt.QueryRowx(o).Scan(&o.ID)
 }
 
-func (db *DB) PayloadGetByID(id int64) (*Payload, error) {
-	var o Payload
+func (db *DB) PayloadGetByID(id int64) (*models.Payload, error) {
+	var o models.Payload
 
 	err := db.Get(&o, "SELECT * FROM payloads WHERE id = $1", id)
 
@@ -44,8 +35,8 @@ func (db *DB) PayloadGetByID(id int64) (*Payload, error) {
 	return &o, nil
 }
 
-func (db *DB) PayloadsGetBySubdomain(subdomain string) (*Payload, error) {
-	var o Payload
+func (db *DB) PayloadsGetBySubdomain(subdomain string) (*models.Payload, error) {
+	var o models.Payload
 
 	err := db.Get(&o, "SELECT * FROM payloads WHERE subdomain = $1", subdomain)
 
@@ -56,8 +47,8 @@ func (db *DB) PayloadsGetBySubdomain(subdomain string) (*Payload, error) {
 	return &o, nil
 }
 
-func (db *DB) PayloadsGetByUserAndName(userID int64, name string) (*Payload, error) {
-	var o Payload
+func (db *DB) PayloadsGetByUserAndName(userID int64, name string) (*models.Payload, error) {
+	var o models.Payload
 
 	err := db.Get(&o, "SELECT * FROM payloads WHERE user_id = $1 and name = $2", userID, name)
 
@@ -68,16 +59,16 @@ func (db *DB) PayloadsGetByUserAndName(userID int64, name string) (*Payload, err
 	return &o, nil
 }
 
-func (db *DB) PayloadsFindByUserID(userID int64) ([]*Payload, error) {
-	res := make([]*Payload, 0)
+func (db *DB) PayloadsFindByUserID(userID int64) ([]*models.Payload, error) {
+	res := make([]*models.Payload, 0)
 
 	err := db.Select(&res, "SELECT * FROM payloads WHERE user_id = $1 ORDER BY created_at DESC", userID)
 
 	return res, err
 }
 
-func (db *DB) PayloadsFindByUserAndName(userID int64, name string) ([]*Payload, error) {
-	res := make([]*Payload, 0)
+func (db *DB) PayloadsFindByUserAndName(userID int64, name string) ([]*models.Payload, error) {
+	res := make([]*models.Payload, 0)
 
 	err := db.Select(&res,
 		"SELECT * FROM payloads WHERE user_id = $1 and name ILIKE $2 ORDER BY created_at DESC",

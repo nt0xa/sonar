@@ -12,6 +12,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
 	"github.com/bi-zone/sonar/pkg/server/dns"
@@ -63,7 +64,7 @@ func main() {
 	}
 
 	// Create admin user
-	admin := &database.User{Name: "admin", Params: database.UserParams{
+	admin := &models.User{Name: "admin", Params: models.UserParams{
 		Admin:      true,
 		TelegramID: cfg.Modules.Telegram.Admin,
 		APIToken:   cfg.Modules.API.Admin,
@@ -94,7 +95,7 @@ func main() {
 	// Events
 	//
 
-	events := make(chan database.Event, 100)
+	events := make(chan models.Event, 100)
 	defer close(events)
 
 	//
