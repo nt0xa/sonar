@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 )
 
 func TestCreateUser_Success(t *testing.T) {
@@ -18,7 +18,7 @@ func TestCreateUser_Success(t *testing.T) {
 	acts.
 		On("CreateUser", admin, actions.CreateUserParams{
 			Name: "user",
-			Params: database.UserParams{
+			Params: models.UserParams{
 				TelegramID: 1337,
 				APIToken:   "token",
 			},

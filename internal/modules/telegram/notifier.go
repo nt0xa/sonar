@@ -8,7 +8,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 )
 
@@ -25,7 +25,7 @@ var (
 `))
 )
 
-func (tg *Telegram) Notify(e *database.Event, u *database.User, p *database.Payload) error {
+func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) error {
 
 	var header, body bytes.Buffer
 

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -20,7 +20,7 @@ func TestCreateUser_Success(t *testing.T) {
 
 	p := actions.CreateUserParams{
 		Name: "test",
-		Params: database.UserParams{
+		Params: models.UserParams{
 			TelegramID: 1000,
 		},
 	}

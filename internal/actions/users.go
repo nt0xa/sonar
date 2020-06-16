@@ -6,18 +6,18 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 type UsersActions interface {
-	CreateUser(*database.User, CreateUserParams) (CreateUserResult, errors.Error)
-	DeleteUser(*database.User, DeleteUserParams) (DeleteUserResult, errors.Error)
+	CreateUser(*models.User, CreateUserParams) (CreateUserResult, errors.Error)
+	DeleteUser(*models.User, DeleteUserParams) (DeleteUserResult, errors.Error)
 }
 
 type CreateUserParams struct {
 	Name   string
-	Params database.UserParams
+	Params models.UserParams
 }
 
 func (p CreateUserParams) Validate() error {
@@ -25,9 +25,9 @@ func (p CreateUserParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type CreateUserResult = *database.User
+type CreateUserResult = *models.User
 
-func (act *actions) CreateUser(u *database.User, p CreateUserParams) (CreateUserResult, errors.Error) {
+func (act *actions) CreateUser(u *models.User, p CreateUserParams) (CreateUserResult, errors.Error) {
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -37,7 +37,7 @@ func (act *actions) CreateUser(u *database.User, p CreateUserParams) (CreateUser
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
 
-	user := &database.User{
+	user := &models.User{
 		Name:   p.Name,
 		Params: p.Params,
 	}
@@ -60,7 +60,7 @@ func (p DeleteUserParams) Validate() error {
 
 type DeleteUserResult = *MessageResult
 
-func (act *actions) DeleteUser(u *database.User, p DeleteUserParams) (DeleteUserResult, errors.Error) {
+func (act *actions) DeleteUser(u *models.User, p DeleteUserParams) (DeleteUserResult, errors.Error) {
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)

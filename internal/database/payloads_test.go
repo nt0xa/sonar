@@ -5,17 +5,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bi-zone/sonar/internal/database"
 )
 
 func TestPayloadsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &database.Payload{
+	o := &models.Payload{
 		UserID:    1,
 		Subdomain: "8a8b58beaf",
 		Name:      "test",
@@ -31,7 +30,7 @@ func TestPayloadsCreate_Duplicate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &database.Payload{
+	o := &models.Payload{
 		UserID:    1,
 		Subdomain: "8a8b58beaf",
 		Name:      "payload1",

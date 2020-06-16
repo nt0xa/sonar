@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -26,7 +26,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			u, err := api.db.UsersGetByParams(&database.UserParams{
+			u, err := api.db.UsersGetByParams(&models.UserParams{
 				APIToken: token,
 			})
 
@@ -41,8 +41,8 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 	}
 }
 
-func getUser(ctx context.Context) (*database.User, error) {
-	u, ok := ctx.Value(userKey).(*database.User)
+func getUser(ctx context.Context) (*models.User, error) {
+	u, ok := ctx.Value(userKey).(*models.User)
 	if !ok {
 		return nil, errors.Internalf("no %q key in context", userKey)
 	}
