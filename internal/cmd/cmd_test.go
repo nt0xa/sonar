@@ -10,31 +10,31 @@ import (
 
 	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
 	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 )
 
 var (
-	user = &database.User{
+	user = &models.User{
 		ID:   1,
 		Name: "test",
-		Params: database.UserParams{
+		Params: models.UserParams{
 			TelegramID: 1337,
 			APIToken:   "token",
 		},
 	}
-	admin = &database.User{
+	admin = &models.User{
 		ID:   1,
 		Name: "admin",
-		Params: database.UserParams{
+		Params: models.UserParams{
 			Admin: true,
 		},
 	}
-	payload = &database.Payload{
+	payload = &models.Payload{
 		ID:     1,
 		Name:   "payload",
 		UserID: 1,
 	}
-	payloads = []*database.Payload{payload}
+	payloads = []*models.Payload{payload}
 )
 
 type ResultHandlerMock struct {
@@ -51,7 +51,7 @@ func prepare() (*cobra.Command, *actions_mock.Actions, *ResultHandlerMock) {
 	return cmd.RootCmd(acts, hnd.Handle), acts, hnd
 }
 
-func execute(c *cobra.Command, user *database.User, args string) (string, error) {
+func execute(c *cobra.Command, user *models.User, args string) (string, error) {
 	ctx := cmd.SetUser(context.Background(), user)
 
 	c.SetArgs(strings.Split(args, " "))

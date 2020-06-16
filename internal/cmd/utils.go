@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
+
+	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 type contextKey string
@@ -15,15 +16,15 @@ const (
 	userKey contextKey = "user"
 )
 
-func GetUser(ctx context.Context) (*database.User, errors.Error) {
-	u, ok := ctx.Value(userKey).(*database.User)
+func GetUser(ctx context.Context) (*models.User, errors.Error) {
+	u, ok := ctx.Value(userKey).(*models.User)
 	if !ok {
 		return nil, errors.Internalf("no %q key in context", userKey)
 	}
 	return u, nil
 }
 
-func SetUser(ctx context.Context, u *database.User) context.Context {
+func SetUser(ctx context.Context, u *models.User) context.Context {
 	return context.WithValue(ctx, userKey, u)
 }
 

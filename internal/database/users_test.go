@@ -5,19 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/bi-zone/sonar/internal/database"
 )
 
 func TestUsersCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &database.User{
+	o := &models.User{
 		ID:   1337,
 		Name: "test",
-		Params: database.UserParams{
+		Params: models.UserParams{
 			TelegramID: 31337,
 		},
 	}
@@ -31,7 +30,7 @@ func TestUsersCreate_Duplicate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &database.User{
+	o := &models.User{
 		ID:   1337,
 		Name: "user1",
 	}
@@ -118,7 +117,7 @@ func TestUsersUpdate_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &database.User{ID: 1337}
+	o := &models.User{ID: 1337}
 
 	err := db.UsersUpdate(o)
 	assert.Error(t, err)
@@ -129,7 +128,7 @@ func TestUsersGetByParams_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	p := &database.UserParams{TelegramID: 31337}
+	p := &models.UserParams{TelegramID: 31337}
 
 	o, err := db.UsersGetByParams(p)
 	assert.NoError(t, err)
@@ -141,7 +140,7 @@ func TestUsersGetByParams_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	p := &database.UserParams{TelegramID: 1}
+	p := &models.UserParams{TelegramID: 1}
 
 	o, err := db.UsersGetByParams(p)
 	assert.Error(t, err)

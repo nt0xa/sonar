@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/pkg/server"
 )
@@ -14,7 +15,7 @@ var (
 	subdomainRegexp = regexp.MustCompile("[a-f0-9]{8}")
 )
 
-func ProcessEvents(events <-chan database.Event, db *database.DB, ns []modules.Notifier) error {
+func ProcessEvents(events <-chan models.Event, db *database.DB, ns []modules.Notifier) error {
 	for e := range events {
 
 		seen := make(map[string]struct{})
@@ -58,10 +59,10 @@ func ProcessEvents(events <-chan database.Event, db *database.DB, ns []modules.N
 	return nil
 }
 
-func AddProtoEvent(proto string, events chan<- database.Event) server.NotifyRequestFunc {
+func AddProtoEvent(proto string, events chan<- models.Event) server.NotifyRequestFunc {
 	return func(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
 
-		events <- database.Event{
+		events <- models.Event{
 			Protocol:   proto,
 			Data:       string(data),
 			RawData:    data,

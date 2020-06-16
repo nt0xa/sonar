@@ -10,7 +10,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -75,7 +75,7 @@ func (tg *Telegram) Start() error {
 		chatID := update.Message.Chat.ID
 		text := update.Message.Text
 
-		u, err := tg.db.UsersGetByParams(&database.UserParams{TelegramID: chatID})
+		u, err := tg.db.UsersGetByParams(&models.UserParams{TelegramID: chatID})
 		if err != nil {
 			tg.handleError(chatID, errors.Unauthorized())
 			continue
@@ -133,7 +133,7 @@ func (tg *Telegram) handleError(chatID int64, err errors.Error) {
 	tg.txtMessage(chatID, err.Error())
 }
 
-func (tg *Telegram) handleCommand(u *database.User, text string) (string, errors.Error) {
+func (tg *Telegram) handleCommand(u *models.User, text string) (string, errors.Error) {
 	// Prepare context
 	ctx := context.Background()
 	ctx = cmd.SetUser(ctx, u)
