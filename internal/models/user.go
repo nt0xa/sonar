@@ -11,12 +11,12 @@ type User struct {
 	ID        int64      `db:"id"`
 	Name      string     `db:"name"`
 	Params    UserParams `db:"params"`
+	IsAdmin   bool       `db:"is_admin"`
 	CreatedAt time.Time  `db:"created_at"`
 }
 
 // It is required to add omitempty because of UsersGetByParams func
 type UserParams struct {
-	Admin      bool   `json:"admin,omitempty"       mapstructure:"admin"`
 	TelegramID int64  `json:"telegram.id,omitempty" mapstructure:"telegram.id"`
 	APIToken   string `json:"api.token,omitempty"   mapstructure:"api.token"`
 }

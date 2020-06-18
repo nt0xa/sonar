@@ -64,11 +64,14 @@ func main() {
 	}
 
 	// Create admin user
-	admin := &models.User{Name: "admin", Params: models.UserParams{
-		Admin:      true,
-		TelegramID: cfg.Modules.Telegram.Admin,
-		APIToken:   cfg.Modules.API.Admin,
-	}}
+	admin := &models.User{
+		Name:    "admin",
+		IsAdmin: true,
+		Params: models.UserParams{
+			TelegramID: cfg.Modules.Telegram.Admin,
+			APIToken:   cfg.Modules.API.Admin,
+		},
+	}
 
 	if u, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
 		// There is no admin yet - create one

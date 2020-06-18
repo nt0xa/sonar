@@ -21,7 +21,8 @@ func (db *DB) UsersCreate(o *models.User) error {
 	}
 
 	nstmt, err := db.PrepareNamed(
-		"INSERT INTO users (name, params, created_at) VALUES(:name, :params, :created_at) RETURNING id")
+		"INSERT INTO users (name, params, is_admin, created_at) " +
+			"VALUES(:name, :params, :is_admin, :created_at) RETURNING id")
 
 	if err != nil {
 		return err
