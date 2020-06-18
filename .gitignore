@@ -1,6 +1,6 @@
 # Binary
 cmd/server/server
-./server
+/server
 
 # macOS
 .DS_Store
