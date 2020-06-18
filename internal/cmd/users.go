@@ -18,7 +18,7 @@ func UsersCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 				return errors.Internal(err)
 			}
 
-			if !u.Params.Admin {
+			if !u.IsAdmin {
 				return errors.Forbidden()
 			}
 

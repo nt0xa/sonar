@@ -23,11 +23,9 @@ var (
 		},
 	}
 	admin = &models.User{
-		ID:   1,
-		Name: "admin",
-		Params: models.UserParams{
-			Admin: true,
-		},
+		ID:      1,
+		Name:    "admin",
+		IsAdmin: true,
 	}
 	payload = &models.Payload{
 		ID:     1,
