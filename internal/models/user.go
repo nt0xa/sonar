@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
+)
+
+type UserParamsKey string
+
+const (
+	UserTelegramID UserParamsKey = "telegram.id"
+	UserAPIToken   UserParamsKey = "api.token"
 )
 
 type User struct {
@@ -15,10 +24,9 @@ type User struct {
 	CreatedAt time.Time  `db:"created_at"`
 }
 
-// It is required to add omitempty because of UsersGetByParams func
 type UserParams struct {
-	TelegramID int64  `json:"telegram.id,omitempty" mapstructure:"telegram.id"`
-	APIToken   string `json:"api.token,omitempty"   mapstructure:"api.token"`
+	TelegramID int64  `json:"telegram.id" mapstructure:"telegram.id"`
+	APIToken   string `json:"api.token"   mapstructure:"api.token"`
 }
 
 func (p UserParams) Value() (driver.Value, error) {
@@ -31,5 +39,22 @@ func (p *UserParams) Scan(value interface{}) error {
 		return errors.New("type assertion to []byte failed")
 	}
 
-	return json.Unmarshal(b, &p)
+	m := make(map[string]string)
+
+	if err := json.Unmarshal(b, &m); err != nil {
+		return err
+	}
+
+	c := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           &p,
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := mapstructure.NewDecoder(c)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(m)
 }

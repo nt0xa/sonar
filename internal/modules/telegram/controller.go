@@ -75,7 +75,7 @@ func (tg *Telegram) Start() error {
 		chatID := update.Message.Chat.ID
 		text := update.Message.Text
 
-		u, err := tg.db.UsersGetByParams(&models.UserParams{TelegramID: chatID})
+		u, err := tg.db.UsersGetByParam(models.UserTelegramID, chatID)
 		if err != nil {
 			tg.handleError(chatID, errors.Unauthorized())
 			continue
