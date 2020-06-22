@@ -1,0 +1,29 @@
+- id: 1
+  user_id: 1
+  key: telegram.id
+  value: 31337
+
+- id: 2
+  user_id: 1
+  key: api.token
+  value: 50c862e41d059eeca13adc7b276b46b7
+
+- id: 3
+  user_id: 2
+  key: telegram.id
+  value: 31338
+
+- id: 4
+  user_id: 2
+  key: api.token
+  value: 7001f2d819d3d5fb0b1fd75dd38eb34e
+
+- id: 5
+  user_id: 3
+  key: telegram.id
+  value: 1337
+
+- id: 6
+  user_id: 3
+  key: api.token
+  value: a33bfdbfb3c62feb7ea59314dbd17426
