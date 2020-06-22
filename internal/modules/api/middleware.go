@@ -26,9 +26,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			u, err := api.db.UsersGetByParams(&models.UserParams{
-				APIToken: token,
-			})
+			u, err := api.db.UsersGetByParam(models.UserAPIToken, token)
 
 			if err != nil {
 				handleError(api.log, w, r, errors.Unauthorizedf("invalid token"))

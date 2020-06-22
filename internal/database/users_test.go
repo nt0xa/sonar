@@ -7,6 +7,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUsersCreate_Success(t *testing.T) {
@@ -14,25 +15,42 @@ func TestUsersCreate_Success(t *testing.T) {
 	defer teardown(t)
 
 	o := &models.User{
-		ID:   1337,
 		Name: "test",
 		Params: models.UserParams{
-			TelegramID: 31337,
+			TelegramID: 1234,
 		},
 	}
 
 	err := db.UsersCreate(o)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+
+	o2, err := db.UsersGetByID(o.ID)
+	require.NoError(t, err)
+	assert.Equal(t, o.Params, o2.Params)
 }
 
-func TestUsersCreate_Duplicate(t *testing.T) {
+func TestUsersCreate_DuplicateName(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
 	o := &models.User{
-		ID:   1337,
 		Name: "user1",
+	}
+
+	err := db.UsersCreate(o)
+	assert.Error(t, err)
+}
+
+func TestUsersCreate_DuplicateParam(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o := &models.User{
+		Name: "test",
+		Params: models.UserParams{
+			TelegramID: 1337,
+		},
 	}
 
 	err := db.UsersCreate(o)
@@ -86,51 +104,31 @@ func TestUsersDelete_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestUsersDelete_NotExist(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-
-	err := db.UsersDelete(1337)
-	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
-}
-
 func TestUsersUpdate_Succes(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
 	o, err := db.UsersGetByID(1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, o)
 
 	o.Name = "user1_updated"
+	o.Params.TelegramID = 1234
 
 	err = db.UsersUpdate(o)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	o2, err := db.UsersGetByID(1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "user1_updated", o2.Name)
-}
-
-func TestUsersUpdate_NotExist(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-
-	o := &models.User{ID: 1337}
-
-	err := db.UsersUpdate(o)
-	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.Equal(t, o.Params, o2.Params)
 }
 
 func TestUsersGetByParams_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	p := &models.UserParams{TelegramID: 31337}
-
-	o, err := db.UsersGetByParams(p)
+	o, err := db.UsersGetByParam(models.UserTelegramID, 31337)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
@@ -140,9 +138,7 @@ func TestUsersGetByParams_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	p := &models.UserParams{TelegramID: 1}
-
-	o, err := db.UsersGetByParams(p)
+	o, err := db.UsersGetByParam(models.UserTelegramID, 1)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
