@@ -1,10 +1,13 @@
 package cmd_test
 
 import (
+	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
@@ -28,15 +31,18 @@ func TestCreateUser_Success(t *testing.T) {
 	hnd.
 		On("Handle", mock.Anything, res)
 
-	_, err := execute(cmd, admin, "users new user -p telegram.id=1337 -p api.token=token")
+	_, err := cmd.Exec(context.Background(), admin,
+		strings.Split("users new user -p telegram.id=1337 -p api.token=token", " "))
+
 	assert.NoError(t, err)
 }
 
 func TestCreateUser_NoArg(t *testing.T) {
 	cmd, _, _ := prepare()
 
-	out, err := execute(cmd, user, "users new")
+	out, err := cmd.Exec(context.Background(), admin, []string{"users", "new"})
 	assert.Error(t, err)
+	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
 
@@ -54,14 +60,15 @@ func TestDeleteUser_Success(t *testing.T) {
 	hnd.
 		On("Handle", mock.Anything, res)
 
-	_, err := execute(cmd, admin, "users del user")
+	_, err := cmd.Exec(context.Background(), admin, []string{"users", "del", "user"})
 	assert.NoError(t, err)
 }
 
 func TestDeleteUser_NoArg(t *testing.T) {
 	cmd, _, _ := prepare()
 
-	out, err := execute(cmd, user, "users del")
+	out, err := cmd.Exec(context.Background(), admin, []string{"users", "del"})
 	assert.Error(t, err)
+	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
