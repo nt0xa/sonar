@@ -7,32 +7,19 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func UsersCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
-
+func (c *Command) Users() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "users",
 		Short: "Manage users",
-		PersistentPreRunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return errors.Internal(err)
-			}
-
-			if !u.IsAdmin {
-				return errors.Forbidden()
-			}
-
-			return nil
-		}),
 	}
 
-	cmd.AddCommand(CreateUserCmd(acts, handler))
-	cmd.AddCommand(DeleteUserCmd(acts, handler))
+	cmd.AddCommand(c.CreateUser())
+	cmd.AddCommand(c.DeleteUser())
 
 	return cmd
 }
 
-func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+func (c *Command) CreateUser() *cobra.Command {
 	var p actions.CreateUserParams
 
 	cmd := &cobra.Command{
@@ -40,7 +27,7 @@ func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		Short: "Create new user",
 		Long:  "Create new user identified by NAME",
 		Args:  OneArg("NAME"),
-		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
+		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
@@ -53,23 +40,24 @@ func CreateUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 				return errors.BadFormat(err)
 			}
 
-			res, err := acts.CreateUser(u, p)
+			res, err := c.Actions.CreateUser(u, p)
 			if err != nil {
 				return err
 			}
 
-			handler(cmd.Context(), res)
+			c.ResultHandler(cmd.Context(), res)
 
 			return nil
 		}),
 	}
 
 	cmd.Flags().StringToStringP("params", "p", map[string]string{}, "User parameters")
+	cmd.Flags().BoolVarP(&p.IsAdmin, "admin", "a", false, "Admin user")
 
 	return cmd
 }
 
-func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
+func (c *Command) DeleteUser() *cobra.Command {
 	var p actions.DeleteUserParams
 
 	cmd := &cobra.Command{
@@ -77,7 +65,7 @@ func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 		Short: "Delete user",
 		Long:  "Delete user identified by NAME",
 		Args:  OneArg("NAME"),
-		RunE: runE(func(cmd *cobra.Command, args []string) errors.Error {
+		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			u, err := GetUser(cmd.Context())
 			if err != nil {
 				return err
@@ -85,12 +73,12 @@ func DeleteUserCmd(acts actions.Actions, handler ResultHandler) *cobra.Command {
 
 			p.Name = args[0]
 
-			res, err := acts.DeleteUser(u, p)
+			res, err := c.Actions.DeleteUser(u, p)
 			if err != nil {
 				return err
 			}
 
-			handler(cmd.Context(), res)
+			c.ResultHandler(cmd.Context(), res)
 
 			return nil
 		}),

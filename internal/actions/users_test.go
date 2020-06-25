@@ -23,6 +23,7 @@ func TestCreateUser_Success(t *testing.T) {
 		Params: models.UserParams{
 			TelegramID: 1000,
 		},
+		IsAdmin: true,
 	}
 
 	r, err := acts.CreateUser(u, p)
@@ -31,6 +32,7 @@ func TestCreateUser_Success(t *testing.T) {
 	assert.NotNil(t, r)
 	assert.Equal(t, "test", r.Name)
 	assert.Equal(t, int64(1000), r.Params.TelegramID)
+	assert.Equal(t, true, r.IsAdmin)
 }
 
 func TestCreateUser_Validation(t *testing.T) {
