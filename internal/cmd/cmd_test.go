@@ -1,11 +1,8 @@
 package cmd_test
 
 import (
-	"bytes"
 	"context"
-	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
 
 	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
@@ -43,23 +40,14 @@ func (m *ResultHandlerMock) Handle(ctx context.Context, res interface{}) {
 	m.Called(ctx, res)
 }
 
-func prepare() (*cobra.Command, *actions_mock.Actions, *ResultHandlerMock) {
-	acts := &actions_mock.Actions{}
-	hnd := &ResultHandlerMock{}
-	return cmd.RootCmd(acts, hnd.Handle), acts, hnd
-}
+func prepare() (*cmd.Command, *actions_mock.Actions, *ResultHandlerMock) {
+	actions := &actions_mock.Actions{}
+	handler := &ResultHandlerMock{}
 
-func execute(c *cobra.Command, user *models.User, args string) (string, error) {
-	ctx := cmd.SetUser(context.Background(), user)
+	c := &cmd.Command{
+		Actions:       actions,
+		ResultHandler: handler.Handle,
+	}
 
-	c.SetArgs(strings.Split(args, " "))
-
-	out := &bytes.Buffer{}
-
-	c.SetOut(out)
-	c.SetErr(out)
-
-	err := c.ExecuteContext(ctx)
-
-	return out.String(), err
+	return c, actions, handler
 }
