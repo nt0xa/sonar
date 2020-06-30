@@ -16,9 +16,10 @@ type UsersActions interface {
 }
 
 type CreateUserParams struct {
-	Name    string
-	Params  models.UserParams
-	IsAdmin bool
+	Name      string
+	Params    models.UserParams
+	IsAdmin   bool
+	CreatedBy *int64
 }
 
 func (p CreateUserParams) Validate() error {
@@ -39,9 +40,10 @@ func (act *actions) CreateUser(u *models.User, p CreateUserParams) (CreateUserRe
 	}
 
 	user := &models.User{
-		Name:    p.Name,
-		Params:  p.Params,
-		IsAdmin: p.IsAdmin,
+		Name:      p.Name,
+		Params:    p.Params,
+		IsAdmin:   p.IsAdmin,
+		CreatedBy: p.CreatedBy,
 	}
 
 	if err := act.db.UsersCreate(user); err != nil {
