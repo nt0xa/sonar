@@ -65,8 +65,9 @@ func main() {
 
 	// Create admin user
 	admin := &models.User{
-		Name:    "admin",
-		IsAdmin: true,
+		Name:      "admin",
+		IsAdmin:   true,
+		CreatedBy: nil,
 		Params: models.UserParams{
 			TelegramID: cfg.Modules.Telegram.Admin,
 			APIToken:   cfg.Modules.API.Admin,

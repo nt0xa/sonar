@@ -11,6 +11,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/utils/pointer"
 )
 
 func TestCreateUser_Success(t *testing.T) {
@@ -25,6 +26,7 @@ func TestCreateUser_Success(t *testing.T) {
 				TelegramID: 1337,
 				APIToken:   "token",
 			},
+			CreatedBy: pointer.Int64(1),
 		}).
 		Return(res, nil)
 
