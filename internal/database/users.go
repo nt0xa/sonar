@@ -35,8 +35,8 @@ func (db *DB) UsersCreate(o *models.User) error {
 	}
 
 	nstmt, err := tx.PrepareNamed(
-		"INSERT INTO users (name, is_admin, created_at) " +
-			"VALUES(:name, :is_admin, :created_at) RETURNING id")
+		"INSERT INTO users (name, is_admin, created_by, created_at) " +
+			"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id")
 
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (db *DB) UsersUpdate(o *models.User) error {
 	}
 
 	_, err = db.NamedExec(
-		"UPDATE users SET name = :name, is_admin = :is_admin WHERE id = :id", o)
+		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
 		return err

@@ -15,14 +15,17 @@ import (
 	"github.com/bi-zone/sonar/internal/cmd"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 type Telegram struct {
-	api *tgbotapi.BotAPI
-	db  *database.DB
-	cfg *Config
-	cmd *cmd.Command
+	api     *tgbotapi.BotAPI
+	db      *database.DB
+	cfg     *Config
+	cmd     *cmd.Command
+	actions actions.Actions
+	bot     tgbotapi.User
 
 	domain string
 }
@@ -48,11 +51,18 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
 
+	bot, err := api.GetMe()
+	if err != nil {
+		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
+	}
+
 	tg := &Telegram{
-		api:    api,
-		db:     db,
-		cfg:    cfg,
-		domain: domain,
+		api:     api,
+		db:      db,
+		cfg:     cfg,
+		domain:  domain,
+		bot:     bot,
+		actions: actions,
 	}
 
 	cmd := &cmd.Command{
@@ -81,23 +91,83 @@ func (tg *Telegram) Start() error {
 			continue
 		}
 
-		chatID := update.Message.Chat.ID
-
-		ctx := SetChatID(context.Background(), chatID)
+		msg := update.Message
+		chat := msg.Chat
 
 		// Ignore error because user=nil is unauthorized user and there are
 		// some commands available for unauthorized users (e.g. "/id")
-		user, _ := tg.db.UsersGetByParam(models.UserTelegramID, chatID)
+		chatUser, _ := tg.db.UsersGetByParam(models.UserTelegramID, chat.ID)
+		fromUser, _ := tg.db.UsersGetByParam(models.UserTelegramID, msg.From.ID)
+
+		// Create user for group on group creation or when bot added to already
+		// existing group.
+		if tg.isAddedToGroup(msg) && fromUser != nil {
+			rnd, _ := utils.GenerateRandomString(4)
+
+			u := &models.User{
+				Name:      fmt.Sprintf("shared-%s", rnd),
+				CreatedBy: &fromUser.ID,
+				Params: models.UserParams{
+					TelegramID: chat.ID,
+				},
+			}
+
+			if err := tg.db.UsersCreate(u); err != nil {
+				tg.handleError(chat.ID, errors.Internal(err))
+			}
+
+			continue
+		}
+
+		// Delete group user when it is removed from group.
+		if chat.IsGroup() && tg.isDeletedFromGroup(msg) && chatUser != nil {
+			if err := tg.db.UsersDelete(chatUser.ID); err != nil {
+				tg.handleError(chat.ID, errors.Internal(err))
+			}
+
+			continue
+		}
+
+		var user *models.User
+
+		// Only registered users should be able to use bot.
+		if chat.IsGroup() && fromUser == nil {
+			user = nil
+		} else {
+			user = chatUser
+		}
+
+		ctx := SetChatID(context.Background(), chat.ID)
 		args := strings.Split(strings.TrimLeft(update.Message.Text, "/"), " ")
 
 		if out, err := tg.cmd.Exec(ctx, user, args); err != nil {
-			tg.handleError(chatID, err)
+			tg.handleError(chat.ID, err)
 		} else if out != "" {
-			tg.htmlMessage(chatID, out)
+			tg.htmlMessage(chat.ID, out)
 		}
 	}
 
 	return nil
+}
+
+func (tg *Telegram) isAddedToGroup(msg *tgbotapi.Message) bool {
+	if msg.GroupChatCreated {
+		return true
+	}
+
+	if msg.NewChatMembers != nil {
+		for _, m := range *msg.NewChatMembers {
+			if tg.bot.ID == m.ID {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (tg *Telegram) isDeletedFromGroup(msg *tgbotapi.Message) bool {
+	return msg.LeftChatMember != nil && msg.LeftChatMember.ID == tg.bot.ID
 }
 
 func (tg *Telegram) preExec(root *cobra.Command, user *models.User) {

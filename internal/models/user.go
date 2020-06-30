@@ -21,6 +21,7 @@ type User struct {
 	Name      string     `db:"name"`
 	Params    UserParams `db:"params"`
 	IsAdmin   bool       `db:"is_admin"`
+	CreatedBy *int64     `db:"created_by"`
 	CreatedAt time.Time  `db:"created_at"`
 }
 

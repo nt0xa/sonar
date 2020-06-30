@@ -34,6 +34,7 @@ func (c *Command) CreateUser() *cobra.Command {
 			}
 
 			p.Name = args[0]
+			p.CreatedBy = &u.ID
 
 			params, _ := cmd.Flags().GetStringToString("params")
 			if err := mapToStruct(params, &p.Params); err != nil {
