@@ -9,10 +9,12 @@ import (
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/bi-zone/sonar/internal/utils/slice"
 )
 
 type PayloadsActions interface {
 	CreatePayload(*models.User, CreatePayloadParams) (CreatePayloadResult, errors.Error)
+	UpdatePayload(*models.User, UpdatePayloadParams) (UpdatePayloadResult, errors.Error)
 	DeletePayload(*models.User, DeletePayloadParams) (DeletePayloadResult, errors.Error)
 	ListPayloads(*models.User, ListPayloadsParams) (ListPayloadsResult, errors.Error)
 }
@@ -22,15 +24,22 @@ type PayloadsActions interface {
 //
 
 type CreatePayloadParams struct {
-	Name string
+	Name            string
+	NotifyProtocols []string
 }
 
 func (p CreatePayloadParams) Validate() error {
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.Name, validation.Required))
+		validation.Field(&p.Name, validation.Required),
+		validation.Field(&p.NotifyProtocols, validation.Each(validation.In(
+			models.PayloadProtocolDNS,
+			models.PayloadProtocolHTTP,
+			models.PayloadProtocolSMTP,
+		))),
+	)
 }
 
-type CreatePayloadResult = *models.Payload
+type CreatePayloadResult *models.Payload
 
 func (act *actions) CreatePayload(u *models.User, p CreatePayloadParams) (CreatePayloadResult, errors.Error) {
 
@@ -48,9 +57,10 @@ func (act *actions) CreatePayload(u *models.User, p CreatePayloadParams) (Create
 	}
 
 	payload := &models.Payload{
-		UserID:    u.ID,
-		Subdomain: subdomain,
-		Name:      p.Name,
+		UserID:          u.ID,
+		Subdomain:       subdomain,
+		Name:            p.Name,
+		NotifyProtocols: slice.StringsDedup(p.NotifyProtocols),
 	}
 
 	err = act.db.PayloadsCreate(payload)
@@ -59,6 +69,58 @@ func (act *actions) CreatePayload(u *models.User, p CreatePayloadParams) (Create
 	}
 
 	return CreatePayloadResult(payload), nil
+}
+
+//
+// Update
+//
+
+type UpdatePayloadParams struct {
+	Name            string
+	NewName         string
+	NotifyProtocols []string
+}
+
+func (p UpdatePayloadParams) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Name, validation.Required),
+		validation.Field(&p.NotifyProtocols, validation.Each(validation.In(
+			models.PayloadProtocolDNS,
+			models.PayloadProtocolHTTP,
+			models.PayloadProtocolSMTP,
+		))),
+	)
+}
+
+type UpdatePayloadResult = *MessageResult
+
+func (act *actions) UpdatePayload(u *models.User, p UpdatePayloadParams) (UpdatePayloadResult, errors.Error) {
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("payload with name %q not found", p.Name)
+	} else if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if p.NewName != "" {
+		payload.Name = p.NewName
+	}
+
+	if p.NotifyProtocols != nil {
+		payload.NotifyProtocols = slice.StringsDedup(p.NotifyProtocols)
+	}
+
+	err = act.db.PayloadsUpdate(payload)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	return &MessageResult{Message: "payload updated"}, nil
 }
 
 //
@@ -108,7 +170,7 @@ func (p ListPayloadsParams) Validate() error {
 	return nil
 }
 
-type ListPayloadsResult = []*models.Payload
+type ListPayloadsResult []*models.Payload
 
 func (act *actions) ListPayloads(u *models.User, p ListPayloadsParams) (ListPayloadsResult, errors.Error) {
 

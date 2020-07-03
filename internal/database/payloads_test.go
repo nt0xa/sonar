@@ -15,15 +15,17 @@ func TestPayloadsCreate_Success(t *testing.T) {
 	defer teardown(t)
 
 	o := &models.Payload{
-		UserID:    1,
-		Subdomain: "8a8b58beaf",
-		Name:      "test",
+		UserID:          1,
+		Subdomain:       "8a8b58beaf",
+		Name:            "test",
+		NotifyProtocols: []string{"dns", "http", "smtp"},
 	}
 
 	err := db.PayloadsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+	assert.Equal(t, models.PayloadProtocolsAll, []string(o.NotifyProtocols))
 }
 
 func TestPayloadsCreate_Duplicate(t *testing.T) {
@@ -162,4 +164,23 @@ func TestPayloadsDelete_NotExist(t *testing.T) {
 	err := db.PayloadsDelete(1337)
 	assert.Error(t, err)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
+}
+
+func TestPayloadsUpdate_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.PayloadGetByID(1)
+	require.NoError(t, err)
+	assert.NotNil(t, o)
+
+	o.Name = "payload1_updated"
+	o.NotifyProtocols = []string{"dns"}
+
+	err = db.PayloadsUpdate(o)
+	require.NoError(t, err)
+
+	o2, err := db.PayloadGetByID(1)
+	require.NoError(t, err)
+	assert.Equal(t, o, o2)
 }

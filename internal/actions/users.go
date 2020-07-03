@@ -27,7 +27,7 @@ func (p CreateUserParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type CreateUserResult = *models.User
+type CreateUserResult *models.User
 
 func (act *actions) CreateUser(u *models.User, p CreateUserParams) (CreateUserResult, errors.Error) {
 

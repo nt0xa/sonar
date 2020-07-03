@@ -1,6 +1,10 @@
 package telegram
 
-import "html/template"
+import (
+	"html/template"
+
+	"github.com/Masterminds/sprig"
+)
 
 var (
 	helpTemplate = `<code>{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
@@ -34,7 +38,7 @@ Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}
 
 	codeTemplate = tpl(`<code>{{ . }}</code>`)
 
-	listPayloadTemplate = tpl(`{{range .Payloads}}<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ $.Domain }}</code>
+	listPayloadTemplate = tpl(`{{range .Payloads}}<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ $.Domain }}</code> ({{ .NotifyProtocols | join ", " }})
 {{else}}you don't have any payloads yet{{end}}`)
 
 	meTemplate = tpl("" +
@@ -44,5 +48,5 @@ Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}
 )
 
 func tpl(tpl string) *template.Template {
-	return template.Must(template.New("msg").Parse(tpl))
+	return template.Must(template.New("msg").Funcs(sprig.FuncMap()).Parse(tpl))
 }

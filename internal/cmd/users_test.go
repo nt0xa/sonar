@@ -17,7 +17,7 @@ import (
 func TestCreateUser_Success(t *testing.T) {
 	cmd, acts, hnd := prepare()
 
-	res := user
+	res := actions.CreateUserResult(user)
 
 	acts.
 		On("CreateUser", admin, actions.CreateUserParams{

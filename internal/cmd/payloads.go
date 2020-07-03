@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -33,6 +34,52 @@ func (c *Command) CreatePayload() *cobra.Command {
 			return nil
 		}),
 	}
+
+	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
+		models.PayloadProtocolsAll, "Protocols to notify")
+
+	return cmd
+}
+
+func (c *Command) UpdatePayload() *cobra.Command {
+	var p actions.UpdatePayloadParams
+
+	cmd := &cobra.Command{
+		Use:   "mod NAME",
+		Short: "Modify existing payload",
+		Long:  "Modify existing payload identified by NAME",
+		Args:  OneArg("NAME"),
+		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
+			u, err := GetUser(cmd.Context())
+			if err != nil {
+				return err
+			}
+
+			p.Name = args[0]
+
+			if cmd.Flags().Changed("name") {
+				newName, _ := cmd.Flags().GetString("name")
+				p.NewName = newName
+			}
+
+			if cmd.Flags().Changed("protocols") {
+				protocols, _ := cmd.Flags().GetStringSlice("protocols")
+				p.NotifyProtocols = protocols
+			}
+
+			res, err := c.Actions.UpdatePayload(u, p)
+			if err != nil {
+				return err
+			}
+
+			c.ResultHandler(cmd.Context(), res)
+
+			return nil
+		}),
+	}
+
+	cmd.Flags().StringP("name", "n", "", "Payload name")
+	cmd.Flags().StringSliceP("protocols", "p", []string{}, "Protocols to notify")
 
 	return cmd
 }

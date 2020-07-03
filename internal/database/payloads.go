@@ -13,14 +13,27 @@ func (db *DB) PayloadsCreate(o *models.Payload) error {
 	o.CreatedAt = time.Now()
 
 	nstmt, err := db.PrepareNamed(
-		"INSERT INTO payloads (subdomain, user_id, name, created_at) " +
-			"VALUES(:subdomain, :user_id, :name, :created_at) RETURNING id")
+		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, created_at) " +
+			"VALUES(:subdomain, :user_id, :name, :notify_protocols, :created_at) RETURNING id")
 
 	if err != nil {
 		return err
 	}
 
 	return nstmt.QueryRowx(o).Scan(&o.ID)
+}
+
+func (db *DB) PayloadsUpdate(o *models.Payload) error {
+
+	_, err := db.NamedExec(
+		"UPDATE payloads SET "+
+			"subdomain = :subdomain, "+
+			"user_id = :user_id, "+
+			"name = :name, "+
+			"notify_protocols = :notify_protocols "+
+			"WHERE id = :id", o)
+
+	return err
 }
 
 func (db *DB) PayloadGetByID(id int64) (*models.Payload, error) {
