@@ -17,15 +17,15 @@ type Actions struct {
 }
 
 // CreatePayload provides a mock function with given fields: _a0, _a1
-func (_m *Actions) CreatePayload(_a0 *models.User, _a1 actions.CreatePayloadParams) (*models.Payload, errors.Error) {
+func (_m *Actions) CreatePayload(_a0 *models.User, _a1 actions.CreatePayloadParams) (actions.CreatePayloadResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *models.Payload
-	if rf, ok := ret.Get(0).(func(*models.User, actions.CreatePayloadParams) *models.Payload); ok {
+	var r0 actions.CreatePayloadResult
+	if rf, ok := ret.Get(0).(func(*models.User, actions.CreatePayloadParams) actions.CreatePayloadResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*models.Payload)
+			r0 = ret.Get(0).(actions.CreatePayloadResult)
 		}
 	}
 
@@ -42,15 +42,15 @@ func (_m *Actions) CreatePayload(_a0 *models.User, _a1 actions.CreatePayloadPara
 }
 
 // CreateUser provides a mock function with given fields: _a0, _a1
-func (_m *Actions) CreateUser(_a0 *models.User, _a1 actions.CreateUserParams) (*models.User, errors.Error) {
+func (_m *Actions) CreateUser(_a0 *models.User, _a1 actions.CreateUserParams) (actions.CreateUserResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *models.User
-	if rf, ok := ret.Get(0).(func(*models.User, actions.CreateUserParams) *models.User); ok {
+	var r0 actions.CreateUserResult
+	if rf, ok := ret.Get(0).(func(*models.User, actions.CreateUserParams) actions.CreateUserResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*models.User)
+			r0 = ret.Get(0).(actions.CreateUserResult)
 		}
 	}
 
@@ -117,20 +117,45 @@ func (_m *Actions) DeleteUser(_a0 *models.User, _a1 actions.DeleteUserParams) (*
 }
 
 // ListPayloads provides a mock function with given fields: _a0, _a1
-func (_m *Actions) ListPayloads(_a0 *models.User, _a1 actions.ListPayloadsParams) ([]*models.Payload, errors.Error) {
+func (_m *Actions) ListPayloads(_a0 *models.User, _a1 actions.ListPayloadsParams) (actions.ListPayloadsResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 []*models.Payload
-	if rf, ok := ret.Get(0).(func(*models.User, actions.ListPayloadsParams) []*models.Payload); ok {
+	var r0 actions.ListPayloadsResult
+	if rf, ok := ret.Get(0).(func(*models.User, actions.ListPayloadsParams) actions.ListPayloadsResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*models.Payload)
+			r0 = ret.Get(0).(actions.ListPayloadsResult)
 		}
 	}
 
 	var r1 errors.Error
 	if rf, ok := ret.Get(1).(func(*models.User, actions.ListPayloadsParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// UpdatePayload provides a mock function with given fields: _a0, _a1
+func (_m *Actions) UpdatePayload(_a0 *models.User, _a1 actions.UpdatePayloadParams) (*actions.MessageResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *actions.MessageResult
+	if rf, ok := ret.Get(0).(func(*models.User, actions.UpdatePayloadParams) *actions.MessageResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*actions.MessageResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(*models.User, actions.UpdatePayloadParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {

@@ -2,16 +2,19 @@
   user_id: 1
   subdomain: c1da9f3db9
   name: payload1
+  notify_protocols: '{dns, http, smtp}'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
   user_id: 2
   subdomain: 6564e0c73c
   name: payload2
+  notify_protocols: '{dns, http, smtp}'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 3
   user_id: 2
   subdomain: 730d6a4a48
   name: payload3
+  notify_protocols: '{dns, http, smtp}'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'

@@ -3,18 +3,14 @@ package api_test
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/alecthomas/jsonschema"
+
+	"github.com/bi-zone/sonar/internal/models"
 )
 
-type Payload struct {
-	Name      string    `json:"name"`
-	Subdomain string    `json:"subdomain"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-type Payloads []Payload
+type Payload = models.Payload
+type Payloads = []Payload
 
 var (
 	payloads, _ = jsonschema.Reflect(&Payloads{}).MarshalJSON()
