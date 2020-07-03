@@ -3,11 +3,13 @@ package main
 import (
 	"net"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
+	"github.com/bi-zone/sonar/internal/utils/slice"
 	"github.com/bi-zone/sonar/pkg/server"
 )
 
@@ -37,6 +39,11 @@ func ProcessEvents(events <-chan models.Event, db *database.DB, ns []modules.Not
 			if err != nil {
 				// TODO: as argument
 				log.Println(err)
+				continue
+			}
+
+			// Skip if current event protocol is muted for payload.
+			if !slice.StringsContains(p.NotifyProtocols, strings.ToLower(e.Protocol)) {
 				continue
 			}
 

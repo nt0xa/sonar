@@ -45,6 +45,7 @@ func (c *Command) Root(u *models.User) *cobra.Command {
 
 	// Main payloads commands
 	cmd.AddCommand(c.CreatePayload())
+	cmd.AddCommand(c.UpdatePayload())
 	cmd.AddCommand(c.DeletePayload())
 	cmd.AddCommand(c.ListPayloads())
 

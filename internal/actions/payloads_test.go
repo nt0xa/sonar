@@ -10,7 +10,7 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func TestCreatePayload_Succes(t *testing.T) {
+func TestCreatePayload_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -61,7 +61,7 @@ func TestCreatePayload_Conflict(t *testing.T) {
 	assert.IsType(t, &errors.ConflictError{}, err)
 }
 
-func TestDeletePayload_Succes(t *testing.T) {
+func TestDeletePayload_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -108,7 +108,7 @@ func TestDeletePayload_NotFound(t *testing.T) {
 	assert.IsType(t, &errors.NotFoundError{}, err)
 }
 
-func TestListPayloads_Succes(t *testing.T) {
+func TestListPayloads_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -130,4 +130,27 @@ func TestListPayloads_Succes(t *testing.T) {
 	r, err = acts.ListPayloads(u, p)
 	assert.NoError(t, err)
 	assert.Len(t, r, 1)
+}
+
+func TestUpdatePayload_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	u, err := db.UsersGetByID(1)
+	require.NoError(t, err)
+
+	p := actions.UpdatePayloadParams{
+		Name:            "payload1",
+		NewName:         "payload1_updated",
+		NotifyProtocols: []string{"dns"},
+	}
+
+	_, err = acts.UpdatePayload(u, p)
+	assert.NoError(t, err)
+
+	p2, err := db.PayloadsGetByUserAndName(1, "payload1_updated")
+	require.NoError(t, err)
+	require.NotNil(t, p2)
+	assert.Equal(t, "payload1_updated", p2.Name)
+	assert.Equal(t, []string{"dns"}, []string(p2.NotifyProtocols))
 }

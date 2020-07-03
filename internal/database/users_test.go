@@ -104,7 +104,7 @@ func TestUsersDelete_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestUsersUpdate_Succes(t *testing.T) {
+func TestUsersUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
