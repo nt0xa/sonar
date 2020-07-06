@@ -6,8 +6,6 @@ import (
 	"html/template"
 	"unicode/utf8"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 )
@@ -63,29 +61,15 @@ func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) e
 		return fmt.Errorf("message body render error: %w", err)
 	}
 
-	var message tgbotapi.Chattable
-
 	if len(header.String()+body.String()) < maxMessageSize && utf8.ValidString(body.String()) {
-		// Send as message.
-		msg := tgbotapi.NewMessage(u.Params.TelegramID, header.String()+body.String())
-		msg.ParseMode = tgbotapi.ModeHTML
-		msg.DisableWebPagePreview = true
-		message = msg
+		tg.htmlMessage(u.Params.TelegramID, header.String()+body.String())
 	} else {
-		// Send as document.
-		doc := tgbotapi.FileBytes{
-			Name:  "log.txt",
-			Bytes: e.RawData,
-		}
-
-		msg := tgbotapi.NewDocumentUpload(u.Params.TelegramID, doc)
-		msg.Caption = header.String()
-		msg.ParseMode = tgbotapi.ModeHTML
-		message = msg
+		tg.docMessage(u.Params.TelegramID, "log.txt", header.String(), e.RawData)
 	}
 
-	if _, err := tg.api.Send(message); err != nil {
-		return fmt.Errorf("send message error: %w", err)
+	// For SMTP send log.eml for better preview.
+	if e.Protocol == "SMTP" {
+		tg.docMessage(u.Params.TelegramID, "log.eml", header.String(), e.RawData)
 	}
 
 	return nil

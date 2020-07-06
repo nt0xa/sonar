@@ -250,5 +250,18 @@ func (tg *Telegram) htmlMessage(chatID int64, html string) {
 		html,
 	)
 	msg.ParseMode = tgbotapi.ModeHTML
+	msg.DisableWebPagePreview = true
+	tg.api.Send(msg)
+}
+
+func (tg *Telegram) docMessage(chatID int64, name string, caption string, data []byte) {
+	doc := tgbotapi.FileBytes{
+		Name:  name,
+		Bytes: data,
+	}
+
+	msg := tgbotapi.NewDocumentUpload(chatID, doc)
+	msg.Caption = caption
+	msg.ParseMode = tgbotapi.ModeHTML
 	tg.api.Send(msg)
 }
