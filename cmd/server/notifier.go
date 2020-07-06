@@ -42,8 +42,16 @@ func ProcessEvents(events <-chan models.Event, db *database.DB, ns []modules.Not
 				continue
 			}
 
+			protocol := strings.ToLower(e.Protocol)
+
+			// Change "https" to "http" because there is only
+			// one category for both
+			if protocol == "https" {
+				protocol = "http"
+			}
+
 			// Skip if current event protocol is muted for payload.
-			if !slice.StringsContains(p.NotifyProtocols, strings.ToLower(e.Protocol)) {
+			if !slice.StringsContains(p.NotifyProtocols, protocol) {
 				continue
 			}
 
