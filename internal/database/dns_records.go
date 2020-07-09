@@ -8,11 +8,12 @@ import (
 
 func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = time.Now().UTC()
 
 	nstmt, err := db.PrepareNamed(
-		"INSERT INTO dns_records (payload_id, name, type, ttl, values, created_at) " +
-			"VALUES(:payload_id, :name, :type, :ttl, :values, :created_at) RETURNING id")
+		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at) " +
+			"VALUES(:payload_id, :name, :type, :ttl, :values, :strategy, :last_answer, :last_accessed_at, :created_at) " +
+			"RETURNING id")
 
 	if err != nil {
 		return err
@@ -29,7 +30,10 @@ func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
 			"name = :name, "+
 			"type = :type, "+
 			"ttl = :ttl, "+
-			"values = :values "+
+			"values = :values, "+
+			"strategy = :strategy, "+
+			"last_answer = :last_answer, "+
+			"last_accessed_at = :last_accessed_at "+
 			"WHERE id = :id", o)
 
 	return err

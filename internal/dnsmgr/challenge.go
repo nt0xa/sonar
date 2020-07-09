@@ -7,12 +7,9 @@ import (
 
 // Present allows DNSMgr to satisfy challenge.Provider interface
 func (mgr *DNSMgr) Present(domain, token, keyAuth string) error {
-	mgr.Lock()
-	defer mgr.Unlock()
-
 	fqdn, value := dns01.GetRecord(domain, keyAuth)
 
-	mgr.staticRecords.add(dns.RR(&dns.TXT{
+	mgr.addStatic(dns.RR(&dns.TXT{
 		Hdr: dns.RR_Header{
 			Name:   fqdn,
 			Rrtype: dns.TypeTXT,
@@ -27,12 +24,9 @@ func (mgr *DNSMgr) Present(domain, token, keyAuth string) error {
 
 // CleanUp allows DNSMgr to satisfy challenge.Provider interface
 func (mgr *DNSMgr) CleanUp(domain, token, keyAuth string) error {
-	mgr.Lock()
-	defer mgr.Unlock()
-
 	fqdn, _ := dns01.GetRecord(domain, keyAuth)
 
-	mgr.staticRecords.delByName(fqdn)
+	mgr.delStatic(fqdn, dns.TypeTXT)
 
 	return nil
 }

@@ -4,6 +4,7 @@
   type: A
   ttl: 60
   values: '{192.168.1.1,192.168.1.2}'
+  strategy: default
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
@@ -12,6 +13,7 @@
   type: MX
   ttl: 60
   values: '{10 mx.sonar.local, 20 mx.sonar.local}'
+  strategy: default
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 3
@@ -20,4 +22,5 @@
   type: A
   ttl: 60
   values: '{10.1.1.10,10.1.1.11}'
+  strategy: default
   created_at: RAW=NOW() AT TIME ZONE 'UTC'

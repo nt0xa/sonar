@@ -18,14 +18,23 @@ const (
 	DNSTypeCNAME = "CNAME"
 )
 
+const (
+	DNSStrategyDefault    = "default"
+	DNSStrategyRoundRobin = "round-robin"
+	DNSStrategyRebind     = "rebind"
+)
+
 type DNSRecord struct {
-	ID        int64          `db:"id"         json:"-"`
-	PayloadID int64          `db:"payload_id" json:"-"`
-	Name      string         `db:"name"       json:"name"`
-	Type      string         `db:"type"       json:"type"`
-	TTL       int            `db:"ttl"        json:"ttl"`
-	Values    pq.StringArray `db:"values"     json:"values"`
-	CreatedAt time.Time      `db:"created_at" json:"createdAt"`
+	ID             int64          `db:"id"               json:"-"`
+	PayloadID      int64          `db:"payload_id"       json:"-"`
+	Name           string         `db:"name"             json:"name"`
+	Type           string         `db:"type"             json:"type"`
+	TTL            int            `db:"ttl"              json:"ttl"`
+	Values         pq.StringArray `db:"values"           json:"values"`
+	Strategy       string         `db:"strategy"         json:"strategy"`
+	LastAnswer     pq.StringArray `db:"last_answer"      json:"lastAnswer"`
+	LastAccessedAt *time.Time     `db:"last_accessed_at" json:"lastAccessedAt"`
+	CreatedAt      time.Time      `db:"created_at"       json:"createdAt"`
 }
 
 func (r *DNSRecord) Qtype() uint16 {
@@ -47,76 +56,106 @@ func (r *DNSRecord) Qtype() uint16 {
 
 func (r *DNSRecord) RRs(origin string) []dns.RR {
 	rrs := make([]dns.RR, 0)
-
 	for _, v := range r.Values {
-		name := fmt.Sprintf("%s.%s.", r.Name, origin)
+		rrs = append(rrs, DNSStringToRR(v, r.Type, r.Name, origin, r.TTL))
+	}
+	return rrs
+}
 
-		switch r.Type {
+func (r *DNSRecord) LastAnswerRRs(origin string) []dns.RR {
+	rrs := make([]dns.RR, 0)
+	for _, v := range r.LastAnswer {
+		rrs = append(rrs, DNSStringToRR(v, r.Type, r.Name, origin, r.TTL))
+	}
+	return rrs
+}
 
-		case DNSTypeA:
-			rrs = append(rrs, &dns.A{
-				Hdr: dns.RR_Header{
-					Name:   name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    uint32(r.TTL),
-				},
-				A: net.ParseIP(v),
-			})
+func DNSStringToRR(value, typ, name, origin string, ttl int) dns.RR {
+	fqdn := fmt.Sprintf("%s.%s.", name, origin)
 
-		case DNSTypeAAAA:
-			rrs = append(rrs, &dns.AAAA{
-				Hdr: dns.RR_Header{
-					Name:   name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    uint32(r.TTL),
-				},
-				AAAA: net.ParseIP(v),
-			})
+	switch typ {
 
-		case DNSTypeMX:
-			var (
-				pref uint16
-				mx   string
-			)
+	case DNSTypeA:
+		return &dns.A{
+			Hdr: dns.RR_Header{
+				Name:   fqdn,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			A: net.ParseIP(value),
+		}
 
-			fmt.Scanf("%d %s", &pref, &mx)
+	case DNSTypeAAAA:
+		return &dns.AAAA{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			AAAA: net.ParseIP(value),
+		}
 
-			rrs = append(rrs, &dns.MX{
-				Hdr: dns.RR_Header{
-					Name:   name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    uint32(r.TTL),
-				},
-				Mx:         mx,
-				Preference: pref,
-			})
+	case DNSTypeMX:
+		var (
+			pref uint16
+			mx   string
+		)
 
-		case DNSTypeTXT:
-			rrs = append(rrs, &dns.TXT{
-				Hdr: dns.RR_Header{
-					Name:   name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    uint32(r.TTL),
-				},
-				Txt: strings.Split(v, ","),
-			})
+		fmt.Scanf("%d %s", &pref, &mx)
 
-		case DNSTypeCNAME:
-			rrs = append(rrs, &dns.CNAME{
-				Hdr: dns.RR_Header{
-					Name:   name,
-					Rrtype: dns.TypeA,
-					Class:  dns.ClassINET,
-					Ttl:    uint32(r.TTL),
-				},
-				Target: v,
-			})
+		return &dns.MX{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			Mx:         mx,
+			Preference: pref,
+		}
+
+	case DNSTypeTXT:
+		return &dns.TXT{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			Txt: strings.Split(value, ","),
+		}
+
+	case DNSTypeCNAME:
+		return &dns.CNAME{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			Target: value,
 		}
 	}
 
-	return rrs
+	return nil
+}
+
+func DNSRRToString(rr dns.RR) string {
+
+	switch r := rr.(type) {
+	case *dns.A:
+		return r.A.String()
+	case *dns.AAAA:
+		return r.AAAA.String()
+	case *dns.MX:
+		return fmt.Sprintf("%d %s", r.Preference, r.Mx)
+	case *dns.TXT:
+		return strings.Join(r.Txt, ",")
+	case *dns.CNAME:
+		return r.Target
+	}
+
+	return ""
 }

@@ -21,6 +21,7 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 		Type:      models.DNSTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
+		Strategy:  models.DNSStrategyDefault,
 	}
 
 	err := db.DNSRecordsCreate(o)

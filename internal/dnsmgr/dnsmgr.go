@@ -5,10 +5,10 @@ import (
 	"net"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/utils/tpl"
+	"github.com/miekg/dns"
 )
 
 var recordsTpl = tpl.MustParse(`
@@ -23,17 +23,14 @@ var recordsTpl = tpl.MustParse(`
 {{- end }}
 @ IN MX   10 mx
 * IN MX   10 mx
-test.test IN A 10.1.1.1
 `)
 
 type DNSMgr struct {
-	db                 *database.DB
-	origin             string
-	dynamicRecordRegex *regexp.Regexp
+	db           *database.DB
+	origin       string
+	dynamicRegex *regexp.Regexp
 
-	staticRecords *recordSet
-
-	sync.RWMutex
+	static map[string][]dns.RR
 }
 
 func New(domain string, ip net.IP, subdomainPattern string, db *database.DB) (*DNSMgr, error) {
@@ -46,10 +43,10 @@ func New(domain string, ip net.IP, subdomainPattern string, db *database.DB) (*D
 	}
 
 	mgr := &DNSMgr{
-		staticRecords:      newRecordSet(),
-		db:                 db,
-		dynamicRecordRegex: re,
-		origin:             domain,
+		static:       make(map[string][]dns.RR),
+		db:           db,
+		dynamicRegex: re,
+		origin:       domain,
 	}
 
 	data := struct {
@@ -69,7 +66,7 @@ func New(domain string, ip net.IP, subdomainPattern string, db *database.DB) (*D
 	}
 
 	for _, rr := range rrs {
-		mgr.staticRecords.add(rr)
+		mgr.addStatic(rr)
 	}
 
 	return mgr, nil

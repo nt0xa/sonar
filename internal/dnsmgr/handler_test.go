@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/miekg/dns"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,9 +16,9 @@ var tests = []struct {
 }{
 	{"test.sonar.local.", dns.TypeMX, []string{"10 mx.sonar.local"}},
 	{"test.sonar.local.", dns.TypeA, []string{"127.0.0.1"}},
-	{"test.sonar.local.", dns.TypeAAAA, []string{"::ffff:127.0.0.1"}},
+	{"test.sonar.local.", dns.TypeAAAA, []string{"127.0.0.1"}},
 	{"c1da9f3d.sonar.local.", dns.TypeA, []string{"127.0.0.1"}},
-	{"dns1.c1da9f3d.sonar.local.", dns.TypeA, []string{"127.0.0.1"}},
+	{"dns1.c1da9f3d.sonar.local.", dns.TypeA, []string{"192.168.1.1", "192.168.1.2"}},
 }
 
 func TestDNSMgr(t *testing.T) {
@@ -40,8 +41,10 @@ func TestDNSMgr(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, in)
 
-			for _, a := range in.Answer {
-				fmt.Println(a)
+			require.Len(t, in.Answer, len(tt.results))
+
+			for i, a := range in.Answer {
+				assert.Contains(t, a.String(), tt.results[i])
 			}
 		})
 	}

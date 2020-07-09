@@ -10,7 +10,7 @@ import (
 
 func (db *DB) PayloadsCreate(o *models.Payload) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = time.Now().UTC()
 
 	nstmt, err := db.PrepareNamed(
 		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, created_at) " +
