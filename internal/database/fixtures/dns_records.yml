@@ -1,0 +1,23 @@
+- id: 1
+  payload_id: 1
+  name: dns1
+  type: A
+  ttl: 60
+  values: '{192.168.1.1,192.168.1.2}'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 2
+  payload_id: 1
+  name: dns2
+  type: MX
+  ttl: 60
+  values: '{10 mx.sonar.local, 20 mx.sonar.local}'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 3
+  payload_id: 1
+  name: '*.dns3'
+  type: A
+  ttl: 60
+  values: '{10.1.1.10,10.1.1.11}'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'

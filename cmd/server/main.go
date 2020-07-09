@@ -12,6 +12,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/dnsmgr"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
@@ -106,21 +107,22 @@ func main() {
 	// DNS
 	//
 
-	var (
-		dnsProvider *dns.Server
-		dnsStarted  sync.WaitGroup
-	)
+	dnsmgr, err := dnsmgr.New(cfg.Domain, net.ParseIP(cfg.IP), "[a-f0-9]{8}", db)
+	if err != nil {
+		log.Fatalf("Fail to create DNS manager: %v", err)
+	}
+
+	var dnsStarted sync.WaitGroup
 
 	dnsStarted.Add(1)
 
 	go func() {
-		srv := dns.New(":53", cfg.Domain, net.ParseIP(cfg.IP),
+		srv := dns.New(":53", dnsmgr.HandleFunc,
 			dns.NotifyRequestFunc(AddProtoEvent("DNS", events)),
 			dns.NotifyStartedFunc(func() {
 				dnsStarted.Done()
-			}))
-
-		dnsProvider = srv
+			}),
+		)
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to start DNS handler: %v", err.Error())
@@ -136,7 +138,7 @@ func main() {
 	// use it as DNS challenge provider for Let's Encrypt
 	dnsStarted.Wait()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsProvider)
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsmgr)
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}

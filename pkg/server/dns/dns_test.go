@@ -6,18 +6,40 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/pkg/server/dns"
-	"github.com/golang/mock/gomock"
+	"github.com/miekg/dns"
+	"github.com/stretchr/testify/mock"
+
+	dnssrv "github.com/bi-zone/sonar/pkg/server/dns"
 )
 
 var (
-	srv *dns.Server
+	srv      *dnssrv.Server
+	handler  *HandlerMock
+	notifier *NotifierMock
 )
+
+type HandlerMock struct {
+	mock.Mock
+}
+
+func (m *HandlerMock) HandleFunc(w dns.ResponseWriter, r *dns.Msg) {
+	m.Called(w, r)
+	msg := &dns.Msg{}
+	msg.SetReply(r)
+	w.WriteMsg(msg)
+}
+
+type NotifierMock struct {
+	mock.Mock
+}
+
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+	m.Called(remoteAddr, data, meta)
+}
 
 func TestMain(m *testing.M) {
 	if err := setupGlobals(); err != nil {
@@ -34,8 +56,12 @@ func setupGlobals() error {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	srv = dns.New(":1053", "sonar.local", net.IPv4(127, 0, 0, 1),
-		dns.NotifyStartedFunc(func() {
+	handler = &HandlerMock{}
+	notifier = &NotifierMock{}
+
+	srv = dnssrv.New(":1053", handler.HandleFunc,
+		dnssrv.NotifyRequestFunc(notifier.Notify),
+		dnssrv.NotifyStartedFunc(func() {
 			wg.Done()
 		}))
 
@@ -65,25 +91,3 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 		return true // timed out
 	}
 }
-
-type containsMatcher struct{ s string }
-
-func (m containsMatcher) Matches(value interface{}) bool {
-	s := ""
-	switch v := value.(type) {
-	case string:
-		s = v
-	case []byte:
-		s = string(v)
-	default:
-		return false
-	}
-
-	return strings.Contains(s, m.s)
-}
-
-func (m containsMatcher) String() string {
-	return fmt.Sprintf("contains %q", m.s)
-}
-
-func Contains(s string) gomock.Matcher { return containsMatcher{s} }
