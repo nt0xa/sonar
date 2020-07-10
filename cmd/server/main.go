@@ -94,7 +94,7 @@ func main() {
 	// Actions
 	//
 
-	actions := actions.New(db, log)
+	actions := actions.New(db, log, cfg.Domain)
 
 	//
 	// Events

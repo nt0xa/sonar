@@ -21,7 +21,7 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 		Type:      models.DNSTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
-		Strategy:  models.DNSStrategyDefault,
+		Strategy:  models.DNSStrategyAll,
 	}
 
 	err := db.DNSRecordsCreate(o)
@@ -52,7 +52,7 @@ func TestDNSRecordsGetByID_Success(t *testing.T) {
 
 	o, err := db.DNSRecordsGetByID(1)
 	assert.NoError(t, err)
-	assert.Equal(t, "dns1", o.Name)
+	assert.Equal(t, "test-a", o.Name)
 }
 
 func TestDNSRecordsGetByID_NotExist(t *testing.T) {
@@ -69,9 +69,10 @@ func TestDNSRecordsGetByPayloadNameType_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameType(1, "dns1", models.DNSTypeA)
-	assert.NoError(t, err)
-	assert.Equal(t, "dns1", o.Name)
+	o, err := db.DNSRecordsGetByPayloadNameType(1, "test-a", models.DNSTypeA)
+	require.NoError(t, err)
+	require.NotNil(t, o)
+	assert.Equal(t, int64(1), o.ID)
 }
 
 func TestDNSRecordsGetByPayloadNameType_NotExist(t *testing.T) {

@@ -4,9 +4,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/miekg/dns"
+
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/pointer"
-	"github.com/miekg/dns"
 )
 
 func (mgr *DNSMgr) HandleFunc(w dns.ResponseWriter, r *dns.Msg) {
@@ -24,7 +25,7 @@ func (mgr *DNSMgr) HandleFunc(w dns.ResponseWriter, r *dns.Msg) {
 		if rec := mgr.findDynamicRecords(name, qtype); rec != nil {
 			switch rec.Strategy {
 
-			case models.DNSStrategyDefault:
+			case models.DNSStrategyAll:
 				msg.Answer = rec.RRs(mgr.origin)
 
 			case models.DNSStrategyRoundRobin:

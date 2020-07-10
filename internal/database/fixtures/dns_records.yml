@@ -4,7 +4,7 @@
   type: A
   ttl: 60
   values: '{192.168.1.1}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
@@ -13,7 +13,7 @@
   type: AAAA
   ttl: 60
   values: '{2001:0db8:85a3:0000:0000:8a2e:0370:7334}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 3
@@ -22,7 +22,7 @@
   type: MX
   ttl: 60
   values: '{10 mx.sonar.local.}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 4
@@ -31,7 +31,7 @@
   type: TXT
   ttl: 60
   values: '{txt1, txt2}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 5
@@ -40,7 +40,7 @@
   type: CNAME
   ttl: 60
   values: '{example.com.}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 6
@@ -49,16 +49,16 @@
   type: A
   ttl: 60
   values: '{192.168.1.1}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 7
   payload_id: 1
-  name: test-default
+  name: test-all
   type: A
   ttl: 60
   values: '{192.168.1.1, 192.168.1.2, 192.168.1.3}'
-  strategy: default
+  strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 8

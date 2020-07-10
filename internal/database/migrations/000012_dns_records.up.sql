@@ -9,7 +9,7 @@ $$;
 DO $$
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'dns_strategy') THEN
-      CREATE TYPE dns_strategy AS ENUM('default', 'round-robin', 'rebind');
+      CREATE TYPE dns_strategy AS ENUM('all', 'round-robin', 'rebind');
     END IF;
   END
 $$;

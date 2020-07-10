@@ -16,6 +16,31 @@ type Actions struct {
 	mock.Mock
 }
 
+// CreateDNSRecord provides a mock function with given fields: _a0, _a1
+func (_m *Actions) CreateDNSRecord(_a0 *models.User, _a1 actions.CreateDNSRecordParams) (*actions.CreateDNSRecordResultData, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *actions.CreateDNSRecordResultData
+	if rf, ok := ret.Get(0).(func(*models.User, actions.CreateDNSRecordParams) *actions.CreateDNSRecordResultData); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*actions.CreateDNSRecordResultData)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(*models.User, actions.CreateDNSRecordParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // CreatePayload provides a mock function with given fields: _a0, _a1
 func (_m *Actions) CreatePayload(_a0 *models.User, _a1 actions.CreatePayloadParams) (actions.CreatePayloadResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
@@ -66,6 +91,31 @@ func (_m *Actions) CreateUser(_a0 *models.User, _a1 actions.CreateUserParams) (a
 	return r0, r1
 }
 
+// DeleteDNSRecord provides a mock function with given fields: _a0, _a1
+func (_m *Actions) DeleteDNSRecord(_a0 *models.User, _a1 actions.DeleteDNSRecordParams) (*actions.MessageResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *actions.MessageResult
+	if rf, ok := ret.Get(0).(func(*models.User, actions.DeleteDNSRecordParams) *actions.MessageResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*actions.MessageResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(*models.User, actions.DeleteDNSRecordParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // DeletePayload provides a mock function with given fields: _a0, _a1
 func (_m *Actions) DeletePayload(_a0 *models.User, _a1 actions.DeletePayloadParams) (*actions.MessageResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
@@ -106,6 +156,31 @@ func (_m *Actions) DeleteUser(_a0 *models.User, _a1 actions.DeleteUserParams) (*
 
 	var r1 errors.Error
 	if rf, ok := ret.Get(1).(func(*models.User, actions.DeleteUserParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// ListDNSRecords provides a mock function with given fields: _a0, _a1
+func (_m *Actions) ListDNSRecords(_a0 *models.User, _a1 actions.ListDNSRecordsParams) (*actions.ListDNSRecordsResultData, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *actions.ListDNSRecordsResultData
+	if rf, ok := ret.Get(0).(func(*models.User, actions.ListDNSRecordsParams) *actions.ListDNSRecordsResultData); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*actions.ListDNSRecordsResultData)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(*models.User, actions.ListDNSRecordsParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {

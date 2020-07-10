@@ -41,6 +41,9 @@ Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}
 	listPayloadTemplate = tpl(`{{range .Payloads}}<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ $.Domain }}</code> ({{ .NotifyProtocols | join ", " }})
 {{else}}you don't have any payloads yet{{end}}`)
 
+	dnsRecordTemplate = tpl(`{{range .RRs}}<code>{{ . }}</code>
+{{end}}`)
+
 	meTemplate = tpl("" +
 		"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
 		"<b>API token:</b> <code>{{ .APIToken }}</code>",

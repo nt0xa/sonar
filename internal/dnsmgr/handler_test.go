@@ -52,7 +52,7 @@ var tests = []struct {
 	}},
 
 	// Strategies
-	{"test-default.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test-all.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
 		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
 	}},
 	{"test-round-robin.c1da9f3d.sonar.local.", dns.TypeA, [][]string{

@@ -18,11 +18,25 @@ const (
 	DNSTypeCNAME = "CNAME"
 )
 
+var DNSTypesAll = []string{
+	DNSTypeA,
+	DNSTypeAAAA,
+	DNSTypeMX,
+	DNSTypeTXT,
+	DNSTypeCNAME,
+}
+
 const (
-	DNSStrategyDefault    = "default"
+	DNSStrategyAll        = "all"
 	DNSStrategyRoundRobin = "round-robin"
 	DNSStrategyRebind     = "rebind"
 )
+
+var DNSStrategiesAll = []string{
+	DNSStrategyAll,
+	DNSStrategyRoundRobin,
+	DNSStrategyRebind,
+}
 
 type DNSRecord struct {
 	ID             int64          `db:"id"               json:"-"`
