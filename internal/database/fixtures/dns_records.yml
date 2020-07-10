@@ -1,26 +1,80 @@
 - id: 1
   payload_id: 1
-  name: dns1
+  name: test-a
   type: A
   ttl: 60
-  values: '{192.168.1.1,192.168.1.2}'
+  values: '{192.168.1.1}'
   strategy: default
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
   payload_id: 1
-  name: dns2
-  type: MX
+  name: test-aaaa
+  type: AAAA
   ttl: 60
-  values: '{10 mx.sonar.local, 20 mx.sonar.local}'
+  values: '{2001:0db8:85a3:0000:0000:8a2e:0370:7334}'
   strategy: default
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 3
   payload_id: 1
-  name: '*.dns3'
+  name: test-mx
+  type: MX
+  ttl: 60
+  values: '{10 mx.sonar.local.}'
+  strategy: default
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 4
+  payload_id: 1
+  name: test-txt
+  type: TXT
+  ttl: 60
+  values: '{txt1, txt2}'
+  strategy: default
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 5
+  payload_id: 1
+  name: test-cname
+  type: CNAME
+  ttl: 60
+  values: '{example.com.}'
+  strategy: default
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 6
+  payload_id: 1
+  name: '*.test-wildcard'
   type: A
   ttl: 60
-  values: '{10.1.1.10,10.1.1.11}'
+  values: '{192.168.1.1}'
   strategy: default
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 7
+  payload_id: 1
+  name: test-default
+  type: A
+  ttl: 60
+  values: '{192.168.1.1, 192.168.1.2, 192.168.1.3}'
+  strategy: default
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 8
+  payload_id: 1
+  name: test-round-robin
+  type: A
+  ttl: 60
+  values: '{192.168.1.1, 192.168.1.2, 192.168.1.3}'
+  strategy: round-robin
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 9
+  payload_id: 1
+  name: test-rebind
+  type: A
+  ttl: 60
+  values: '{192.168.1.1, 192.168.1.2, 192.168.1.3}'
+  strategy: rebind
   created_at: RAW=NOW() AT TIME ZONE 'UTC'

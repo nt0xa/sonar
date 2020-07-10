@@ -14,6 +14,7 @@ import (
 	"github.com/bi-zone/sonar/internal/dnsmgr"
 	"github.com/bi-zone/sonar/pkg/server/dns"
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -65,10 +66,6 @@ func setupGlobals() error {
 		return fmt.Errorf("fail to load fixtures: %w", err)
 	}
 
-	if err := tf.Load(); err != nil {
-		return fmt.Errorf("fail to load fixtures: %w", err)
-	}
-
 	mgr, err = dnsmgr.New("sonar.local", net.ParseIP("127.0.0.1"), "[a-f0-9]{8}", db)
 	if err != nil {
 		return err
@@ -108,3 +105,10 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 		return true // timed out
 	}
 }
+
+func setup(t *testing.T) {
+	err := tf.Load()
+	require.NoError(t, err)
+}
+
+func teardown(t *testing.T) {}

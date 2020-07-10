@@ -89,8 +89,8 @@ func DNSStringToRR(value, typ, name, origin string, ttl int) dns.RR {
 	case DNSTypeAAAA:
 		return &dns.AAAA{
 			Hdr: dns.RR_Header{
-				Name:   name,
-				Rrtype: dns.TypeA,
+				Name:   fqdn,
+				Rrtype: dns.TypeAAAA,
 				Class:  dns.ClassINET,
 				Ttl:    uint32(ttl),
 			},
@@ -103,12 +103,12 @@ func DNSStringToRR(value, typ, name, origin string, ttl int) dns.RR {
 			mx   string
 		)
 
-		fmt.Scanf("%d %s", &pref, &mx)
+		fmt.Sscanf(value, "%d %s", &pref, &mx)
 
 		return &dns.MX{
 			Hdr: dns.RR_Header{
-				Name:   name,
-				Rrtype: dns.TypeA,
+				Name:   fqdn,
+				Rrtype: dns.TypeMX,
 				Class:  dns.ClassINET,
 				Ttl:    uint32(ttl),
 			},
@@ -119,8 +119,8 @@ func DNSStringToRR(value, typ, name, origin string, ttl int) dns.RR {
 	case DNSTypeTXT:
 		return &dns.TXT{
 			Hdr: dns.RR_Header{
-				Name:   name,
-				Rrtype: dns.TypeA,
+				Name:   fqdn,
+				Rrtype: dns.TypeTXT,
 				Class:  dns.ClassINET,
 				Ttl:    uint32(ttl),
 			},
@@ -130,8 +130,8 @@ func DNSStringToRR(value, typ, name, origin string, ttl int) dns.RR {
 	case DNSTypeCNAME:
 		return &dns.CNAME{
 			Hdr: dns.RR_Header{
-				Name:   name,
-				Rrtype: dns.TypeA,
+				Name:   fqdn,
+				Rrtype: dns.TypeCNAME,
 				Class:  dns.ClassINET,
 				Ttl:    uint32(ttl),
 			},

@@ -12,13 +12,61 @@ import (
 var tests = []struct {
 	name    string
 	qtype   uint16
-	results []string
+	results [][]string
 }{
-	{"test.sonar.local.", dns.TypeMX, []string{"10 mx.sonar.local"}},
-	{"test.sonar.local.", dns.TypeA, []string{"127.0.0.1"}},
-	{"test.sonar.local.", dns.TypeAAAA, []string{"127.0.0.1"}},
-	{"c1da9f3d.sonar.local.", dns.TypeA, []string{"127.0.0.1"}},
-	{"dns1.c1da9f3d.sonar.local.", dns.TypeA, []string{"192.168.1.1", "192.168.1.2"}},
+	// Static
+	{"test.sonar.local.", dns.TypeMX, [][]string{
+		{"10 mx.sonar.local"},
+	}},
+	{"test.sonar.local.", dns.TypeA, [][]string{
+		{"127.0.0.1"},
+	}},
+	{"test.sonar.local.", dns.TypeAAAA, [][]string{
+		{"127.0.0.1"},
+	}},
+	{"c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"127.0.0.1"},
+	}},
+
+	// Dynamic
+	{"test-a.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+	{"test-aaaa.c1da9f3d.sonar.local.", dns.TypeAAAA, [][]string{
+		{"2001:db8:85a3::8a2e:370:7334"},
+	}},
+	{"test-mx.c1da9f3d.sonar.local.", dns.TypeMX, [][]string{
+		{"10 mx.sonar.local"},
+	}},
+	{"test-txt.c1da9f3d.sonar.local.", dns.TypeTXT, [][]string{
+		{"txt1", "txt2"},
+	}},
+	{"test-cname.c1da9f3d.sonar.local.", dns.TypeCNAME, [][]string{
+		{"example.com"},
+	}},
+	{"test.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+	{"test2.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+
+	// Strategies
+	{"test-default.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+	}},
+	{"test-round-robin.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+		{"192.168.1.2", "192.168.1.3", "192.168.1.1"},
+		{"192.168.1.3", "192.168.1.1", "192.168.1.2"},
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+	}},
+	{"test-rebind.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+		{"192.168.1.2"},
+		{"192.168.1.3"},
+		{"192.168.1.3"},
+	}},
 }
 
 func TestDNSMgr(t *testing.T) {
@@ -26,6 +74,9 @@ func TestDNSMgr(t *testing.T) {
 		name := fmt.Sprintf("%s/%s", tt.name, dns.Type(tt.qtype).String())
 
 		t.Run(name, func(st *testing.T) {
+			setup(t)
+			defer teardown(t)
+
 			msg := new(dns.Msg)
 			msg.Id = dns.Id()
 			msg.RecursionDesired = true
@@ -37,14 +88,18 @@ func TestDNSMgr(t *testing.T) {
 			}
 
 			c := &dns.Client{}
-			in, _, err := c.Exchange(msg, "127.0.0.1:1053")
-			require.NoError(t, err)
-			require.NotNil(t, in)
 
-			require.Len(t, in.Answer, len(tt.results))
+			for i := 0; i < len(tt.results); i++ {
 
-			for i, a := range in.Answer {
-				assert.Contains(t, a.String(), tt.results[i])
+				in, _, err := c.Exchange(msg, "127.0.0.1:1053")
+				require.NoError(t, err)
+				require.NotNil(t, in)
+
+				require.Len(t, in.Answer, len(tt.results[i]))
+
+				for j, a := range in.Answer {
+					assert.Contains(t, a.String(), tt.results[i][j])
+				}
 			}
 		})
 	}
