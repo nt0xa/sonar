@@ -108,7 +108,7 @@ func Setup() error {
 	log := logrus.New()
 
 	// Actions
-	actions := actions.New(db, log)
+	actions := actions.New(db, log, "sonar.local")
 
 	// API controller
 	api, err := api.New(cfg, db, log, nil, actions)
