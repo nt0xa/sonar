@@ -15,7 +15,7 @@ var recordsTpl = tpl.MustParse(`
 * IN 600 NS ns1
 @ IN 600 NS ns2
 * IN 600 NS ns2
-{{- if .IP.To4 -}}
+{{ if .IP.To4 -}}
 @ IN 600 A    {{ .IP }}
 * IN 600 A    {{ .IP }}
 @ IN AAAA ::ffff:{{ .IP }}
