@@ -75,7 +75,7 @@ func Setup() error {
 	log := logrus.New()
 
 	// Actions
-	acts = actions.New(db, log)
+	acts = actions.New(db, log, "sonar.local")
 
 	return nil
 }

@@ -23,7 +23,7 @@ func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.DB),
 		validation.Field(&c.Domain, validation.Required, is.Domain),
-		validation.Field(&c.IP, validation.Required, is.IPv4),
+		validation.Field(&c.IP, validation.Required, is.IP),
 		validation.Field(&c.TLS),
 		validation.Field(&c.Modules),
 	)

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -218,6 +219,28 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 
 	case actions.CreateUserResult:
 		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("user %q created", r.Name))
+
+	case actions.CreateDNSRecordResult:
+		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
+		data := struct {
+			RRs []dns.RR
+		}{r.Record.RRs(origin)}
+
+		err = dnsRecordTemplate.Execute(&tpl, data)
+		tg.htmlMessage(u.Params.TelegramID, tpl.String())
+
+	case actions.ListDNSRecordsResult:
+		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
+		rrs := make([]dns.RR, 0)
+		for _, rec := range r.Records {
+			rrs = append(rrs, rec.RRs(origin)...)
+		}
+		data := struct {
+			RRs []dns.RR
+		}{rrs}
+
+		err = dnsRecordTemplate.Execute(&tpl, data)
+		tg.htmlMessage(u.Params.TelegramID, tpl.String())
 
 	case *actions.MessageResult:
 		tg.txtMessage(u.Params.TelegramID, r.Message)
