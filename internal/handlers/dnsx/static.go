@@ -11,17 +11,21 @@ import (
 )
 
 var recordsTpl = tpl.MustParse(`
-{{- if .IP.To4 -}}
-@ IN A    {{ .IP }}
-* IN A    {{ .IP }}
+@ IN 600 NS ns1
+* IN 600 NS ns1
+@ IN 600 NS ns2
+* IN 600 NS ns2
+{{ if .IP.To4 -}}
+@ IN 600 A    {{ .IP }}
+* IN 600 A    {{ .IP }}
 @ IN AAAA ::ffff:{{ .IP }}
 * IN AAAA ::ffff:{{ .IP }}
 {{- else -}}
 @ IN AAAA {{ .IP }}
 * IN AAAA {{ .IP }}
 {{- end }}
-@ IN MX   10 mx
-* IN MX   10 mx
+@ 600 IN MX   10 mx
+* 600 IN MX   10 mx
 `)
 
 func (h *DNSX) addStaticRecords() error {
