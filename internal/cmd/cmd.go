@@ -13,6 +13,7 @@ import (
 )
 
 func init() {
+	cobra.EnableCommandSorting = false
 	cobra.AddTemplateFuncs(sprig.TxtFuncMap())
 }
 
@@ -48,6 +49,8 @@ func (c *Command) Root(u *models.User) *cobra.Command {
 	cmd.AddCommand(c.UpdatePayload())
 	cmd.AddCommand(c.DeletePayload())
 	cmd.AddCommand(c.ListPayloads())
+
+	cmd.AddCommand(c.DNS())
 
 	if u.IsAdmin {
 		cmd.AddCommand(c.Users())

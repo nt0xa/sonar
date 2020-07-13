@@ -66,7 +66,7 @@ func TestPayloadsGetBySubdomain_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadsGetBySubdomain("c1da9f3db9")
+	o, err := db.PayloadsGetBySubdomain("c1da9f3d")
 	assert.NoError(t, err)
 	assert.Equal(t, "payload1", o.Name)
 }
@@ -86,7 +86,7 @@ func TestPayloadsGetByUserAndName_Success(t *testing.T) {
 
 	o, err := db.PayloadsGetByUserAndName(1, "payload1")
 	assert.NoError(t, err)
-	assert.Equal(t, "c1da9f3db9", o.Subdomain)
+	assert.Equal(t, "c1da9f3d", o.Subdomain)
 }
 
 func TestPayloadsGetByUserAndName_NotExist(t *testing.T) {
@@ -137,7 +137,7 @@ func TestPayloadsFindByUserAndName_Success(t *testing.T) {
 		subdomains = append(subdomains, p.Subdomain)
 	}
 
-	assert.Contains(t, subdomains, "c1da9f3db9")
+	assert.Contains(t, subdomains, "c1da9f3d")
 }
 
 func TestPayloadsFindByUserAndName_Empty(t *testing.T) {

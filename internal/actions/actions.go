@@ -12,13 +12,15 @@ type MessageResult struct {
 type Actions interface {
 	PayloadsActions
 	UsersActions
+	DNSActions
 }
 
 type actions struct {
-	db  *database.DB
-	log logger.StdLogger
+	db     *database.DB
+	log    logger.StdLogger
+	domain string
 }
 
-func New(db *database.DB, log logger.StdLogger) Actions {
-	return &actions{db, log}
+func New(db *database.DB, log logger.StdLogger, domain string) Actions {
+	return &actions{db, log, domain}
 }

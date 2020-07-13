@@ -12,10 +12,11 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/handlers"
+	"github.com/bi-zone/sonar/internal/handlers/dnsx"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
-	"github.com/bi-zone/sonar/pkg/server/dns"
 	"github.com/bi-zone/sonar/pkg/server/http"
 	"github.com/bi-zone/sonar/pkg/server/smtp"
 )
@@ -93,7 +94,7 @@ func main() {
 	// Actions
 	//
 
-	actions := actions.New(db, log)
+	actions := actions.New(db, log, cfg.Domain)
 
 	//
 	// Events
@@ -106,26 +107,25 @@ func main() {
 	// DNS
 	//
 
-	var (
-		dnsProvider *dns.Server
-		dnsStarted  sync.WaitGroup
-	)
+	var dnsStarted sync.WaitGroup
 
 	dnsStarted.Add(1)
 
+	dns, err := dnsx.New(":53", cfg.Domain, net.ParseIP(cfg.IP), db,
+		dnsx.NotifyRequestFunc(handlers.NotifyRequestFunc(AddProtoEvent("DNS", events))),
+		dnsx.NotifyStartedFunc(func() {
+			dnsStarted.Done()
+		}),
+	)
+
+	if err != nil {
+		log.Fatal("Failed to create DNS handler: %w", err)
+	}
+
 	go func() {
-		srv := dns.New(":53", cfg.Domain, net.ParseIP(cfg.IP),
-			dns.NotifyRequestFunc(AddProtoEvent("DNS", events)),
-			dns.NotifyStartedFunc(func() {
-				dnsStarted.Done()
-			}))
-
-		dnsProvider = srv
-
-		if err := srv.ListenAndServe(); err != nil {
+		if err := dns.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to start DNS handler: %v", err.Error())
 		}
-
 	}()
 
 	//
@@ -136,7 +136,7 @@ func main() {
 	// use it as DNS challenge provider for Let's Encrypt
 	dnsStarted.Wait()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsProvider)
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dns)
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}

@@ -19,7 +19,7 @@ var usersQuery = "" +
 
 func (db *DB) UsersCreate(o *models.User) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = time.Now().UTC()
 
 	if o.Params.APIToken == "" {
 		token, err := utils.GenerateRandomString(16)
