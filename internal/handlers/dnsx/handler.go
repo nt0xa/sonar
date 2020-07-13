@@ -1,6 +1,7 @@
 package dnsx
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,22 +18,25 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 
 	msg := &dns.Msg{}
 	msg.SetReply(r)
+	msg.Authoritative = true
 
 	name := r.Question[0].Name
 	qtype := r.Question[0].Qtype
 
 	if h.subdomainRegexp.MatchString(name) {
-		if rec := h.findDynamicRecords(name, qtype); rec != nil {
+		if payload, rec := h.findDynamicRecords(name, qtype); rec != nil {
+			origin := fmt.Sprintf("%s.%s", payload.Subdomain, h.origin)
+
 			switch rec.Strategy {
 
 			case models.DNSStrategyAll:
-				msg.Answer = rec.RRs(h.origin)
+				msg.Answer = rec.RRs(origin)
 
 			case models.DNSStrategyRoundRobin:
 				if rec.LastAnswer != nil {
 					msg.Answer = rotate(rec.LastAnswerRRs(h.origin))
 				} else {
-					msg.Answer = rec.RRs(h.origin)
+					msg.Answer = rec.RRs(origin)
 				}
 
 			case models.DNSStrategyRebind:
@@ -40,14 +44,14 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 					rec.LastAccessedAt != nil &&
 					time.Now().UTC().Sub(*rec.LastAccessedAt) < time.Second*3 {
 					i := findIndex(rec.Values, rec.LastAnswer[0]) + 1
-					rrs := rec.RRs(h.origin)
+					rrs := rec.RRs(origin)
 					if i < len(rrs) {
 						msg.Answer = rrs[i : i+1]
 					} else {
 						msg.Answer = rrs[len(rrs)-1:]
 					}
 				} else {
-					msg.Answer = rec.RRs(h.origin)[:1]
+					msg.Answer = rec.RRs(origin)[:1]
 				}
 			}
 
@@ -71,12 +75,12 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(msg)
 }
 
-func (h *DNSX) findDynamicRecords(name string, qtype uint16) *models.DNSRecord {
+func (h *DNSX) findDynamicRecords(name string, qtype uint16) (*models.Payload, *models.DNSRecord) {
 	// test1.test2.00b18489.sonar.local -> [test1, test2, 00b18489]
 	parts := strings.Split(strings.TrimSuffix(name, "."+h.origin+"."), ".")
 
 	if len(parts) < 2 {
-		return nil
+		return nil, nil
 	}
 
 	// 00b18489
@@ -84,7 +88,7 @@ func (h *DNSX) findDynamicRecords(name string, qtype uint16) *models.DNSRecord {
 
 	p, err := h.db.PayloadsGetBySubdomain(right)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
 	// test1.test2
@@ -100,10 +104,10 @@ func (h *DNSX) findDynamicRecords(name string, qtype uint16) *models.DNSRecord {
 			continue
 		}
 
-		return r
+		return p, r
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (h *DNSX) findStaticRecords(name string, qtype uint16) []dns.RR {
