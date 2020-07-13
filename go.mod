@@ -23,6 +23,7 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect

@@ -8,14 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bi-zone/sonar/internal/models"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+
+	"github.com/bi-zone/sonar/internal/models"
 )
 
 var (
-	subdomainRegexp = regexp.MustCompile(`^(\*|[a-z0-9]{1}[a-z0-9-]+[a-z0-9]{1})(\.[a-z0-9]{1}[a-z0-9-]+[a-z0-9]{1})*$`)
-	fqdnRegexp      = regexp.MustCompile(`^([a-z0-9]{1}[a-z0-9-]+[a-z0-9]{1}\.)+$`)
+	namePattern     = `[a-z0-9]{1}([a-z0-9-]*[a-z0-9]{1})?`
+	subdomainRegexp = regexp.MustCompile(fmt.Sprintf(`^(\*|%[1]s)(\.%[1]s)*$`, namePattern))
+	fqdnRegexp      = regexp.MustCompile(fmt.Sprintf(`^(%s\.)+$`, namePattern))
 )
 
 func File(value interface{}) error {

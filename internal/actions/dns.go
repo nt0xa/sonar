@@ -33,7 +33,7 @@ func (p CreateDNSRecordParams) Validate() error {
 		validation.Field(&p.PayloadName, validation.Required),
 		validation.Field(&p.Name, validation.Required, validation.By(valid.Subdomain)),
 		validation.Field(&p.Type, valid.OneOf(models.DNSTypesAll)),
-		validation.Field(&p.Values, validation.Each(valid.DNSRecord(p.Type))),
+		validation.Field(&p.Values, validation.Required, validation.Each(valid.DNSRecord(p.Type))),
 		validation.Field(&p.Strategy, valid.OneOf(models.DNSStrategiesAll)),
 	)
 }
@@ -108,7 +108,10 @@ func (act *actions) DeleteDNSRecord(u *models.User, p DeleteDNSRecordParams) (De
 	}
 
 	rec, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, p.Type)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("dns records for payload %q with name %q and type %q not found",
+			p.PayloadName, p.Name, p.Type)
+	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
 
