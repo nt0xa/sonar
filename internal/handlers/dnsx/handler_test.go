@@ -114,6 +114,7 @@ func TestDNSMgr(t *testing.T) {
 
 				for j, a := range in.Answer {
 					assert.Contains(t, a.String(), tt.results[i][j])
+					assert.Equal(t, a.Header().Name, tt.name)
 				}
 			}
 		})
