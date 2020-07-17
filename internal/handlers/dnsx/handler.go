@@ -69,7 +69,6 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 	if len(msg.Answer) > 0 {
 		msg.Answer = fixWilidcards(msg.Answer, name)
 	} else {
-		fmt.Println("HERE")
 		msg.Rcode = dns.RcodeServerFailure
 	}
 
