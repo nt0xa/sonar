@@ -34,7 +34,7 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 
 			case models.DNSStrategyRoundRobin:
 				if rec.LastAnswer != nil {
-					msg.Answer = rotate(rec.LastAnswerRRs(h.origin))
+					msg.Answer = rotate(rec.LastAnswerRRs(origin))
 				} else {
 					msg.Answer = rec.RRs(origin)
 				}
@@ -69,6 +69,7 @@ func (h *DNSX) handleFunc(w dns.ResponseWriter, r *dns.Msg) {
 	if len(msg.Answer) > 0 {
 		msg.Answer = fixWilidcards(msg.Answer, name)
 	} else {
+		fmt.Println("HERE")
 		msg.Rcode = dns.RcodeServerFailure
 	}
 
