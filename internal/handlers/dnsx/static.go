@@ -12,20 +12,20 @@ import (
 
 var recordsTpl = tpl.MustParse(`
 @ IN 600 NS ns1
-* IN 0 NS ns1
+* IN 0   NS ns1
 @ IN 600 NS ns2
-* IN 0 NS ns2
+* IN 0   NS ns2
 {{ if .IP.To4 -}}
 @ IN 600 A    {{ .IP }}
-* IN A    {{ .IP }}
+* IN 0   A  {{ .IP }}
 @ IN 600 AAAA ::ffff:{{ .IP }}
-* IN AAAA ::ffff:{{ .IP }}
+* IN 0   AAAA ::ffff:{{ .IP }}
 {{- else -}}
-@ IN 600 AAAA {{ .IP }}
-* IN AAAA {{ .IP }}
+@ IN 0 AAAA {{ .IP }}
+* IN 0   AAAA {{ .IP }}
 {{- end }}
 @ 600 IN MX   10 mx
-* 0 IN MX   10 mx
+* 0   IN MX   10 mx
 @ 600 IN CAA 0 issue "letsencrypt.org"
 `)
 
