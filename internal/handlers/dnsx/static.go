@@ -26,6 +26,7 @@ var recordsTpl = tpl.MustParse(`
 {{- end }}
 @ 600 IN MX   10 mx
 * 600 IN MX   10 mx
+@ 600 IN CAA 0 issue "letsencrypt.org"
 `)
 
 func (h *DNSX) addStaticRecords() error {
