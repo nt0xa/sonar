@@ -1,0 +1,48 @@
+project_name: sonar
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: server
+    binary: server
+    dir: ./cmd/server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  skip: true
+
+dockers:
+- image_templates:
+    - "docker.pkg.github.com/bi-zone/sonar/server:latest"
+    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}"
+    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}.{{.Minor}}"
+    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}.{{.Minor}}.{{.Patch}}"
+  build_flag_templates:
+    - "--pull"
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.name={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+  extra_files:
+    - internal/database/migrations
+  dockerfile: Dockerfile.ci
