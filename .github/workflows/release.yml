@@ -13,5 +13,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Publish docker image
-      run: make docker-release docker_login=bizonebot docker_password=${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14
+
+    - name: Docker Login (Github)
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login --username bizonebot --password-stdin
+
+    - name: Publish release notes
+      uses: release-drafter/release-drafter@v5
+      with:
+        publish: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --rm-dist
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Clear Docker credentials
+      run: rm -f ${HOME}/.docker/config.json
