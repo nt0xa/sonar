@@ -91,7 +91,6 @@ func TestSMTP(t *testing.T) {
 
 			notifier.
 				On("Notify", conn.LocalAddr(), mock.MatchedBy(func(data []byte) bool {
-					fmt.Println("HERE")
 					for _, s := range contains {
 						if !strings.Contains(string(data), s) {
 							return false

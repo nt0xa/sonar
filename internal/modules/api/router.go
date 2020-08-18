@@ -26,12 +26,6 @@ func (api *API) Router() http.Handler {
 }
 
 func (api *API) createPayload(w http.ResponseWriter, r *http.Request) {
-	u, err := getUser(r.Context())
-	if err != nil {
-		handleError(api.log, w, r, err)
-		return
-	}
-
 	var p actions.CreatePayloadParams
 
 	if err := fromJSON(r, &p); err != nil {
@@ -39,7 +33,7 @@ func (api *API) createPayload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.actions.CreatePayload(u, p)
+	res, err := api.actions.CreatePayload(r.Context(), p)
 	if err != nil {
 		handleError(api.log, w, r, err)
 		return
@@ -49,12 +43,6 @@ func (api *API) createPayload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) deletePayload(w http.ResponseWriter, r *http.Request) {
-	u, err := getUser(r.Context())
-	if err != nil {
-		handleError(api.log, w, r, err)
-		return
-	}
-
 	var p actions.DeletePayloadParams
 
 	if err := fromPath(r, &p); err != nil {
@@ -62,7 +50,7 @@ func (api *API) deletePayload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = api.actions.DeletePayload(u, p)
+	_, err := api.actions.DeletePayload(r.Context(), p)
 	if err != nil {
 		handleError(api.log, w, r, err)
 		return
@@ -72,12 +60,6 @@ func (api *API) deletePayload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) listPayloads(w http.ResponseWriter, r *http.Request) {
-	u, err := getUser(r.Context())
-	if err != nil {
-		handleError(api.log, w, r, err)
-		return
-	}
-
 	var p actions.ListPayloadsParams
 
 	if err := fromQuery(r, &p); err != nil {
@@ -85,7 +67,7 @@ func (api *API) listPayloads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.actions.ListPayloads(u, p)
+	res, err := api.actions.ListPayloads(r.Context(), p)
 	if err != nil {
 		handleError(api.log, w, r, err)
 		return

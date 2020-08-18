@@ -28,20 +28,14 @@ func (c *Command) CreateUser() *cobra.Command {
 		Long:  "Create new user identified by NAME",
 		Args:  OneArg("NAME"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Name = args[0]
-			p.CreatedBy = &u.ID
 
 			params, _ := cmd.Flags().GetStringToString("params")
 			if err := mapToStruct(params, &p.Params); err != nil {
 				return errors.BadFormat(err)
 			}
 
-			res, err := c.Actions.CreateUser(u, p)
+			res, err := c.Actions.CreateUser(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -67,14 +61,9 @@ func (c *Command) DeleteUser() *cobra.Command {
 		Long:  "Delete user identified by NAME",
 		Args:  OneArg("NAME"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Name = args[0]
 
-			res, err := c.Actions.DeleteUser(u, p)
+			res, err := c.Actions.DeleteUser(cmd.Context(), p)
 			if err != nil {
 				return err
 			}

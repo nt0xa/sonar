@@ -16,8 +16,10 @@ func TestCreatePayload_Success(t *testing.T) {
 
 	res := actions.CreatePayloadResult(payload)
 
+	ctx := actions.SetUser(context.Background(), user)
+
 	acts.
-		On("CreatePayload", user, actions.CreatePayloadParams{
+		On("CreatePayload", ctx, actions.CreatePayloadParams{
 			Name:            "test",
 			NotifyProtocols: models.PayloadProtocolsAll,
 		}).
@@ -44,8 +46,10 @@ func TestDeletePayload_Success(t *testing.T) {
 
 	res := &actions.MessageResult{Message: "test"}
 
+	ctx := actions.SetUser(context.Background(), user)
+
 	acts.
-		On("DeletePayload", user, actions.DeletePayloadParams{
+		On("DeletePayload", ctx, actions.DeletePayloadParams{
 			Name: "test",
 		}).
 		Return(res, nil)
@@ -71,8 +75,10 @@ func TestListPayloads_Success(t *testing.T) {
 
 	res := actions.ListPayloadsResult(payloads)
 
+	ctx := actions.SetUser(context.Background(), user)
+
 	acts.
-		On("ListPayloads", user, actions.ListPayloadsParams{
+		On("ListPayloads", ctx, actions.ListPayloadsParams{
 			Name: "test",
 		}).
 		Return(res, nil)
@@ -89,8 +95,10 @@ func TestUpdatePayload_Success(t *testing.T) {
 
 	res := &actions.MessageResult{Message: "test"}
 
+	ctx := actions.SetUser(context.Background(), user)
+
 	acts.
-		On("UpdatePayload", user, actions.UpdatePayloadParams{
+		On("UpdatePayload", ctx, actions.UpdatePayloadParams{
 			Name:            "payload1",
 			NewName:         "payload1_updated",
 			NotifyProtocols: []string{"dns", "http"},

@@ -13,8 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/modules/api"
 )
 
@@ -108,7 +108,7 @@ func Setup() error {
 	log := logrus.New()
 
 	// Actions
-	actions := actions.New(db, log, "sonar.local")
+	actions := dbactions.New(db, log, "sonar.local")
 
 	// API controller
 	api, err := api.New(cfg, db, log, nil, actions)

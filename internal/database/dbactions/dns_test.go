@@ -1,6 +1,7 @@
-package actions_test
+package dbactions_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,8 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
+
+	ctx := actions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -59,7 +62,7 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.CreateDNSRecord(u, tt.p)
+			r, err := acts.CreateDNSRecord(ctx, tt.p)
 			require.NoError(t, err)
 			require.NotNil(t, r)
 
@@ -74,6 +77,8 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
+
+	ctx := actions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -150,7 +155,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.CreateDNSRecord(u, tt.p)
+			_, err := acts.CreateDNSRecord(ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -163,6 +168,8 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
+
+	ctx := actions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -187,7 +194,7 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DeleteDNSRecord(u, tt.p)
+			_, err := acts.DeleteDNSRecord(ctx, tt.p)
 			assert.NoError(t, err)
 		})
 	}
@@ -199,6 +206,8 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
+
+	ctx := actions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -237,7 +246,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DeleteDNSRecord(u, tt.p)
+			_, err := acts.DeleteDNSRecord(ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -251,11 +260,13 @@ func TestListDNSRecords_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
+	ctx := actions.SetUser(context.Background(), u)
+
 	p := actions.ListDNSRecordsParams{
 		PayloadName: "payload1",
 	}
 
-	r, err := acts.ListDNSRecords(u, p)
+	r, err := acts.ListDNSRecords(ctx, p)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 
