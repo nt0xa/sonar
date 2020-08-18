@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/pkg/server/mock_server"
+	server_mocks "github.com/bi-zone/sonar/pkg/server/mocks"
 	smtpsrv "github.com/bi-zone/sonar/pkg/server/smtp"
 )
 
@@ -62,12 +63,6 @@ func TestSMTP(t *testing.T) {
 		}
 
 		t.Run(name, func(st *testing.T) {
-			ctrl := gomock.NewController(st)
-			defer ctrl.Finish()
-
-			m := mock_server.NewMockRequestNotifier(ctrl)
-			srv.SetOption(smtpsrv.NotifyRequestFunc(m.Notify))
-			srvTLS.SetOption(smtpsrv.NotifyRequestFunc(m.Notify))
 
 			// TLS config
 			tlsConfig := &tls.Config{
@@ -90,15 +85,25 @@ func TestSMTP(t *testing.T) {
 				require.NoError(st, err)
 			}
 
-			// Setup here because now we know local address
-			m.
-				EXPECT().
-				Notify(
-					gomock.Eq(conn.LocalAddr()),
-					Contains(tt.from, tt.to, tt.subj, tt.body),
-					gomock.Eq(map[string]interface{}{}),
-				).
-				Times(1)
+			contains := []string{tt.from, tt.to, tt.subj, tt.body}
+
+			notifier := server_mocks.RequestNotifier{}
+
+			notifier.
+				On("Notify", conn.LocalAddr(), mock.MatchedBy(func(data []byte) bool {
+					fmt.Println("HERE")
+					for _, s := range contains {
+						if !strings.Contains(string(data), s) {
+							return false
+						}
+					}
+					return true
+				}), map[string]interface{}{}).
+				Return().
+				Once()
+
+			srv.SetOption(smtpsrv.NotifyRequestFunc(notifier.Notify))
+			srvTLS.SetOption(smtpsrv.NotifyRequestFunc(notifier.Notify))
 
 			// Create SMTP client
 			c, err := smtp.NewClient(conn, "sonar.local")
@@ -129,6 +134,8 @@ func TestSMTP(t *testing.T) {
 			c.Quit()
 
 			time.Sleep(time.Microsecond * 500)
+
+			notifier.AssertExpectations(t)
 		})
 	}
 }

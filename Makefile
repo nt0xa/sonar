@@ -31,7 +31,10 @@ mock: mock-server mock-actions
 
 .PHONY: mock-server
 mock-server:
-	@mockgen -source pkg/server/server.go > pkg/server/mock_server/mock_server.go
+	@mockery -dir pkg/server \
+		-output pkg/server/mocks \
+		-outpkg server_mocks \
+		-name RequestNotifier
 
 .PHONY: mock-actions
 mock-actions:

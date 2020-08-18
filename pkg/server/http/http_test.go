@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/bi-zone/sonar/pkg/server/http"
-	"github.com/golang/mock/gomock"
 )
 
 var (
@@ -72,8 +70,6 @@ func setupGlobals() error {
 		return errors.New("timeout waiting for server to start")
 	}
 
-	time.Sleep(3 * time.Second)
-
 	return nil
 }
 
@@ -90,31 +86,3 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 		return true // timed out
 	}
 }
-
-type containsMatcher struct{ s []string }
-
-func (m containsMatcher) Matches(value interface{}) bool {
-	s := ""
-	switch v := value.(type) {
-	case string:
-		s = v
-	case []byte:
-		s = string(v)
-	default:
-		return false
-	}
-
-	for _, ss := range m.s {
-		if !strings.Contains(s, ss) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (m containsMatcher) String() string {
-	return fmt.Sprintf("contains %q", m.s)
-}
-
-func Contains(s ...string) gomock.Matcher { return containsMatcher{s} }

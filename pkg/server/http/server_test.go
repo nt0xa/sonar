@@ -9,15 +9,16 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	httpsrv "github.com/bi-zone/sonar/pkg/server/http"
-	"github.com/bi-zone/sonar/pkg/server/mock_server"
+	server_mocks "github.com/bi-zone/sonar/pkg/server/mocks"
 )
 
 var tests = []struct {
@@ -76,14 +77,6 @@ func TestHTTP(t *testing.T) {
 		name := fmt.Sprintf("%s/%s", proto, tt.method)
 
 		t.Run(name, func(st *testing.T) {
-			ctrl := gomock.NewController(st)
-			defer ctrl.Finish()
-
-			m := mock_server.NewMockRequestNotifier(ctrl)
-			srv.SetOption(httpsrv.NotifyRequestFunc(m.Notify))
-			srvTLS.SetOption(httpsrv.NotifyRequestFunc(m.Notify))
-
-			meta := map[string]interface{}{"tls": tt.tls}
 
 			contains := make([]string, 0)
 			contains = append(contains, tt.path)
@@ -100,14 +93,25 @@ func TestHTTP(t *testing.T) {
 			ct, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			notifier := &server_mocks.RequestNotifier{}
+
 			dial := func(ctx context.Context, network, address string) (net.Conn, error) {
 				conn, err := (&net.Dialer{}).DialContext(ct, network, address)
 
-				// Setup here because now we know local address
-				m.
-					EXPECT().
-					Notify(gomock.Eq(conn.LocalAddr()), Contains(contains...), gomock.Eq(meta)).
-					Times(1)
+				notifier.
+					On("Notify", conn.LocalAddr(), mock.MatchedBy(func(data []byte) bool {
+						for _, s := range contains {
+							if !strings.Contains(string(data), s) {
+								return false
+							}
+						}
+
+						return true
+					}), map[string]interface{}{"tls": tt.tls}).
+					Once()
+
+				srv.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
+				srvTLS.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
 
 				return conn, err
 			}
@@ -164,6 +168,8 @@ func TestHTTP(t *testing.T) {
 			defer res.Body.Close()
 
 			assert.Equal(st, 200, res.StatusCode)
+
+			notifier.AssertExpectations(t)
 		})
 	}
 }
