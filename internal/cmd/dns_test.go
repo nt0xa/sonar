@@ -46,8 +46,10 @@ func TestDNSRecordCreate_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd, acts, hnd := prepare()
 
+			ctx := actions.SetUser(context.Background(), user)
+
 			acts.
-				On("CreateDNSRecord", user, tt.result).
+				On("CreateDNSRecord", ctx, tt.result).
 				Return(&actions.CreateDNSRecordResultData{}, nil)
 
 			hnd.On("Handle", mock.Anything, mock.Anything)
@@ -100,8 +102,10 @@ func TestDNSDeleteCreate_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd, acts, hnd := prepare()
 
+			ctx := actions.SetUser(context.Background(), user)
+
 			acts.
-				On("DeleteDNSRecord", user, tt.result).
+				On("DeleteDNSRecord", ctx, tt.result).
 				Return(&actions.MessageResult{}, nil)
 
 			hnd.On("Handle", mock.Anything, mock.Anything)
@@ -135,8 +139,10 @@ func TestDNSList_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd, acts, hnd := prepare()
 
+			ctx := actions.SetUser(context.Background(), user)
+
 			acts.
-				On("ListDNSRecords", user, tt.result).
+				On("ListDNSRecords", ctx, tt.result).
 				Return(&actions.ListDNSRecordsResultData{}, nil)
 
 			hnd.On("Handle", mock.Anything, mock.Anything)

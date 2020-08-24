@@ -1,18 +1,12 @@
 package api
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
+	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
-)
-
-type contextKey string
-
-const (
-	userKey contextKey = "user"
 )
 
 func (api *API) checkAuth() func(http.Handler) http.Handler {
@@ -33,16 +27,9 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userKey, u)
+			ctx := actions.SetUser(r.Context(), u)
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-func getUser(ctx context.Context) (*models.User, error) {
-	u, ok := ctx.Value(userKey).(*models.User)
-	if !ok {
-		return nil, errors.Internalf("no %q key in context", userKey)
-	}
-	return u, nil
 }

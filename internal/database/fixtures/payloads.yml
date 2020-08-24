@@ -18,3 +18,10 @@
   name: payload3
   notify_protocols: '{dns, http, smtp}'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 4
+  user_id: 1
+  subdomain: eb0d48c6
+  name: payload4
+  notify_protocols: '{dns, http, smtp}'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'

@@ -11,7 +11,6 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/internal/utils/pointer"
 )
 
 func TestCreateUser_Success(t *testing.T) {
@@ -19,14 +18,15 @@ func TestCreateUser_Success(t *testing.T) {
 
 	res := actions.CreateUserResult(user)
 
+	ctx := actions.SetUser(context.Background(), admin)
+
 	acts.
-		On("CreateUser", admin, actions.CreateUserParams{
+		On("CreateUser", ctx, actions.CreateUserParams{
 			Name: "user",
 			Params: models.UserParams{
 				TelegramID: 1337,
 				APIToken:   "token",
 			},
-			CreatedBy: pointer.Int64(1),
 		}).
 		Return(res, nil)
 
@@ -53,8 +53,10 @@ func TestDeleteUser_Success(t *testing.T) {
 
 	res := &actions.MessageResult{Message: "test"}
 
+	ctx := actions.SetUser(context.Background(), admin)
+
 	acts.
-		On("DeleteUser", admin, actions.DeleteUserParams{
+		On("DeleteUser", ctx, actions.DeleteUserParams{
 			Name: "user",
 		}).
 		Return(res, nil)

@@ -1,4 +1,4 @@
-package actions_test
+package dbactions_test
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 )
 
 func TestMain(m *testing.M) {
@@ -50,7 +51,7 @@ func Setup() error {
 	// DB
 	db, err = database.New(&database.Config{
 		DSN:        dsn,
-		Migrations: "../database/migrations",
+		Migrations: "../migrations",
 	})
 	if err != nil {
 		return fmt.Errorf("fail to init db: %w", err)
@@ -65,7 +66,7 @@ func Setup() error {
 	tf, err = testfixtures.NewFolder(
 		db.DB.DB,
 		&testfixtures.PostgreSQL{},
-		"../database/fixtures",
+		"../fixtures",
 	)
 	if err != nil {
 		return fmt.Errorf("fail to load fixtures: %w", err)
@@ -75,7 +76,7 @@ func Setup() error {
 	log := logrus.New()
 
 	// Actions
-	acts = actions.New(db, log, "sonar.local")
+	acts = dbactions.New(db, log, "sonar.local")
 
 	return nil
 }
