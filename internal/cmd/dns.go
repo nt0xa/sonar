@@ -33,15 +33,10 @@ func (c *Command) CreateDNSRecord() *cobra.Command {
 		Long:  "Create new DNS records",
 		Args:  AtLeastOneArg("VALUES"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Values = args
 			p.Type = strings.ToUpper(p.Type)
 
-			res, err := c.Actions.CreateDNSRecord(u, p)
+			res, err := c.Actions.CreateDNSRecord(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -71,14 +66,9 @@ func (c *Command) DeleteDNSRecord() *cobra.Command {
 		Short: "Delete DNS records",
 		Long:  "Delete DNS records",
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Type = strings.ToUpper(p.Type)
 
-			res, err := c.Actions.DeleteDNSRecord(u, p)
+			res, err := c.Actions.DeleteDNSRecord(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -105,12 +95,7 @@ func (c *Command) ListDNSRecords() *cobra.Command {
 		Short: "List DNS records for payload",
 		Long:  "List DNS records for payload with name PAYLOAD",
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
-			res, err := c.Actions.ListDNSRecords(u, p)
+			res, err := c.Actions.ListDNSRecords(cmd.Context(), p)
 			if err != nil {
 				return err
 			}

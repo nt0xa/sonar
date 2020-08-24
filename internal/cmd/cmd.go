@@ -72,7 +72,7 @@ func (c *Command) Exec(ctx context.Context, user *models.User, args []string) (s
 	root.SetErr(bb)
 	root.SetOut(bb)
 
-	ctx = SetUser(ctx, user)
+	ctx = actions.SetUser(ctx, user)
 
 	// There is no subcommands which means that user is unauthorized
 	// and no commands available for unauthorized users in current controller.

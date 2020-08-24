@@ -10,8 +10,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/handlers"
 	"github.com/bi-zone/sonar/internal/handlers/dnsx"
 	"github.com/bi-zone/sonar/internal/models"
@@ -94,7 +94,7 @@ func main() {
 	// Actions
 	//
 
-	actions := actions.New(db, log, cfg.Domain)
+	actions := dbactions.New(db, log, cfg.Domain)
 
 	//
 	// Events

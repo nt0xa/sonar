@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"database/sql"
+	"context"
 
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
@@ -10,9 +10,9 @@ import (
 )
 
 type DNSActions interface {
-	CreateDNSRecord(*models.User, CreateDNSRecordParams) (CreateDNSRecordResult, errors.Error)
-	DeleteDNSRecord(*models.User, DeleteDNSRecordParams) (DeleteDNSRecordResult, errors.Error)
-	ListDNSRecords(*models.User, ListDNSRecordsParams) (ListDNSRecordsResult, errors.Error)
+	CreateDNSRecord(context.Context, CreateDNSRecordParams) (CreateDNSRecordResult, errors.Error)
+	DeleteDNSRecord(context.Context, DeleteDNSRecordParams) (DeleteDNSRecordResult, errors.Error)
+	ListDNSRecords(context.Context, ListDNSRecordsParams) (ListDNSRecordsResult, errors.Error)
 }
 
 //
@@ -45,38 +45,6 @@ type CreateDNSRecordResultData struct {
 
 type CreateDNSRecordResult = *CreateDNSRecordResultData
 
-func (act *actions) CreateDNSRecord(u *models.User, p CreateDNSRecordParams) (CreateDNSRecordResult, errors.Error) {
-	if err := p.Validate(); err != nil {
-		return nil, errors.Validation(err)
-	}
-
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
-	}
-
-	if _, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, p.Type); err != sql.ErrNoRows {
-		return nil, errors.Conflictf("dns records for payload %q with name %q and type %q already exist",
-			p.PayloadName, p.Name, p.Type)
-	}
-
-	rec := &models.DNSRecord{
-		PayloadID: payload.ID,
-		Name:      p.Name,
-		TTL:       p.TTL,
-		Type:      p.Type,
-		Values:    p.Values,
-		Strategy:  p.Strategy,
-	}
-
-	err = act.db.DNSRecordsCreate(rec)
-	if err != nil {
-		return nil, errors.Internal(err)
-	}
-
-	return &CreateDNSRecordResultData{payload, rec}, nil
-}
-
 //
 // Delete
 //
@@ -96,31 +64,6 @@ func (p DeleteDNSRecordParams) Validate() error {
 }
 
 type DeleteDNSRecordResult = *MessageResult
-
-func (act *actions) DeleteDNSRecord(u *models.User, p DeleteDNSRecordParams) (DeleteDNSRecordResult, errors.Error) {
-	if err := p.Validate(); err != nil {
-		return nil, errors.Validation(err)
-	}
-
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
-	}
-
-	rec, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, p.Type)
-	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("dns records for payload %q with name %q and type %q not found",
-			p.PayloadName, p.Name, p.Type)
-	} else if err != nil {
-		return nil, errors.Internal(err)
-	}
-
-	if err := act.db.DNSRecordsDelete(rec.ID); err != nil {
-		return nil, errors.Internal(err)
-	}
-
-	return &MessageResult{"record deleted"}, nil
-}
 
 //
 // List
@@ -142,21 +85,3 @@ type ListDNSRecordsResultData struct {
 }
 
 type ListDNSRecordsResult = *ListDNSRecordsResultData
-
-func (act *actions) ListDNSRecords(u *models.User, p ListDNSRecordsParams) (ListDNSRecordsResult, errors.Error) {
-	if err := p.Validate(); err != nil {
-		return nil, errors.Validation(err)
-	}
-
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
-	}
-
-	recs, err := act.db.DNSRecordsGetByPayloadID(payload.ID)
-	if err != nil {
-		return nil, errors.Internal(err)
-	}
-
-	return &ListDNSRecordsResultData{payload, recs}, nil
-}

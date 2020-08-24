@@ -17,14 +17,9 @@ func (c *Command) CreatePayload() *cobra.Command {
 		Long:  "Create new payload identified by NAME",
 		Args:  OneArg("NAME"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Name = args[0]
 
-			res, err := c.Actions.CreatePayload(u, p)
+			res, err := c.Actions.CreatePayload(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -50,11 +45,6 @@ func (c *Command) UpdatePayload() *cobra.Command {
 		Long:  "Modify existing payload identified by NAME",
 		Args:  OneArg("NAME"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Name = args[0]
 
 			if cmd.Flags().Changed("name") {
@@ -67,7 +57,7 @@ func (c *Command) UpdatePayload() *cobra.Command {
 				p.NotifyProtocols = protocols
 			}
 
-			res, err := c.Actions.UpdatePayload(u, p)
+			res, err := c.Actions.UpdatePayload(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -93,14 +83,9 @@ func (c *Command) DeletePayload() *cobra.Command {
 		Long:  "Delete payload identified by NAME",
 		Args:  OneArg("NAME"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			p.Name = args[0]
 
-			res, err := c.Actions.DeletePayload(u, p)
+			res, err := c.Actions.DeletePayload(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
@@ -122,16 +107,11 @@ func (c *Command) ListPayloads() *cobra.Command {
 		Short: "List payloads",
 		Long:  "List payloads whose NAME contain SUBSTR",
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			u, err := GetUser(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			if len(args) > 0 {
 				p.Name = args[0]
 			}
 
-			res, err := c.Actions.ListPayloads(u, p)
+			res, err := c.Actions.ListPayloads(cmd.Context(), p)
 			if err != nil {
 				return err
 			}

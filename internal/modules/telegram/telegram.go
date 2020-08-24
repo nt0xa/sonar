@@ -199,7 +199,7 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 		err error
 	)
 
-	u, err := cmd.GetUser(ctx)
+	u, err := actions.GetUser(ctx)
 	if err != nil {
 		return
 	}
