@@ -87,16 +87,16 @@ func (s *Server) Handle(ctx context.Context, conn *listener.Conn) error {
 			return nil
 
 		case req := <-ch:
-			if err := s.sendResponse(w); err != nil {
-				return err
-			}
-
 			meta := make(map[string]interface{})
 
 			_, meta["tls"] = conn.Conn.(*tls.Conn)
 
 			if s.options.notifyRequestFunc != nil {
 				s.options.notifyRequestFunc(conn.RemoteAddr(), req, meta)
+			}
+
+			if err := s.sendResponse(w); err != nil {
+				return err
 			}
 
 			return nil

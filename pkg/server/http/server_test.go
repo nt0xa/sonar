@@ -55,7 +55,7 @@ var tests = []struct {
 	},
 	{
 		"POST",
-		"/get",
+		"/post",
 		map[string]string{"test": "query-param"},
 		map[string]string{"Test": "test-header"},
 		map[string]string{"test": "test-body"},
@@ -77,6 +77,7 @@ func TestHTTP(t *testing.T) {
 		name := fmt.Sprintf("%s/%s", proto, tt.method)
 
 		t.Run(name, func(st *testing.T) {
+			fmt.Println("START")
 
 			contains := make([]string, 0)
 			contains = append(contains, tt.path)
@@ -95,7 +96,14 @@ func TestHTTP(t *testing.T) {
 
 			notifier := &server_mocks.RequestNotifier{}
 
+			if tt.tls {
+				srvTLS.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
+			} else {
+				srv.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
+			}
+
 			dial := func(ctx context.Context, network, address string) (net.Conn, error) {
+
 				conn, err := (&net.Dialer{}).DialContext(ct, network, address)
 
 				notifier.
@@ -109,9 +117,6 @@ func TestHTTP(t *testing.T) {
 						return true
 					}), map[string]interface{}{"tls": tt.tls}).
 					Once()
-
-				srv.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
-				srvTLS.SetOption(httpsrv.NotifyRequestFunc(notifier.Notify))
 
 				return conn, err
 			}
