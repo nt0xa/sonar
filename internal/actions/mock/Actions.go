@@ -218,15 +218,15 @@ func (_m *Actions) ListPayloads(_a0 context.Context, _a1 actions.ListPayloadsPar
 }
 
 // UpdatePayload provides a mock function with given fields: _a0, _a1
-func (_m *Actions) UpdatePayload(_a0 context.Context, _a1 actions.UpdatePayloadParams) (*actions.MessageResult, errors.Error) {
+func (_m *Actions) UpdatePayload(_a0 context.Context, _a1 actions.UpdatePayloadParams) (actions.UpdatePayloadResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.MessageResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.UpdatePayloadParams) *actions.MessageResult); ok {
+	var r0 actions.UpdatePayloadResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.UpdatePayloadParams) actions.UpdatePayloadResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.MessageResult)
+			r0 = ret.Get(0).(actions.UpdatePayloadResult)
 		}
 	}
 

@@ -93,7 +93,7 @@ func TestListPayloads_Success(t *testing.T) {
 func TestUpdatePayload_Success(t *testing.T) {
 	cmd, acts, hnd := prepare()
 
-	res := &actions.MessageResult{Message: "test"}
+	res := actions.UpdatePayloadResult(payload)
 
 	ctx := actions.SetUser(context.Background(), user)
 
