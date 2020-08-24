@@ -16,6 +16,10 @@ func (act *dbactions) CreateUser(ctx context.Context, p actions.CreateUserParams
 		return nil, e
 	}
 
+	if !u.IsAdmin {
+		return nil, errors.Forbiddenf("only admin can create users")
+	}
+
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
 	}
@@ -42,6 +46,10 @@ func (act *dbactions) DeleteUser(ctx context.Context, p actions.DeleteUserParams
 	u, e := actions.GetUser(ctx)
 	if e != nil || u == nil {
 		return nil, e
+	}
+
+	if !u.IsAdmin {
+		return nil, errors.Forbiddenf("only admin can delete users")
 	}
 
 	if err := p.Validate(); err != nil {

@@ -76,7 +76,7 @@ func (act *dbactions) UpdatePayload(ctx context.Context, p actions.UpdatePayload
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.MessageResult{Message: "payload updated"}, nil
+	return payload, nil
 }
 
 func (act *dbactions) DeletePayload(ctx context.Context, p actions.DeletePayloadParams) (actions.DeletePayloadResult, errors.Error) {

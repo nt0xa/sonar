@@ -59,7 +59,7 @@ func (p UpdatePayloadParams) Validate() error {
 	)
 }
 
-type UpdatePayloadResult = *MessageResult
+type UpdatePayloadResult *models.Payload
 
 //
 // Delete
