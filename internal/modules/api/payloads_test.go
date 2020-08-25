@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/alecthomas/jsonschema"
-
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/actions"
 )
 
-type Payload = models.Payload
+type Payload = actions.Payload
 type Payloads = []Payload
 
 var (
@@ -57,11 +56,12 @@ func Test_deletePayload_Success(t *testing.T) {
 	e := heDefault(t)
 	e = heAuth(e, User1Token)
 
-	_ = e.DELETE(fmt.Sprintf("/payloads/%s", "payload1")).
+	res := e.DELETE(fmt.Sprintf("/payloads/%s", "payload1")).
 		Expect().
-		Status(204).
-		NoContent()
+		Status(200).
+		JSON()
 
+	res.Schema(payload)
 }
 
 func Test_deletePayload_NotFound(t *testing.T) {

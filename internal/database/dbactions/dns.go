@@ -9,10 +9,25 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (act *dbactions) CreateDNSRecord(ctx context.Context, p actions.CreateDNSRecordParams) (actions.CreateDNSRecordResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func DNSRecord(m *models.DNSRecord) *actions.DNSRecord {
+	if m == nil {
+		return nil
+	}
+
+	return &actions.DNSRecord{
+		Name:      m.Name,
+		Type:      m.Type,
+		TTL:       m.TTL,
+		Values:    m.Values,
+		Strategy:  m.Strategy,
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecordsCreateParams) (actions.DNSRecordsCreateResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -42,13 +57,16 @@ func (act *dbactions) CreateDNSRecord(ctx context.Context, p actions.CreateDNSRe
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.CreateDNSRecordResultData{payload, rec}, nil
+	return &actions.CreateDNSRecordResultData{
+		Payload: Payload(payload),
+		Record:  DNSRecord(rec),
+	}, nil
 }
 
-func (act *dbactions) DeleteDNSRecord(ctx context.Context, p actions.DeleteDNSRecordParams) (actions.DeleteDNSRecordResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (actions.DNSRecordsDeleteResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -72,13 +90,13 @@ func (act *dbactions) DeleteDNSRecord(ctx context.Context, p actions.DeleteDNSRe
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.MessageResult{"record deleted"}, nil
+	return DNSRecord(rec), nil
 }
 
-func (act *dbactions) ListDNSRecords(ctx context.Context, p actions.ListDNSRecordsParams) (actions.ListDNSRecordsResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -95,5 +113,14 @@ func (act *dbactions) ListDNSRecords(ctx context.Context, p actions.ListDNSRecor
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.ListDNSRecordsResultData{payload, recs}, nil
+	res := make([]*actions.DNSRecord, 0)
+
+	for _, r := range recs {
+		res = append(res, DNSRecord(r))
+	}
+
+	return &actions.ListDNSRecordsResultData{
+		Payload: Payload(payload),
+		Records: res,
+	}, nil
 }

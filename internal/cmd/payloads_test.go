@@ -7,98 +7,98 @@ import (
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreatePayload_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := actions.CreatePayloadResult(payload)
-
-	ctx := actions.SetUser(context.Background(), user)
+	res := actions.PayloadsCreateResult(&actions.Payload{})
 
 	acts.
-		On("CreatePayload", ctx, actions.CreatePayloadParams{
+		On("PayloadsCreate", ctx, actions.PayloadsCreateParams{
 			Name:            "test",
 			NotifyProtocols: models.PayloadProtocolsAll,
 		}).
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("Handle", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), user, []string{"new", "test"})
+	_, err := c.Exec(ctx, &actions.User{}, []string{"new", "test"})
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }
 
 func TestCreatePayload_NoArg(t *testing.T) {
-	cmd, _, _ := prepare()
+	c, _, _ := prepare()
 
-	out, err := cmd.Exec(context.Background(), user, []string{"new"})
+	out, err := c.Exec(context.Background(), &actions.User{}, []string{"new"})
 	assert.Error(t, err)
 	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
 
 func TestDeletePayload_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := &actions.MessageResult{Message: "test"}
-
-	ctx := actions.SetUser(context.Background(), user)
+	res := actions.PayloadsDeleteResult(&actions.Payload{})
 
 	acts.
-		On("DeletePayload", ctx, actions.DeletePayloadParams{
+		On("PayloadsDelete", ctx, actions.PayloadsDeleteParams{
 			Name: "test",
 		}).
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("Handle", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), user, []string{"del", "test"})
+	_, err := c.Exec(ctx, &actions.User{}, []string{"del", "test"})
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }
 
 func TestDeletePayload_NoArg(t *testing.T) {
-	cmd, _, _ := prepare()
+	c, _, _ := prepare()
 
-	out, err := cmd.Exec(context.Background(), user, []string{"del"})
+	out, err := c.Exec(context.Background(), &actions.User{}, []string{"del"})
 	assert.Error(t, err)
 	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
 
 func TestListPayloads_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := actions.ListPayloadsResult(payloads)
-
-	ctx := actions.SetUser(context.Background(), user)
+	res := actions.PayloadsListResult([]*actions.Payload{})
 
 	acts.
-		On("ListPayloads", ctx, actions.ListPayloadsParams{
+		On("PayloadsList", ctx, actions.PayloadsListParams{
 			Name: "test",
 		}).
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("Handle", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), user, []string{"list", "test"})
+	_, err := c.Exec(ctx, &actions.User{}, []string{"list", "test"})
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }
 
 func TestUpdatePayload_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := actions.UpdatePayloadResult(payload)
-
-	ctx := actions.SetUser(context.Background(), user)
+	res := actions.PayloadsUpdateResult(&actions.Payload{})
 
 	acts.
-		On("UpdatePayload", ctx, actions.UpdatePayloadParams{
+		On("PayloadsUpdate", ctx, actions.PayloadsUpdateParams{
 			Name:            "payload1",
 			NewName:         "payload1_updated",
 			NotifyProtocols: []string{"dns", "http"},
@@ -106,9 +106,12 @@ func TestUpdatePayload_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("Handle", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), user,
+	_, err := c.Exec(ctx, &actions.User{},
 		[]string{"mod", "payload1", "-n", "payload1_updated", "-p", "dns,http"})
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }

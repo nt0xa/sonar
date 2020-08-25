@@ -44,7 +44,7 @@ Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}
 	dnsRecordTemplate = tpl(`{{range .RRs}}<code>{{ . }}</code>
 {{end}}`)
 
-	meTemplate = tpl("" +
+	userTemplate = tpl("" +
 		"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
 		"<b>API token:</b> <code>{{ .APIToken }}</code>",
 	)

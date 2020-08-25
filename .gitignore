@@ -14,5 +14,7 @@ letsencrypt/
 .env
 env
 
-# Misc
+# Dev
 docker-compose.yml
+.idea/
+

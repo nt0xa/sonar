@@ -9,12 +9,14 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/google/shlex"
 	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/cmd"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
@@ -24,7 +26,7 @@ type Telegram struct {
 	api     *tgbotapi.BotAPI
 	db      *database.DB
 	cfg     *Config
-	cmd     *cmd.Command
+	cmd     cmd.Command
 	actions actions.Actions
 	bot     tgbotapi.User
 
@@ -66,13 +68,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		actions: actions,
 	}
 
-	cmd := &cmd.Command{
-		Actions:       actions,
-		ResultHandler: tg.handleResult,
-		PreExec:       tg.preExec,
-	}
-
-	tg.cmd = cmd
+	tg.cmd = cmd.New(actions, tg.handleResult, tg.preExec)
 
 	return tg, nil
 }
@@ -139,9 +135,10 @@ func (tg *Telegram) Start() error {
 		}
 
 		ctx := SetChatID(context.Background(), chat.ID)
-		args := strings.Split(strings.TrimLeft(update.Message.Text, "/"), " ")
+		ctx = dbactions.SetUser(ctx, user)
+		args, _ := shlex.Split(strings.TrimLeft(update.Message.Text, "/"))
 
-		if out, err := tg.cmd.Exec(ctx, user, args); err != nil {
+		if out, err := tg.cmd.Exec(ctx, dbactions.User(user), args); err != nil {
 			tg.handleError(chat.ID, err)
 		} else if out != "" {
 			tg.htmlMessage(chat.ID, out)
@@ -171,7 +168,7 @@ func (tg *Telegram) isDeletedFromGroup(msg *tgbotapi.Message) bool {
 	return msg.LeftChatMember != nil && msg.LeftChatMember.ID == tg.bot.ID
 }
 
-func (tg *Telegram) preExec(root *cobra.Command, user *models.User) {
+func (tg *Telegram) preExec(root *cobra.Command, u *actions.User) {
 	root.SetHelpTemplate(helpTemplate)
 	root.SetUsageTemplate(usageTemplate)
 
@@ -199,28 +196,28 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 		err error
 	)
 
-	u, err := actions.GetUser(ctx)
+	u, err := dbactions.GetUser(ctx)
 	if err != nil {
 		return
 	}
 
 	switch r := res.(type) {
 
-	case actions.CreatePayloadResult:
+	case actions.PayloadsCreateResult:
 		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("%s.%s", r.Subdomain, tg.domain))
 
-	case actions.ListPayloadsResult:
+	case actions.PayloadsListResult:
 		data := struct {
-			Payloads actions.ListPayloadsResult
+			Payloads actions.PayloadsListResult
 			Domain   string
 		}{r, tg.domain}
 		err = listPayloadTemplate.Execute(&tpl, data)
 		tg.htmlMessage(u.Params.TelegramID, tpl.String())
 
-	case actions.CreateUserResult:
+	case actions.UsersCreateResult:
 		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("user %q created", r.Name))
 
-	case actions.CreateDNSRecordResult:
+	case actions.DNSRecordsCreateResult:
 		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
 		data := struct {
 			RRs []dns.RR
@@ -229,7 +226,7 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 		err = dnsRecordTemplate.Execute(&tpl, data)
 		tg.htmlMessage(u.Params.TelegramID, tpl.String())
 
-	case actions.ListDNSRecordsResult:
+	case actions.DNSRecordsListResult:
 		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
 		rrs := make([]dns.RR, 0)
 		for _, rec := range r.Records {
@@ -241,9 +238,6 @@ func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
 
 		err = dnsRecordTemplate.Execute(&tpl, data)
 		tg.htmlMessage(u.Params.TelegramID, tpl.String())
-
-	case *actions.MessageResult:
-		tg.txtMessage(u.Params.TelegramID, r.Message)
 	}
 
 	if err != nil {

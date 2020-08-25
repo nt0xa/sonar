@@ -3,11 +3,15 @@
 #
 
 .PHONY: build
-build: build-server
+build: build-server build-client
 
 .PHONY: build-server
 build-server:
 	@go build -o server ./cmd/server
+
+.PHONY: build-client
+build-client:
+	@go build -o sonar ./cmd/client
 
 
 #
@@ -41,7 +45,8 @@ mock-actions:
 	@mockery -dir internal/actions \
 		-output internal/actions/mock \
 		-outpkg actions_mock \
-		-name Actions
+		-name Actions \
+		-name ResultHandler
 
 #
 # Migrations

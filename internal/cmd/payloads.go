@@ -8,8 +8,8 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *Command) CreatePayload() *cobra.Command {
-	var p actions.CreatePayloadParams
+func (c *command) CreatePayload() *cobra.Command {
+	var p actions.PayloadsCreateParams
 
 	cmd := &cobra.Command{
 		Use:   "new NAME",
@@ -19,12 +19,12 @@ func (c *Command) CreatePayload() *cobra.Command {
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Name = args[0]
 
-			res, err := c.Actions.CreatePayload(cmd.Context(), p)
+			res, err := c.actions.PayloadsCreate(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler(cmd.Context(), res)
 
 			return nil
 		}),
@@ -36,8 +36,8 @@ func (c *Command) CreatePayload() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) UpdatePayload() *cobra.Command {
-	var p actions.UpdatePayloadParams
+func (c *command) UpdatePayload() *cobra.Command {
+	var p actions.PayloadsUpdateParams
 
 	cmd := &cobra.Command{
 		Use:   "mod NAME",
@@ -57,12 +57,12 @@ func (c *Command) UpdatePayload() *cobra.Command {
 				p.NotifyProtocols = protocols
 			}
 
-			res, err := c.Actions.UpdatePayload(cmd.Context(), p)
+			res, err := c.actions.PayloadsUpdate(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler(cmd.Context(), res)
 
 			return nil
 		}),
@@ -74,8 +74,8 @@ func (c *Command) UpdatePayload() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) DeletePayload() *cobra.Command {
-	var p actions.DeletePayloadParams
+func (c *command) DeletePayload() *cobra.Command {
+	var p actions.PayloadsDeleteParams
 
 	cmd := &cobra.Command{
 		Use:   "del NAME",
@@ -85,12 +85,12 @@ func (c *Command) DeletePayload() *cobra.Command {
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Name = args[0]
 
-			res, err := c.Actions.DeletePayload(cmd.Context(), p)
+			res, err := c.actions.PayloadsDelete(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler(cmd.Context(), res)
 
 			return nil
 		}),
@@ -99,8 +99,8 @@ func (c *Command) DeletePayload() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) ListPayloads() *cobra.Command {
-	var p actions.ListPayloadsParams
+func (c *command) ListPayloads() *cobra.Command {
+	var p actions.PayloadsListParams
 
 	cmd := &cobra.Command{
 		Use:   "list SUBSTR",
@@ -111,12 +111,12 @@ func (c *Command) ListPayloads() *cobra.Command {
 				p.Name = args[0]
 			}
 
-			res, err := c.Actions.ListPayloads(cmd.Context(), p)
+			res, err := c.actions.PayloadsList(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler(cmd.Context(), res)
 
 			return nil
 		}),

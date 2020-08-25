@@ -8,23 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 func TestCreateUser_Success(t *testing.T) {
-	u, err := db.UsersGetByID(3) // admin
+	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
-		p    actions.CreateUserParams
+		p    actions.UsersCreateParams
 	}{
 		{
 			"regular",
-			actions.CreateUserParams{
+			actions.UsersCreateParams{
 				Name: "test",
 				Params: models.UserParams{
 					TelegramID: 1000,
@@ -34,7 +35,7 @@ func TestCreateUser_Success(t *testing.T) {
 		},
 		{
 			"admin",
-			actions.CreateUserParams{
+			actions.UsersCreateParams{
 				Name: "test",
 				Params: models.UserParams{
 					TelegramID: 1000,
@@ -50,7 +51,7 @@ func TestCreateUser_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.CreateUser(ctx, tt.p)
+			r, err := acts.UsersCreate(ctx, tt.p)
 			assert.NoError(t, err)
 
 			assert.NotNil(t, r)
@@ -66,37 +67,26 @@ func TestCreateUser_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	adm, err := db.UsersGetByID(3)
-	require.NoError(t, err)
-
-	ctx := actions.SetUser(context.Background(), adm)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.CreateUserParams
+		p    actions.UsersCreateParams
 		err  errors.Error
 	}{
 		{
 			"no user in ctx",
 			context.Background(),
-			actions.CreateUserParams{
+			actions.UsersCreateParams{
 				Name: "test",
 			},
 			&errors.InternalError{},
 		},
 		{
-			"not admin",
-			actions.SetUser(context.Background(), u),
-			actions.CreateUserParams{
-				Name: "test",
-			},
-			&errors.ForbiddenError{},
-		},
-		{
 			"empty name",
 			ctx,
-			actions.CreateUserParams{
+			actions.UsersCreateParams{
 				Name: "",
 			},
 			&errors.ValidationError{},
@@ -104,7 +94,7 @@ func TestCreateUser_Error(t *testing.T) {
 		{
 			"duplicate name",
 			ctx,
-			actions.CreateUserParams{
+			actions.UsersCreateParams{
 				Name: "user1",
 			},
 			&errors.ConflictError{},
@@ -116,7 +106,7 @@ func TestCreateUser_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.CreateUser(tt.ctx, tt.p)
+			_, err := acts.UsersCreate(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -127,15 +117,15 @@ func TestDeleteUser_Success(t *testing.T) {
 	u, err := db.UsersGetByID(3)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
-		p    actions.DeleteUserParams
+		p    actions.UsersDeleteParams
 	}{
 		{
 			"user1",
-			actions.DeleteUserParams{
+			actions.UsersDeleteParams{
 				Name: "user1",
 			},
 		},
@@ -146,7 +136,7 @@ func TestDeleteUser_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.DeleteUser(ctx, tt.p)
+			r, err := acts.UsersDelete(ctx, tt.p)
 			assert.NoError(t, err)
 
 			assert.NotNil(t, r)
@@ -161,37 +151,18 @@ func TestDeleteUser_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	adm, err := db.UsersGetByID(3)
-	require.NoError(t, err)
-
-	ctx := actions.SetUser(context.Background(), adm)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.DeleteUserParams
+		p    actions.UsersDeleteParams
 		err  errors.Error
 	}{
 		{
-			"no user in ctx",
-			context.Background(),
-			actions.DeleteUserParams{
-				Name: "test",
-			},
-			&errors.InternalError{},
-		},
-		{
-			"not admin",
-			actions.SetUser(context.Background(), u),
-			actions.DeleteUserParams{
-				Name: "test",
-			},
-			&errors.ForbiddenError{},
-		},
-		{
 			"empty name",
 			ctx,
-			actions.DeleteUserParams{
+			actions.UsersDeleteParams{
 				Name: "",
 			},
 			&errors.ValidationError{},
@@ -199,7 +170,7 @@ func TestDeleteUser_Error(t *testing.T) {
 		{
 			"not existing user",
 			ctx,
-			actions.DeleteUserParams{
+			actions.UsersDeleteParams{
 				Name: "not-exist",
 			},
 			&errors.NotFoundError{},
@@ -211,7 +182,7 @@ func TestDeleteUser_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DeleteUser(tt.ctx, tt.p)
+			_, err := acts.UsersDelete(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})

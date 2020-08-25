@@ -16,6 +16,7 @@ require (
 	github.com/go-acme/lego/v3 v3.2.0
 	github.com/go-chi/chi v4.0.4+incompatible
 	github.com/go-ozzo/ozzo-validation/v4 v4.1.0
+	github.com/go-resty/resty/v2 v2.3.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/go-testfixtures/testfixtures v2.5.1+incompatible
@@ -24,6 +25,7 @@ require (
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+	github.com/gookit/color v1.2.8
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect
@@ -59,7 +61,6 @@ require (
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
-	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/grpc v1.27.1 // indirect

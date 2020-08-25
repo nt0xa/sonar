@@ -27,9 +27,9 @@ func JSON(src io.Reader, dst interface{}) error {
 		case errors.As(err, &unmarshalTypeError):
 			return fmt.Errorf("invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
 
-		case strings.HasPrefix(err.Error(), "unknown field "):
-			fieldName := strings.TrimPrefix(err.Error(), "unknown field ")
-			return fmt.Errorf("unknown field %q", fieldName)
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			return fmt.Errorf("unknown field %s", fieldName)
 
 		case errors.Is(err, io.EOF):
 			return errors.New("empty")
