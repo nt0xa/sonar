@@ -37,13 +37,9 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		u, err := dbactions.GetUser(r.Context())
-		if err != nil {
-			handleError(api.log, w, r, err)
-			return
-		}
+		u, _ := dbactions.GetUser(r.Context())
 
-		if !u.IsAdmin {
+		if u == nil || !u.IsAdmin {
 			handleError(api.log, w, r, errors.Forbiddenf("admin only"))
 			return
 		}
