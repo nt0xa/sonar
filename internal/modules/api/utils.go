@@ -14,6 +14,10 @@ import (
 
 var decoder = schema.NewDecoder()
 
+func init() {
+	decoder.SetAliasTag("query")
+}
+
 func fromPath(r *http.Request, dst interface{}) error {
 	pp := chi.RouteContext(r.Context()).URLParams
 
@@ -23,7 +27,16 @@ func fromPath(r *http.Request, dst interface{}) error {
 		pmap[name] = pp.Values[i]
 	}
 
-	if err := mapstructure.Decode(pmap, dst); err != nil {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata: nil,
+		Result:   dst,
+		TagName:  "path",
+	})
+	if err != nil {
+		return errors.Internal(err)
+	}
+
+	if err := decoder.Decode(pmap); err != nil {
 		return errors.BadFormatf("path: %s", err)
 	}
 

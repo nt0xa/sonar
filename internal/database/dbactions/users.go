@@ -3,21 +3,29 @@ package dbactions
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (act *dbactions) CreateUser(ctx context.Context, p actions.CreateUserParams) (actions.CreateUserResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func User(m *models.User) *actions.User {
+	if m == nil {
+		return nil
 	}
 
-	if !u.IsAdmin {
-		return nil, errors.Forbiddenf("only admin can create users")
+	return &actions.User{
+		Name:      m.Name,
+		Params:    m.Params,
+		IsAdmin:   m.IsAdmin,
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreateParams) (actions.UsersCreateResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -39,19 +47,10 @@ func (act *dbactions) CreateUser(ctx context.Context, p actions.CreateUserParams
 		return nil, errors.Internal(err)
 	}
 
-	return actions.CreateUserResult(user), nil
+	return User(user), nil
 }
 
-func (act *dbactions) DeleteUser(ctx context.Context, p actions.DeleteUserParams) (actions.DeleteUserResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
-	}
-
-	if !u.IsAdmin {
-		return nil, errors.Forbiddenf("only admin can delete users")
-	}
-
+func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeleteParams) (actions.UsersDeleteResult, errors.Error) {
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
 	}
@@ -65,5 +64,5 @@ func (act *dbactions) DeleteUser(ctx context.Context, p actions.DeleteUserParams
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.MessageResult{Message: fmt.Sprintf("user %q deleted", user.Name)}, nil
+	return User(user), nil
 }

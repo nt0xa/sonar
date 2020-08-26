@@ -7,20 +7,20 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *Command) Users() *cobra.Command {
+func (c *command) Users() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "users",
 		Short: "Manage users",
 	}
 
-	cmd.AddCommand(c.CreateUser())
-	cmd.AddCommand(c.DeleteUser())
+	cmd.AddCommand(c.UsersCreate())
+	cmd.AddCommand(c.UsersDelete())
 
 	return cmd
 }
 
-func (c *Command) CreateUser() *cobra.Command {
-	var p actions.CreateUserParams
+func (c *command) UsersCreate() *cobra.Command {
+	var p actions.UsersCreateParams
 
 	cmd := &cobra.Command{
 		Use:   "new NAME",
@@ -35,12 +35,12 @@ func (c *Command) CreateUser() *cobra.Command {
 				return errors.BadFormat(err)
 			}
 
-			res, err := c.Actions.CreateUser(cmd.Context(), p)
+			res, err := c.actions.UsersCreate(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler.UsersCreate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -52,8 +52,8 @@ func (c *Command) CreateUser() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) DeleteUser() *cobra.Command {
-	var p actions.DeleteUserParams
+func (c *command) UsersDelete() *cobra.Command {
+	var p actions.UsersDeleteParams
 
 	cmd := &cobra.Command{
 		Use:   "del NAME",
@@ -63,12 +63,12 @@ func (c *Command) DeleteUser() *cobra.Command {
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Name = args[0]
 
-			res, err := c.Actions.DeleteUser(cmd.Context(), p)
+			res, err := c.actions.UsersDelete(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler.UsersDelete(cmd.Context(), res)
 
 			return nil
 		}),

@@ -62,7 +62,7 @@ var (
 )
 
 const (
-	AdminToken = "94008eb13da98b94b5933cd1bd15a359"
+	AdminToken = "a33bfdbfb3c62feb7ea59314dbd17426"
 	User1Token = "50c862e41d059eeca13adc7b276b46b7"
 	User2Token = "7001f2d819d3d5fb0b1fd75dd38eb34e"
 )

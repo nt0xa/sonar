@@ -1,7 +1,9 @@
 # Binary
 dist/
 cmd/server/server
+cmd/client/client
 /server
+/sonar
 
 # macOS
 .DS_Store
@@ -14,5 +16,7 @@ letsencrypt/
 .env
 env
 
-# Misc
+# Dev
 docker-compose.yml
+.idea/
+

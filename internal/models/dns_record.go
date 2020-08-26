@@ -39,16 +39,16 @@ var DNSStrategiesAll = []string{
 }
 
 type DNSRecord struct {
-	ID             int64          `db:"id"               json:"-"`
-	PayloadID      int64          `db:"payload_id"       json:"-"`
-	Name           string         `db:"name"             json:"name"`
-	Type           string         `db:"type"             json:"type"`
-	TTL            int            `db:"ttl"              json:"ttl"`
-	Values         pq.StringArray `db:"values"           json:"values"`
-	Strategy       string         `db:"strategy"         json:"strategy"`
-	LastAnswer     pq.StringArray `db:"last_answer"      json:"lastAnswer"`
-	LastAccessedAt *time.Time     `db:"last_accessed_at" json:"lastAccessedAt"`
-	CreatedAt      time.Time      `db:"created_at"       json:"createdAt"`
+	ID             int64          `db:"id"`
+	PayloadID      int64          `db:"payload_id"`
+	Name           string         `db:"name"`
+	Type           string         `db:"type"`
+	TTL            int            `db:"ttl"`
+	Values         pq.StringArray `db:"values"`
+	Strategy       string         `db:"strategy"`
+	LastAnswer     pq.StringArray `db:"last_answer"`
+	LastAccessedAt *time.Time     `db:"last_accessed_at"`
+	CreatedAt      time.Time      `db:"created_at"`
 }
 
 func (r *DNSRecord) Qtype() uint16 {

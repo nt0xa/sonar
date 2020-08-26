@@ -18,20 +18,20 @@ type Actions struct {
 }
 
 // CreateDNSRecord provides a mock function with given fields: _a0, _a1
-func (_m *Actions) CreateDNSRecord(_a0 context.Context, _a1 actions.CreateDNSRecordParams) (*actions.CreateDNSRecordResultData, errors.Error) {
+func (_m *Actions) DNSRecordsCreate(_a0 context.Context, _a1 actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResultData, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.CreateDNSRecordResultData
-	if rf, ok := ret.Get(0).(func(context.Context, actions.CreateDNSRecordParams) *actions.CreateDNSRecordResultData); ok {
+	var r0 *actions.DNSRecordsCreateResultData
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsCreateParams) *actions.DNSRecordsCreateResultData); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.CreateDNSRecordResultData)
+			r0 = ret.Get(0).(*actions.DNSRecordsCreateResultData)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.CreateDNSRecordParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.DNSRecordsCreateParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -43,20 +43,20 @@ func (_m *Actions) CreateDNSRecord(_a0 context.Context, _a1 actions.CreateDNSRec
 }
 
 // CreatePayload provides a mock function with given fields: _a0, _a1
-func (_m *Actions) CreatePayload(_a0 context.Context, _a1 actions.CreatePayloadParams) (actions.CreatePayloadResult, errors.Error) {
+func (_m *Actions) PayloadsCreate(_a0 context.Context, _a1 actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 actions.CreatePayloadResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.CreatePayloadParams) actions.CreatePayloadResult); ok {
+	var r0 actions.PayloadsCreateResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.PayloadsCreateParams) actions.PayloadsCreateResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(actions.CreatePayloadResult)
+			r0 = ret.Get(0).(actions.PayloadsCreateResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.CreatePayloadParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.PayloadsCreateParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -68,20 +68,20 @@ func (_m *Actions) CreatePayload(_a0 context.Context, _a1 actions.CreatePayloadP
 }
 
 // CreateUser provides a mock function with given fields: _a0, _a1
-func (_m *Actions) CreateUser(_a0 context.Context, _a1 actions.CreateUserParams) (actions.CreateUserResult, errors.Error) {
+func (_m *Actions) UsersCreate(_a0 context.Context, _a1 actions.UsersCreateParams) (actions.UsersCreateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 actions.CreateUserResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.CreateUserParams) actions.CreateUserResult); ok {
+	var r0 actions.UsersCreateResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.UsersCreateParams) actions.UsersCreateResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(actions.CreateUserResult)
+			r0 = ret.Get(0).(actions.UsersCreateResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.CreateUserParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.UsersCreateParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -93,20 +93,20 @@ func (_m *Actions) CreateUser(_a0 context.Context, _a1 actions.CreateUserParams)
 }
 
 // DeleteDNSRecord provides a mock function with given fields: _a0, _a1
-func (_m *Actions) DeleteDNSRecord(_a0 context.Context, _a1 actions.DeleteDNSRecordParams) (*actions.MessageResult, errors.Error) {
+func (_m *Actions) DNSRecordsDelete(_a0 context.Context, _a1 actions.DNSRecordsDeleteParams) (actions.DNSRecordsDeleteResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.MessageResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.DeleteDNSRecordParams) *actions.MessageResult); ok {
+	var r0 actions.DNSRecordsDeleteResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsDeleteParams) actions.DNSRecordsDeleteResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.MessageResult)
+			r0 = ret.Get(0).(actions.DNSRecordsDeleteResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.DeleteDNSRecordParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.DNSRecordsDeleteParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -118,20 +118,20 @@ func (_m *Actions) DeleteDNSRecord(_a0 context.Context, _a1 actions.DeleteDNSRec
 }
 
 // DeletePayload provides a mock function with given fields: _a0, _a1
-func (_m *Actions) DeletePayload(_a0 context.Context, _a1 actions.DeletePayloadParams) (*actions.MessageResult, errors.Error) {
+func (_m *Actions) PayloadsDelete(_a0 context.Context, _a1 actions.PayloadsDeleteParams) (actions.PayloadsDeleteResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.MessageResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.DeletePayloadParams) *actions.MessageResult); ok {
+	var r0 actions.PayloadsDeleteResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.PayloadsDeleteParams) actions.PayloadsDeleteResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.MessageResult)
+			r0 = ret.Get(0).(actions.PayloadsDeleteResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.DeletePayloadParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.PayloadsDeleteParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -143,20 +143,20 @@ func (_m *Actions) DeletePayload(_a0 context.Context, _a1 actions.DeletePayloadP
 }
 
 // DeleteUser provides a mock function with given fields: _a0, _a1
-func (_m *Actions) DeleteUser(_a0 context.Context, _a1 actions.DeleteUserParams) (*actions.MessageResult, errors.Error) {
+func (_m *Actions) UsersDelete(_a0 context.Context, _a1 actions.UsersDeleteParams) (actions.UsersDeleteResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.MessageResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.DeleteUserParams) *actions.MessageResult); ok {
+	var r0 actions.UsersDeleteResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.UsersDeleteParams) actions.UsersDeleteResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.MessageResult)
+			r0 = ret.Get(0).(actions.UsersDeleteResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.DeleteUserParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.UsersDeleteParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -167,21 +167,46 @@ func (_m *Actions) DeleteUser(_a0 context.Context, _a1 actions.DeleteUserParams)
 	return r0, r1
 }
 
-// ListDNSRecords provides a mock function with given fields: _a0, _a1
-func (_m *Actions) ListDNSRecords(_a0 context.Context, _a1 actions.ListDNSRecordsParams) (*actions.ListDNSRecordsResultData, errors.Error) {
-	ret := _m.Called(_a0, _a1)
+// GetCurrentUser provides a mock function with given fields: _a0
+func (_m *Actions) UserCurrent(_a0 context.Context) (actions.UserCurrentResult, errors.Error) {
+	ret := _m.Called(_a0)
 
-	var r0 *actions.ListDNSRecordsResultData
-	if rf, ok := ret.Get(0).(func(context.Context, actions.ListDNSRecordsParams) *actions.ListDNSRecordsResultData); ok {
-		r0 = rf(_a0, _a1)
+	var r0 actions.UserCurrentResult
+	if rf, ok := ret.Get(0).(func(context.Context) actions.UserCurrentResult); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.ListDNSRecordsResultData)
+			r0 = ret.Get(0).(actions.UserCurrentResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.ListDNSRecordsParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) errors.Error); ok {
+		r1 = rf(_a0)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// ListDNSRecords provides a mock function with given fields: _a0, _a1
+func (_m *Actions) DNSRecordsList(_a0 context.Context, _a1 actions.DNSRecordsListParams) (*actions.DNSRecordsListResultData, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 *actions.DNSRecordsListResultData
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsListParams) *actions.DNSRecordsListResultData); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*actions.DNSRecordsListResultData)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(context.Context, actions.DNSRecordsListParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -193,20 +218,20 @@ func (_m *Actions) ListDNSRecords(_a0 context.Context, _a1 actions.ListDNSRecord
 }
 
 // ListPayloads provides a mock function with given fields: _a0, _a1
-func (_m *Actions) ListPayloads(_a0 context.Context, _a1 actions.ListPayloadsParams) (actions.ListPayloadsResult, errors.Error) {
+func (_m *Actions) PayloadsList(_a0 context.Context, _a1 actions.PayloadsListParams) (actions.PayloadsListResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 actions.ListPayloadsResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.ListPayloadsParams) actions.ListPayloadsResult); ok {
+	var r0 actions.PayloadsListResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.PayloadsListParams) actions.PayloadsListResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(actions.ListPayloadsResult)
+			r0 = ret.Get(0).(actions.PayloadsListResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.ListPayloadsParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.PayloadsListParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
@@ -218,20 +243,20 @@ func (_m *Actions) ListPayloads(_a0 context.Context, _a1 actions.ListPayloadsPar
 }
 
 // UpdatePayload provides a mock function with given fields: _a0, _a1
-func (_m *Actions) UpdatePayload(_a0 context.Context, _a1 actions.UpdatePayloadParams) (actions.UpdatePayloadResult, errors.Error) {
+func (_m *Actions) PayloadsUpdate(_a0 context.Context, _a1 actions.PayloadsUpdateParams) (actions.PayloadsUpdateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 actions.UpdatePayloadResult
-	if rf, ok := ret.Get(0).(func(context.Context, actions.UpdatePayloadParams) actions.UpdatePayloadResult); ok {
+	var r0 actions.PayloadsUpdateResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.PayloadsUpdateParams) actions.PayloadsUpdateResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(actions.UpdatePayloadResult)
+			r0 = ret.Get(0).(actions.PayloadsUpdateResult)
 		}
 	}
 
 	var r1 errors.Error
-	if rf, ok := ret.Get(1).(func(context.Context, actions.UpdatePayloadParams) errors.Error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, actions.PayloadsUpdateParams) errors.Error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {

@@ -2,24 +2,49 @@ package actions
 
 import (
 	"context"
+	"time"
 
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/bi-zone/sonar/internal/utils/valid"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/miekg/dns"
 )
 
 type DNSActions interface {
-	CreateDNSRecord(context.Context, CreateDNSRecordParams) (CreateDNSRecordResult, errors.Error)
-	DeleteDNSRecord(context.Context, DeleteDNSRecordParams) (DeleteDNSRecordResult, errors.Error)
-	ListDNSRecords(context.Context, ListDNSRecordsParams) (ListDNSRecordsResult, errors.Error)
+	DNSRecordsCreate(context.Context, DNSRecordsCreateParams) (DNSRecordsCreateResult, errors.Error)
+	DNSRecordsDelete(context.Context, DNSRecordsDeleteParams) (DNSRecordsDeleteResult, errors.Error)
+	DNSRecordsList(context.Context, DNSRecordsListParams) (DNSRecordsListResult, errors.Error)
+}
+
+type DNSRecordsHandler interface {
+	DNSRecordsCreate(context.Context, DNSRecordsCreateResult)
+	DNSRecordsList(context.Context, DNSRecordsListResult)
+	DNSRecordsDelete(context.Context, DNSRecordsDeleteResult)
+}
+
+type DNSRecord struct {
+	Name      string    `json:"name"`
+	Type      string    `json:"type"`
+	TTL       int       `json:"ttl"`
+	Values    []string  `json:"values"`
+	Strategy  string    `json:"strategy"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+func (r *DNSRecord) RRs(origin string) []dns.RR {
+	rrs := make([]dns.RR, 0)
+	for _, v := range r.Values {
+		rrs = append(rrs, models.DNSStringToRR(v, r.Type, r.Name, origin, r.TTL))
+	}
+	return rrs
 }
 
 //
 // Create
 //
 
-type CreateDNSRecordParams struct {
+type DNSRecordsCreateParams struct {
 	PayloadName string   `json:"payloadName"`
 	Name        string   `json:"name"`
 	TTL         int      `json:"ttl"`
@@ -28,7 +53,7 @@ type CreateDNSRecordParams struct {
 	Strategy    string   `json:"strategy"`
 }
 
-func (p CreateDNSRecordParams) Validate() error {
+func (p DNSRecordsCreateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
 		validation.Field(&p.Name, validation.Required, validation.By(valid.Subdomain)),
@@ -38,24 +63,24 @@ func (p CreateDNSRecordParams) Validate() error {
 	)
 }
 
-type CreateDNSRecordResultData struct {
-	Payload *models.Payload
-	Record  *models.DNSRecord
+type DNSRecordsCreateResultData struct {
+	Payload *Payload   `json:"payload"`
+	Record  *DNSRecord `json:"record"`
 }
 
-type CreateDNSRecordResult = *CreateDNSRecordResultData
+type DNSRecordsCreateResult = *DNSRecordsCreateResultData
 
 //
 // Delete
 //
 
-type DeleteDNSRecordParams struct {
-	PayloadName string `json:"payloadName"`
-	Name        string `json:"name"`
-	Type        string `json:"type"`
+type DNSRecordsDeleteParams struct {
+	PayloadName string `path:"payloadName"`
+	Name        string `path:"name"`
+	Type        string `path:"type"`
 }
 
-func (p DeleteDNSRecordParams) Validate() error {
+func (p DNSRecordsDeleteParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
 		validation.Field(&p.Name, validation.Required, validation.By(valid.Subdomain)),
@@ -63,25 +88,30 @@ func (p DeleteDNSRecordParams) Validate() error {
 	)
 }
 
-type DeleteDNSRecordResult = *MessageResult
+type DNSRecordsDeleteResultData struct {
+	Payload *Payload   `json:"payload"`
+	Record  *DNSRecord `json:"record"`
+}
+
+type DNSRecordsDeleteResult = *DNSRecordsDeleteResultData
 
 //
 // List
 //
 
-type ListDNSRecordsParams struct {
-	PayloadName string `json:"payloadName"`
+type DNSRecordsListParams struct {
+	PayloadName string `path:"payloadName"`
 }
 
-func (p ListDNSRecordsParams) Validate() error {
+func (p DNSRecordsListParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
 	)
 }
 
-type ListDNSRecordsResultData struct {
-	Payload *models.Payload
-	Records []*models.DNSRecord
+type DNSRecordsListResultData struct {
+	Payload *Payload     `json:"payload"`
+	Records []*DNSRecord `json:"records"`
 }
 
-type ListDNSRecordsResult = *ListDNSRecordsResultData
+type DNSRecordsListResult = *DNSRecordsListResultData
