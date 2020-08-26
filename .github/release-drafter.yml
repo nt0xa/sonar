@@ -13,3 +13,15 @@ categories:
     label: 'documentation'
   - title: 'Maintenance'
     label: 'maintenance'
+    
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
