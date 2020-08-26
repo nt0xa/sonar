@@ -11,7 +11,7 @@ import (
 	"github.com/bi-zone/sonar/internal/models"
 )
 
-func TestPayloadsCreate(t *testing.T) {
+func TestPayloadsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -28,7 +28,20 @@ func TestPayloadsCreate(t *testing.T) {
 	assert.Equal(t, p.NotifyProtocols, res.NotifyProtocols)
 }
 
-func TestPayloadsList(t *testing.T) {
+func TestPayloadsCreate_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.PayloadsCreateParams{
+		NotifyProtocols: []string{"http"},
+	}
+
+	res, err := client.PayloadsCreate(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
+}
+
+func TestPayloadsList_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -43,7 +56,7 @@ func TestPayloadsList(t *testing.T) {
 	assert.Len(t, res, 2)
 }
 
-func TestPayloadsUpdate(t *testing.T) {
+func TestPayloadsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -60,7 +73,22 @@ func TestPayloadsUpdate(t *testing.T) {
 	assert.Equal(t, p.NewName, res.Name)
 }
 
-func TestPayloadsDelete(t *testing.T) {
+func TestPayloadsUpdate_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.PayloadsUpdateParams{
+		Name:            "not-exist",
+		NewName:         "test",
+		NotifyProtocols: []string{models.PayloadProtocolDNS},
+	}
+
+	res, err := client.PayloadsUpdate(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
+}
+
+func TestPayloadsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -71,4 +99,17 @@ func TestPayloadsDelete(t *testing.T) {
 	res, err := client.PayloadsDelete(context.Background(), p)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+}
+
+func TestPayloadsDelete_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.PayloadsDeleteParams{
+		Name: "not-exist",
+	}
+
+	res, err := client.PayloadsDelete(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
 }

@@ -34,6 +34,24 @@ func TestPayloadsCreate_Success(t *testing.T) {
 	res.Schema(payload)
 }
 
+func TestPayloadsCreate_BadRequest(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	e := heDefault(t)
+	e = heAuth(e, User1Token)
+
+	res := e.POST("/payloads").
+		WithJSON(map[string]interface{}{
+			"invalid": "test",
+		}).
+		Expect().
+		Status(400).
+		JSON()
+
+	res.Object().ContainsKey("message")
+}
+
 func TestPayloadsList_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUsersCreate(t *testing.T) {
+func TestUsersCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -24,7 +24,20 @@ func TestUsersCreate(t *testing.T) {
 	assert.Equal(t, p.Name, res.Name)
 }
 
-func TestUsersDelete(t *testing.T) {
+func TestUsersCreate_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.UsersCreateParams{
+		Name: "",
+	}
+
+	res, err := adminClient.UsersCreate(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
+}
+
+func TestUsersDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -35,4 +48,17 @@ func TestUsersDelete(t *testing.T) {
 	res, err := adminClient.UsersDelete(context.Background(), p)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+}
+
+func TestUsersDelete_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.UsersDeleteParams{
+		Name: "not-exist",
+	}
+
+	res, err := adminClient.UsersDelete(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
 }

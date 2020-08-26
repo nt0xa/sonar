@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDNSRecordsCreate(t *testing.T) {
+func TestDNSRecordsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -30,7 +30,22 @@ func TestDNSRecordsCreate(t *testing.T) {
 	assert.Equal(t, p.Name, res.Record.Name)
 }
 
-func TestDNSRecordsList(t *testing.T) {
+func TestDNSRecordsCreate_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.DNSRecordsCreateParams{
+		PayloadName: "payload1",
+		Name:        "test",
+		TTL:         60,
+	}
+
+	res, err := client.DNSRecordsCreate(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
+}
+
+func TestDNSRecordsList_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -45,7 +60,20 @@ func TestDNSRecordsList(t *testing.T) {
 	assert.Len(t, res.Records, 9)
 }
 
-func TestDNSRecordsDelete(t *testing.T) {
+func TestDNSRecordsList_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.DNSRecordsListParams{
+		PayloadName: "not-exist",
+	}
+
+	res, err := client.DNSRecordsList(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
+}
+
+func TestDNSRecordsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -58,4 +86,18 @@ func TestDNSRecordsDelete(t *testing.T) {
 	res, err := client.DNSRecordsDelete(context.Background(), p)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+}
+
+func TestDNSRecordsDelete_Error(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.DNSRecordsDeleteParams{
+		PayloadName: "payload1",
+		Name:        "test-aaaa",
+	}
+
+	res, err := client.DNSRecordsDelete(context.Background(), p)
+	require.Error(t, err)
+	require.Nil(t, res)
 }
