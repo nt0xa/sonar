@@ -16,22 +16,7 @@ var (
 	payload, _  = jsonschema.Reflect(&Payload{}).MarshalJSON()
 )
 
-func Test_listPayloads_Success(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-
-	e := heDefault(t)
-	e = heAuth(e, User1Token)
-
-	res := e.GET("/payloads").
-		Expect().
-		Status(200).
-		JSON()
-
-	res.Schema(payloads)
-}
-
-func Test_createPayload_Success(t *testing.T) {
+func TestPayloadsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -49,7 +34,40 @@ func Test_createPayload_Success(t *testing.T) {
 	res.Schema(payload)
 }
 
-func Test_deletePayload_Success(t *testing.T) {
+func TestPayloadsList_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	e := heDefault(t)
+	e = heAuth(e, User1Token)
+
+	res := e.GET("/payloads").
+		Expect().
+		Status(200).
+		JSON()
+
+	res.Schema(payloads)
+}
+
+func TestPayloadsUpdate_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	e := heDefault(t)
+	e = heAuth(e, User1Token)
+
+	res := e.PUT("/payloads/payload1").
+		WithJSON(map[string]interface{}{
+			"name": "test",
+		}).
+		Expect().
+		Status(200).
+		JSON()
+
+	res.Schema(payload)
+}
+
+func TestPayloadsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -64,7 +82,7 @@ func Test_deletePayload_Success(t *testing.T) {
 	res.Schema(payload)
 }
 
-func Test_deletePayload_NotFound(t *testing.T) {
+func TestPayloadsDelete_NotFound(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 

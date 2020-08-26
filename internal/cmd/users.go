@@ -13,13 +13,13 @@ func (c *command) Users() *cobra.Command {
 		Short: "Manage users",
 	}
 
-	cmd.AddCommand(c.CreateUser())
-	cmd.AddCommand(c.DeleteUser())
+	cmd.AddCommand(c.UsersCreate())
+	cmd.AddCommand(c.UsersDelete())
 
 	return cmd
 }
 
-func (c *command) CreateUser() *cobra.Command {
+func (c *command) UsersCreate() *cobra.Command {
 	var p actions.UsersCreateParams
 
 	cmd := &cobra.Command{
@@ -40,7 +40,7 @@ func (c *command) CreateUser() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.UsersCreate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -52,7 +52,7 @@ func (c *command) CreateUser() *cobra.Command {
 	return cmd
 }
 
-func (c *command) DeleteUser() *cobra.Command {
+func (c *command) UsersDelete() *cobra.Command {
 	var p actions.UsersDeleteParams
 
 	cmd := &cobra.Command{
@@ -68,7 +68,7 @@ func (c *command) DeleteUser() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.UsersDelete(cmd.Context(), res)
 
 			return nil
 		}),

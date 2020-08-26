@@ -8,7 +8,7 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *command) CreatePayload() *cobra.Command {
+func (c *command) PayloadsCreate() *cobra.Command {
 	var p actions.PayloadsCreateParams
 
 	cmd := &cobra.Command{
@@ -24,7 +24,7 @@ func (c *command) CreatePayload() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.PayloadsCreate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -36,7 +36,33 @@ func (c *command) CreatePayload() *cobra.Command {
 	return cmd
 }
 
-func (c *command) UpdatePayload() *cobra.Command {
+func (c *command) PayloadsList() *cobra.Command {
+	var p actions.PayloadsListParams
+
+	cmd := &cobra.Command{
+		Use:   "list SUBSTR",
+		Short: "List payloads",
+		Long:  "List payloads whose NAME contain SUBSTR",
+		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
+			if len(args) > 0 {
+				p.Name = args[0]
+			}
+
+			res, err := c.actions.PayloadsList(cmd.Context(), p)
+			if err != nil {
+				return err
+			}
+
+			c.handler.PayloadsList(cmd.Context(), res)
+
+			return nil
+		}),
+	}
+
+	return cmd
+}
+
+func (c *command) PayloadsUpdate() *cobra.Command {
 	var p actions.PayloadsUpdateParams
 
 	cmd := &cobra.Command{
@@ -62,7 +88,7 @@ func (c *command) UpdatePayload() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.PayloadsUpdate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -74,7 +100,7 @@ func (c *command) UpdatePayload() *cobra.Command {
 	return cmd
 }
 
-func (c *command) DeletePayload() *cobra.Command {
+func (c *command) PayloadsDelete() *cobra.Command {
 	var p actions.PayloadsDeleteParams
 
 	cmd := &cobra.Command{
@@ -90,33 +116,7 @@ func (c *command) DeletePayload() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
-
-			return nil
-		}),
-	}
-
-	return cmd
-}
-
-func (c *command) ListPayloads() *cobra.Command {
-	var p actions.PayloadsListParams
-
-	cmd := &cobra.Command{
-		Use:   "list SUBSTR",
-		Short: "List payloads",
-		Long:  "List payloads whose NAME contain SUBSTR",
-		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			if len(args) > 0 {
-				p.Name = args[0]
-			}
-
-			res, err := c.actions.PayloadsList(cmd.Context(), p)
-			if err != nil {
-				return err
-			}
-
-			c.handler(cmd.Context(), res)
+			c.handler.PayloadsDelete(cmd.Context(), res)
 
 			return nil
 		}),

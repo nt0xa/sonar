@@ -11,20 +11,20 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *command) DNS() *cobra.Command {
+func (c *command) DNSRecords() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dns",
 		Short: "Manage DNS records",
 	}
 
-	cmd.AddCommand(c.CreateDNSRecord())
-	cmd.AddCommand(c.DeleteDNSRecord())
-	cmd.AddCommand(c.ListDNSRecords())
+	cmd.AddCommand(c.DNSRecordsCreate())
+	cmd.AddCommand(c.DNSRecordsDelete())
+	cmd.AddCommand(c.DNSRecordsList())
 
 	return cmd
 }
 
-func (c *command) CreateDNSRecord() *cobra.Command {
+func (c *command) DNSRecordsCreate() *cobra.Command {
 	var p actions.DNSRecordsCreateParams
 
 	cmd := &cobra.Command{
@@ -34,14 +34,13 @@ func (c *command) CreateDNSRecord() *cobra.Command {
 		Args:  AtLeastOneArg("VALUES"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Values = args
-			p.Type = strings.ToUpper(p.Type)
 
 			res, err := c.actions.DNSRecordsCreate(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.DNSRecordsCreate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -58,7 +57,7 @@ func (c *command) CreateDNSRecord() *cobra.Command {
 	return cmd
 }
 
-func (c *command) DeleteDNSRecord() *cobra.Command {
+func (c *command) DNSRecordsDelete() *cobra.Command {
 	var p actions.DNSRecordsDeleteParams
 
 	cmd := &cobra.Command{
@@ -73,7 +72,7 @@ func (c *command) DeleteDNSRecord() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.DNSRecordsDelete(cmd.Context(), res)
 
 			return nil
 		}),
@@ -87,7 +86,7 @@ func (c *command) DeleteDNSRecord() *cobra.Command {
 	return cmd
 }
 
-func (c *command) ListDNSRecords() *cobra.Command {
+func (c *command) DNSRecordsList() *cobra.Command {
 	var p actions.DNSRecordsListParams
 
 	cmd := &cobra.Command{
@@ -100,7 +99,7 @@ func (c *command) ListDNSRecords() *cobra.Command {
 				return err
 			}
 
-			c.handler(cmd.Context(), res)
+			c.handler.DNSRecordsList(cmd.Context(), res)
 
 			return nil
 		}),

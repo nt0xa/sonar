@@ -23,7 +23,7 @@ func TestCreatePayload_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("PayloadsCreate", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{}, []string{"new", "test"})
 	assert.NoError(t, err)
@@ -53,7 +53,7 @@ func TestDeletePayload_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("PayloadsDelete", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{}, []string{"del", "test"})
 	assert.NoError(t, err)
@@ -83,7 +83,7 @@ func TestListPayloads_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("PayloadsList", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{}, []string{"list", "test"})
 	assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestUpdatePayload_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("PayloadsUpdate", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{},
 		[]string{"mod", "payload1", "-n", "payload1_updated", "-p", "dns,http"})

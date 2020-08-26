@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_checkAuth_NoToken(t *testing.T) {
+func TestAuth_NoToken(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -19,7 +19,7 @@ func Test_checkAuth_NoToken(t *testing.T) {
 	res.Object().ContainsKey("message")
 }
 
-func Test_checkAuth_InvalidToken(t *testing.T) {
+func TestAuth_InvalidToken(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -34,7 +34,7 @@ func Test_checkAuth_InvalidToken(t *testing.T) {
 	res.Object().ContainsKey("message")
 }
 
-func Test_checkAuth_ValidToken(t *testing.T) {
+func TestAuth_ValidToken(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -44,5 +44,36 @@ func Test_checkAuth_ValidToken(t *testing.T) {
 		WithHeader("Authorization", fmt.Sprintf("Bearer %s", User1Token)).
 		Expect().
 		Status(200).
+		JSON()
+}
+
+func TestAdmin_Forbidden(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	e := heDefault(t)
+
+	res := e.POST("/users").
+		WithHeader("Authorization", fmt.Sprintf("Bearer %s", User1Token)).
+		Expect().
+		Status(403).
+		JSON()
+
+	res.Object().ContainsKey("message")
+}
+
+func TestAdmin_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	e := heDefault(t)
+
+	_ = e.POST("/users").
+		WithHeader("Authorization", fmt.Sprintf("Bearer %s", AdminToken)).
+		WithJSON(map[string]interface{}{
+			"name": "test",
+		}).
+		Expect().
+		Status(201).
 		JSON()
 }

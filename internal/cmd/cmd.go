@@ -21,7 +21,7 @@ type PreExec func(*cobra.Command, *actions.User)
 
 type command struct {
 	actions actions.Actions
-	handler ResultHandler
+	handler actions.ResultHandler
 	preExec PreExec
 }
 
@@ -30,7 +30,7 @@ type Command interface {
 	Exec(context.Context, *actions.User, []string) (string, errors.Error)
 }
 
-func New(actions actions.Actions, handler ResultHandler, preExec PreExec) Command {
+func New(actions actions.Actions, handler actions.ResultHandler, preExec PreExec) Command {
 	return &command{
 		actions: actions,
 		handler: handler,
@@ -41,7 +41,7 @@ func New(actions actions.Actions, handler ResultHandler, preExec PreExec) Comman
 func (c *command) Root(u *actions.User) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "sonar",
-		Short: "CLI to control your sonar server",
+		Short: "CLI to control sonar server",
 	}
 
 	// There is no access control inside commands,
@@ -57,12 +57,12 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 	}
 
 	// Main payloads commands
-	cmd.AddCommand(c.CreatePayload())
-	cmd.AddCommand(c.UpdatePayload())
-	cmd.AddCommand(c.DeletePayload())
-	cmd.AddCommand(c.ListPayloads())
+	cmd.AddCommand(c.PayloadsCreate())
+	cmd.AddCommand(c.PayloadsList())
+	cmd.AddCommand(c.PayloadsUpdate())
+	cmd.AddCommand(c.PayloadsDelete())
 
-	cmd.AddCommand(c.DNS())
+	cmd.AddCommand(c.DNSRecords())
 
 	if u.IsAdmin {
 		cmd.AddCommand(c.Users())

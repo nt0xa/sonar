@@ -44,7 +44,7 @@ func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 		}
 
 		if !u.IsAdmin {
-			handleError(api.log, w, r, errors.Unauthorizedf("admin only"))
+			handleError(api.log, w, r, errors.Forbiddenf("admin only"))
 			return
 		}
 

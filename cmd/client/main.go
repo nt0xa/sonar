@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"log"
+	"net/url"
 	"os"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -31,16 +30,21 @@ func main() {
 	//
 
 	var (
-		url, token string
-		insecure   bool
+		baseURL, token string
+		insecure       bool
 	)
 
-	if url = os.Getenv("SONAR_API_URL"); url == "" {
-		log.Fatal("Empty SONAR_API_URL")
+	if baseURL = os.Getenv("SONAR_API_URL"); baseURL == "" {
+		fatal("Empty SONAR_API_URL")
+	}
+
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		fatal(err)
 	}
 
 	if token = os.Getenv("SONAR_API_TOKEN"); token == "" {
-		log.Fatal("Empty SONAR_API_TOKEN")
+		fatal("Empty SONAR_API_TOKEN")
 	}
 
 	if os.Getenv("SONAR_API_INSECURE") != "" {
@@ -51,7 +55,7 @@ func main() {
 	// API client
 	//
 
-	client := apiclient.New(url, token, insecure)
+	client := apiclient.New(baseURL, token, insecure)
 
 	//
 	// User
@@ -59,30 +63,21 @@ func main() {
 
 	user, err := client.UserCurrent(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	//
 	// Command
 	//
 
-	c := cmd.New(client, resultHandler, nil)
+	c := cmd.New(client, &handler{u.Hostname()}, nil)
 
 	command := c.Root(user)
 
 	command.Execute()
 }
 
-func resultHandler(ctx context.Context, res interface{}) {
-	buf := &bytes.Buffer{}
-
-	switch r := res.(type) {
-	case actions.PayloadsListResult:
-		for _, p := range r {
-			payloadTpl.Execute(buf, p)
-			break
-		}
-	}
-
-	color.Print(buf.String())
+func fatal(data interface{}) {
+	color.Error.Println(data)
+	os.Exit(1)
 }

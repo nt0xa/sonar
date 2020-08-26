@@ -98,7 +98,7 @@ func DNSRecord(typ string) validation.Rule {
 		return validation.By(FQDN)
 	}
 
-	return nil
+	return validation.Required
 }
 
 type OneOfRule struct {

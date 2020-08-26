@@ -60,13 +60,13 @@ func TestDNSRecordCreate_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c, acts, hnd := prepare()
 
-			res := &actions.CreateDNSRecordResultData{}
+			res := &actions.DNSRecordsCreateResultData{}
 
 			acts.
 				On("DNSRecordsCreate", ctx, tt.result).
 				Return(res, nil)
 
-			hnd.On("Handle", ctx, res)
+			hnd.On("DNSRecordsCreate", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
@@ -124,13 +124,13 @@ func TestDNSRecordDelete_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c, acts, hnd := prepare()
 
-			res := actions.DNSRecordsDeleteResult(&actions.DNSRecord{})
+			res := &actions.DNSRecordsDeleteResultData{}
 
 			acts.
 				On("DNSRecordsDelete", ctx, tt.result).
 				Return(res, nil)
 
-			hnd.On("Handle", ctx, res)
+			hnd.On("DNSRecordsDelete", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
@@ -164,13 +164,13 @@ func TestDNSList_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c, acts, hnd := prepare()
 
-			res := &actions.ListDNSRecordsResultData{}
+			res := &actions.DNSRecordsListResultData{}
 
 			acts.
 				On("DNSRecordsList", ctx, tt.result).
 				Return(res, nil)
 
-			hnd.On("Handle", ctx, res)
+			hnd.On("DNSRecordsList", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)

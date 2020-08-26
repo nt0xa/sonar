@@ -10,7 +10,6 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/google/shlex"
-	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -68,7 +67,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		actions: actions,
 	}
 
-	tg.cmd = cmd.New(actions, tg.handleResult, tg.preExec)
+	tg.cmd = cmd.New(actions, tg, tg.preExec)
 
 	return tg, nil
 }
@@ -188,63 +187,6 @@ func (tg *Telegram) preExec(root *cobra.Command, u *actions.User) {
 	}
 
 	root.AddCommand(cmd)
-}
-
-func (tg *Telegram) handleResult(ctx context.Context, res interface{}) {
-	var (
-		tpl bytes.Buffer
-		err error
-	)
-
-	u, err := dbactions.GetUser(ctx)
-	if err != nil {
-		return
-	}
-
-	switch r := res.(type) {
-
-	case actions.PayloadsCreateResult:
-		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("%s.%s", r.Subdomain, tg.domain))
-
-	case actions.PayloadsListResult:
-		data := struct {
-			Payloads actions.PayloadsListResult
-			Domain   string
-		}{r, tg.domain}
-		err = listPayloadTemplate.Execute(&tpl, data)
-		tg.htmlMessage(u.Params.TelegramID, tpl.String())
-
-	case actions.UsersCreateResult:
-		tg.txtMessage(u.Params.TelegramID, fmt.Sprintf("user %q created", r.Name))
-
-	case actions.DNSRecordsCreateResult:
-		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
-		data := struct {
-			RRs []dns.RR
-		}{r.Record.RRs(origin)}
-
-		err = dnsRecordTemplate.Execute(&tpl, data)
-		tg.htmlMessage(u.Params.TelegramID, tpl.String())
-
-	case actions.DNSRecordsListResult:
-		origin := fmt.Sprintf("%s.%s", r.Payload.Subdomain, tg.domain)
-		rrs := make([]dns.RR, 0)
-		for _, rec := range r.Records {
-			rrs = append(rrs, rec.RRs(origin)...)
-		}
-		data := struct {
-			RRs []dns.RR
-		}{rrs}
-
-		err = dnsRecordTemplate.Execute(&tpl, data)
-		tg.htmlMessage(u.Params.TelegramID, tpl.String())
-	}
-
-	if err != nil {
-		tg.handleError(u.Params.TelegramID, errors.Internal(err))
-		return
-	}
-
 }
 
 func (tg *Telegram) handleError(chatID int64, err errors.Error) {

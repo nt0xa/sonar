@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/models"
 )
 
-func TestPayloadCreate(t *testing.T) {
+func TestPayloadsCreate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -27,7 +28,7 @@ func TestPayloadCreate(t *testing.T) {
 	assert.Equal(t, p.NotifyProtocols, res.NotifyProtocols)
 }
 
-func TestPayloadList(t *testing.T) {
+func TestPayloadsList(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -42,7 +43,24 @@ func TestPayloadList(t *testing.T) {
 	assert.Len(t, res, 2)
 }
 
-func TestPayloadDelete(t *testing.T) {
+func TestPayloadsUpdate(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	p := actions.PayloadsUpdateParams{
+		Name:            "payload1",
+		NewName:         "test",
+		NotifyProtocols: []string{models.PayloadProtocolDNS},
+	}
+
+	res, err := client.PayloadsUpdate(context.Background(), p)
+	require.NoError(t, err)
+	require.NotNil(t, res)
+
+	assert.Equal(t, p.NewName, res.Name)
+}
+
+func TestPayloadsDelete(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 

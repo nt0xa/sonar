@@ -55,15 +55,16 @@ func TestMain(m *testing.M) {
 //
 
 var (
-	cfg    *api.Config
-	db     *database.DB
-	srv    *httptest.Server
-	tf     *testfixtures.Context
-	client *apiclient.Client
+	cfg         *api.Config
+	db          *database.DB
+	srv         *httptest.Server
+	tf          *testfixtures.Context
+	client      *apiclient.Client
+	adminClient *apiclient.Client
 )
 
 const (
-	AdminToken = "94008eb13da98b94b5933cd1bd15a359"
+	AdminToken = "a33bfdbfb3c62feb7ea59314dbd17426"
 	UserToken  = "50c862e41d059eeca13adc7b276b46b7"
 )
 
@@ -121,6 +122,7 @@ func Setup() error {
 
 	// Create api client
 	client = apiclient.New(srv.URL, UserToken, false)
+	adminClient = apiclient.New(srv.URL, AdminToken, false)
 
 	return nil
 }

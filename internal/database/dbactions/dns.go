@@ -3,6 +3,7 @@ package dbactions
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
@@ -29,6 +30,8 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
+
+	p.Type = strings.ToUpper(p.Type)
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -57,7 +60,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.CreateDNSRecordResultData{
+	return &actions.DNSRecordsCreateResultData{
 		Payload: Payload(payload),
 		Record:  DNSRecord(rec),
 	}, nil
@@ -68,6 +71,8 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
+
+	p.Type = strings.ToUpper(p.Type)
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -90,7 +95,10 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return DNSRecord(rec), nil
+	return &actions.DNSRecordsDeleteResultData{
+		Payload: Payload(payload),
+		Record:  DNSRecord(rec),
+	}, nil
 }
 
 func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
@@ -119,7 +127,7 @@ func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsLi
 		res = append(res, DNSRecord(r))
 	}
 
-	return &actions.ListDNSRecordsResultData{
+	return &actions.DNSRecordsListResultData{
 		Payload: Payload(payload),
 		Records: res,
 	}, nil

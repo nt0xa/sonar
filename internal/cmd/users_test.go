@@ -28,7 +28,7 @@ func TestCreateUser_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("UsersCreate", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{IsAdmin: true},
 		strings.Split("users new user -p telegram.id=1337 -p api.token=token", " "))
@@ -60,7 +60,7 @@ func TestDeleteUser_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", ctx, res)
+		On("UsersDelete", ctx, res)
 
 	_, err := c.Exec(ctx, &actions.User{IsAdmin: true}, []string{"users", "del", "user"})
 	assert.NoError(t, err)

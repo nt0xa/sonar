@@ -63,12 +63,12 @@ func (p DNSRecordsCreateParams) Validate() error {
 	)
 }
 
-type CreateDNSRecordResultData struct {
+type DNSRecordsCreateResultData struct {
 	Payload *Payload   `json:"payload"`
 	Record  *DNSRecord `json:"record"`
 }
 
-type DNSRecordsCreateResult = *CreateDNSRecordResultData
+type DNSRecordsCreateResult = *DNSRecordsCreateResultData
 
 //
 // Delete
@@ -88,7 +88,12 @@ func (p DNSRecordsDeleteParams) Validate() error {
 	)
 }
 
-type DNSRecordsDeleteResult *DNSRecord
+type DNSRecordsDeleteResultData struct {
+	Payload *Payload   `json:"payload"`
+	Record  *DNSRecord `json:"record"`
+}
+
+type DNSRecordsDeleteResult = *DNSRecordsDeleteResultData
 
 //
 // List
@@ -104,9 +109,9 @@ func (p DNSRecordsListParams) Validate() error {
 	)
 }
 
-type ListDNSRecordsResultData struct {
+type DNSRecordsListResultData struct {
 	Payload *Payload     `json:"payload"`
 	Records []*DNSRecord `json:"records"`
 }
 
-type DNSRecordsListResult = *ListDNSRecordsResultData
+type DNSRecordsListResult = *DNSRecordsListResultData

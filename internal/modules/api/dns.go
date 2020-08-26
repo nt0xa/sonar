@@ -37,7 +37,7 @@ func (api *API) listDNSRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSON(w, res, http.StatusCreated)
+	responseJSON(w, res, http.StatusOK)
 }
 
 func (api *API) deleteDNSRecord(w http.ResponseWriter, r *http.Request) {

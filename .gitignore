@@ -1,7 +1,9 @@
 # Binary
 dist/
 cmd/server/server
+cmd/client/client
 /server
+/sonar
 
 # macOS
 .DS_Store

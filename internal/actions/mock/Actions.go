@@ -18,15 +18,15 @@ type Actions struct {
 }
 
 // CreateDNSRecord provides a mock function with given fields: _a0, _a1
-func (_m *Actions) DNSRecordsCreate(_a0 context.Context, _a1 actions.DNSRecordsCreateParams) (*actions.CreateDNSRecordResultData, errors.Error) {
+func (_m *Actions) DNSRecordsCreate(_a0 context.Context, _a1 actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResultData, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.CreateDNSRecordResultData
-	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsCreateParams) *actions.CreateDNSRecordResultData); ok {
+	var r0 *actions.DNSRecordsCreateResultData
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsCreateParams) *actions.DNSRecordsCreateResultData); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.CreateDNSRecordResultData)
+			r0 = ret.Get(0).(*actions.DNSRecordsCreateResultData)
 		}
 	}
 
@@ -193,15 +193,15 @@ func (_m *Actions) UserCurrent(_a0 context.Context) (actions.UserCurrentResult, 
 }
 
 // ListDNSRecords provides a mock function with given fields: _a0, _a1
-func (_m *Actions) DNSRecordsList(_a0 context.Context, _a1 actions.DNSRecordsListParams) (*actions.ListDNSRecordsResultData, errors.Error) {
+func (_m *Actions) DNSRecordsList(_a0 context.Context, _a1 actions.DNSRecordsListParams) (*actions.DNSRecordsListResultData, errors.Error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *actions.ListDNSRecordsResultData
-	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsListParams) *actions.ListDNSRecordsResultData); ok {
+	var r0 *actions.DNSRecordsListResultData
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsListParams) *actions.DNSRecordsListResultData); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*actions.ListDNSRecordsResultData)
+			r0 = ret.Get(0).(*actions.DNSRecordsListResultData)
 		}
 	}
 
