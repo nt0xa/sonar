@@ -34,6 +34,7 @@ func (c *command) DNSRecordsCreate() *cobra.Command {
 		Args:  AtLeastOneArg("VALUES"),
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Values = args
+			p.Type = strings.ToUpper(p.Type)
 
 			res, err := c.actions.DNSRecordsCreate(cmd.Context(), p)
 			if err != nil {

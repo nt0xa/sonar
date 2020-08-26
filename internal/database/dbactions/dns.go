@@ -3,7 +3,6 @@ package dbactions
 import (
 	"context"
 	"database/sql"
-	"strings"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
@@ -30,8 +29,6 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
-
-	p.Type = strings.ToUpper(p.Type)
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
@@ -71,8 +68,6 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
-
-	p.Type = strings.ToUpper(p.Type)
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)

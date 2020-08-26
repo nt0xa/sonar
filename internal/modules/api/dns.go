@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/actions"
 )
@@ -13,6 +14,8 @@ func (api *API) createDNSRecord(w http.ResponseWriter, r *http.Request) {
 		handleError(api.log, w, r, err)
 		return
 	}
+
+	p.Type = strings.ToUpper(p.Type)
 
 	res, err := api.actions.DNSRecordsCreate(r.Context(), p)
 	if err != nil {
@@ -47,6 +50,8 @@ func (api *API) deleteDNSRecord(w http.ResponseWriter, r *http.Request) {
 		handleError(api.log, w, r, err)
 		return
 	}
+
+	p.Type = strings.ToUpper(p.Type)
 
 	res, err := api.actions.DNSRecordsDelete(r.Context(), p)
 	if err != nil {
