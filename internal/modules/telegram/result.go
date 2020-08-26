@@ -1,0 +1,177 @@
+package telegram
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"html/template"
+
+	"github.com/Masterminds/sprig"
+	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/utils/errors"
+)
+
+var (
+	helpTemplate = `<code>{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}</code>`
+
+	usageTemplate = `<code>
+Usage:{{if .Runnable}}{{if .HasParent}}
+  {{.UseLine | replace "sonarctl " "/"}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+	{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command]{{end}}{{if gt (len .Aliases) 0}}
+
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command] --help" for more information about a command.{{end}}
+</code>`
+
+	codeTemplate = tpl(`<code>{{ . }}</code>`)
+)
+
+func tpl(s string) *template.Template {
+	return template.Must(template.
+		New("").
+		Funcs(sprig.FuncMap()).
+		Funcs(template.FuncMap{
+			// This is nesessary for templates to compile.
+			// It will be replaced later with correct function.
+			"domain": func() string { return "" },
+		}).
+		Parse(s),
+	)
+}
+
+func (tg *Telegram) getDomain() string {
+	return tg.domain
+}
+
+func (tg *Telegram) txtResult(ctx context.Context, txt string) {
+	u, err := dbactions.GetUser(ctx)
+	if err != nil {
+		return
+	}
+
+	tg.txtMessage(u.Params.TelegramID, txt)
+}
+
+func (tg *Telegram) tplResult(ctx context.Context, tpl *template.Template, data interface{}) {
+	u, err := dbactions.GetUser(ctx)
+	if err != nil {
+		return
+	}
+
+	tpl.Funcs(template.FuncMap{
+		"domain": tg.getDomain,
+	})
+
+	buf := &bytes.Buffer{}
+
+	if err := tpl.Execute(buf, data); err != nil {
+		tg.handleError(u.Params.TelegramID, errors.Internal(err))
+	}
+
+	tg.htmlMessage(u.Params.TelegramID, buf.String())
+}
+
+//
+// User
+//
+
+var userCurrentTemplate = tpl("" +
+	"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
+	"<b>API token:</b> <code>{{ .APIToken }}</code>",
+)
+
+func (tg *Telegram) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
+	tg.tplResult(ctx, userCurrentTemplate, res)
+}
+
+//
+// Payloads
+//
+
+var (
+	payload = `<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ domain }}</code> ({{ .NotifyProtocols | join ", " }})`
+
+	payloadTemplate = tpl(payload)
+
+	payloadsTemplate = tpl(fmt.Sprintf(`{{ range . }}%s
+{{ else }}nothing found{{ end }}`, payload))
+)
+
+func (tg *Telegram) PayloadsCreate(ctx context.Context, res actions.PayloadsCreateResult) {
+	tg.tplResult(ctx, payloadTemplate, res)
+}
+
+func (tg *Telegram) PayloadsList(ctx context.Context, res actions.PayloadsListResult) {
+	tg.tplResult(ctx, payloadsTemplate, res)
+}
+
+func (tg *Telegram) PayloadsUpdate(ctx context.Context, res actions.PayloadsUpdateResult) {
+	tg.tplResult(ctx, payloadTemplate, res)
+}
+
+func (tg *Telegram) PayloadsDelete(ctx context.Context, res actions.PayloadsDeleteResult) {
+	tg.txtResult(ctx, fmt.Sprintf("payload %q deleted", res.Name))
+}
+
+//
+// DNS records
+//
+
+var (
+	dnsRecord = `
+{{- $p := $.Payload -}}
+{{- range $value := $r.Values -}}
+<code>{{ $r.Name }}.{{ $p.Subdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
+{{ end -}}`
+
+	dnsRecordTemplate = tpl(`{{ $r := .Record }}` + dnsRecord)
+
+	dnsRecordsTemplate = tpl(fmt.Sprintf(`
+{{- range .Records -}}
+{{ $r := . }}
+%s
+{{ else }}nothing found{{ end }}`, dnsRecord))
+)
+
+func (tg *Telegram) DNSRecordsCreate(ctx context.Context, res actions.DNSRecordsCreateResult) {
+	tg.tplResult(ctx, dnsRecordTemplate, res)
+}
+
+func (tg *Telegram) DNSRecordsList(ctx context.Context, res actions.DNSRecordsListResult) {
+	tg.tplResult(ctx, dnsRecordsTemplate, res)
+}
+
+func (tg *Telegram) DNSRecordsDelete(ctx context.Context, res actions.DNSRecordsDeleteResult) {
+	tg.txtResult(ctx, "dns record deleted")
+}
+
+//
+// Users
+//
+
+func (tg *Telegram) UsersCreate(ctx context.Context, res actions.UsersCreateResult) {
+	tg.txtResult(ctx, fmt.Sprintf("user %q created", res.Name))
+}
+
+func (tg *Telegram) UsersDelete(ctx context.Context, res actions.UsersDeleteResult) {
+	tg.txtResult(ctx, fmt.Sprintf("user %q deleted", res.Name))
+}

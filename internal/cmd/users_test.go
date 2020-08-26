@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -14,14 +13,12 @@ import (
 )
 
 func TestCreateUser_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := actions.CreateUserResult(user)
-
-	ctx := actions.SetUser(context.Background(), admin)
+	res := actions.UsersCreateResult(&actions.User{})
 
 	acts.
-		On("CreateUser", ctx, actions.CreateUserParams{
+		On("UsersCreate", ctx, actions.UsersCreateParams{
 			Name: "user",
 			Params: models.UserParams{
 				TelegramID: 1337,
@@ -31,48 +28,53 @@ func TestCreateUser_Success(t *testing.T) {
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("UsersCreate", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), admin,
+	_, err := c.Exec(ctx, &actions.User{IsAdmin: true},
 		strings.Split("users new user -p telegram.id=1337 -p api.token=token", " "))
 
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }
 
 func TestCreateUser_NoArg(t *testing.T) {
-	cmd, _, _ := prepare()
+	c, _, _ := prepare()
 
-	out, err := cmd.Exec(context.Background(), admin, []string{"users", "new"})
+	out, err := c.Exec(context.Background(), &actions.User{IsAdmin: true}, []string{"users", "new"})
 	assert.Error(t, err)
 	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
 
 func TestDeleteUser_Success(t *testing.T) {
-	cmd, acts, hnd := prepare()
+	c, acts, hnd := prepare()
 
-	res := &actions.MessageResult{Message: "test"}
-
-	ctx := actions.SetUser(context.Background(), admin)
+	res := actions.UsersDeleteResult(&actions.User{})
 
 	acts.
-		On("DeleteUser", ctx, actions.DeleteUserParams{
+		On("UsersDelete", ctx, actions.UsersDeleteParams{
 			Name: "user",
 		}).
 		Return(res, nil)
 
 	hnd.
-		On("Handle", mock.Anything, res)
+		On("UsersDelete", ctx, res)
 
-	_, err := cmd.Exec(context.Background(), admin, []string{"users", "del", "user"})
+	_, err := c.Exec(ctx, &actions.User{IsAdmin: true}, []string{"users", "del", "user"})
 	assert.NoError(t, err)
+
+	acts.AssertExpectations(t)
+	hnd.AssertExpectations(t)
 }
 
 func TestDeleteUser_NoArg(t *testing.T) {
-	cmd, _, _ := prepare()
+	c, _, _ := prepare()
 
-	out, err := cmd.Exec(context.Background(), admin, []string{"users", "del"})
+	out, err := c.Exec(context.Background(), &actions.User{IsAdmin: true}, []string{"users", "del"})
 	assert.Error(t, err)
 	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
+
 }

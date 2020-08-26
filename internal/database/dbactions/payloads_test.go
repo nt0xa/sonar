@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
@@ -16,22 +17,22 @@ func TestCreatePayload_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
-		p    actions.CreatePayloadParams
+		p    actions.PayloadsCreateParams
 	}{
 		{
 			"empty notify protocols",
-			actions.CreatePayloadParams{
+			actions.PayloadsCreateParams{
 				Name:            "test",
 				NotifyProtocols: []string{},
 			},
 		},
 		{
 			"dns only",
-			actions.CreatePayloadParams{
+			actions.PayloadsCreateParams{
 				Name:            "test-dns",
 				NotifyProtocols: []string{models.PayloadProtocolDNS},
 			},
@@ -43,13 +44,12 @@ func TestCreatePayload_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.CreatePayload(ctx, tt.p)
+			r, err := acts.PayloadsCreate(ctx, tt.p)
 			assert.NoError(t, err)
 
 			assert.NotNil(t, r)
 			assert.Equal(t, tt.p.Name, r.Name)
 			assert.Equal(t, tt.p.NotifyProtocols, []string(r.NotifyProtocols))
-			assert.Equal(t, u.ID, r.UserID)
 		})
 	}
 }
@@ -58,18 +58,18 @@ func TestCreatePayload_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.CreatePayloadParams
+		p    actions.PayloadsCreateParams
 		err  errors.Error
 	}{
 		{
 			"no user in ctx",
 			context.Background(),
-			actions.CreatePayloadParams{
+			actions.PayloadsCreateParams{
 				Name: "test",
 			},
 			&errors.InternalError{},
@@ -77,7 +77,7 @@ func TestCreatePayload_Error(t *testing.T) {
 		{
 			"empty payload name",
 			ctx,
-			actions.CreatePayloadParams{
+			actions.PayloadsCreateParams{
 				Name: "",
 			},
 			&errors.ValidationError{},
@@ -85,7 +85,7 @@ func TestCreatePayload_Error(t *testing.T) {
 		{
 			"duplicate payload name",
 			ctx,
-			actions.CreatePayloadParams{
+			actions.PayloadsCreateParams{
 				Name: "payload1",
 			},
 			&errors.ConflictError{},
@@ -97,7 +97,7 @@ func TestCreatePayload_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.CreatePayload(tt.ctx, tt.p)
+			_, err := acts.PayloadsCreate(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -108,15 +108,15 @@ func TestDeletePayload_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
-		p    actions.DeletePayloadParams
+		p    actions.PayloadsDeleteParams
 	}{
 		{
 			"payload1",
-			actions.DeletePayloadParams{
+			actions.PayloadsDeleteParams{
 				Name: "payload1",
 			},
 		},
@@ -127,7 +127,7 @@ func TestDeletePayload_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.DeletePayload(ctx, tt.p)
+			r, err := acts.PayloadsDelete(ctx, tt.p)
 			assert.NoError(t, err)
 
 			assert.NotNil(t, r)
@@ -139,18 +139,18 @@ func TestDeletePayload_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.DeletePayloadParams
+		p    actions.PayloadsDeleteParams
 		err  errors.Error
 	}{
 		{
 			"no user in ctx",
 			context.Background(),
-			actions.DeletePayloadParams{
+			actions.PayloadsDeleteParams{
 				Name: "test",
 			},
 			&errors.InternalError{},
@@ -158,7 +158,7 @@ func TestDeletePayload_Error(t *testing.T) {
 		{
 			"empty payload name",
 			ctx,
-			actions.DeletePayloadParams{
+			actions.PayloadsDeleteParams{
 				Name: "",
 			},
 			&errors.ValidationError{},
@@ -166,7 +166,7 @@ func TestDeletePayload_Error(t *testing.T) {
 		{
 			"not existing payload name",
 			ctx,
-			actions.DeletePayloadParams{
+			actions.PayloadsDeleteParams{
 				Name: "payload2",
 			},
 			&errors.NotFoundError{},
@@ -178,7 +178,7 @@ func TestDeletePayload_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DeletePayload(tt.ctx, tt.p)
+			_, err := acts.PayloadsDelete(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -189,23 +189,23 @@ func TestListPayloads_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name  string
-		p     actions.ListPayloadsParams
+		p     actions.PayloadsListParams
 		count int
 	}{
 		{
 			"all",
-			actions.ListPayloadsParams{
+			actions.PayloadsListParams{
 				Name: "",
 			},
 			2,
 		},
 		{
 			"payload1",
-			actions.ListPayloadsParams{
+			actions.PayloadsListParams{
 				Name: "payload1",
 			},
 			1,
@@ -217,7 +217,7 @@ func TestListPayloads_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.ListPayloads(ctx, tt.p)
+			r, err := acts.PayloadsList(ctx, tt.p)
 			assert.NoError(t, err)
 			assert.Len(t, r, tt.count)
 		})
@@ -229,13 +229,13 @@ func TestListPayloads_Error(t *testing.T) {
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.ListPayloadsParams
+		p    actions.PayloadsListParams
 		err  errors.Error
 	}{
 		{
 			"no user in ctx",
 			context.Background(),
-			actions.ListPayloadsParams{
+			actions.PayloadsListParams{
 				Name: "test",
 			},
 			&errors.InternalError{},
@@ -247,7 +247,7 @@ func TestListPayloads_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.ListPayloads(tt.ctx, tt.p)
+			_, err := acts.PayloadsList(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -258,22 +258,22 @@ func TestUpdatePayload_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
-		p    actions.UpdatePayloadParams
+		p    actions.PayloadsUpdateParams
 	}{
 		{
 			"update name",
-			actions.UpdatePayloadParams{
+			actions.PayloadsUpdateParams{
 				Name:    "payload1",
 				NewName: "payload1_updated",
 			},
 		},
 		{
 			"update notify protocols",
-			actions.UpdatePayloadParams{
+			actions.PayloadsUpdateParams{
 				Name:            "payload1",
 				NotifyProtocols: []string{models.PayloadProtocolHTTP},
 			},
@@ -285,7 +285,7 @@ func TestUpdatePayload_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			r, err := acts.UpdatePayload(ctx, tt.p)
+			r, err := acts.PayloadsUpdate(ctx, tt.p)
 			assert.NoError(t, err)
 			assert.NotNil(t, r)
 
@@ -304,18 +304,18 @@ func TestUpdatePayload_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
-	ctx := actions.SetUser(context.Background(), u)
+	ctx := dbactions.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
 		ctx  context.Context
-		p    actions.UpdatePayloadParams
+		p    actions.PayloadsUpdateParams
 		err  errors.Error
 	}{
 		{
 			"no user in ctx",
 			context.Background(),
-			actions.UpdatePayloadParams{
+			actions.PayloadsUpdateParams{
 				Name: "test",
 			},
 			&errors.InternalError{},
@@ -323,7 +323,7 @@ func TestUpdatePayload_Error(t *testing.T) {
 		{
 			"empty name",
 			ctx,
-			actions.UpdatePayloadParams{
+			actions.PayloadsUpdateParams{
 				Name: "",
 			},
 			&errors.ValidationError{},
@@ -331,7 +331,7 @@ func TestUpdatePayload_Error(t *testing.T) {
 		{
 			"not existing payload",
 			ctx,
-			actions.UpdatePayloadParams{
+			actions.PayloadsUpdateParams{
 				Name: "not-exist",
 			},
 			&errors.NotFoundError{},
@@ -343,7 +343,7 @@ func TestUpdatePayload_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.UpdatePayload(tt.ctx, tt.p)
+			_, err := acts.PayloadsUpdate(tt.ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})

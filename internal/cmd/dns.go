@@ -11,21 +11,21 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *Command) DNS() *cobra.Command {
+func (c *command) DNSRecords() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dns",
 		Short: "Manage DNS records",
 	}
 
-	cmd.AddCommand(c.CreateDNSRecord())
-	cmd.AddCommand(c.DeleteDNSRecord())
-	cmd.AddCommand(c.ListDNSRecords())
+	cmd.AddCommand(c.DNSRecordsCreate())
+	cmd.AddCommand(c.DNSRecordsDelete())
+	cmd.AddCommand(c.DNSRecordsList())
 
 	return cmd
 }
 
-func (c *Command) CreateDNSRecord() *cobra.Command {
-	var p actions.CreateDNSRecordParams
+func (c *command) DNSRecordsCreate() *cobra.Command {
+	var p actions.DNSRecordsCreateParams
 
 	cmd := &cobra.Command{
 		Use:   "new VALUES",
@@ -36,12 +36,12 @@ func (c *Command) CreateDNSRecord() *cobra.Command {
 			p.Values = args
 			p.Type = strings.ToUpper(p.Type)
 
-			res, err := c.Actions.CreateDNSRecord(cmd.Context(), p)
+			res, err := c.actions.DNSRecordsCreate(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler.DNSRecordsCreate(cmd.Context(), res)
 
 			return nil
 		}),
@@ -58,8 +58,8 @@ func (c *Command) CreateDNSRecord() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) DeleteDNSRecord() *cobra.Command {
-	var p actions.DeleteDNSRecordParams
+func (c *command) DNSRecordsDelete() *cobra.Command {
+	var p actions.DNSRecordsDeleteParams
 
 	cmd := &cobra.Command{
 		Use:   "del",
@@ -68,12 +68,12 @@ func (c *Command) DeleteDNSRecord() *cobra.Command {
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
 			p.Type = strings.ToUpper(p.Type)
 
-			res, err := c.Actions.DeleteDNSRecord(cmd.Context(), p)
+			res, err := c.actions.DNSRecordsDelete(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler.DNSRecordsDelete(cmd.Context(), res)
 
 			return nil
 		}),
@@ -87,20 +87,20 @@ func (c *Command) DeleteDNSRecord() *cobra.Command {
 	return cmd
 }
 
-func (c *Command) ListDNSRecords() *cobra.Command {
-	var p actions.ListDNSRecordsParams
+func (c *command) DNSRecordsList() *cobra.Command {
+	var p actions.DNSRecordsListParams
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List DNS records for payload",
 		Long:  "List DNS records for payload with name PAYLOAD",
 		RunE: RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			res, err := c.Actions.ListDNSRecords(cmd.Context(), p)
+			res, err := c.actions.DNSRecordsList(cmd.Context(), p)
 			if err != nil {
 				return err
 			}
 
-			c.ResultHandler(cmd.Context(), res)
+			c.handler.DNSRecordsList(cmd.Context(), res)
 
 			return nil
 		}),

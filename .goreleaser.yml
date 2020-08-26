@@ -14,6 +14,17 @@ builds:
       - linux
     goarch:
       - amd64
+  - id: client
+    binary: sonar
+    dir: ./cmd/client
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
 
 archives:
   - replacements:

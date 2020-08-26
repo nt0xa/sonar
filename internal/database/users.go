@@ -9,13 +9,15 @@ import (
 	"github.com/fatih/structs"
 )
 
-var usersQuery = "" +
+var usersInnerQuery = "" +
 	"SELECT users.*, " +
 	"COALESCE(json_object_agg(user_params.key, user_params.value) " +
 	"FILTER (WHERE user_params.key IS NOT NULL), '{}') AS params " +
 	"FROM users " +
 	"LEFT JOIN user_params ON user_params.user_id = users.id " +
-	"%s GROUP BY users.id"
+	"GROUP BY users.id"
+
+var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
 
 func (db *DB) UsersCreate(o *models.User) error {
 
@@ -87,7 +89,7 @@ func (db *DB) UsersGetByParam(key models.UserParamsKey, value interface{}) (*mod
 	var o models.User
 
 	err := db.Get(&o,
-		fmt.Sprintf(usersQuery, "WHERE user_params.key = $1 AND user_params.value = $2::TEXT"), key, value)
+		fmt.Sprintf(usersQuery, "WHERE users.params->>$1 = $2::TEXT"), key, value)
 
 	if err != nil {
 		return nil, err

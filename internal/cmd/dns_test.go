@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -17,105 +16,131 @@ func TestDNSRecordCreate_Success(t *testing.T) {
 	tests := []struct {
 		name    string
 		cmdline string
-		result  actions.CreateDNSRecordParams
+		result  actions.DNSRecordsCreateParams
 	}{
 		{
 			"defaults",
 			"dns new -p payload -n name 192.168.1.1",
-			actions.CreateDNSRecordParams{
-				"payload", "name", 60, models.DNSTypeA, []string{"192.168.1.1"}, models.DNSStrategyAll,
+			actions.DNSRecordsCreateParams{
+				PayloadName: "payload",
+				Name:        "name",
+				TTL:         60,
+				Type:        models.DNSTypeA,
+				Values:      []string{"192.168.1.1"},
+				Strategy:    models.DNSStrategyAll,
 			},
 		},
 		{
 			"custom 1",
 			`dns new -p payload -n name -t mx -l 120 -s round-robin "10 mx.example.com."`,
-			actions.CreateDNSRecordParams{
-				"payload", "name", 120, models.DNSTypeMX, []string{"10 mx.example.com."}, models.DNSStrategyRoundRobin,
+			actions.DNSRecordsCreateParams{
+				PayloadName: "payload",
+				Name:        "name",
+				TTL:         120,
+				Type:        models.DNSTypeMX,
+				Values:      []string{"10 mx.example.com."},
+				Strategy:    models.DNSStrategyRoundRobin,
 			},
 		},
 		{
 			"custom 2",
 			`dns new -p payload -n name -t a -l 100 -s rebind 1.1.1.1 2.2.2.2 3.3.3.3`,
-			actions.CreateDNSRecordParams{
-				"payload", "name", 100, models.DNSTypeA, []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"}, models.DNSStrategyRebind,
+			actions.DNSRecordsCreateParams{
+				PayloadName: "payload",
+				Name:        "name",
+				TTL:         100,
+				Type:        models.DNSTypeA,
+				Values:      []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"},
+				Strategy:    models.DNSStrategyRebind,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, acts, hnd := prepare()
+			c, acts, hnd := prepare()
 
-			ctx := actions.SetUser(context.Background(), user)
+			res := &actions.DNSRecordsCreateResultData{}
 
 			acts.
-				On("CreateDNSRecord", ctx, tt.result).
-				Return(&actions.CreateDNSRecordResultData{}, nil)
+				On("DNSRecordsCreate", ctx, tt.result).
+				Return(res, nil)
 
-			hnd.On("Handle", mock.Anything, mock.Anything)
+			hnd.On("DNSRecordsCreate", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, err = cmd.Exec(context.Background(), user, args)
+			_, err = c.Exec(ctx, &actions.User{}, args)
 
 			assert.NoError(t, err)
+
+			acts.AssertExpectations(t)
+			hnd.AssertExpectations(t)
 		})
 	}
+
 }
 
 func TestDNSRecordCreate_Error(t *testing.T) {
-	cmd, _, _ := prepare()
+	c, _, _ := prepare()
 
 	args, err := shlex.Split("dns new -p payload -n name")
 	require.NoError(t, err)
 
-	out, err := cmd.Exec(context.Background(), user, args)
+	out, err := c.Exec(context.Background(), &actions.User{}, args)
 	assert.Error(t, err)
 	require.NotNil(t, out)
 	assert.Contains(t, out, "required")
 }
 
-func TestDNSDeleteCreate_Success(t *testing.T) {
+func TestDNSRecordDelete_Success(t *testing.T) {
 	tests := []struct {
 		name    string
 		cmdline string
-		result  actions.DeleteDNSRecordParams
+		result  actions.DNSRecordsDeleteParams
 	}{
 		{
 			"1",
 			"dns del -p payload -n name -t a",
-			actions.DeleteDNSRecordParams{
-				"payload", "name", models.DNSTypeA,
+			actions.DNSRecordsDeleteParams{
+				PayloadName: "payload",
+				Name:        "name",
+				Type:        models.DNSTypeA,
 			},
 		},
 		{
 			"2",
 			"dns del -p payload -n name -t mx",
-			actions.DeleteDNSRecordParams{
-				"payload", "name", models.DNSTypeMX,
+			actions.DNSRecordsDeleteParams{
+				PayloadName: "payload",
+				Name:        "name",
+				Type:        models.DNSTypeMX,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, acts, hnd := prepare()
+			c, acts, hnd := prepare()
 
-			ctx := actions.SetUser(context.Background(), user)
+			res := &actions.DNSRecordsDeleteResultData{}
 
 			acts.
-				On("DeleteDNSRecord", ctx, tt.result).
-				Return(&actions.MessageResult{}, nil)
+				On("DNSRecordsDelete", ctx, tt.result).
+				Return(res, nil)
 
-			hnd.On("Handle", mock.Anything, mock.Anything)
+			hnd.On("DNSRecordsDelete", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, err = cmd.Exec(context.Background(), user, args)
+			_, err = c.Exec(ctx, &actions.User{}, args)
 
 			assert.NoError(t, err)
+
+			acts.AssertExpectations(t)
+			hnd.AssertExpectations(t)
 		})
 	}
 }
@@ -124,35 +149,38 @@ func TestDNSList_Success(t *testing.T) {
 	tests := []struct {
 		name    string
 		cmdline string
-		result  actions.ListDNSRecordsParams
+		result  actions.DNSRecordsListParams
 	}{
 		{
 			"1",
 			"dns list -p payload",
-			actions.ListDNSRecordsParams{
-				"payload",
+			actions.DNSRecordsListParams{
+				PayloadName: "payload",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd, acts, hnd := prepare()
+			c, acts, hnd := prepare()
 
-			ctx := actions.SetUser(context.Background(), user)
+			res := &actions.DNSRecordsListResultData{}
 
 			acts.
-				On("ListDNSRecords", ctx, tt.result).
-				Return(&actions.ListDNSRecordsResultData{}, nil)
+				On("DNSRecordsList", ctx, tt.result).
+				Return(res, nil)
 
-			hnd.On("Handle", mock.Anything, mock.Anything)
+			hnd.On("DNSRecordsList", ctx, res)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, err = cmd.Exec(context.Background(), user, args)
+			_, err = c.Exec(ctx, &actions.User{}, args)
 
 			assert.NoError(t, err)
+
+			acts.AssertExpectations(t)
+			hnd.AssertExpectations(t)
 		})
 	}
 }

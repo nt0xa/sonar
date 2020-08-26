@@ -3,7 +3,6 @@ package dbactions
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
@@ -12,10 +11,23 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/slice"
 )
 
-func (act *dbactions) CreatePayload(ctx context.Context, p actions.CreatePayloadParams) (actions.CreatePayloadResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func Payload(m *models.Payload) *actions.Payload {
+	if m == nil {
+		return nil
+	}
+
+	return &actions.Payload{
+		Subdomain:       m.Subdomain,
+		Name:            m.Name,
+		NotifyProtocols: m.NotifyProtocols,
+		CreatedAt:       m.CreatedAt,
+	}
+}
+
+func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -43,13 +55,13 @@ func (act *dbactions) CreatePayload(ctx context.Context, p actions.CreatePayload
 		return nil, errors.Internal(err)
 	}
 
-	return actions.CreatePayloadResult(payload), nil
+	return Payload(payload), nil
 }
 
-func (act *dbactions) UpdatePayload(ctx context.Context, p actions.UpdatePayloadParams) (actions.UpdatePayloadResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpdateParams) (actions.PayloadsUpdateResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -76,13 +88,13 @@ func (act *dbactions) UpdatePayload(ctx context.Context, p actions.UpdatePayload
 		return nil, errors.Internal(err)
 	}
 
-	return payload, nil
+	return Payload(payload), nil
 }
 
-func (act *dbactions) DeletePayload(ctx context.Context, p actions.DeletePayloadParams) (actions.DeletePayloadResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (actions.PayloadsDeleteResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -100,13 +112,13 @@ func (act *dbactions) DeletePayload(ctx context.Context, p actions.DeletePayload
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.MessageResult{Message: fmt.Sprintf("payload %q deleted", payload.Name)}, nil
+	return Payload(payload), nil
 }
 
-func (act *dbactions) ListPayloads(ctx context.Context, p actions.ListPayloadsParams) (actions.ListPayloadsResult, errors.Error) {
-	u, e := actions.GetUser(ctx)
-	if e != nil || u == nil {
-		return nil, e
+func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListParams) (actions.PayloadsListResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if err := p.Validate(); err != nil {
@@ -118,5 +130,11 @@ func (act *dbactions) ListPayloads(ctx context.Context, p actions.ListPayloadsPa
 		return nil, errors.Internal(err)
 	}
 
-	return actions.ListPayloadsResult(payloads), nil
+	res := make([]*actions.Payload, 0)
+
+	for _, p := range payloads {
+		res = append(res, Payload(p))
+	}
+
+	return res, nil
 }

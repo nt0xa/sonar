@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -18,25 +17,38 @@ func init() {
 }
 
 type ResultHandler func(context.Context, interface{})
-type PreExecFunc func(*cobra.Command, *models.User)
+type PreExec func(*cobra.Command, *actions.User)
 
-type Command struct {
-	Actions       actions.Actions
-	ResultHandler ResultHandler
-	PreExec       PreExecFunc
+type command struct {
+	actions actions.Actions
+	handler actions.ResultHandler
+	preExec PreExec
 }
 
-func (c *Command) Root(u *models.User) *cobra.Command {
+type Command interface {
+	Root(*actions.User) *cobra.Command
+	Exec(context.Context, *actions.User, []string) (string, errors.Error)
+}
+
+func New(actions actions.Actions, handler actions.ResultHandler, preExec PreExec) Command {
+	return &command{
+		actions: actions,
+		handler: handler,
+		preExec: preExec,
+	}
+}
+
+func (c *command) Root(u *actions.User) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "sonarctl",
-		Short: "CLI to control your sonar server",
+		Use:   "sonar",
+		Short: "CLI to control sonar server",
 	}
 
 	// There is no access control inside commands,
 	// so if user is not allowed to do command we just
 	// don't add it to root.
 
-	// Currenty, threre are no default commands available
+	// Currently, there are no default commands available
 	// for unauthorized users, but some controller can implement
 	// their own unauthorized commands and add this commands to root
 	// using `preExec`.
@@ -45,25 +57,27 @@ func (c *Command) Root(u *models.User) *cobra.Command {
 	}
 
 	// Main payloads commands
-	cmd.AddCommand(c.CreatePayload())
-	cmd.AddCommand(c.UpdatePayload())
-	cmd.AddCommand(c.DeletePayload())
-	cmd.AddCommand(c.ListPayloads())
+	cmd.AddCommand(c.PayloadsCreate())
+	cmd.AddCommand(c.PayloadsList())
+	cmd.AddCommand(c.PayloadsUpdate())
+	cmd.AddCommand(c.PayloadsDelete())
 
-	cmd.AddCommand(c.DNS())
+	cmd.AddCommand(c.DNSRecords())
 
 	if u.IsAdmin {
 		cmd.AddCommand(c.Users())
 	}
 
+	cmd.AddCommand(completionCmd)
+
 	return cmd
 }
 
-func (c *Command) Exec(ctx context.Context, user *models.User, args []string) (string, errors.Error) {
-	root := c.Root(user)
+func (c *command) Exec(ctx context.Context, u *actions.User, args []string) (string, errors.Error) {
+	root := c.Root(u)
 
-	if c.PreExec != nil {
-		c.PreExec(root, user)
+	if c.preExec != nil {
+		c.preExec(root, u)
 	}
 
 	root.SetArgs(args)
@@ -71,8 +85,6 @@ func (c *Command) Exec(ctx context.Context, user *models.User, args []string) (s
 	bb := &bytes.Buffer{}
 	root.SetErr(bb)
 	root.SetOut(bb)
-
-	ctx = actions.SetUser(ctx, user)
 
 	// There is no subcommands which means that user is unauthorized
 	// and no commands available for unauthorized users in current controller.

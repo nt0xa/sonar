@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
@@ -10,22 +11,36 @@ import (
 )
 
 type PayloadsActions interface {
-	CreatePayload(context.Context, CreatePayloadParams) (CreatePayloadResult, errors.Error)
-	UpdatePayload(context.Context, UpdatePayloadParams) (UpdatePayloadResult, errors.Error)
-	DeletePayload(context.Context, DeletePayloadParams) (DeletePayloadResult, errors.Error)
-	ListPayloads(context.Context, ListPayloadsParams) (ListPayloadsResult, errors.Error)
+	PayloadsCreate(context.Context, PayloadsCreateParams) (PayloadsCreateResult, errors.Error)
+	PayloadsUpdate(context.Context, PayloadsUpdateParams) (PayloadsUpdateResult, errors.Error)
+	PayloadsDelete(context.Context, PayloadsDeleteParams) (PayloadsDeleteResult, errors.Error)
+	PayloadsList(context.Context, PayloadsListParams) (PayloadsListResult, errors.Error)
+}
+
+type PayloadsHandler interface {
+	PayloadsCreate(context.Context, PayloadsCreateResult)
+	PayloadsList(context.Context, PayloadsListResult)
+	PayloadsUpdate(context.Context, PayloadsUpdateResult)
+	PayloadsDelete(context.Context, PayloadsDeleteResult)
+}
+
+type Payload struct {
+	Subdomain       string    `json:"subdomain"`
+	Name            string    `json:"name"`
+	NotifyProtocols []string  `json:"notifyProtocols"`
+	CreatedAt       time.Time `json:"createdAt"`
 }
 
 //
 // Create
 //
 
-type CreatePayloadParams struct {
-	Name            string
-	NotifyProtocols []string
+type PayloadsCreateParams struct {
+	Name            string   `json:"name"`
+	NotifyProtocols []string `json:"notifyProtocols"`
 }
 
-func (p CreatePayloadParams) Validate() error {
+func (p PayloadsCreateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
 		validation.Field(&p.NotifyProtocols, validation.Each(validation.In(
@@ -36,19 +51,19 @@ func (p CreatePayloadParams) Validate() error {
 	)
 }
 
-type CreatePayloadResult *models.Payload
+type PayloadsCreateResult *Payload
 
 //
 // Update
 //
 
-type UpdatePayloadParams struct {
-	Name            string
-	NewName         string
-	NotifyProtocols []string
+type PayloadsUpdateParams struct {
+	Name            string   `json:"-"               path:"name"`
+	NewName         string   `json:"name"`
+	NotifyProtocols []string `json:"notifyProtocols"`
 }
 
-func (p UpdatePayloadParams) Validate() error {
+func (p PayloadsUpdateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
 		validation.Field(&p.NotifyProtocols, validation.Each(validation.In(
@@ -59,33 +74,33 @@ func (p UpdatePayloadParams) Validate() error {
 	)
 }
 
-type UpdatePayloadResult *models.Payload
+type PayloadsUpdateResult *Payload
 
 //
 // Delete
 //
 
-type DeletePayloadParams struct {
-	Name string
+type PayloadsDeleteParams struct {
+	Name string `path:"name"`
 }
 
-func (p DeletePayloadParams) Validate() error {
+func (p PayloadsDeleteParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required))
 }
 
-type DeletePayloadResult = *MessageResult
+type PayloadsDeleteResult *Payload
 
 //
 // List
 //
 
-type ListPayloadsParams struct {
-	Name string
+type PayloadsListParams struct {
+	Name string `query:"name"`
 }
 
-func (p ListPayloadsParams) Validate() error {
+func (p PayloadsListParams) Validate() error {
 	return nil
 }
 
-type ListPayloadsResult []*models.Payload
+type PayloadsListResult []*Payload

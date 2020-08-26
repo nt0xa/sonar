@@ -6,6 +6,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/models"
 )
@@ -166,4 +167,42 @@ func TestDNSStringToRR(t *testing.T) {
 			assert.Equal(t, tt.res, models.DNSStringToRR(tt.value, tt.typ, "test", "sonar.local", 60))
 		})
 	}
+}
+
+func TestDNSRecordsQtype(t *testing.T) {
+	tests := []struct {
+		typ   string
+		qtype uint16
+	}{
+		{"A", dns.TypeA},
+		{"AAAA", dns.TypeAAAA},
+		{"MX", dns.TypeMX},
+		{"CNAME", dns.TypeCNAME},
+		{"TXT", dns.TypeTXT},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.typ, func(t *testing.T) {
+			rec := models.DNSRecord{Type: tt.typ}
+
+			assert.Equal(t, tt.qtype, rec.Qtype())
+		})
+	}
+}
+
+func TestDNSRecordsRRs(t *testing.T) {
+	rec := models.DNSRecord{
+		Name:       "test",
+		Type:       models.DNSTypeA,
+		Values:     []string{"127.0.0.1", "1.1.1.1"},
+		LastAnswer: []string{"1.1.1.1", "127.0.0.1"},
+	}
+
+	rrs := rec.RRs("sonar.local")
+	require.NotNil(t, rrs)
+	assert.Len(t, rrs, 2)
+
+	lastRRs := rec.LastAnswerRRs("sonar.local")
+	require.NotNil(t, lastRRs)
+	assert.Len(t, rrs, 2)
 }
