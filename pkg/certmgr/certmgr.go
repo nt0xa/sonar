@@ -138,7 +138,9 @@ func (cm *CertMgr) obtainCertificate(acc registration.User) (*tls.Certificate, e
 		return nil, err
 	}
 
-	cert, err := tls.X509KeyPair(res.Certificate, res.PrivateKey)
+	full := append(res.Certificate[:], res.IssuerCertificate...)
+
+	cert, err := tls.X509KeyPair(full, res.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create tls certificate: %w", err)
 	}

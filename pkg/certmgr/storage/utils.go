@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/pem"
 	"fmt"
+	"os"
 
 	"github.com/go-acme/lego/v3/certcrypto"
 )
@@ -21,4 +22,13 @@ func pemEncode(data interface{}) ([]byte, error) {
 	}
 
 	return pemBytes.Bytes(), nil
+
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
