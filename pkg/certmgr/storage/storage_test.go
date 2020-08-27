@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -128,6 +129,39 @@ func Test_SaveLoadCert(t *testing.T) {
 }
 
 func genCert() (*tls.Certificate, error) {
+	rootKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	var rootTemplate = x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Country:      []string{"SE"},
+			Organization: []string{"Company Co."},
+			CommonName:   "Root CA",
+		},
+		NotBefore:             time.Now().Add(-10 * time.Second),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            2,
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
+	}
+
+	rootDerBytes, err := x509.CreateCertificate(rand.Reader, &rootTemplate, &rootTemplate, &rootKey.PublicKey, rootKey)
+	if err != nil {
+		return nil, err
+	}
+
+	rootPemBytes := &bytes.Buffer{}
+	err = pem.Encode(rootPemBytes, &pem.Block{Type: "CERTIFICATE", Bytes: rootDerBytes})
+	if err != nil {
+		return nil, err
+	}
+
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
@@ -146,7 +180,7 @@ func genCert() (*tls.Certificate, error) {
 		BasicConstraintsValid: true,
 	}
 
-	certDerBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	certDerBytes, err := x509.CreateCertificate(rand.Reader, &template, &rootTemplate, &key.PublicKey, rootKey)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +197,9 @@ func genCert() (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	cert, err := tls.X509KeyPair(certPemBytes.Bytes(), keyPemBytes.Bytes())
+	full := append(certPemBytes.Bytes()[:], rootPemBytes.Bytes()[:]...)
+
+	cert, err := tls.X509KeyPair(full, keyPemBytes.Bytes())
 	if err != nil {
 		return nil, err
 	}

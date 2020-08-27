@@ -19,6 +19,7 @@ const (
 	accountKeyFileName  = "account.key"
 	keyFileName         = "tls.key"
 	certFileName        = "tls.crt"
+	caFileName          = "ca-%d.crt"
 )
 
 type Storage struct {
@@ -138,6 +139,21 @@ func (s *Storage) SaveCertificate(cert *tls.Certificate) error {
 		return fmt.Errorf("fail to save key: %w", err)
 	}
 
+	for i := 1; i < len(cert.Certificate); i++ {
+		pemBytes, err := pemEncode(certcrypto.DERCertificateBytes(cert.Certificate[i]))
+		if err != nil {
+			return fmt.Errorf("fail to pem encode ca certificate: %w", err)
+		}
+
+		if err := ioutil.WriteFile(
+			filepath.Join(s.rootPath, fmt.Sprintf(caFileName, i)),
+			pemBytes,
+			s.options.filePerm,
+		); err != nil {
+			return fmt.Errorf("fail to save ca certificate: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -151,6 +167,25 @@ func (s *Storage) LoadCertificate() (*tls.Certificate, error) {
 	keyPemBytes, err := ioutil.ReadFile(filepath.Join(s.rootPath, keyFileName))
 	if err != nil {
 		return nil, fmt.Errorf("fail to load key: %w", err)
+	}
+
+	i := 1
+
+	for {
+		path := filepath.Join(s.rootPath, fmt.Sprintf(caFileName, i))
+
+		if !fileExists(path) {
+			break
+		}
+
+		pemBytes, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("fail to load certificate: %w", err)
+		}
+
+		certPemBytes = append(certPemBytes, pemBytes...)
+
+		i += 1
 	}
 
 	cert, err := tls.X509KeyPair(certPemBytes, keyPemBytes)
