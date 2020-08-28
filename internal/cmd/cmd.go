@@ -68,8 +68,6 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 		cmd.AddCommand(c.Users())
 	}
 
-	cmd.AddCommand(completionCmd)
-
 	return cmd
 }
 

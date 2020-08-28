@@ -21,7 +21,9 @@ func main() {
 			os.Args[1] == "completion" ||
 			slice.StringsContains(os.Args, "-h") ||
 			slice.StringsContains(os.Args, "--help")) {
-		cmd.New(nil, nil, nil).Root(&actions.User{}).Execute()
+		root := cmd.New(nil, nil, nil).Root(&actions.User{})
+		root.AddCommand(completionCmd)
+		root.Execute()
 		return
 	}
 
@@ -70,14 +72,16 @@ func main() {
 	// Command
 	//
 
-	c := cmd.New(client, &handler{u.Hostname()}, nil)
-
-	command := c.Root(user)
-
-	command.Execute()
+	root := cmd.New(client, &handler{u.Hostname()}, nil).Root(user)
+	root.AddCommand(completionCmd)
+	root.SilenceErrors = true
+	root.SilenceUsage = true
+	if err := root.Execute(); err != nil {
+		fatal(err)
+	}
 }
 
 func fatal(data interface{}) {
-	color.Error.Println(data)
+	color.Danger.Println(data)
 	os.Exit(1)
 }
