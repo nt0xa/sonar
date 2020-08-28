@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -49,7 +50,7 @@ func (h *handler) tplResult(tpl *template.Template, data interface{}) {
 		os.Exit(1)
 	}
 
-	color.Println(buf.String())
+	color.Println(strings.TrimRight(buf.String(), "\n"))
 }
 
 //
@@ -57,8 +58,8 @@ func (h *handler) tplResult(tpl *template.Template, data interface{}) {
 //
 
 var userCurrentTemplate = tpl("" +
-	"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
-	"<b>API token:</b> <code>{{ .APIToken }}</code>",
+	"<bold>Telegram ID:</> {{ .TelegramID }}\n" +
+	"<bold>API token:</> {{ .APIToken }}",
 )
 
 func (h *handler) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
@@ -102,7 +103,7 @@ var (
 	dnsRecord = `
 {{- $p := $.Payload -}}
 {{- range $value := $r.Values -}}
-<code>{{ $r.Name }}.{{ $p.Subdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
+<bold>{{ $r.Name }}.{{ $p.Subdomain }}.{{ domain }}</> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}
 {{ end -}}`
 
 	dnsRecordTemplate = tpl(`{{ $r := .Record }}` + dnsRecord)
@@ -111,7 +112,7 @@ var (
 {{- range .Records -}}
 {{ $r := . }}
 %s
-{{ else }}nothing found{{ end }}`, dnsRecord))
+{{ else }}nothing found{{ end -}}`, dnsRecord))
 )
 
 func (h *handler) DNSRecordsCreate(ctx context.Context, res actions.DNSRecordsCreateResult) {
