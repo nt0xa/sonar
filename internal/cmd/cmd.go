@@ -11,6 +11,8 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
+//go:generate go run ./internal/codegen/*.go -type cmd
+
 func init() {
 	cobra.EnableCommandSorting = false
 	cobra.AddTemplateFuncs(sprig.TxtFuncMap())
@@ -39,7 +41,7 @@ func New(actions actions.Actions, handler actions.ResultHandler, preExec PreExec
 }
 
 func (c *command) Root(u *actions.User) *cobra.Command {
-	var cmd = &cobra.Command{
+	var root = &cobra.Command{
 		Use:   "sonar",
 		Short: "CLI to control sonar server",
 	}
@@ -53,22 +55,44 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 	// their own unauthorized commands and add this commands to root
 	// using `preExec`.
 	if u == nil {
-		return cmd
+		return root
 	}
 
 	// Main payloads commands
-	cmd.AddCommand(c.PayloadsCreate())
-	cmd.AddCommand(c.PayloadsList())
-	cmd.AddCommand(c.PayloadsUpdate())
-	cmd.AddCommand(c.PayloadsDelete())
+	root.AddCommand(c.PayloadsCreate())
+	root.AddCommand(c.PayloadsList())
+	root.AddCommand(c.PayloadsUpdate())
+	root.AddCommand(c.PayloadsDelete())
 
-	cmd.AddCommand(c.DNSRecords())
-
-	if u.IsAdmin {
-		cmd.AddCommand(c.Users())
+	// DNS
+	dns := &cobra.Command{
+		Use:   "dns",
+		Short: "Manage DNS records",
 	}
 
-	return cmd
+	dns.AddCommand(c.DNSRecordsCreate())
+	dns.AddCommand(c.DNSRecordsDelete())
+	dns.AddCommand(c.DNSRecordsList())
+
+	root.AddCommand(dns)
+
+	// User
+	root.AddCommand(c.UserCurrent())
+
+	// Users
+	if u.IsAdmin {
+		users := &cobra.Command{
+			Use:   "users",
+			Short: "Manage users",
+		}
+
+		users.AddCommand(c.UsersCreate())
+		users.AddCommand(c.UsersDelete())
+
+		root.AddCommand(users)
+	}
+
+	return root
 }
 
 func (c *command) Exec(ctx context.Context, u *actions.User, args []string) (string, errors.Error) {

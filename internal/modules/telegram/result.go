@@ -95,8 +95,8 @@ func (tg *Telegram) tplResult(ctx context.Context, tpl *template.Template, data 
 //
 
 var userCurrentTemplate = tpl("" +
-	"<b>Telegram ID:</b> <code>{{ .TelegramID }}</code>\n" +
-	"<b>API token:</b> <code>{{ .APIToken }}</code>",
+	"<b>Telegram ID:</b> <code>{{ .Params.TelegramID }}</code>\n" +
+	"<b>API token:</b> <code>{{ .Params.APIToken }}</code>",
 )
 
 func (tg *Telegram) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {

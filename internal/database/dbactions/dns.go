@@ -3,6 +3,7 @@ package dbactions
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/models"
@@ -39,7 +40,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	if _, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, p.Type); err != sql.ErrNoRows {
+	if _, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("dns records for payload %q with name %q and type %q already exist",
 			p.PayloadName, p.Name, p.Type)
 	}
@@ -48,7 +49,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		PayloadID: payload.ID,
 		Name:      p.Name,
 		TTL:       p.TTL,
-		Type:      p.Type,
+		Type:      strings.ToUpper(p.Type),
 		Values:    p.Values,
 		Strategy:  p.Strategy,
 	}
@@ -78,9 +79,9 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	rec, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, p.Type)
+	rec, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, strings.ToUpper(p.Type))
 	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("dns records for payload %q with name %q and type %q not found",
+		return nil, errors.NotFoundf("dns record for payload %q with name %q and type %q not found",
 			p.PayloadName, p.Name, p.Type)
 	} else if err != nil {
 		return nil, errors.Internal(err)

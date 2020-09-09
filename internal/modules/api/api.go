@@ -48,23 +48,23 @@ func (api *API) Router() http.Handler {
 
 	r.Use(api.checkAuth())
 
-	r.Get("/user", api.getUser)
+	r.Get("/user", api.UserCurrent)
 
 	r.Route("/payloads", func(r chi.Router) {
-		r.Get("/", api.listPayloads)
-		r.Post("/", api.createPayload)
+		r.Get("/", api.PayloadsList)
+		r.Post("/", api.PayloadsCreate)
 		r.Route("/{name}", func(r chi.Router) {
-			r.Delete("/", api.deletePayload)
-			r.Put("/", api.updatePayload)
+			r.Delete("/", api.PayloadsDelete)
+			r.Put("/", api.PayloadsUpdate)
 		})
 	})
 
-	r.Route("/dns", func(r chi.Router) {
-		r.Post("/", api.createDNSRecord)
+	r.Route("/dnsrecords", func(r chi.Router) {
+		r.Post("/", api.DNSRecordsCreate)
 		r.Route("/{payloadName}", func(r chi.Router) {
-			r.Get("/", api.listDNSRecords)
+			r.Get("/", api.DNSRecordsList)
 			r.Route("/{name}/{type}", func(r chi.Router) {
-				r.Delete("/", api.deleteDNSRecord)
+				r.Delete("/", api.DNSRecordsDelete)
 			})
 		})
 	})
@@ -73,9 +73,9 @@ func (api *API) Router() http.Handler {
 		r.Use(api.checkIsAdmin)
 
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", api.createUser)
+			r.Post("/", api.UsersCreate)
 			r.Route("/{name}", func(r chi.Router) {
-				r.Delete("/", api.deleteUser)
+				r.Delete("/", api.UsersDelete)
 			})
 		})
 	})

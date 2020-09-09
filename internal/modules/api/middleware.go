@@ -16,14 +16,14 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 			token := strings.Trim(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "), " ")
 
 			if token == "" {
-				handleError(api.log, w, r, errors.Unauthorizedf("empty token"))
+				api.handleError(w, r, errors.Unauthorizedf("empty token"))
 				return
 			}
 
 			u, err := api.db.UsersGetByParam(models.UserAPIToken, token)
 
 			if err != nil {
-				handleError(api.log, w, r, errors.Unauthorizedf("invalid token"))
+				api.handleError(w, r, errors.Unauthorizedf("invalid token"))
 				return
 			}
 
@@ -40,7 +40,7 @@ func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 		u, _ := dbactions.GetUser(r.Context())
 
 		if u == nil || !u.IsAdmin {
-			handleError(api.log, w, r, errors.Forbiddenf("admin only"))
+			api.handleError(w, r, errors.Forbiddenf("admin only"))
 			return
 		}
 
