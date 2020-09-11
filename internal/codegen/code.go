@@ -89,7 +89,7 @@ import (
 func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.Name "" }}, params actions.{{ .Params.Name }}{{ end }}) (actions.{{ .Result }}, errors.Error) {
 	var res actions.{{ .Result }}
 
-	resp, err := c.client.R().
+	err := handle(c.client.R().
 		{{- range .Params.Types }}
 		{{- if eq . "JSON" }}
 		SetBody(params).
@@ -103,14 +103,10 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.Name "" }}, par
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		{{ .HTTPMethod | lower | title }}("{{ .HTTPPath }}")
+		{{ .HTTPMethod | lower | title }}("{{ .HTTPPath }}"))
 
 	if err != nil {
-		return nil, errors.Internal(err)
-	}
-
-	if resp.Error() != nil {
-		return nil, resp.Error().(*APIError)
+		return nil, err
 	}
 
 	return res, nil

@@ -185,6 +185,7 @@ func equal(expected interface{}) matcher {
 
 func contains(s interface{}) matcher {
 	return func(t *testing.T, value interface{}) {
+		require.NotNil(t, value)
 		assert.Contains(t, value, s)
 	}
 }
@@ -216,65 +217,6 @@ func TestAPI(t *testing.T) {
 		result map[string]matcher
 		status int
 	}{
-
-		//
-		// User & auth
-		//
-
-		{
-			method: "GET",
-			path:   "/user",
-			schema: &errors.BaseError{},
-			result: map[string]matcher{
-				"$.message": contains("unauthorized"),
-			},
-			status: 401,
-		},
-		{
-			method: "GET",
-			path:   "/user",
-			token:  "invalid",
-			schema: &errors.BaseError{},
-			result: map[string]matcher{
-				"$.message": contains("unauthorized"),
-			},
-			status: 401,
-		},
-		{
-			method: "GET",
-			path:   "/user",
-			token:  User1Token,
-			schema: (actions.UserCurrentResult)(nil),
-			result: map[string]matcher{
-				"$.name":    equal("user1"),
-				"$.isAdmin": equal(false),
-			},
-			status: 200,
-		},
-		{
-			method: "GET",
-			path:   "/user",
-			token:  AdminToken,
-			schema: (actions.UserCurrentResult)(nil),
-			result: map[string]matcher{
-				"$.name":    equal("admin"),
-				"$.isAdmin": equal(true),
-			},
-			status: 200,
-		},
-
-		// Admin auth
-
-		{
-			method: "POST",
-			path:   "/users",
-			token:  User1Token,
-			schema: &errors.ForbiddenError{},
-			result: map[string]matcher{
-				"$.message": contains("forbidden"),
-			},
-			status: 403,
-		},
 
 		//
 		// Payloads
@@ -375,6 +317,18 @@ func TestAPI(t *testing.T) {
 			method: "PUT",
 			path:   "/payloads/payload1",
 			token:  User1Token,
+			json:   `{"invalid": 1}`,
+			schema: &errors.BadFormatError{},
+			result: map[string]matcher{
+				"$.message": contains("format"),
+				"$.details": contains("json"),
+			},
+			status: 400,
+		},
+		{
+			method: "PUT",
+			path:   "/payloads/payload1",
+			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["invalid"]}`,
 			schema: &errors.ValidationError{},
 			result: map[string]matcher{
@@ -441,6 +395,18 @@ func TestAPI(t *testing.T) {
 			method: "POST",
 			path:   "/dnsrecords",
 			token:  User1Token,
+			json:   `{"invalid": 1}`,
+			schema: &errors.BadFormatError{},
+			result: map[string]matcher{
+				"$.message": contains("format"),
+				"$.details": contains("json"),
+			},
+			status: 400,
+		},
+		{
+			method: "POST",
+			path:   "/dnsrecords",
+			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": ""}`,
 			schema: &errors.ValidationError{},
 			result: map[string]matcher{
@@ -474,6 +440,16 @@ func TestAPI(t *testing.T) {
 			},
 			status: 200,
 		},
+		{
+			method: "GET",
+			path:   "/dnsrecords/not-exist",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
 
 		// Delete
 
@@ -486,6 +462,16 @@ func TestAPI(t *testing.T) {
 				"$.record.name": equal("test-a"),
 			},
 			status: 200,
+		},
+		{
+			method: "DELETE",
+			path:   "/dnsrecords/not-exist/test-a/a",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
 		},
 
 		//
@@ -502,10 +488,31 @@ func TestAPI(t *testing.T) {
 			},
 			status: 200,
 		},
+		{
+			method: "GET",
+			path:   "/user",
+			schema: &errors.BaseError{},
+			result: map[string]matcher{
+				"$.message": contains("unauthorized"),
+			},
+			status: 401,
+		},
+		{
+			method: "GET",
+			path:   "/user",
+			token:  "invalid",
+			schema: &errors.BaseError{},
+			result: map[string]matcher{
+				"$.message": contains("unauthorized"),
+			},
+			status: 401,
+		},
 
 		//
 		// Users
 		//
+
+		// Create
 
 		{
 			method: "POST",
@@ -523,11 +530,57 @@ func TestAPI(t *testing.T) {
 			status: 201,
 		},
 		{
+			method: "POST",
+			path:   "/users",
+			token:  AdminToken,
+			json:   `{"invalid": 1}`,
+			schema: &errors.BadFormatError{},
+			result: map[string]matcher{
+				"$.message": contains("format"),
+				"$.details": contains("json"),
+			},
+			status: 400,
+		},
+		{
+			method: "POST",
+			path:   "/users",
+			token:  AdminToken,
+			json:   `{"name": "user1", "params": {"api.token": "token", "telegram.id": 1234}}`,
+			schema: &errors.ConflictError{},
+			result: map[string]matcher{
+				"$.message": contains("conflict"),
+			},
+			status: 409,
+		},
+		{
+			method: "POST",
+			path:   "/users",
+			token:  User1Token,
+			schema: &errors.ForbiddenError{},
+			result: map[string]matcher{
+				"$.message": contains("forbidden"),
+			},
+			status: 403,
+		},
+
+		// Delete
+
+		{
 			method: "DELETE",
 			path:   "/users/user1",
 			token:  AdminToken,
 			schema: (actions.UsersCreateResult)(nil),
 			status: 200,
+		},
+		{
+			method: "DELETE",
+			path:   "/users/not-exist",
+			token:  AdminToken,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
 		},
 	}
 
