@@ -12,7 +12,7 @@ func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecords
 
 	resp, err := c.client.R().
 		SetBody(params).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Post("/dnsrecords")
@@ -22,7 +22,7 @@ func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecords
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -33,7 +33,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 
 	resp, err := c.client.R().
 		SetPathParams(toPath(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Delete("/dnsrecords/{payloadName}/{name}/{type}")
@@ -43,7 +43,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -54,7 +54,7 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 
 	resp, err := c.client.R().
 		SetPathParams(toPath(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Get("/dnsrecords/{payloadName}")
@@ -64,7 +64,7 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -75,7 +75,7 @@ func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCrea
 
 	resp, err := c.client.R().
 		SetBody(params).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Post("/payloads")
@@ -85,7 +85,7 @@ func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCrea
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -96,7 +96,7 @@ func (c *Client) PayloadsDelete(ctx context.Context, params actions.PayloadsDele
 
 	resp, err := c.client.R().
 		SetPathParams(toPath(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Delete("/payloads/{name}")
@@ -106,7 +106,7 @@ func (c *Client) PayloadsDelete(ctx context.Context, params actions.PayloadsDele
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -117,7 +117,7 @@ func (c *Client) PayloadsList(ctx context.Context, params actions.PayloadsListPa
 
 	resp, err := c.client.R().
 		SetQueryParamsFromValues(toQuery(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Get("/payloads")
@@ -127,7 +127,7 @@ func (c *Client) PayloadsList(ctx context.Context, params actions.PayloadsListPa
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -139,7 +139,7 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	resp, err := c.client.R().
 		SetBody(params).
 		SetPathParams(toPath(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Put("/payloads/{name}")
@@ -149,7 +149,7 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -158,7 +158,7 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 func (c *Client) UserCurrent(ctx context.Context) (actions.UserCurrentResult, errors.Error) {
 	var res actions.UserCurrentResult
 
-	resp, err := c.client.R().SetError(&apiError{}).
+	resp, err := c.client.R().SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Get("/user")
@@ -168,7 +168,7 @@ func (c *Client) UserCurrent(ctx context.Context) (actions.UserCurrentResult, er
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -179,7 +179,7 @@ func (c *Client) UsersCreate(ctx context.Context, params actions.UsersCreatePara
 
 	resp, err := c.client.R().
 		SetBody(params).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Post("/users")
@@ -189,7 +189,7 @@ func (c *Client) UsersCreate(ctx context.Context, params actions.UsersCreatePara
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil
@@ -200,7 +200,7 @@ func (c *Client) UsersDelete(ctx context.Context, params actions.UsersDeletePara
 
 	resp, err := c.client.R().
 		SetPathParams(toPath(params)).
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Delete("/users/{name}")
@@ -210,7 +210,7 @@ func (c *Client) UsersDelete(ctx context.Context, params actions.UsersDeletePara
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil

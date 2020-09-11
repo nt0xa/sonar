@@ -100,7 +100,7 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.Name "" }}, par
 		{{- end }}
 		{{ else }}
 		{{- end -}}
-		SetError(&apiError{}).
+		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		{{ .HTTPMethod | lower | title }}("{{ .HTTPPath }}")
@@ -110,7 +110,7 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.Name "" }}, par
 	}
 
 	if resp.Error() != nil {
-		return nil, resp.Error().(*apiError)
+		return nil, resp.Error().(*APIError)
 	}
 
 	return res, nil

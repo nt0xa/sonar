@@ -412,6 +412,16 @@ func TestClient(t *testing.T) {
 		},
 
 		// Delete
+
+		{
+			actions.UsersDeleteParams{
+				Name: "user1",
+			},
+			map[string]matcher{
+				"Name": equal("user1"),
+			},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {

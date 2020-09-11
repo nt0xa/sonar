@@ -263,6 +263,19 @@ func TestAPI(t *testing.T) {
 			status: 200,
 		},
 
+		// Admin auth
+
+		{
+			method: "POST",
+			path:   "/users",
+			token:  User1Token,
+			schema: &errors.ForbiddenError{},
+			result: map[string]matcher{
+				"$.message": contains("forbidden"),
+			},
+			status: 403,
+		},
+
 		//
 		// Payloads
 		//
