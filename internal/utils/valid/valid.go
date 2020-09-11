@@ -102,14 +102,19 @@ func DNSRecord(typ string) validation.Rule {
 }
 
 type OneOfRule struct {
-	values []string
+	values        []string
+	caseSensetive bool
 }
 
 func (r *OneOfRule) Validate(value interface{}) error {
 	val, _ := value.(string)
 
+	if !r.caseSensetive {
+		val = strings.ToLower(val)
+	}
+
 	for _, v := range r.values {
-		if v == val {
+		if val == strings.ToLower(v) {
 			return nil
 		}
 	}
@@ -117,6 +122,6 @@ func (r *OneOfRule) Validate(value interface{}) error {
 	return fmt.Errorf("invalid value, expected one of %s", strings.Join(r.values, ","))
 }
 
-func OneOf(values []string) validation.Rule {
-	return &OneOfRule{values}
+func OneOf(values []string, caseSensetive bool) validation.Rule {
+	return &OneOfRule{values, caseSensetive}
 }

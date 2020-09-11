@@ -5,11 +5,10 @@ import (
 	"net/http"
 
 	"github.com/bi-zone/sonar/internal/utils/errors"
-	"github.com/sirupsen/logrus"
 )
 
-func handleError(log logrus.FieldLogger, w http.ResponseWriter, r *http.Request, err error) {
-	log = log.WithField("uri", r.RequestURI)
+func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {
+	log := api.log.WithField("uri", r.RequestURI)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	switch err.(type) {

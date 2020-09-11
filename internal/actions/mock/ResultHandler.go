@@ -16,17 +16,17 @@ type ResultHandler struct {
 }
 
 // DNSRecordsCreate provides a mock function with given fields: _a0, _a1
-func (_m *ResultHandler) DNSRecordsCreate(_a0 context.Context, _a1 *actions.DNSRecordsCreateResultData) {
+func (_m *ResultHandler) DNSRecordsCreate(_a0 context.Context, _a1 actions.DNSRecordsCreateResult) {
 	_m.Called(_a0, _a1)
 }
 
 // DNSRecordsDelete provides a mock function with given fields: _a0, _a1
-func (_m *ResultHandler) DNSRecordsDelete(_a0 context.Context, _a1 *actions.DNSRecordsDeleteResultData) {
+func (_m *ResultHandler) DNSRecordsDelete(_a0 context.Context, _a1 actions.DNSRecordsDeleteResult) {
 	_m.Called(_a0, _a1)
 }
 
 // DNSRecordsList provides a mock function with given fields: _a0, _a1
-func (_m *ResultHandler) DNSRecordsList(_a0 context.Context, _a1 *actions.DNSRecordsListResultData) {
+func (_m *ResultHandler) DNSRecordsList(_a0 context.Context, _a1 actions.DNSRecordsListResult) {
 	_m.Called(_a0, _a1)
 }
 

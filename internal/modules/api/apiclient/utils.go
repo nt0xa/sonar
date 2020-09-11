@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/fatih/structs"
+	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/schema"
 )
 
@@ -34,4 +36,16 @@ func toPath(src interface{}) map[string]string {
 	}
 
 	return dst
+}
+
+func handle(resp *resty.Response, err error) errors.Error {
+	if err != nil {
+		return errors.Internal(err)
+	}
+
+	if resp.Error() != nil {
+		return resp.Error().(*APIError)
+	}
+
+	return nil
 }

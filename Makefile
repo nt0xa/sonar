@@ -45,8 +45,33 @@ mock-actions:
 	@mockery -dir internal/actions \
 		-output internal/actions/mock \
 		-outpkg actions_mock \
-		-name Actions \
+		-name Actions
+	@mockery -dir internal/actions \
+		-output internal/actions/mock \
+		-outpkg actions_mock \
 		-name ResultHandler
+
+#
+# Code generation
+#
+
+.PHONY: gen
+gen: gen-api gen-cmd gen-apiclient
+
+.PHONY: gen-api
+gen-api:
+	@go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
+	@go fmt ./internal/modules/api
+
+.PHONY: gen-cmd
+gen-cmd:
+	@go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
+	@go fmt ./internal/cmd
+
+.PHONY: gen-apiclient
+gen-apiclient:
+	@go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
+	@go fmt ./internal/modules/api/apiclient
 
 #
 # Migrations
