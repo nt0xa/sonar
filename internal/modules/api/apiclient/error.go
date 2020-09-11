@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-type apiError struct {
+type APIError struct {
 	Msg  string                 `json:"message"`
 	Det  string                 `json:"details"`
 	Errs map[string]interface{} `json:"errors"`
 }
 
-func (e *apiError) Message() string {
+func (e *APIError) Message() string {
 	return e.Msg
 }
 
-func (e *apiError) Details() string {
+func (e *APIError) Details() string {
 	return e.Det
 }
 
-func (e *apiError) Error() string {
+func (e *APIError) Error() string {
 	det := ""
 
 	if len(e.Errs) > 0 {

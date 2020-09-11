@@ -36,6 +36,8 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
 
+	// TODO: check telegram.id and api.token duplicate
+
 	user := &models.User{
 		Name:      p.Name,
 		Params:    p.Params,

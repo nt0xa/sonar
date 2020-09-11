@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/spf13/cobra"
 )
 
 type UserActions interface {
@@ -15,3 +16,12 @@ type UserHandler interface {
 }
 
 type UserCurrentResult *User
+
+func UserCurrentCommand() (*cobra.Command, PrepareCommandFunc) {
+	cmd := &cobra.Command{
+		Use:   "user",
+		Short: "Get current user info",
+	}
+
+	return cmd, nil
+}
