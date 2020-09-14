@@ -44,10 +44,10 @@ changelog:
 
 dockers:
 - image_templates:
-    - "docker.pkg.github.com/bi-zone/sonar/server:latest"
-    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}"
-    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}.{{.Minor}}"
-    - "docker.pkg.github.com/bi-zone/sonar/server:{{.Major}}.{{.Minor}}.{{.Patch}}"
+    - "ghcr.io/bi-zone/sonar:latest"
+    - "ghcr.io/bi-zone/sonar:{{.Major}}"
+    - "ghcr.io/bi-zone/sonar:{{.Major}}.{{.Minor}}"
+    - "ghcr.io/bi-zone/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
   build_flag_templates:
     - "--pull"
     - "--label=org.opencontainers.image.created={{.Date}}"
