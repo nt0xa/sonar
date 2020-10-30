@@ -51,7 +51,7 @@ func (s *Server) ListenAndServe() error {
 func (s *Server) Handle(ctx context.Context, conn *listener.Conn) error {
 	sess := newSession(conn, s.domain, s.options.tlsConfig)
 
-	sess.onClose(func(data Data, log []byte, meta map[string]interface{}) {
+	sess.onClose(func(log []byte, meta map[string]interface{}) {
 		if s.options.notifyRequestFunc != nil {
 			s.options.notifyRequestFunc(conn.RemoteAddr(), log, meta)
 		}

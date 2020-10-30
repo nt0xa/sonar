@@ -97,7 +97,7 @@ func TestSMTP(t *testing.T) {
 						}
 					}
 					return true
-				}), map[string]interface{}{}).
+				}), mock.Anything).
 				Return().
 				Once()
 

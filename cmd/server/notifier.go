@@ -81,6 +81,7 @@ func AddProtoEvent(proto string, events chan<- models.Event) server.NotifyReques
 			Protocol:   proto,
 			Data:       string(data),
 			RawData:    data,
+			Meta:       meta,
 			RemoteAddr: remoteAddr,
 			ReceivedAt: time.Now(),
 		}
