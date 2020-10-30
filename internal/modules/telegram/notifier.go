@@ -3,7 +3,6 @@ package telegram
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"unicode/utf8"
 
 	"github.com/bi-zone/sonar/internal/models"
@@ -13,14 +12,18 @@ import (
 const maxMessageSize = 4096
 
 var (
-	messageHeaderTemplate = template.Must(template.New("msg").Parse(`
+	messageHeaderTemplate = tpl(`
 <b>[{{ .Name }}]</b> {{ .Protocol }} from <code>{{ .RemoteAddr }}</code> at {{ .ReceivedAt }}
-`))
-	messageBodyTemplate = template.Must(template.New("msg").Parse(`
+{{- if eq .Protocol "SMTP" }}
+<b>Rcpt To:</b> {{ index .Meta "RcptTo" | join ", " }}
+<b>Mail From:</b> {{ index .Meta "MailFrom" | join ", " }}
+{{ end -}}
+`)
+	messageBodyTemplate = tpl(`
 <pre>
 {{ .Data }}
 </pre>
-`))
+`)
 )
 
 func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) error {
@@ -32,11 +35,13 @@ func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) e
 		Protocol   string
 		RemoteAddr string
 		ReceivedAt string
+		Meta       map[string]interface{}
 	}{
 		p.Name,
 		e.Protocol,
 		e.RemoteAddr.String(),
 		e.ReceivedAt.Format("15:04:05 01.01.2006"),
+		e.Meta,
 	}
 
 	if err := messageHeaderTemplate.Execute(&header, headerData); err != nil {
