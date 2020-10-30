@@ -12,6 +12,8 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/fatih/structs"
 )
 
 const (
@@ -26,18 +28,18 @@ var (
 	ErrQuit    = errors.New("connection closed")
 )
 
-type Data struct {
-	helo     string
-	mailFrom string
-	rcptTo   []string
-	data     string
+type Meta struct {
+	Helo     string
+	MailFrom string
+	RcptTo   []string
+	Data     string
 }
 
 type Session struct {
 	domain    string
 	tlsConfig *tls.Config
 
-	onclose func(Data, []byte, map[string]interface{})
+	onclose func([]byte, map[string]interface{})
 
 	lines   chan string
 	rdy     chan struct{}
@@ -49,7 +51,7 @@ type Session struct {
 
 	state int
 
-	data Data
+	data Meta
 
 	mu sync.RWMutex
 }
@@ -76,11 +78,11 @@ func newSession(conn net.Conn, domain string, tlsConfig *tls.Config) *Session {
 		conv:    &buf,
 
 		state: stateHelo,
-		data: Data{
-			helo:     "",
-			mailFrom: "",
-			rcptTo:   make([]string, 0),
-			data:     "",
+		data: Meta{
+			Helo:     "",
+			MailFrom: "",
+			RcptTo:   make([]string, 0),
+			Data:     "",
 		},
 	}
 }
@@ -89,8 +91,7 @@ func (s *Session) start(ctx context.Context) error {
 
 	if s.onclose != nil {
 		defer func() {
-			meta := make(map[string]interface{})
-			s.onclose(s.data, s.conv.Bytes(), meta)
+			s.onclose(s.conv.Bytes(), structs.Map(s.data))
 		}()
 	}
 
@@ -229,7 +230,7 @@ func (s *Session) ready() {
 }
 
 func (s *Session) handleHelo(args string) error {
-	s.data.helo = args
+	s.data.Helo = args
 	s.state = stateMailFrom
 	return s.writeLine("250 Hello")
 }
@@ -239,7 +240,7 @@ func (s *Session) handleNoop(args string) error {
 }
 
 func (s *Session) handleEhlo(args string) error {
-	s.data.helo = args
+	s.data.Helo = args
 	s.state = stateMailFrom
 
 	if s.tlsConfig == nil {
@@ -285,18 +286,18 @@ func (s *Session) handleStartTLS(args string) error {
 	return nil
 }
 
-func (s *Session) onClose(f func(Data, []byte, map[string]interface{})) {
+func (s *Session) onClose(f func([]byte, map[string]interface{})) {
 	s.onclose = f
 }
 
 func (s *Session) handleMailFrom(args string) error {
-	s.data.mailFrom = addrRegexp.ReplaceAllString(args, "$2")
+	s.data.MailFrom = addrRegexp.ReplaceAllString(args, "$2")
 	s.state = stateRcptTo
 	return s.writeLine("250 OK")
 }
 
 func (s *Session) handleRcptTo(args string) error {
-	s.data.rcptTo = append(s.data.rcptTo, addrRegexp.ReplaceAllString(args, "$2"))
+	s.data.RcptTo = append(s.data.RcptTo, addrRegexp.ReplaceAllString(args, "$2"))
 	s.state = stateRcptTo
 	return s.writeLine("250 OK")
 }
@@ -306,7 +307,7 @@ func (s *Session) handleData(args string) error {
 		s.state = stateData
 		return s.writeLine("354 Send data")
 	} else if args != "." {
-		s.data.data += args + "\n"
+		s.data.Data += args + "\n"
 		return nil
 	}
 
