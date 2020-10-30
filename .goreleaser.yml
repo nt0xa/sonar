@@ -27,7 +27,9 @@ builds:
       - amd64
 
 archives:
-  - replacements:
+  - builds:
+     - client
+    replacements:
       darwin: Darwin
       linux: Linux
       windows: Windows
