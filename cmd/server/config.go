@@ -1,12 +1,11 @@
 package main
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
-
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 type Config struct {

@@ -32,3 +32,13 @@ func StringsContains(items []string, item string) bool {
 	}
 	return false
 }
+
+func FindIndex(values []string, value string) int {
+	for i, v := range values {
+		if value == v {
+			return i
+		}
+	}
+
+	return -1
+}

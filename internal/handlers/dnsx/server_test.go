@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	hnd      *dnsx.DNSX
+	srv      *dnsx.Server
 	db       *database.DB
 	tf       *testfixtures.Context
 	notifier *NotifierMock
@@ -69,9 +69,18 @@ func setupGlobals() error {
 	wg.Add(1)
 
 	notifier = &NotifierMock{}
+	domain := "sonar.local"
 
-	hnd, err = dnsx.New(":1053", "sonar.local", net.ParseIP("127.0.0.1"), db,
-		dnsx.SubdomainPattern("[a-z0-9]{8}"),
+	defaultRecords, err := dnsx.DefaultRecords(domain, net.ParseIP("127.0.0.1"))
+	if err != nil {
+		return fmt.Errorf("fail to init default dns records: %w", err)
+	}
+
+	srv = dnsx.New(":1053", domain,
+		[]dnsx.Finder{
+			dnsx.NewDatabaseFinder(db, domain),
+			defaultRecords,
+		},
 		dnsx.NotifyRequestFunc(notifier.Notify),
 		dnsx.NotifyStartedFunc(func() {
 			wg.Done()
@@ -82,7 +91,7 @@ func setupGlobals() error {
 	}
 
 	go func() {
-		if err := hnd.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(fmt.Errorf("fail to start server: %w", err))
 		}
 	}()

@@ -72,7 +72,7 @@ var tests = []struct {
 	}},
 }
 
-func TestDNSMgr(t *testing.T) {
+func TestDNS(t *testing.T) {
 	for _, tt := range tests {
 		name := fmt.Sprintf("%s/%s", tt.name, dns.Type(tt.qtype).String())
 

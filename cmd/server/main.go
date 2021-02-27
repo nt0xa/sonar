@@ -6,7 +6,6 @@ import (
 	"net"
 	"sync"
 
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
@@ -111,7 +110,16 @@ func main() {
 
 	dnsStarted.Add(1)
 
-	dns, err := dnsx.New(":53", cfg.Domain, net.ParseIP(cfg.IP), db,
+	defaultRecords, err := dnsx.DefaultRecords(cfg.Domain, net.ParseIP(cfg.IP))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dns := dnsx.New(":53", cfg.Domain,
+		[]dnsx.Finder{
+			dnsx.NewDatabaseFinder(db, cfg.Domain),
+			defaultRecords,
+		},
 		dnsx.NotifyRequestFunc(handlers.NotifyRequestFunc(AddProtoEvent("DNS", events))),
 		dnsx.NotifyStartedFunc(func() {
 			dnsStarted.Done()
@@ -136,7 +144,7 @@ func main() {
 	// use it as DNS challenge provider for Let's Encrypt
 	dnsStarted.Wait()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dns)
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, defaultRecords)
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}

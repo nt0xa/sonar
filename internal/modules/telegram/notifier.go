@@ -6,7 +6,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/internal/utils"
 )
 
 const maxMessageSize = 4096
@@ -48,18 +47,10 @@ func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) e
 		return fmt.Errorf("message header render error: %w", err)
 	}
 
-	var data string
-
-	if e.Protocol == "DNS" {
-		data = utils.HexDump(e.RawData)
-	} else {
-		data = e.Data
-	}
-
 	bodyData := struct {
 		Data string
 	}{
-		data,
+		e.Data,
 	}
 
 	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {
