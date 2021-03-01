@@ -9,7 +9,6 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/bi-zone/sonar/internal/utils/valid"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/miekg/dns"
 	"github.com/spf13/cobra"
 )
 
@@ -32,14 +31,6 @@ type DNSRecord struct {
 	Values    []string  `json:"values"`
 	Strategy  string    `json:"strategy"`
 	CreatedAt time.Time `json:"createdAt"`
-}
-
-func (r *DNSRecord) RRs(origin string) []dns.RR {
-	rrs := make([]dns.RR, 0)
-	for _, v := range r.Values {
-		rrs = append(rrs, models.DNSStringToRR(v, r.Type, r.Name, origin, r.TTL))
-	}
-	return rrs
 }
 
 //

@@ -15,11 +15,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/handlers/dnsx"
+	"github.com/bi-zone/sonar/internal/dnsx"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsdb"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsdef"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsrec"
 )
 
 var (
-	hnd      *dnsx.DNSX
+	srv      *dnsx.Server
+	rec      *dnsrec.Records
 	db       *database.DB
 	tf       *testfixtures.Context
 	notifier *NotifierMock
@@ -46,7 +50,7 @@ func setupGlobals() error {
 
 	db, err = database.New(&database.Config{
 		DSN:        dsn,
-		Migrations: "../../database/migrations",
+		Migrations: "../database/migrations",
 	})
 	if err != nil {
 		return fmt.Errorf("fail to init db: %w", err)
@@ -59,7 +63,7 @@ func setupGlobals() error {
 	tf, err = testfixtures.NewFolder(
 		db.DB.DB,
 		&testfixtures.PostgreSQL{},
-		"../../database/fixtures",
+		"../database/fixtures",
 	)
 	if err != nil {
 		return fmt.Errorf("fail to load fixtures: %w", err)
@@ -69,20 +73,28 @@ func setupGlobals() error {
 	wg.Add(1)
 
 	notifier = &NotifierMock{}
+	domain := "sonar.local"
 
-	hnd, err = dnsx.New(":1053", "sonar.local", net.ParseIP("127.0.0.1"), db,
-		dnsx.SubdomainPattern("[a-z0-9]{8}"),
-		dnsx.NotifyRequestFunc(notifier.Notify),
-		dnsx.NotifyStartedFunc(func() {
-			wg.Done()
-		}),
-	)
+	rec, err = dnsdef.Records(domain, net.ParseIP("127.0.0.1"))
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to init default dns records: %w", err)
+	}
+
+	srv := dnsx.Server{
+		Addr:   ":1053",
+		Origin: domain,
+		Handlers: []dnsx.Handler{
+			&dnsdb.Handler{DB: db, Origin: domain},
+			rec,
+		},
+		NotifyStartedFunc: func() {
+			wg.Done()
+		},
+		NotifyRequestFunc: notifier.Notify,
 	}
 
 	go func() {
-		if err := hnd.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(fmt.Errorf("fail to start server: %w", err))
 		}
 	}()
