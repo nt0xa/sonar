@@ -50,17 +50,20 @@ type Server struct {
 
 	// If NotifyRequestFunc is set it is called on every DNS query.
 	NotifyRequestFunc func(net.Addr, []byte, map[string]interface{})
+
+	server *dns.Server
 }
 
 // ListenAndServe starts the DNS server on configured address.
 func (srv *Server) ListenAndServe() error {
-	s := dns.Server{
+	srv.server = &dns.Server{
 		Addr:              srv.Addr,
 		Net:               "udp",
 		Handler:           srv,
 		NotifyStartedFunc: srv.NotifyStartedFunc,
 	}
-	return s.ListenAndServe()
+
+	return srv.server.ListenAndServe()
 }
 
 // ServeDNS allows Server to implement dns.Handler interface
@@ -138,4 +141,9 @@ loop:
 	res.Answer = rrs
 
 	_ = w.WriteMsg(res)
+}
+
+// Shutdown shuts down a server. After a call to Shutdown, ListenAndServe will return.
+func (srv *Server) Shutdown() error {
+	return srv.server.Shutdown()
 }

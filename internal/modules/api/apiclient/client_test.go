@@ -20,10 +20,10 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
+	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -44,117 +44,37 @@ func init() {
 	flag.Parse()
 }
 
-func TestMain(m *testing.M) {
-	if err := Setup(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	if err := Teardown(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	os.Exit(ret)
-}
-
-//
-// Setup & Teardown globals
-//
-
-var (
-	cfg         *api.Config
-	db          *database.DB
-	srv         *httptest.Server
-	tf          *testfixtures.Context
-	client      *apiclient.Client
-	adminClient *apiclient.Client
-)
-
 const (
 	AdminToken = "a33bfdbfb3c62feb7ea59314dbd17426"
 	UserToken  = "50c862e41d059eeca13adc7b276b46b7"
 )
 
-func Setup() error {
-	var err error
+var (
+	db   *database.DB
+	tf   *testfixtures.Context
+	acts actions.Actions
+	srv  *httptest.Server
+	uc   *apiclient.Client
+	ac   *apiclient.Client
 
-	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
-	if !ok {
-		return fmt.Errorf("empty SONAR_DB_DSN")
-	}
+	log = logrus.New()
 
-	// DB
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "../../../database/migrations",
-	})
-	if err != nil {
-		return fmt.Errorf("fail to init db: %w", err)
-	}
-
-	// Migrations
-	if err := db.Migrate(); err != nil {
-		return fmt.Errorf("fail to apply migrations: %w", err)
-	}
-
-	// Load DB fixtures
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"../../../database/fixtures",
+	g = testutils.Globals(
+		testutils.DB(&database.Config{
+			DSN:        os.Getenv("SONAR_DB_DSN"),
+			Migrations: "../../../database/migrations",
+		}, &db),
+		testutils.Fixtures(&db, "../../../database/fixtures", &tf),
+		testutils.ActionsDB(&db, log, &acts),
+		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
+		testutils.APIClient(&srv, UserToken, &uc),
+		testutils.APIClient(&srv, AdminToken, &ac),
 	)
-	if err != nil {
-		return fmt.Errorf("fail to load fixtures: %w", err)
-	}
+)
 
-	// Config
-	cfg = &api.Config{
-		Admin: AdminToken,
-	}
-
-	// Logger
-	log := logrus.New()
-
-	// Actions
-	actions := dbactions.New(db, log, "sonar.local")
-
-	// API controller
-	api, err := api.New(cfg, db, log, nil, actions)
-	if err != nil {
-		return err
-	}
-
-	// Create httptest server
-	srv = httptest.NewServer(api.Router())
-
-	// Create api client
-	client = apiclient.New(srv.URL, UserToken, false)
-	adminClient = apiclient.New(srv.URL, AdminToken, false)
-
-	return nil
+func TestMain(m *testing.M) {
+	testutils.TestMain(m, g)
 }
-
-func Teardown() error {
-	// Close database connection
-	if db != nil {
-		if err := db.Close(); err != nil {
-			return fmt.Errorf("model: fail to close: %w", err)
-		}
-	}
-
-	// Stop httptest server
-	if srv != nil {
-		srv.Close()
-	}
-
-	return nil
-}
-
-//
-// setup & teardown
-//
 
 func setup(t *testing.T) {
 	err := tf.Load()
@@ -438,31 +358,31 @@ func TestClient(t *testing.T) {
 
 			// Payloads
 			case actions.PayloadsCreateParams:
-				res, err = client.PayloadsCreate(context.Background(), p)
+				res, err = uc.PayloadsCreate(context.Background(), p)
 			case actions.PayloadsListParams:
-				res, err = client.PayloadsList(context.Background(), p)
+				res, err = uc.PayloadsList(context.Background(), p)
 			case actions.PayloadsUpdateParams:
-				res, err = client.PayloadsUpdate(context.Background(), p)
+				res, err = uc.PayloadsUpdate(context.Background(), p)
 			case actions.PayloadsDeleteParams:
-				res, err = client.PayloadsDelete(context.Background(), p)
+				res, err = uc.PayloadsDelete(context.Background(), p)
 
 				// DNS records
 			case actions.DNSRecordsCreateParams:
-				res, err = client.DNSRecordsCreate(context.Background(), p)
+				res, err = uc.DNSRecordsCreate(context.Background(), p)
 			case actions.DNSRecordsListParams:
-				res, err = client.DNSRecordsList(context.Background(), p)
+				res, err = uc.DNSRecordsList(context.Background(), p)
 			case actions.DNSRecordsDeleteParams:
-				res, err = client.DNSRecordsDelete(context.Background(), p)
+				res, err = uc.DNSRecordsDelete(context.Background(), p)
 
 			// Users
 			case actions.UsersCreateParams:
-				res, err = adminClient.UsersCreate(context.Background(), p)
+				res, err = ac.UsersCreate(context.Background(), p)
 			case actions.UsersDeleteParams:
-				res, err = adminClient.UsersDelete(context.Background(), p)
+				res, err = ac.UsersDelete(context.Background(), p)
 
 			// User
 			default:
-				res, err = client.UserCurrent(context.Background())
+				res, err = uc.UserCurrent(context.Background())
 			}
 
 			if tt.err != nil {
