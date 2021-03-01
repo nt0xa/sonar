@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -51,11 +49,7 @@ type DNSRecord struct {
 }
 
 func (r *DNSRecord) Qtype() uint16 {
-	return DNSQtype(r.Type)
-}
-
-func DNSQtype(typ string) uint16 {
-	switch typ {
+	switch r.Type {
 	case DNSTypeA:
 		return dns.TypeA
 	case DNSTypeAAAA:
@@ -68,38 +62,4 @@ func DNSQtype(typ string) uint16 {
 		return dns.TypeCNAME
 	}
 	panic("unsupported dns query type")
-}
-
-func DNSType(qtype uint16) string {
-	switch qtype {
-	case dns.TypeA:
-		return DNSTypeA
-	case dns.TypeAAAA:
-		return DNSTypeAAAA
-	case dns.TypeMX:
-		return DNSTypeMX
-	case dns.TypeTXT:
-		return DNSTypeTXT
-	case dns.TypeCNAME:
-		return DNSTypeCNAME
-	}
-	panic("unsupported dns query type")
-}
-
-func DNSRRToString(rr dns.RR) string {
-
-	switch r := rr.(type) {
-	case *dns.A:
-		return r.A.String()
-	case *dns.AAAA:
-		return r.AAAA.String()
-	case *dns.MX:
-		return fmt.Sprintf("%d %s", r.Preference, r.Mx)
-	case *dns.TXT:
-		return strings.Join(r.Txt, ",")
-	case *dns.CNAME:
-		return r.Target
-	}
-
-	panic("unsupported dns record type")
 }

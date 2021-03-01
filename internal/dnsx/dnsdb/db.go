@@ -1,4 +1,4 @@
-package dnsx
+package dnsdb
 
 import (
 	"database/sql"
@@ -9,30 +9,29 @@ import (
 	"github.com/miekg/dns"
 
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/dnsx"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsutils"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/pointer"
 	"github.com/bi-zone/sonar/internal/utils/slice"
 )
 
-// DatabaseFinder uses database.DB to find DNS records in the database.
-type DatabaseFinder struct {
-	db     *database.DB
-	origin string
+// Handler uses database.DB to find DNS records in the database.
+type Handler struct {
+	DB     *database.DB
+	Origin string
 }
 
-// DatabaseFinder must implement Finder interface.
-var _ Finder = &DatabaseFinder{}
+// Ensure Handler implements dnsx.Handler interface.
+var _ dnsx.Handler = &Handler{}
 
-// NewDatabaseFinder returns new instance of DatabaseFinder.
-func NewDatabaseFinder(db *database.DB, origin string) *DatabaseFinder {
-	return &DatabaseFinder{db, origin}
-}
-
-// Find allows DatabaseFinder to implement Finder interface.
-func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
+// ServeDNS allows Handler to implement dnsx.Handler interface.
+func (h *Handler) ServeDNS(name string, qtype uint16) ([]dns.RR, error) {
+	// Trim origin because domains are stored without it.
 	// test1.test2.00b18489.sonar.local -> [test1, test2, 00b18489]
-	parts := strings.Split(strings.TrimSuffix(name, "."+f.origin+"."), ".")
+	parts := strings.Split(strings.TrimSuffix(name, "."+h.Origin+"."), ".")
 
+	// This can't be user created domain.
 	if len(parts) < 2 {
 		return nil, nil
 	}
@@ -40,7 +39,7 @@ func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
 	// Get payload subdomain from name, i.e. rightmost part.
 	domain := parts[len(parts)-1]
 
-	payload, err := f.db.PayloadsGetBySubdomain(domain)
+	payload, err := h.DB.PayloadsGetBySubdomain(domain)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -51,7 +50,7 @@ func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
 	// [test1 test2 0a88a087] -> test1.test2
 	subdomain := strings.Join(parts[:len(parts)-1], ".")
 
-	record, err := f.db.DNSRecordsGetByPayloadNameType(payload.ID, subdomain, qtypeStr(qtype))
+	record, err := h.DB.DNSRecordsGetByPayloadNameType(payload.ID, subdomain, dnsutils.QtypeString(qtype))
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -60,8 +59,8 @@ func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
 
 	var res []dns.RR
 
-	fqdn := fmt.Sprintf("%s.%s.%s.", record.Name, payload.Subdomain, f.origin)
-	rrs := NewRRs(fqdn, record.Qtype(), record.TTL, record.Values)
+	fqdn := fmt.Sprintf("%s.%s.%s.", record.Name, payload.Subdomain, h.Origin)
+	rrs := dnsutils.NewRRs(fqdn, record.Qtype(), record.TTL, record.Values)
 
 	// Build answer based on record "strategy".
 	switch record.Strategy {
@@ -73,7 +72,7 @@ func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
 	// "round-robin" — return all records but rotate them cyclically.
 	case models.DNSStrategyRoundRobin:
 		if record.LastAnswer != nil {
-			res = rotate(NewRRs(fqdn, record.Qtype(), record.TTL, record.LastAnswer))
+			res = rotate(dnsutils.NewRRs(fqdn, record.Qtype(), record.TTL, record.LastAnswer))
 		} else {
 			res = rrs
 		}
@@ -94,10 +93,10 @@ func (f *DatabaseFinder) Find(name string, qtype uint16) ([]dns.RR, error) {
 	}
 
 	// Update last answer and last answer time.
-	record.LastAnswer = rrsToStrings(res)
+	record.LastAnswer = dnsutils.RRsToStrings(res)
 	record.LastAccessedAt = pointer.Time(time.Now().UTC())
 
-	if err := f.db.DNSRecordsUpdate(record); err != nil {
+	if err := h.DB.DNSRecordsUpdate(record); err != nil {
 		return nil, err
 	}
 

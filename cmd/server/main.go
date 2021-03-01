@@ -11,8 +11,11 @@ import (
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/dnsx"
+	"github.com/bi-zone/sonar/internal/dnsx/dnschal"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsdb"
+	"github.com/bi-zone/sonar/internal/dnsx/dnsdef"
 	"github.com/bi-zone/sonar/internal/handlers"
-	"github.com/bi-zone/sonar/internal/handlers/dnsx"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/tls"
@@ -110,21 +113,23 @@ func main() {
 
 	dnsStarted.Add(1)
 
-	defaultRecords, err := dnsx.DefaultRecords(cfg.Domain, net.ParseIP(cfg.IP))
+	defaultRecords, err := dnsdef.Records(cfg.Domain, net.ParseIP(cfg.IP))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dns := dnsx.New(":53", cfg.Domain,
-		[]dnsx.Finder{
-			dnsx.NewDatabaseFinder(db, cfg.Domain),
+	dns := dnsx.Server{
+		Addr:   ":53",
+		Origin: cfg.Domain,
+		Handlers: []dnsx.Handler{
+			&dnsdb.Handler{DB: db, Origin: cfg.Domain},
 			defaultRecords,
 		},
-		dnsx.NotifyRequestFunc(handlers.NotifyRequestFunc(AddProtoEvent("DNS", events))),
-		dnsx.NotifyStartedFunc(func() {
+		NotifyStartedFunc: func() {
 			dnsStarted.Done()
-		}),
-	)
+		},
+		NotifyRequestFunc: handlers.NotifyRequestFunc(AddProtoEvent("DNS", events)),
+	}
 
 	if err != nil {
 		log.Fatal("Failed to create DNS handler: %w", err)
@@ -144,7 +149,7 @@ func main() {
 	// use it as DNS challenge provider for Let's Encrypt
 	dnsStarted.Wait()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, defaultRecords)
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, &dnschal.Provider{Records: defaultRecords})
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}
