@@ -3,19 +3,27 @@ package dnsx_test
 import (
 	"testing"
 
+	"github.com/bi-zone/sonar/internal/dnsx/dnschal"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDNShnd_ChallengeProvider(t *testing.T) {
-	for _, name := range []string{"_acme-challenge.sonar.local.", "_aCme-chAlLEnge.soNAr.lOcal."} {
-		err := hnd.Present("sonar.local", "", "key1")
+func TestDNS_Challenge(t *testing.T) {
+	provider := &dnschal.Provider{Records: rec}
+
+	for _, name := range []string{
+		"_acme-challenge.sonar.local.",
+		"_aCme-chAlLEnge.soNAr.lOcal.",
+	} {
+
+		err := provider.Present("sonar.local", "", "key1")
 		require.NoError(t, err)
 
-		err = hnd.Present("sonar.local", "", "key2")
+		err = provider.Present("sonar.local", "", "key2")
 		require.NoError(t, err)
+
 		msg := new(dns.Msg)
 		msg.Id = dns.Id()
 		msg.RecursionDesired = true
@@ -33,7 +41,6 @@ func TestDNShnd_ChallengeProvider(t *testing.T) {
 		c := &dns.Client{}
 		in, _, err := c.Exchange(msg, "127.0.0.1:1053")
 		require.NoError(t, err)
-		require.NotNil(t, in)
 		require.Len(t, in.Answer, 2)
 
 		for i, txt := range []string{
@@ -46,7 +53,7 @@ func TestDNShnd_ChallengeProvider(t *testing.T) {
 			assert.Equal(t, txt, a.Txt[0])
 		}
 
-		err = hnd.CleanUp("sonar.local", "", "")
+		err = provider.CleanUp("sonar.local", "", "")
 		require.NoError(t, err)
 
 		in, _, err = c.Exchange(msg, "127.0.0.1:1053")
