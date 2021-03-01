@@ -1,8 +1,6 @@
 package dbactions_test
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"testing"
 
@@ -12,88 +10,29 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/testutils"
 )
-
-func TestMain(m *testing.M) {
-	if err := Setup(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	if err := Teardown(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	os.Exit(ret)
-}
-
-//
-// Setup & Teardown globals
-//
 
 var (
 	db   *database.DB
 	tf   *testfixtures.Context
 	acts actions.Actions
+
+	log = logrus.New()
+
+	g = testutils.Globals(
+		testutils.DB(&database.Config{
+			DSN:        os.Getenv("SONAR_DB_DSN"),
+			Migrations: "../migrations",
+		}, &db),
+		testutils.Fixtures(&db, "../fixtures", &tf),
+		testutils.ActionsDB(&db, log, &acts),
+	)
 )
 
-func Setup() error {
-	var err error
-
-	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
-	if !ok {
-		return errors.New("empty SONAR_DB_DSN")
-	}
-
-	// DB
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "../migrations",
-	})
-	if err != nil {
-		return fmt.Errorf("fail to init db: %w", err)
-	}
-
-	// Migrations
-	if err := db.Migrate(); err != nil {
-		return fmt.Errorf("fail to apply migrations: %w", err)
-	}
-
-	// Load DB fixtures
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"../fixtures",
-	)
-	if err != nil {
-		return fmt.Errorf("fail to load fixtures: %w", err)
-	}
-
-	// Logger
-	log := logrus.New()
-
-	// Actions
-	acts = dbactions.New(db, log, "sonar.local")
-
-	return nil
+func TestMain(m *testing.M) {
+	testutils.TestMain(m, g)
 }
-
-func Teardown() error {
-	// Close database connection
-	if db != nil {
-		if err := db.Close(); err != nil {
-			return fmt.Errorf("model: fail to close: %w", err)
-		}
-	}
-	return nil
-}
-
-//
-// setup & teardown
-//
 
 func setup(t *testing.T) {
 	err := tf.Load()

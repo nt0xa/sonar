@@ -18,9 +18,9 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules/api"
+	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -41,112 +41,34 @@ func init() {
 	flag.Parse()
 }
 
-func TestMain(m *testing.M) {
-	if err := Setup(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	if err := Teardown(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	os.Exit(ret)
-}
-
-//
-// Setup & Teardown globals
-//
-
-var (
-	cfg *api.Config
-	db  *database.DB
-	srv *httptest.Server
-	tf  *testfixtures.Context
-)
-
 const (
 	AdminToken = "a33bfdbfb3c62feb7ea59314dbd17426"
 	User1Token = "50c862e41d059eeca13adc7b276b46b7"
 	User2Token = "7001f2d819d3d5fb0b1fd75dd38eb34e"
 )
 
-func Setup() error {
-	var err error
+var (
+	db   *database.DB
+	tf   *testfixtures.Context
+	acts actions.Actions
+	srv  *httptest.Server
 
-	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
-	if !ok {
-		return fmt.Errorf("empty SONAR_DB_DSN")
-	}
+	log = logrus.New()
 
-	// DB
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "../../database/migrations",
-	})
-	if err != nil {
-		return fmt.Errorf("fail to init db: %w", err)
-	}
-
-	// Migrations
-	if err := db.Migrate(); err != nil {
-		return fmt.Errorf("fail to apply migrations: %w", err)
-	}
-
-	// Load DB fixtures
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"../../database/fixtures",
+	g = testutils.Globals(
+		testutils.DB(&database.Config{
+			DSN:        os.Getenv("SONAR_DB_DSN"),
+			Migrations: "../../database/migrations",
+		}, &db),
+		testutils.Fixtures(&db, "../../database/fixtures", &tf),
+		testutils.ActionsDB(&db, log, &acts),
+		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
 	)
-	if err != nil {
-		return fmt.Errorf("fail to load fixtures: %w", err)
-	}
+)
 
-	// Config
-	cfg = &api.Config{
-		Admin: AdminToken,
-	}
-
-	// Logger
-	log := logrus.New()
-
-	// Actions
-	actions := dbactions.New(db, log, "sonar.local")
-
-	// API controller
-	api, err := api.New(cfg, db, log, nil, actions)
-	if err != nil {
-		return err
-	}
-
-	// Create httptest server
-	srv = httptest.NewServer(api.Router())
-
-	return nil
+func TestMain(m *testing.M) {
+	testutils.TestMain(m, g)
 }
-
-func Teardown() error {
-	// Close database connection
-	if db != nil {
-		if err := db.Close(); err != nil {
-			return fmt.Errorf("model: fail to close: %w", err)
-		}
-	}
-
-	// Stop httptest server
-	if srv != nil {
-		srv.Close()
-	}
-
-	return nil
-}
-
-//
-// setup & teardown
-//
 
 func setup(t *testing.T) {
 	err := tf.Load()

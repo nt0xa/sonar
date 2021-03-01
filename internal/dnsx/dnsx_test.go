@@ -1,14 +1,9 @@
 package dnsx_test
 
 import (
-	"errors"
-	"fmt"
-	"log"
 	"net"
 	"os"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/go-testfixtures/testfixtures"
 	"github.com/stretchr/testify/mock"
@@ -17,115 +12,44 @@ import (
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/dnsx"
 	"github.com/bi-zone/sonar/internal/dnsx/dnsdb"
-	"github.com/bi-zone/sonar/internal/dnsx/dnsdef"
 	"github.com/bi-zone/sonar/internal/dnsx/dnsrec"
+	"github.com/bi-zone/sonar/internal/testutils"
 )
 
 var (
-	srv      *dnsx.Server
-	rec      *dnsrec.Records
-	db       *database.DB
-	tf       *testfixtures.Context
-	notifier *NotifierMock
+	db    *database.DB
+	tf    *testfixtures.Context
+	rec   *dnsrec.Records
+	dbrec *dnsdb.Handler
+	srv   *dnsx.Server
+
+	notifier = &NotifierMock{}
+
+	g = testutils.Globals(
+		testutils.DB(&database.Config{
+			DSN:        os.Getenv("SONAR_DB_DSN"),
+			Migrations: "../database/migrations",
+		}, &db),
+		testutils.Fixtures(&db, "../database/fixtures", &tf),
+		testutils.DNSDefaultRecords(&rec),
+		testutils.DNSDBRecords(&db, &dbrec),
+		testutils.DNSX([](func() dnsx.Handler){
+			func(r **dnsdb.Handler) func() dnsx.Handler {
+				return func() dnsx.Handler {
+					return *r
+				}
+			}(&dbrec),
+			func(r **dnsrec.Records) func() dnsx.Handler {
+				return func() dnsx.Handler {
+					return *r
+				}
+			}(&rec),
+		}, notifier.Notify, &srv),
+	)
 )
 
 func TestMain(m *testing.M) {
-	if err := setupGlobals(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	os.Exit(ret)
-}
-
-func setupGlobals() error {
-	var err error
-
-	dsn, ok := os.LookupEnv("SONAR_DB_DSN")
-	if !ok {
-		return errors.New("empty SONAR_DB_DSN")
-	}
-
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "../database/migrations",
-	})
-	if err != nil {
-		return fmt.Errorf("fail to init db: %w", err)
-	}
-
-	if err := db.Migrate(); err != nil {
-		return fmt.Errorf("fail to apply migrations: %w", err)
-	}
-
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"../database/fixtures",
-	)
-	if err != nil {
-		return fmt.Errorf("fail to load fixtures: %w", err)
-	}
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
-	notifier = &NotifierMock{}
-	domain := "sonar.local"
-
-	rec, err = dnsdef.Records(domain, net.ParseIP("127.0.0.1"))
-	if err != nil {
-		return fmt.Errorf("fail to init default dns records: %w", err)
-	}
-
-	srv := dnsx.Server{
-		Addr:   ":1053",
-		Origin: domain,
-		Handlers: []dnsx.Handler{
-			&dnsdb.Handler{DB: db, Origin: domain},
-			rec,
-		},
-		NotifyStartedFunc: func() {
-			wg.Done()
-		},
-		NotifyRequestFunc: notifier.Notify,
-	}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatal(fmt.Errorf("fail to start server: %w", err))
-		}
-	}()
-
-	if waitTimeout(&wg, 30*time.Second) {
-		return errors.New("timeout waiting for server to start")
-	}
-
-	return nil
-}
-
-type NotifierMock struct {
-	mock.Mock
-}
-
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
-	m.Called(remoteAddr, data, meta)
-}
-
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false
-	case <-time.After(timeout):
-		return true
-	}
+	testutils.TestMain(m, g)
 }
 
 func setup(t *testing.T) {
@@ -134,3 +58,11 @@ func setup(t *testing.T) {
 }
 
 func teardown(t *testing.T) {}
+
+type NotifierMock struct {
+	mock.Mock
+}
+
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+	m.Called(remoteAddr, data, meta)
+}
