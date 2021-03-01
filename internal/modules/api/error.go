@@ -8,7 +8,6 @@ import (
 )
 
 func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {
-	log := api.log.WithField("uri", r.RequestURI)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	switch err.(type) {
@@ -37,6 +36,6 @@ func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	if err := json.NewEncoder(w).Encode(err); err != nil {
-		log.Errorf("Failed to encode JSON: %v", err)
+		api.log.Printf("Failed to encode JSON: %v", err)
 	}
 }

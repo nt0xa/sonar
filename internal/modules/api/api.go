@@ -6,21 +6,21 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/sirupsen/logrus"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/utils/logger"
 )
 
 type API struct {
 	cfg     *Config
 	db      *database.DB
-	log     *logrus.Logger
+	log     logger.StdLogger
 	tls     *tls.Config
 	actions actions.Actions
 }
 
-func New(cfg *Config, db *database.DB, log *logrus.Logger,
+func New(cfg *Config, db *database.DB, log logger.StdLogger,
 	tls *tls.Config, actions actions.Actions) (*API, error) {
 
 	return &API{
