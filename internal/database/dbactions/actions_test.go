@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/actions"
@@ -17,13 +18,15 @@ var (
 	tf   *testfixtures.Context
 	acts actions.Actions
 
+	log = logrus.New()
+
 	g = testutils.Globals(
 		testutils.DB(&database.Config{
 			DSN:        os.Getenv("SONAR_DB_DSN"),
 			Migrations: "../migrations",
 		}, &db),
 		testutils.Fixtures(&db, "../fixtures", &tf),
-		testutils.ActionsDB(&db, &acts),
+		testutils.ActionsDB(&db, log, &acts),
 	)
 )
 
