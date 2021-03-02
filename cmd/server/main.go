@@ -11,16 +11,15 @@ import (
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/dbactions"
-	"github.com/bi-zone/sonar/internal/dnsx"
-	"github.com/bi-zone/sonar/internal/dnsx/dnschal"
-	"github.com/bi-zone/sonar/internal/dnsx/dnsdb"
-	"github.com/bi-zone/sonar/internal/dnsx/dnsdef"
-	"github.com/bi-zone/sonar/internal/handlers"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
+	"github.com/bi-zone/sonar/internal/protocols/dnsx"
+	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnschal"
+	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdb"
+	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdef"
+	"github.com/bi-zone/sonar/internal/protocols/httpx"
+	"github.com/bi-zone/sonar/internal/protocols/smtpx"
 	"github.com/bi-zone/sonar/internal/tls"
-	"github.com/bi-zone/sonar/pkg/server/http"
-	"github.com/bi-zone/sonar/pkg/server/smtp"
 )
 
 var (
@@ -128,7 +127,7 @@ func main() {
 		NotifyStartedFunc: func() {
 			dnsStarted.Done()
 		},
-		NotifyRequestFunc: handlers.NotifyRequestFunc(AddProtoEvent("DNS", events)),
+		NotifyRequestFunc: AddProtoEvent("DNS", events),
 	}
 
 	if err != nil {
@@ -173,7 +172,7 @@ func main() {
 	//
 
 	go func() {
-		srv := http.New(":80", http.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
+		srv := httpx.New(":80", httpx.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTP handler: %s", err.Error())
@@ -186,9 +185,9 @@ func main() {
 	//
 
 	go func() {
-		srv := http.New(":443",
-			http.NotifyRequestFunc(AddProtoEvent("HTTPS", events)),
-			http.TLSConfig(tlsConfig))
+		srv := httpx.New(":443",
+			httpx.NotifyRequestFunc(AddProtoEvent("HTTPS", events)),
+			httpx.TLSConfig(tlsConfig))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTPS handler: %s", err.Error())
@@ -201,10 +200,10 @@ func main() {
 
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
-		srv := smtp.New(":25", cfg.Domain,
-			smtp.NotifyRequestFunc(AddProtoEvent("SMTP", events)),
-			smtp.TLSConfig(tlsConfig),
-			smtp.StartTLS(true))
+		srv := smtpx.New(":25", cfg.Domain,
+			smtpx.NotifyRequestFunc(AddProtoEvent("SMTP", events)),
+			smtpx.TLSConfig(tlsConfig),
+			smtpx.StartTLS(true))
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start SMTP handler: %s", err.Error())

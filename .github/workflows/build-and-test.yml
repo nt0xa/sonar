@@ -30,6 +30,8 @@ jobs:
         env:
           PEBBLE_VA_NOSLEEP: 1
           PEBBLE_VA_ALWAYS_VALID: 1
+          PEBBLE_AUTHZREUSE: 0
+          PEBBLE_WFE_NONCEREJECT: 0
         ports:
           - 14000/tcp
 
