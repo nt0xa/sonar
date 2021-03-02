@@ -32,6 +32,8 @@ func (f HandlerFunc) ServeDNS(name string, qtype uint16) {
 type Meta struct {
 	// DNS query type ("A", "AAAA", "TXT", etc.)
 	Qtype string
+
+	Name string
 }
 
 // Server contains parameters for running an DNS server.
@@ -70,17 +72,6 @@ func (srv *Server) ListenAndServe() error {
 func (srv *Server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 	res := new(dns.Msg)
 
-	if srv.NotifyRequestFunc != nil {
-		meta := Meta{
-			Qtype: dnsutils.QtypeString(req.Question[0].Qtype),
-		}
-
-		// Wrap with func() to capture res after modifications.
-		defer func() {
-			srv.NotifyRequestFunc(w.RemoteAddr(), []byte(res.String()), structs.Map(meta))
-		}()
-	}
-
 	res.SetReply(req)
 	res.Authoritative = true
 
@@ -90,6 +81,18 @@ func (srv *Server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 		res.Rcode = dns.RcodeNameError
 		_ = w.WriteMsg(res)
 		return
+	}
+
+	if srv.NotifyRequestFunc != nil {
+		meta := Meta{
+			Qtype: dnsutils.QtypeString(req.Question[0].Qtype),
+			Name:  strings.Trim(req.Question[0].Name, "."),
+		}
+
+		// Wrap with func() to capture res after modifications.
+		defer func() {
+			srv.NotifyRequestFunc(w.RemoteAddr(), []byte(res.String()), structs.Map(meta))
+		}()
 	}
 
 	qname := req.Question[0].Name

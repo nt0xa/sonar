@@ -11,7 +11,6 @@ import (
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/dbactions"
-	"github.com/bi-zone/sonar/internal/handlers"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/protocols/dnsx"
@@ -128,7 +127,7 @@ func main() {
 		NotifyStartedFunc: func() {
 			dnsStarted.Done()
 		},
-		NotifyRequestFunc: handlers.NotifyRequestFunc(AddProtoEvent("DNS", events)),
+		NotifyRequestFunc: AddProtoEvent("DNS", events),
 	}
 
 	if err != nil {

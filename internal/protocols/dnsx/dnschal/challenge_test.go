@@ -1,17 +1,40 @@
-package dnsx_test
+package dnschal_test
 
 import (
+	"net"
 	"testing"
 
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/protocols/dnsx"
 	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnschal"
+	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsrec"
+	"github.com/bi-zone/sonar/internal/testutils"
 )
 
-func TestDNS_Challenge(t *testing.T) {
+var (
+	rec *dnsrec.Records
+	srv *dnsx.Server
+
+	g = testutils.Globals(
+		testutils.DNSDefaultRecords(&rec),
+		testutils.DNSX([](func() dnsx.Handler){
+			func(r **dnsrec.Records) func() dnsx.Handler {
+				return func() dnsx.Handler {
+					return *r
+				}
+			}(&rec),
+		}, func(net.Addr, []byte, map[string]interface{}) {}, &srv),
+	)
+)
+
+func TestMain(m *testing.M) {
+	testutils.TestMain(m, g)
+}
+
+func TestDNSChallenge(t *testing.T) {
 	provider := &dnschal.Provider{Records: rec}
 
 	for _, name := range []string{
@@ -34,10 +57,6 @@ func TestDNS_Challenge(t *testing.T) {
 			Qtype:  dns.TypeTXT,
 			Qclass: dns.ClassINET,
 		}
-
-		notifier.
-			On("Notify", mock.Anything, mock.Anything, mock.Anything).
-			Return()
 
 		c := &dns.Client{}
 		in, _, err := c.Exchange(msg, "127.0.0.1:1053")

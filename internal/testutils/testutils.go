@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-testfixtures/testfixtures"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/dbactions"
@@ -21,7 +24,6 @@ import (
 	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdef"
 	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsrec"
 	"github.com/bi-zone/sonar/internal/utils/logger"
-	"github.com/go-testfixtures/testfixtures"
 )
 
 type Global interface {
@@ -90,6 +92,14 @@ func TestMain(m *testing.M, g Global) {
 	}
 
 	os.Exit(ret)
+}
+
+type NotifierMock struct {
+	mock.Mock
+}
+
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+	m.Called(remoteAddr, data, meta)
 }
 
 var (
