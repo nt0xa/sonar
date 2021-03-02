@@ -10,7 +10,6 @@ import (
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
 	"github.com/bi-zone/sonar/internal/utils/slice"
-	"github.com/bi-zone/sonar/pkg/server"
 )
 
 var (
@@ -74,7 +73,7 @@ func ProcessEvents(events <-chan models.Event, db *database.DB, ns []modules.Not
 	return nil
 }
 
-func AddProtoEvent(proto string, events chan<- models.Event) server.NotifyRequestFunc {
+func AddProtoEvent(proto string, events chan<- models.Event) func(net.Addr, []byte, map[string]interface{}) {
 	return func(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
 
 		events <- models.Event{
