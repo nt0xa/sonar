@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-acme/lego/v3/challenge"
 
-	"github.com/bi-zone/sonar/internal/tls/certmgr"
 	"github.com/bi-zone/sonar/internal/utils/logger"
+	"github.com/bi-zone/sonar/pkg/certmgr"
 )
 
 type TLS struct {

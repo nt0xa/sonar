@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
@@ -16,7 +18,7 @@ var (
 	subdomainRegexp = regexp.MustCompile("[a-f0-9]{8}")
 )
 
-func ProcessEvents(events <-chan models.Event, db *database.DB, ns []modules.Notifier) error {
+func ProcessEvents(log *logrus.Logger, events <-chan models.Event, db *database.DB, ns []modules.Notifier) error {
 	for e := range events {
 
 		seen := make(map[string]struct{})

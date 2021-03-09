@@ -11,6 +11,7 @@ cmd/client/client
 # Tests
 coverage.out
 letsencrypt/
+tls/
 
 # Secrets
 .env
