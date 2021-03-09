@@ -15,7 +15,7 @@ import (
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/cmd"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/actionsdb"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
@@ -134,10 +134,10 @@ func (tg *Telegram) Start() error {
 		}
 
 		ctx := SetChatID(context.Background(), chat.ID)
-		ctx = dbactions.SetUser(ctx, user)
+		ctx = actionsdb.SetUser(ctx, user)
 		args, _ := shlex.Split(strings.TrimLeft(update.Message.Text, "/"))
 
-		if out, err := tg.cmd.Exec(ctx, dbactions.User(user), args); err != nil {
+		if out, err := tg.cmd.Exec(ctx, actionsdb.User(user), args); err != nil {
 			tg.handleError(chat.ID, err)
 		} else if out != "" {
 			tg.htmlMessage(chat.ID, out)

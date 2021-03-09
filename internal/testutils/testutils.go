@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -15,15 +16,14 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/actionsdb"
+	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdb"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdef"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsrec"
 	"github.com/bi-zone/sonar/internal/utils/logger"
+	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/bi-zone/sonar/pkg/httpx"
 )
 
 type Global interface {
@@ -155,7 +155,7 @@ func Fixtures(db **database.DB, path string, out **testfixtures.Context) Global 
 func ActionsDB(db **database.DB, log logger.StdLogger, out *actions.Actions) Global {
 	return &global{
 		setup: func() error {
-			*out = dbactions.New(*db, log, TestDomain)
+			*out = actionsdb.New(*db, log, TestDomain)
 			return nil
 		},
 	}
@@ -184,68 +184,93 @@ func APIClient(srv **httptest.Server, token string, out **apiclient.Client) Glob
 	}
 }
 
-func DNSDefaultRecords(out **dnsrec.Records) Global {
+func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}), h *dnsx.HandlerProvider, srv *dnsx.Server) Global {
 	return &global{
 		setup: func() error {
-			rec, err := dnsdef.Records(TestDomain, TestIP)
-			if err != nil {
-				return fmt.Errorf("fail to init default dns records: %w", err)
-			}
+			wait := sync.Mutex{}
 
-			*out = rec
-			return nil
-		},
-	}
-}
-
-func DNSDBRecords(db **database.DB, out **dnsdb.Handler) Global {
-	return &global{
-		setup: func() error {
-			*out = &dnsdb.Handler{
-				DB:     *db,
-				Origin: TestDomain,
-			}
-			return nil
-		},
-	}
-}
-
-func DNSX(handlers [](func() dnsx.Handler), notify func(net.Addr, []byte, map[string]interface{}), out **dnsx.Server) Global {
-	return &global{
-		setup: func() error {
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-
-			hh := make([]dnsx.Handler, 0)
-
-			for _, h := range handlers {
-				hh = append(hh, h())
-			}
-
-			*out = &dnsx.Server{
-				Addr:     ":1053",
-				Origin:   TestDomain,
-				Handlers: hh,
-				NotifyStartedFunc: func() {
-					wg.Done()
-				},
-				NotifyRequestFunc: notify,
-			}
+			*h = server.DNSHandler(*db, TestDomain, net.ParseIP("127.0.0.1"), notify)
+			*srv = dnsx.New(":1053", *h, dnsx.NotifyStartedFunc(wait.Unlock))
 
 			go func() {
-				if err := (*out).ListenAndServe(); err != nil {
+				if err := (*srv).ListenAndServe(); err != nil {
 					log.Fatal(fmt.Errorf("fail to start server: %w", err))
 				}
 			}()
 
-			if WaitTimeout(&wg, 30*time.Second) {
+			if waitTimeout(&wait, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
 			return nil
 		},
-		teardown: func() error {
-			return (*out).Shutdown()
+	}
+}
+
+func TLSConfig(cert, key string, out **tls.Config) Global {
+	return &global{
+		setup: func() error {
+			cert, err := tls.LoadX509KeyPair(cert, key)
+			if err != nil {
+				return err
+			}
+
+			*out = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+
+			return nil
 		},
+	}
+}
+
+func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, srv *httpx.Server) Global {
+	return &global{
+		setup: func() error {
+			wait := sync.Mutex{}
+
+			h := server.HTTPHandler(notify)
+
+			var addr string
+
+			options := []httpx.Option{
+				httpx.NotifyStartedFunc(wait.Unlock),
+			}
+
+			if tlsConfig == nil {
+				addr = ":1080"
+			} else {
+				addr = ":1443"
+				options = append(options, httpx.TLSConfig(*tlsConfig))
+			}
+
+			*srv = httpx.New(addr, h, options...)
+
+			go func() {
+				if err := (*srv).ListenAndServe(); err != nil {
+					log.Fatal(fmt.Errorf("fail to start server: %w", err))
+				}
+			}()
+
+			if waitTimeout(&wait, 30*time.Second) {
+				return errors.New("timeout waiting for server to start")
+			}
+
+			return nil
+		},
+	}
+}
+
+func waitTimeout(mu *sync.Mutex, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		mu.Lock()
+	}()
+	select {
+	case <-c:
+		return false
+	case <-time.After(timeout):
+		return true
 	}
 }

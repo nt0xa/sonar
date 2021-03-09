@@ -2,28 +2,22 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
+	"github.com/bi-zone/sonar/internal/actionsdb"
+	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnschal"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdb"
-	"github.com/bi-zone/sonar/internal/protocols/dnsx/dnsdef"
-	"github.com/bi-zone/sonar/internal/protocols/httpx"
-	"github.com/bi-zone/sonar/internal/protocols/smtpx"
 	"github.com/bi-zone/sonar/internal/tls"
-)
-
-var (
-	log *logrus.Logger
+	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/bi-zone/sonar/pkg/httpx"
+	"github.com/bi-zone/sonar/pkg/smtpx"
 )
 
 func main() {
@@ -32,7 +26,7 @@ func main() {
 	// Logger
 	//
 
-	log = logrus.New()
+	log := logrus.New()
 	log.SetFormatter(&logrus.TextFormatter{})
 
 	//
@@ -44,9 +38,6 @@ func main() {
 	if err := envconfig.Process("sonar", &cfg); err != nil {
 		log.Fatal(err.Error())
 	}
-
-	prettyCfg, _ := json.MarshalIndent(&cfg, "", "  ")
-	log.Infof("Config:\n%+v", string(prettyCfg))
 
 	if err := cfg.Validate(); err != nil {
 		log.Fatal(err)
@@ -95,7 +86,7 @@ func main() {
 	// Actions
 	//
 
-	actions := dbactions.New(db, log, cfg.Domain)
+	actions := actionsdb.New(db, log, cfg.Domain)
 
 	//
 	// Events
@@ -108,34 +99,23 @@ func main() {
 	// DNS
 	//
 
-	var dnsStarted sync.WaitGroup
+	var waitDNS sync.Mutex
 
-	dnsStarted.Add(1)
-
-	defaultRecords, err := dnsdef.Records(cfg.Domain, net.ParseIP(cfg.IP))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dns := dnsx.Server{
-		Addr:   ":53",
-		Origin: cfg.Domain,
-		Handlers: []dnsx.Handler{
-			&dnsdb.Handler{DB: db, Origin: cfg.Domain},
-			defaultRecords,
-		},
-		NotifyStartedFunc: func() {
-			dnsStarted.Done()
-		},
-		NotifyRequestFunc: AddProtoEvent("DNS", events),
-	}
-
-	if err != nil {
-		log.Fatal("Failed to create DNS handler: %w", err)
-	}
+	dnsHandler := server.DNSHandler(
+		db,
+		cfg.Domain,
+		net.ParseIP(cfg.IP),
+		AddProtoEvent("DNS", events),
+	)
 
 	go func() {
-		if err := dns.ListenAndServe(); err != nil {
+		srv := dnsx.New(
+			":53",
+			dnsHandler,
+			dnsx.NotifyStartedFunc(waitDNS.Unlock),
+		)
+
+		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to start DNS handler: %v", err.Error())
 		}
 	}()
@@ -146,9 +126,9 @@ func main() {
 
 	// Wait for DNS server to start, because we need to
 	// use it as DNS challenge provider for Let's Encrypt
-	dnsStarted.Wait()
+	waitDNS.Lock()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, &dnschal.Provider{Records: defaultRecords})
+	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsHandler)
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}
@@ -172,7 +152,10 @@ func main() {
 	//
 
 	go func() {
-		srv := httpx.New(":80", httpx.NotifyRequestFunc(AddProtoEvent("HTTP", events)))
+		srv := httpx.New(
+			":80",
+			server.HTTPHandler(AddProtoEvent("HTTP", events)),
+		)
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTP handler: %s", err.Error())
@@ -185,9 +168,11 @@ func main() {
 	//
 
 	go func() {
-		srv := httpx.New(":443",
-			httpx.NotifyRequestFunc(AddProtoEvent("HTTPS", events)),
-			httpx.TLSConfig(tlsConfig))
+		srv := httpx.New(
+			":443",
+			server.HTTPHandler(AddProtoEvent("HTTPS", events)),
+			httpx.TLSConfig(tlsConfig),
+		)
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start HTTPS handler: %s", err.Error())
@@ -200,10 +185,11 @@ func main() {
 
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
-		srv := smtpx.New(":25", cfg.Domain,
-			smtpx.NotifyRequestFunc(AddProtoEvent("SMTP", events)),
-			smtpx.TLSConfig(tlsConfig),
-			smtpx.StartTLS(true))
+		srv := smtpx.New(
+			":25",
+			server.SMTPListenerWrapper(1<<20, time.Second*5),
+			server.SMTPSession(cfg.Domain, tlsConfig, AddProtoEvent("SMTP", events)),
+		)
 
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed start SMTP handler: %s", err.Error())
@@ -229,7 +215,7 @@ func main() {
 	}
 
 	// Process events
-	go ProcessEvents(events, db, notifiers)
+	go ProcessEvents(log, events, db, notifiers)
 
 	// Wait forever
 	select {}
