@@ -187,10 +187,11 @@ func APIClient(srv **httptest.Server, token string, out **apiclient.Client) Glob
 func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}), h *dnsx.HandlerProvider, srv *dnsx.Server) Global {
 	return &global{
 		setup: func() error {
-			wait := sync.Mutex{}
+			wg := sync.WaitGroup{}
+			wg.Add(1)
 
 			*h = server.DNSHandler(*db, TestDomain, net.ParseIP("127.0.0.1"), notify)
-			*srv = dnsx.New(":1053", *h, dnsx.NotifyStartedFunc(wait.Unlock))
+			*srv = dnsx.New(":1053", *h, dnsx.NotifyStartedFunc(wg.Done))
 
 			go func() {
 				if err := (*srv).ListenAndServe(); err != nil {
@@ -198,7 +199,7 @@ func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}
 				}
 			}()
 
-			if waitTimeout(&wait, 30*time.Second) {
+			if waitTimeout(&wg, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
@@ -227,14 +228,15 @@ func TLSConfig(cert, key string, out **tls.Config) Global {
 func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, srv *httpx.Server) Global {
 	return &global{
 		setup: func() error {
-			wait := sync.Mutex{}
+			wg := sync.WaitGroup{}
+			wg.Add(1)
 
 			h := server.HTTPHandler(notify)
 
 			var addr string
 
 			options := []httpx.Option{
-				httpx.NotifyStartedFunc(wait.Unlock),
+				httpx.NotifyStartedFunc(g.Done),
 			}
 
 			if tlsConfig == nil {
@@ -252,7 +254,7 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 				}
 			}()
 
-			if waitTimeout(&wait, 30*time.Second) {
+			if waitTimeout(&wg, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
@@ -261,11 +263,11 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 	}
 }
 
-func waitTimeout(mu *sync.Mutex, timeout time.Duration) bool {
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
 		defer close(c)
-		mu.Lock()
+		wg.Wait()
 	}()
 	select {
 	case <-c:
