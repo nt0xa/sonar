@@ -236,7 +236,7 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 			var addr string
 
 			options := []httpx.Option{
-				httpx.NotifyStartedFunc(g.Done),
+				httpx.NotifyStartedFunc(wg.Done),
 			}
 
 			if tlsConfig == nil {
