@@ -14,10 +14,6 @@ import (
 )
 
 func TestCreateDNSRecord_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -85,6 +81,11 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
+			u, err := db.UsersGetByID(1)
+			require.NoError(t, err)
+
+			ctx := actionsdb.SetUser(context.Background(), u)
+
 			r, err := acts.DNSRecordsCreate(ctx, tt.p)
 			require.NoError(t, err)
 			require.NotNil(t, r)
@@ -95,20 +96,16 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 }
 
 func TestCreateDNSRecord_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
 
 	tests := []struct {
-		name string
-		ctx  context.Context
-		p    actions.DNSRecordsCreateParams
-		err  errors.Error
+		name   string
+		userID int
+		p      actions.DNSRecordsCreateParams
+		err    errors.Error
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			0,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -121,7 +118,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"empty name",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "",
@@ -134,7 +131,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"empty payload name",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "",
 				Name:        "test",
@@ -147,7 +144,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"empty values",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -160,7 +157,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"invalid a",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -173,7 +170,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"invalid aaaa",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -186,7 +183,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"invalid mx",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -199,7 +196,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"invalid cname",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
@@ -212,7 +209,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"not existing payload name",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "not-exist",
 				Name:        "test",
@@ -225,7 +222,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"duplicate name and type",
-			ctx,
+			1,
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test-a",
@@ -243,7 +240,16 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DNSRecordsCreate(tt.ctx, tt.p)
+			ctx := context.Background()
+
+			if tt.userID != 0 {
+				u, err := db.UsersGetByID(1)
+				require.NoError(t, err)
+
+				ctx = actionsdb.SetUser(context.Background(), u)
+			}
+
+			_, err := acts.DNSRecordsCreate(ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -251,10 +257,6 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 }
 
 func TestDeleteDNSRecord_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name string
@@ -283,27 +285,27 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DNSRecordsDelete(ctx, tt.p)
+			u, err := db.UsersGetByID(1)
+			require.NoError(t, err)
+
+			ctx := actionsdb.SetUser(context.Background(), u)
+
+			_, err = acts.DNSRecordsDelete(ctx, tt.p)
 			assert.NoError(t, err)
 		})
 	}
 }
 
 func TestDeleteDNSRecord_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
-
 	tests := []struct {
-		name string
-		ctx  context.Context
-		p    actions.DNSRecordsDeleteParams
-		err  errors.Error
+		name   string
+		userID int
+		p      actions.DNSRecordsDeleteParams
+		err    errors.Error
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			0,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
 				Name:        "test-a",
@@ -313,7 +315,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"empty payload name",
-			ctx,
+			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "",
 				Name:        "test-a",
@@ -323,7 +325,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"empty name",
-			ctx,
+			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
 				Name:        "",
@@ -333,7 +335,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"invalid record type",
-			ctx,
+			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
 				Name:        "test-a",
@@ -343,7 +345,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"not existing payload",
-			ctx,
+			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "not-exist",
 				Name:        "test-a",
@@ -353,7 +355,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 		},
 		{
 			"not existing record",
-			ctx,
+			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
 				Name:        "not-exist",
@@ -368,7 +370,16 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DNSRecordsDelete(tt.ctx, tt.p)
+			ctx := context.Background()
+
+			if tt.userID != 0 {
+				u, err := db.UsersGetByID(1)
+				require.NoError(t, err)
+
+				ctx = actionsdb.SetUser(context.Background(), u)
+			}
+
+			_, err := acts.DNSRecordsDelete(ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
@@ -376,10 +387,6 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 }
 
 func TestListDNSRecords_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
 
 	tests := []struct {
 		name  string
@@ -407,27 +414,28 @@ func TestListDNSRecords_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DNSRecordsList(ctx, tt.p)
+			u, err := db.UsersGetByID(1)
+			require.NoError(t, err)
+
+			ctx := actionsdb.SetUser(context.Background(), u)
+
+			_, err = acts.DNSRecordsList(ctx, tt.p)
 			assert.NoError(t, err)
 		})
 	}
 }
 
 func TestListDNSRecords_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
-	require.NoError(t, err)
-
-	ctx := actionsdb.SetUser(context.Background(), u)
 
 	tests := []struct {
-		name string
-		ctx  context.Context
-		p    actions.DNSRecordsListParams
-		err  errors.Error
+		name   string
+		userID int
+		p      actions.DNSRecordsListParams
+		err    errors.Error
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			0,
 			actions.DNSRecordsListParams{
 				PayloadName: "payload1",
 			},
@@ -435,7 +443,7 @@ func TestListDNSRecords_Error(t *testing.T) {
 		},
 		{
 			"empty payload name",
-			ctx,
+			1,
 			actions.DNSRecordsListParams{
 				PayloadName: "",
 			},
@@ -443,7 +451,7 @@ func TestListDNSRecords_Error(t *testing.T) {
 		},
 		{
 			"not existing payload",
-			ctx,
+			1,
 			actions.DNSRecordsListParams{
 				PayloadName: "not-exist",
 			},
@@ -456,7 +464,16 @@ func TestListDNSRecords_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			_, err := acts.DNSRecordsList(tt.ctx, tt.p)
+			ctx := context.Background()
+
+			if tt.userID != 0 {
+				u, err := db.UsersGetByID(1)
+				require.NoError(t, err)
+
+				ctx = actionsdb.SetUser(context.Background(), u)
+			}
+
+			_, err := acts.DNSRecordsList(ctx, tt.p)
 			assert.Error(t, err)
 			assert.IsType(t, tt.err, err)
 		})
