@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/actionsdb"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
@@ -27,7 +27,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := dbactions.SetUser(r.Context(), u)
+			ctx := actionsdb.SetUser(r.Context(), u)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -37,7 +37,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		u, _ := dbactions.GetUser(r.Context())
+		u, _ := actionsdb.GetUser(r.Context())
 
 		if u == nil || !u.IsAdmin {
 			api.handleError(w, r, errors.Forbiddenf("admin only"))

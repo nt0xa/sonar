@@ -8,7 +8,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database/dbactions"
+	"github.com/bi-zone/sonar/internal/actionsdb"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -63,7 +63,7 @@ func (tg *Telegram) getDomain() string {
 }
 
 func (tg *Telegram) txtResult(ctx context.Context, txt string) {
-	u, err := dbactions.GetUser(ctx)
+	u, err := actionsdb.GetUser(ctx)
 	if err != nil {
 		return
 	}
@@ -72,7 +72,7 @@ func (tg *Telegram) txtResult(ctx context.Context, txt string) {
 }
 
 func (tg *Telegram) tplResult(ctx context.Context, tpl *template.Template, data interface{}) {
-	u, err := dbactions.GetUser(ctx)
+	u, err := actionsdb.GetUser(ctx)
 	if err != nil {
 		return
 	}
