@@ -4,8 +4,8 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/fatih/structs"
 	"github.com/go-acme/lego/v3/challenge"
 	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/miekg/dns"
@@ -63,18 +63,29 @@ func ChainHandler(set RecordGetter, next dns.Handler) dns.Handler {
 	})
 }
 
+// Event represents DNS event.
+type Event struct {
+	// RemoteAddr is the address of client.
+	RemoteAddr net.Addr
+
+	// Msg is DNS query and answer for this query.
+	Msg *dns.Msg
+
+	// ReceivedAt is the time of receiving query.
+	ReceivedAt time.Time
+}
+
 // NotifyHandler calls notify function after processing query.
-func NotifyHandler(notify func(net.Addr, []byte, map[string]interface{}), next dns.Handler) dns.Handler {
+func NotifyHandler(notify func(*Event), next dns.Handler) dns.Handler {
 	return dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		wr := dnsutils.NewRecorder(w)
 
 		defer func() {
-			meta := Meta{
-				Qtype: dnsutils.QtypeString(r.Question[0].Qtype),
-				Name:  strings.Trim(r.Question[0].Name, "."),
-			}
-
-			notify(w.RemoteAddr(), []byte(wr.Msg.String()), structs.Map(meta))
+			notify(&Event{
+				RemoteAddr: w.RemoteAddr(),
+				Msg:        wr.Msg,
+				ReceivedAt: wr.Start,
+			})
 		}()
 
 		next.ServeDNS(wr, r)

@@ -25,7 +25,7 @@ var (
 `)
 )
 
-func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) error {
+func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) error {
 
 	var header, body bytes.Buffer
 
@@ -50,7 +50,7 @@ func (tg *Telegram) Notify(e *models.Event, u *models.User, p *models.Payload) e
 	bodyData := struct {
 		Data string
 	}{
-		e.Data,
+		string(e.RawData),
 	}
 
 	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {

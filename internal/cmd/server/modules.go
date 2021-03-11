@@ -1,16 +1,16 @@
-package modules
+package server
 
 import (
 	"crypto/tls"
 	"fmt"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/telegram"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/sirupsen/logrus"
 )
 
 type Controller interface {
@@ -18,11 +18,42 @@ type Controller interface {
 }
 
 type Notifier interface {
-	Notify(*models.Event, *models.User, *models.Payload) error
+	Notify(*models.User, *models.Payload, *models.Event) error
 }
 
-func Init(cfg *Config, db *database.DB, log *logrus.Logger, tls *tls.Config,
-	actions actions.Actions, domain string) ([]Controller, []Notifier, error) {
+type ModulesConfig struct {
+	Enabled  []string        `json:"enabled"`
+	Telegram telegram.Config `json:"telegram"`
+	API      api.Config      `json:"api"`
+}
+
+func (c ModulesConfig) Validate() error {
+	rules := make([]*validation.FieldRules, 0)
+	rules = append(rules, validation.Field(&c.Enabled,
+		validation.Each(validation.In("telegram", "api"))))
+
+	for _, name := range c.Enabled {
+		switch name {
+
+		case "telegram":
+			rules = append(rules, validation.Field(&c.Telegram))
+
+		case "api":
+			rules = append(rules, validation.Field(&c.API))
+		}
+	}
+
+	return validation.ValidateStruct(&c, rules...)
+}
+
+func Modules(
+	cfg *ModulesConfig,
+	db *database.DB,
+	log *logrus.Logger,
+	tls *tls.Config,
+	actions actions.Actions,
+	domain string,
+) ([]Controller, []Notifier, error) {
 
 	controllers := make([]Controller, 0)
 	notifiers := make([]Notifier, 0)

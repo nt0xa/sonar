@@ -30,7 +30,6 @@ func (l *TimeoutListener) Accept() (net.Conn, error) {
 
 type TimeoutConn struct {
 	net.Conn
-
 	idleTimeout time.Duration
 }
 

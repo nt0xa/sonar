@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -22,8 +23,10 @@ import (
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
 	"github.com/bi-zone/sonar/internal/utils/logger"
+	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
 	"github.com/bi-zone/sonar/pkg/httpx"
+	"github.com/bi-zone/sonar/pkg/smtpx"
 )
 
 type Global interface {
@@ -190,7 +193,12 @@ func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
-			*h = server.DNSHandler(*db, TestDomain, net.ParseIP("127.0.0.1"), notify)
+			*h = server.DNSHandler(*db, TestDomain, TestIP, func(e *dnsx.Event) {
+				notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
+					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
+					"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
+				})
+			})
 			*srv = dnsx.New(":1053", *h, dnsx.NotifyStartedFunc(wg.Done))
 
 			go func() {
@@ -231,7 +239,11 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
-			h := server.HTTPHandler(notify)
+			h := server.HTTPHandler(func(e *httpx.Event) {
+				notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]interface{}{
+					"tls": e.Secure,
+				})
+			})
 
 			var addr string
 
@@ -247,6 +259,48 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 			}
 
 			*srv = httpx.New(addr, h, options...)
+
+			go func() {
+				if err := (*srv).ListenAndServe(); err != nil {
+					log.Fatal(fmt.Errorf("fail to start server: %w", err))
+				}
+			}()
+
+			if waitTimeout(&wg, 30*time.Second) {
+				return errors.New("timeout waiting for server to start")
+			}
+
+			return nil
+		},
+	}
+}
+
+func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, isTLS bool, srv *smtpx.Server) Global {
+	return &global{
+		setup: func() error {
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+
+			options := []smtpx.Option{
+				smtpx.NotifyStartedFunc(wg.Done),
+			}
+
+			var addr string
+
+			if isTLS {
+				addr = ":1465"
+				options = append(options, smtpx.TLSConfig(*tlsConfig))
+			} else {
+				addr = ":1025"
+			}
+
+			*srv = smtpx.New(addr,
+				server.SMTPListenerWrapper(1<<20, time.Second*5),
+				server.SMTPSession(TestDomain, *tlsConfig, func(e *smtpx.Event) {
+					notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+				}),
+				options...,
+			)
 
 			go func() {
 				if err := (*srv).ListenAndServe(); err != nil {

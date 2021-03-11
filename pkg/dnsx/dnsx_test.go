@@ -144,8 +144,8 @@ func TestDNS(t *testing.T) {
 						return strings.Contains(string(data), name)
 					}),
 						map[string]interface{}{
-							"Qtype": dns.Type(tt.qtype).String(),
-							"Name":  strings.Trim(tt.name, "."),
+							"qtype": dns.Type(tt.qtype).String(),
+							"name":  strings.Trim(tt.name, "."),
 						}).
 					Return()
 

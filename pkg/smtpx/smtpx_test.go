@@ -2,97 +2,152 @@ package smtpx_test
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
-	"log"
-	"os"
-	"sync"
+	"net"
+	"net/smtp"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/pkg/smtpx"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	srv    smtpx.Server
-	srvTLS smtpx.Server
+	srv smtpx.Server
+
+	tlsConfig *tls.Config
+	srvTLS    smtpx.Server
 
 	notifier = &testutils.NotifierMock{}
+
+	g = testutils.Globals(
+		testutils.TLSConfig("../../test/cert.pem", "../../test/key.pem", &tlsConfig),
+		testutils.SMTPX(notifier.Notify, &tlsConfig, false, &srv),
+		testutils.SMTPX(notifier.Notify, &tlsConfig, true, &srvTLS),
+	)
 )
 
 func TestMain(m *testing.M) {
-	if err := setupGlobals(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
-	ret := m.Run()
-
-	os.Exit(ret)
+	testutils.TestMain(m, g)
 }
 
-func setupGlobals() error {
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	cert, err := tls.LoadX509KeyPair("../../test/cert.pem", "../../test/key.pem")
-	if err != nil {
-		log.Fatal(err)
+func TestSMTP(t *testing.T) {
+	var tests = []struct {
+		from     string
+		to       string
+		subj     string
+		body     string
+		startTLS bool
+		tls      bool
+	}{
+		{
+			"sender@example.org",
+			"recipient@example.net",
+			"Test",
+			"Test body",
+			false,
+			false,
+		},
+		{
+			"sender@example.org",
+			"recipient@example.net",
+			"Test",
+			"Test body",
+			true,
+			false,
+		},
+		{
+			"sender@example.org",
+			"recipient@example.net",
+			"Test",
+			"Test body",
+			true,
+			true,
+		},
 	}
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
 
-	srv = smtpx.New(
-		"localhost:1025",
-		server.SMTPListenerWrapper(1<<20, time.Second*5),
-		server.SMTPSession("sonar.local", tlsConfig, notifier.Notify),
-		smtpx.NotifyStartedFunc(func() {
-			wg.Done()
-		}),
-	)
+	for _, tt := range tests {
+		var name string
 
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatal(fmt.Errorf("fail to start server: %w", err))
+		if tt.tls {
+			name = "SMTPS"
+		} else if tt.startTLS {
+			name = "SMTP/STARTTLS"
+		} else {
+			name = "SMTP"
 		}
-	}()
 
-	srvTLS = smtpx.New(
-		"localhost:1465",
-		server.SMTPListenerWrapper(1<<20, time.Second*5),
-		server.SMTPSession("sonar.local", tlsConfig, notifier.Notify),
-		smtpx.TLSConfig(tlsConfig),
-		smtpx.NotifyStartedFunc(func() {
-			wg.Done()
-		}),
-	)
+		t.Run(name, func(st *testing.T) {
 
-	go func() {
-		if err := srvTLS.ListenAndServe(); err != nil {
-			log.Fatal(fmt.Errorf("fail to start server: %w", err))
-		}
-	}()
+			// TLS config
+			tlsConfig := &tls.Config{
+				InsecureSkipVerify: true,
+			}
 
-	if waitTimeout(&wg, 30*time.Second) {
-		return errors.New("timeout waiting for server to start")
-	}
+			var (
+				conn net.Conn
+				err  error
+			)
 
-	return nil
-}
+			// Connect to server
+			if tt.tls {
+				// TLS connection
+				conn, err = tls.Dial("tcp", "localhost:1465", tlsConfig)
+				require.NoError(st, err)
+			} else {
+				// Simple TCP connection
+				conn, err = net.Dial("tcp", "localhost:1025")
+				require.NoError(st, err)
+			}
 
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false // completed normally
-	case <-time.After(timeout):
-		return true // timed out
+			contains := []string{tt.from, tt.to, tt.subj, tt.body}
+
+			notifier.
+				On("Notify", conn.LocalAddr(), mock.MatchedBy(func(data []byte) bool {
+					for _, s := range contains {
+						if !strings.Contains(string(data), s) {
+							return false
+						}
+					}
+					return true
+				}), mock.Anything).
+				Return().
+				Once()
+
+			// Create SMTP client
+			c, err := smtp.NewClient(conn, "sonar.local")
+			require.NoError(st, err)
+
+			// Send "STARTTLS" if required
+			if tt.startTLS {
+				c.StartTLS(tlsConfig)
+			}
+
+			// Set the sender and recipient first
+			err = c.Mail(tt.from)
+			require.NoError(st, err)
+
+			err = c.Rcpt(tt.to)
+			require.NoError(st, err)
+
+			// Send the email body.
+			wc, err := c.Data()
+			require.NoError(st, err)
+
+			_, err = fmt.Fprintf(wc, tt.body)
+			require.NoError(st, err)
+
+			err = wc.Close()
+			require.NoError(st, err)
+
+			c.Quit()
+
+			time.Sleep(time.Microsecond * 500)
+
+			notifier.AssertExpectations(t)
+		})
 	}
 }
