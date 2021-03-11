@@ -12,8 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-
-	"github.com/fatih/structs"
+	"time"
 )
 
 const (
@@ -28,18 +27,26 @@ var (
 	ErrQuit    = errors.New("connection closed")
 )
 
-type Meta struct {
+type Message struct {
 	Helo     string
+	Ehlo     string
 	MailFrom string
 	RcptTo   []string
 	Data     string
+}
+
+type Event struct {
+	RemoteAddr net.Addr
+	Log        []byte
+	Msg        *Message
+	ReceivedAt time.Time
 }
 
 type Session struct {
 	domain    string
 	tlsConfig *tls.Config
 
-	onClose OnCloseFunc
+	onClose func(*Event)
 
 	lines   chan string
 	rdy     chan struct{}
@@ -51,14 +58,12 @@ type Session struct {
 
 	state int
 
-	data Meta
+	msg *Message
 
 	mu sync.RWMutex
 }
 
-type OnCloseFunc func([]byte, map[string]interface{})
-
-func NewSession(conn net.Conn, domain string, tlsConfig *tls.Config, onClose OnCloseFunc) *Session {
+func NewSession(conn net.Conn, domain string, tlsConfig *tls.Config, onClose func(*Event)) *Session {
 	var buf bytes.Buffer
 
 	r := bufio.NewReader(io.TeeReader(conn, &buf))
@@ -70,8 +75,8 @@ func NewSession(conn net.Conn, domain string, tlsConfig *tls.Config, onClose OnC
 		tlsConfig: tlsConfig,
 		onClose:   onClose,
 
-		lines:   make(chan string),
-		rdy:     make(chan struct{}),
+		lines:   make(chan string, 1),
+		rdy:     make(chan struct{}, 1),
 		conn:    conn,
 		r:       r,
 		w:       w,
@@ -79,17 +84,23 @@ func NewSession(conn net.Conn, domain string, tlsConfig *tls.Config, onClose OnC
 		conv:    &buf,
 
 		state: stateHelo,
-		data: Meta{
+		msg: &Message{
 			RcptTo: make([]string, 0),
 		},
 	}
 }
 
 func (s *Session) start(ctx context.Context) error {
+	start := time.Now()
 
 	if s.onClose != nil {
 		defer func() {
-			s.onClose(s.conv.Bytes(), structs.Map(s.data))
+			s.onClose(&Event{
+				RemoteAddr: s.conn.RemoteAddr(),
+				Log:        s.conv.Bytes(),
+				Msg:        s.msg,
+				ReceivedAt: start,
+			})
 		}()
 	}
 
@@ -97,7 +108,7 @@ func (s *Session) start(ctx context.Context) error {
 		return err
 	}
 
-	go s.readLines(ctx)
+	defer close(s.lines)
 
 	s.ready()
 
@@ -107,6 +118,16 @@ func (s *Session) start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 
+		case <-s.rdy:
+			s.mu.RLock()
+			if !s.scanner.Scan() {
+				s.mu.RUnlock()
+				return s.scanner.Err()
+			}
+			s.mu.RUnlock()
+
+			s.lines <- s.scanner.Text()
+
 		case line := <-s.lines:
 			if err := s.handle(line); err == ErrQuit {
 				return nil
@@ -115,27 +136,6 @@ func (s *Session) start(ctx context.Context) error {
 			}
 		}
 	}
-}
-
-func (s *Session) readLines(ctx context.Context) {
-	defer close(s.lines)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-s.rdy:
-			s.mu.RLock()
-
-			if !s.scanner.Scan() {
-				return
-			}
-			s.lines <- s.scanner.Text()
-
-			s.mu.RUnlock()
-		}
-	}
-
 }
 
 func (s *Session) handle(line string) error {
@@ -228,7 +228,7 @@ func (s *Session) ready() {
 }
 
 func (s *Session) handleHelo(args string) error {
-	s.data.Helo = args
+	s.msg.Helo = args
 	s.state = stateMailFrom
 	return s.writeLine("250 Hello")
 }
@@ -238,7 +238,7 @@ func (s *Session) handleNoop(args string) error {
 }
 
 func (s *Session) handleEhlo(args string) error {
-	s.data.Helo = args
+	s.msg.Ehlo = args
 	s.state = stateMailFrom
 
 	if s.tlsConfig == nil {
@@ -283,13 +283,13 @@ func (s *Session) handleStartTLS(args string) error {
 }
 
 func (s *Session) handleMailFrom(args string) error {
-	s.data.MailFrom = addrRegexp.ReplaceAllString(args, "$2")
+	s.msg.MailFrom = addrRegexp.ReplaceAllString(args, "$2")
 	s.state = stateRcptTo
 	return s.writeLine("250 OK")
 }
 
 func (s *Session) handleRcptTo(args string) error {
-	s.data.RcptTo = append(s.data.RcptTo, addrRegexp.ReplaceAllString(args, "$2"))
+	s.msg.RcptTo = append(s.msg.RcptTo, addrRegexp.ReplaceAllString(args, "$2"))
 	s.state = stateRcptTo
 	return s.writeLine("250 OK")
 }
@@ -299,7 +299,7 @@ func (s *Session) handleData(args string) error {
 		s.state = stateData
 		return s.writeLine("354 Send data")
 	} else if args != "." {
-		s.data.Data += args + "\n"
+		s.msg.Data += args + "\n"
 		return nil
 	}
 

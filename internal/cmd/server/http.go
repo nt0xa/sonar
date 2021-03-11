@@ -21,7 +21,7 @@ func HTTPDefault(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("<html><body>%s</body></html>", rnd)))
 }
 
-func HTTPHandler(notify NotifyFunc) http.Handler {
+func HTTPHandler(notify func(*httpx.Event)) http.Handler {
 	return http.TimeoutHandler(
 		httpx.MultipartHandler(
 			httpx.MaxBytesHandler(

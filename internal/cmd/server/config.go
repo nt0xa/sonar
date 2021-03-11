@@ -1,9 +1,7 @@
-package main
+package server
 
 import (
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/modules"
-	"github.com/bi-zone/sonar/internal/tls"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
@@ -13,9 +11,9 @@ type Config struct {
 	Domain string          `json:"domain"`
 	IP     string          `json:"ip"`
 
-	TLS tls.Config `json:"tls"`
+	TLS TLSConfig `json:"tls"`
 
-	Modules modules.Config `json:"modules"`
+	Modules ModulesConfig `json:"modules"`
 }
 
 func (c Config) Validate() error {

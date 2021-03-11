@@ -2,7 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,8 +15,7 @@ import (
 	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/internal/modules"
-	"github.com/bi-zone/sonar/internal/tls"
+	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
@@ -33,7 +34,7 @@ func main() {
 	// Config
 	//
 
-	var cfg Config
+	var cfg server.Config
 
 	if err := envconfig.Process("sonar", &cfg); err != nil {
 		log.Fatal(err.Error())
@@ -89,30 +90,42 @@ func main() {
 	actions := actionsdb.New(db, log, cfg.Domain)
 
 	//
-	// Events
+	// EventsHandler
 	//
 
-	events := make(chan models.Event, 100)
-	defer close(events)
+	events := server.NewEventsHandler(db, 100)
 
 	//
 	// DNS
 	//
 
-	var waitDNS sync.Mutex
+	var waitDNS sync.WaitGroup
+
+	waitDNS.Add(1)
 
 	dnsHandler := server.DNSHandler(
 		db,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
-		AddProtoEvent("DNS", events),
+		func(e *dnsx.Event) {
+			events.Emit(&models.Event{
+				Protocol:   "dns",
+				RawData:    []byte(e.Msg.String()),
+				RemoteAddr: e.RemoteAddr,
+				ReceivedAt: e.ReceivedAt,
+				Meta: map[string]interface{}{
+					"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
+					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
+				},
+			})
+		},
 	)
 
 	go func() {
 		srv := dnsx.New(
 			":53",
 			dnsHandler,
-			dnsx.NotifyStartedFunc(waitDNS.Unlock),
+			dnsx.NotifyStartedFunc(waitDNS.Done),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -126,9 +139,9 @@ func main() {
 
 	// Wait for DNS server to start, because we need to
 	// use it as DNS challenge provider for Let's Encrypt
-	waitDNS.Lock()
+	waitDNS.Wait()
 
-	tls, err := tls.New(&cfg.TLS, log, cfg.Domain, dnsHandler)
+	tls, err := server.NewTLS(&cfg.TLS, log, cfg.Domain, dnsHandler)
 	if err != nil {
 		log.Fatalf("Failed to init TLS: %v", err)
 	}
@@ -154,7 +167,19 @@ func main() {
 	go func() {
 		srv := httpx.New(
 			":80",
-			server.HTTPHandler(AddProtoEvent("HTTP", events)),
+			server.HTTPHandler(
+				func(e *httpx.Event) {
+					events.Emit(&models.Event{
+						Protocol: "http",
+						RawData:  append(e.RawRequest[:], e.RawResponse...),
+						Meta: map[string]interface{}{
+							"tls": e.Secure,
+						},
+						RemoteAddr: e.RemoteAddr,
+						ReceivedAt: e.ReceivedAt,
+					})
+				},
+			),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -170,7 +195,19 @@ func main() {
 	go func() {
 		srv := httpx.New(
 			":443",
-			server.HTTPHandler(AddProtoEvent("HTTPS", events)),
+			server.HTTPHandler(
+				func(e *httpx.Event) {
+					events.Emit(&models.Event{
+						Protocol: "https",
+						RawData:  append(e.RawRequest[:], e.RawResponse...),
+						Meta: map[string]interface{}{
+							"tls": e.Secure,
+						},
+						RemoteAddr: e.RemoteAddr,
+						ReceivedAt: e.ReceivedAt,
+					})
+				},
+			),
 			httpx.TLSConfig(tlsConfig),
 		)
 
@@ -188,7 +225,17 @@ func main() {
 		srv := smtpx.New(
 			":25",
 			server.SMTPListenerWrapper(1<<20, time.Second*5),
-			server.SMTPSession(cfg.Domain, tlsConfig, AddProtoEvent("SMTP", events)),
+			server.SMTPSession(cfg.Domain, tlsConfig,
+				func(e *smtpx.Event) {
+					events.Emit(&models.Event{
+						Protocol:   "smtp",
+						RawData:    e.Log,
+						Meta:       map[string]interface{}{},
+						RemoteAddr: e.RemoteAddr,
+						ReceivedAt: e.ReceivedAt,
+					})
+				},
+			),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -200,22 +247,27 @@ func main() {
 	// Modules
 	//
 
-	controllers, notifiers, err := modules.Init(&cfg.Modules, db, log, tlsConfig, actions, cfg.Domain)
+	controllers, notifiers, err := server.Modules(&cfg.Modules, db, log, tlsConfig, actions, cfg.Domain)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Start controllers
 	for _, c := range controllers {
-		go func(c modules.Controller) {
+		go func(c server.Controller) {
 			if err := c.Start(); err != nil {
 				log.Fatal(err)
 			}
 		}(c)
 	}
 
+	// Add notifiers
+	for i, n := range notifiers {
+		events.AddNotifier(fmt.Sprintf("%d", i), n)
+	}
+
 	// Process events
-	go ProcessEvents(log, events, db, notifiers)
+	go events.Start()
 
 	// Wait forever
 	select {}
