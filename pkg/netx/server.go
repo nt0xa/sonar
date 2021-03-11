@@ -48,6 +48,7 @@ func (s *Server) ListenAndServe() error {
 		}
 
 		go func() {
+			// TODO: logging
 			defer conn.Close()
 			_ = s.ConnectionHandler(conn)
 		}()

@@ -21,10 +21,8 @@ func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Lis
 	}
 }
 
-func SMTPSession(domain string, tlsConfig *tls.Config, notify NotifyFunc) func(net.Conn) *smtpx.Session {
+func SMTPSession(domain string, tlsConfig *tls.Config, notify func(*smtpx.Event)) func(net.Conn) *smtpx.Session {
 	return func(conn net.Conn) *smtpx.Session {
-		return smtpx.NewSession(conn, domain, tlsConfig, func(data []byte, meta map[string]interface{}) {
-			notify(conn.RemoteAddr(), data, meta)
-		})
+		return smtpx.NewSession(conn, domain, tlsConfig, notify)
 	}
 }

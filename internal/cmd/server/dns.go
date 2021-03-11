@@ -40,7 +40,7 @@ func DNSDefaultRecords(origin string, ip net.IP) *dnsrec.Records {
 	return dnsrec.New(rrs)
 }
 
-func DNSHandler(db *database.DB, origin string, ip net.IP, notify NotifyFunc) dnsx.HandlerProvider {
+func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Event)) dnsx.HandlerProvider {
 	// Do not handle DNS queries which are not subdomains of the origin.
 	h := dns.NewServeMux()
 

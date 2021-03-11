@@ -10,11 +10,6 @@ import (
 	"github.com/bi-zone/sonar/pkg/netx"
 )
 
-// Meta represents HTTP event metadata.
-type Meta struct {
-	TLS bool
-}
-
 type Server interface {
 	ListenAndServe() error
 }

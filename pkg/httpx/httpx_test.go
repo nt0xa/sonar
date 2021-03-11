@@ -270,7 +270,7 @@ func TestHTTPX(t *testing.T) {
 									return true
 								}),
 								map[string]interface{}{
-									"TLS": isTLS,
+									"tls": isTLS,
 								}).
 							Once()
 
