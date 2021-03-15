@@ -2,34 +2,56 @@ package models
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 
 	"github.com/lib/pq"
 )
 
-type Proto string
+type Proto struct {
+	Name string
+}
 
 func (p Proto) String() string {
-	return string(p)
+	return string(p.Name)
 }
 
-const (
-	ProtoDNS   Proto = "dns"
-	ProtoHTTP  Proto = "http"
-	ProtoHTTPS Proto = "https"
-	ProtoSMTP  Proto = "smtp"
+func (p Proto) Value() (driver.Value, error) {
+	return p.String(), nil
+}
+
+func (p *Proto) Scan(value interface{}) error {
+	s, ok := value.(string)
+	if !ok {
+		return errors.New("type assertion to string failed")
+	}
+	*p = Proto{s}
+	return nil
+}
+
+func (p Proto) Category() ProtoCategory {
+	return ProtoToCategory(p)
+}
+
+var (
+	ProtoDNS   = Proto{"dns"}
+	ProtoHTTP  = Proto{"http"}
+	ProtoHTTPS = Proto{"https"}
+	ProtoSMTP  = Proto{"smtp"}
 )
 
-type ProtoCategory string
-
-func (p ProtoCategory) String() string {
-	return string(p)
+type ProtoCategory struct {
+	Name string
 }
 
-const (
-	ProtoCategoryDNS  ProtoCategory = "dns"
-	ProtoCategoryHTTP ProtoCategory = "http"
-	ProtoCategorySMTP ProtoCategory = "smtp"
+func (p ProtoCategory) String() string {
+	return string(p.Name)
+}
+
+var (
+	ProtoCategoryDNS  = ProtoCategory{"dns"}
+	ProtoCategoryHTTP = ProtoCategory{"http"}
+	ProtoCategorySMTP = ProtoCategory{"smtp"}
 )
 
 var ProtoCategoriesAll = ProtoCategoryArray{
@@ -53,10 +75,10 @@ func ProtoToCategory(p Proto) ProtoCategory {
 
 type ProtoCategoryArray []ProtoCategory
 
-func ProtoCagories(cc ...string) ProtoCategoryArray {
+func ProtoCategories(cc ...string) ProtoCategoryArray {
 	res := make([]ProtoCategory, len(cc))
 	for i, c := range cc {
-		res[i] = ProtoCategory(c)
+		res[i] = ProtoCategory{c}
 	}
 	return res
 }
@@ -89,7 +111,7 @@ func (p *ProtoCategoryArray) Scan(value interface{}) error {
 		return err
 	}
 
-	*p = ProtoCagories(a...)
+	*p = ProtoCategories(a...)
 
 	return nil
 }

@@ -47,7 +47,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            p.Name,
-		NotifyProtocols: models.ProtoCagories(slice.StringsDedup(p.NotifyProtocols)...),
+		NotifyProtocols: models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...),
 	}
 
 	err = act.db.PayloadsCreate(payload)
@@ -80,7 +80,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 	}
 
 	if p.NotifyProtocols != nil {
-		payload.NotifyProtocols = models.ProtoCagories(slice.StringsDedup(p.NotifyProtocols)...)
+		payload.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
 	}
 
 	err = act.db.PayloadsUpdate(payload)

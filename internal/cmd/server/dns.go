@@ -2,9 +2,11 @@ package server
 
 import (
 	"net"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/dnsdb"
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/tpl"
 	"github.com/bi-zone/sonar/pkg/dnsrec"
 	"github.com/bi-zone/sonar/pkg/dnsutils"
@@ -57,4 +59,17 @@ func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Eve
 	)
 
 	return dnsx.ChallengeHandler(h)
+}
+
+func DNSEvent(e *dnsx.Event) *models.Event {
+	return &models.Event{
+		Protocol:   models.ProtoDNS,
+		Log:        []byte(e.Msg.String()),
+		RemoteAddr: e.RemoteAddr,
+		ReceivedAt: e.ReceivedAt,
+		Meta: map[string]interface{}{
+			"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
+			"name":  strings.Trim(e.Msg.Question[0].Name, "."),
+		},
+	}
 }

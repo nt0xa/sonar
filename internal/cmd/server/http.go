@@ -37,9 +37,17 @@ func HTTPHandler(notify func(*httpx.Event)) http.Handler {
 }
 
 func HTTPEvent(e *httpx.Event) *models.Event {
+	var proto models.Proto
+
+	if e.Secure {
+		proto = models.ProtoHTTPS
+	} else {
+		proto = models.ProtoHTTP
+	}
+
 	return &models.Event{
-		Protocol: "http",
-		RawData:  append(e.RawRequest[:], e.RawResponse...),
+		Protocol: proto,
+		Log:      append(e.RawRequest[:], e.RawResponse...),
 		Meta: map[string]interface{}{
 			"tls": e.Secure,
 		},

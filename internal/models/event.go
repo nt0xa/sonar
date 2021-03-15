@@ -6,13 +6,11 @@ import (
 )
 
 type Event struct {
-	Protocol   Proto
-	RawData    []byte
+	Protocol   Proto `db:"protocol"`
+	Log        []byte
+	To         []byte
+	From       []byte
 	Meta       map[string]interface{}
 	RemoteAddr net.Addr
 	ReceivedAt time.Time
-}
-
-func (e *Event) ProtoCategory() ProtoCategory {
-	return ProtoToCategory(e.Protocol)
 }

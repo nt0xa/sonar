@@ -175,7 +175,7 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	assert.NotNil(t, o)
 
 	o.Name = "payload1_updated"
-	o.NotifyProtocols = models.ProtoCagories("dns")
+	o.NotifyProtocols = models.ProtoCategories("dns")
 
 	err = db.PayloadsUpdate(o)
 	require.NoError(t, err)
