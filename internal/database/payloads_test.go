@@ -18,14 +18,14 @@ func TestPayloadsCreate_Success(t *testing.T) {
 		UserID:          1,
 		Subdomain:       "8a8b58beaf",
 		Name:            "test",
-		NotifyProtocols: []string{"dns", "http", "smtp"},
+		NotifyProtocols: models.ProtoCategoriesAll,
 	}
 
 	err := db.PayloadsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
-	assert.Equal(t, models.PayloadProtocolsAll, []string(o.NotifyProtocols))
+	assert.Equal(t, models.ProtoCategoriesAll, o.NotifyProtocols)
 }
 
 func TestPayloadsCreate_Duplicate(t *testing.T) {
@@ -175,7 +175,7 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	assert.NotNil(t, o)
 
 	o.Name = "payload1_updated"
-	o.NotifyProtocols = []string{"dns"}
+	o.NotifyProtocols = models.ProtoCagories("dns")
 
 	err = db.PayloadsUpdate(o)
 	require.NoError(t, err)

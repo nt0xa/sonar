@@ -6,7 +6,6 @@ import (
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/internal/utils/slice"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
@@ -58,7 +57,7 @@ func (h *EventsHandler) Start() error {
 			}
 
 			// Skip if current event protocol is muted for payload.
-			if !slice.StringsContains(p.NotifyProtocols, e.Proto()) {
+			if p.NotifyProtocols.Contains(e.ProtoCategory()) {
 				continue
 			}
 

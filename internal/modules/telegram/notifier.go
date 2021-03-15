@@ -37,7 +37,7 @@ func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) e
 		Meta       map[string]interface{}
 	}{
 		p.Name,
-		e.Protocol,
+		e.Protocol.String(),
 		e.RemoteAddr.String(),
 		e.ReceivedAt.Format("15:04:05 01.01.2006"),
 		e.Meta,

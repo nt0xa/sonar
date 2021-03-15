@@ -153,10 +153,15 @@ func TestAPI(t *testing.T) {
 			json:   `{"name": "test", "notifyProtocols": ["dns", "smtp"]}`,
 			schema: (actions.PayloadsCreateResult)(nil),
 			result: map[string]matcher{
-				"$.subdomain":       regex(regexp.MustCompile("^[a-f0-9]{8}$")),
-				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]interface{}{models.PayloadProtocolDNS, models.PayloadProtocolSMTP}),
-				"$.createdAt":       withinDuration(time.Second * 10),
+				"$.subdomain": regex(regexp.MustCompile("^[a-f0-9]{8}$")),
+				"$.name":      equal("test"),
+				"$.notifyProtocols": equal(
+					[]interface{}{
+						models.ProtoCategoryDNS.String(),
+						models.ProtoCategorySMTP.String(),
+					},
+				),
+				"$.createdAt": withinDuration(time.Second * 10),
 			},
 			status: 201,
 		},
@@ -231,7 +236,7 @@ func TestAPI(t *testing.T) {
 			schema: (actions.PayloadsUpdateResult)(nil),
 			result: map[string]matcher{
 				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]interface{}{models.PayloadProtocolSMTP}),
+				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
 			},
 			status: 200,
 		},

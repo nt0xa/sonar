@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/pkg/httpx"
 )
@@ -33,4 +34,16 @@ func HTTPHandler(notify func(*httpx.Event)) http.Handler {
 		httpHandlerTimeout,
 		"timeout",
 	)
+}
+
+func HTTPEvent(e *httpx.Event) *models.Event {
+	return &models.Event{
+		Protocol: "http",
+		RawData:  append(e.RawRequest[:], e.RawResponse...),
+		Meta: map[string]interface{}{
+			"tls": e.Secure,
+		},
+		RemoteAddr: e.RemoteAddr,
+		ReceivedAt: e.ReceivedAt,
+	}
 }
