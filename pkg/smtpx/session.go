@@ -28,11 +28,11 @@ var (
 )
 
 type Data struct {
-	Helo     string   `structs:"helo"`
-	Ehlo     string   `structs:"ehlo"`
-	MailFrom string   `structs:"mailFrom"`
-	RcptTo   []string `structs:"rcptTo"`
-	Data     string   `structs:"data"`
+	Helo     string
+	Ehlo     string
+	MailFrom string
+	RcptTo   []string
+	Data     string
 }
 
 type Event struct {

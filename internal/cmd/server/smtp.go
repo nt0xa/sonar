@@ -31,13 +31,27 @@ func SMTPSession(domain string, tlsConfig *tls.Config, notify func(*smtpx.Event)
 
 func SMTPEvent(e *smtpx.Event) *models.Event {
 
+	type Data struct {
+		Helo     string   `structs:"helo"`
+		Ehlo     string   `structs:"ehlo"`
+		MailFrom string   `structs:"mailFrom"`
+		RcptTo   []string `structs:"rcptTo"`
+		Data     string   `structs:"data"`
+	}
+
 	type Meta struct {
-		Data   *smtpx.Data `structs:"data"`
-		Secure bool        `structs:"secure"`
+		Data   Data `structs:"data"`
+		Secure bool `structs:"secure"`
 	}
 
 	meta := &Meta{
-		Data:   e.Data,
+		Data: Data{
+			Helo:     e.Data.Helo,
+			Ehlo:     e.Data.Ehlo,
+			MailFrom: e.Data.MailFrom,
+			RcptTo:   e.Data.RcptTo,
+			Data:     e.Data.Data,
+		},
 		Secure: e.Secure,
 	}
 
