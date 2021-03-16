@@ -19,7 +19,7 @@ func Payload(m *models.Payload) *actions.Payload {
 	return &actions.Payload{
 		Subdomain:       m.Subdomain,
 		Name:            m.Name,
-		NotifyProtocols: m.NotifyProtocols,
+		NotifyProtocols: m.NotifyProtocols.Strings(),
 		CreatedAt:       m.CreatedAt,
 	}
 }
@@ -47,7 +47,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            p.Name,
-		NotifyProtocols: slice.StringsDedup(p.NotifyProtocols),
+		NotifyProtocols: models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...),
 	}
 
 	err = act.db.PayloadsCreate(payload)
@@ -80,7 +80,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 	}
 
 	if p.NotifyProtocols != nil {
-		payload.NotifyProtocols = slice.StringsDedup(p.NotifyProtocols)
+		payload.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
 	}
 
 	err = act.db.PayloadsUpdate(payload)

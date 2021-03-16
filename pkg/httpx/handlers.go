@@ -1,12 +1,13 @@
 package httpx
 
 import (
+	"bytes"
 	"crypto/tls"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"time"
 
 	"github.com/bi-zone/sonar/pkg/netx"
@@ -62,47 +63,43 @@ func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
 		wr := httptest.NewRecorder()
 		start := time.Now()
 
-		defer func() {
-			WriteTo(w, wr)
-
-			conn, ok := getConn(r).(*netx.LoggingConn)
-			if !ok {
-				return
-			}
-
-			_, secure := conn.Conn.(*tls.Conn)
-
-			notify(&Event{
-				RemoteAddr:  conn.RemoteAddr(),
-				Request:     r,
-				RawRequest:  conn.R.Bytes(),
-				Response:    wr.Result(),
-				RawResponse: conn.W.Bytes(),
-				Secure:      secure,
-				ReceivedAt:  start,
-			})
-		}()
-
 		next.ServeHTTP(wr, r)
+
+		res := wr.Result()
+
+		for k, vv := range res.Header {
+			for _, v := range vv {
+				w.Header().Set(k, v)
+			}
+		}
+		w.WriteHeader(wr.Code)
+		w.Write(wr.Body.Bytes())
+
+		conn, ok := getConn(r).(*netx.LoggingConn)
+		if !ok {
+			return
+		}
+
+		_, secure := conn.Conn.(*tls.Conn)
+
+		notify(&Event{
+			RemoteAddr:  conn.RemoteAddr(),
+			Request:     r,
+			RawRequest:  conn.R.Bytes(),
+			Response:    res,
+			RawResponse: conn.W.Bytes(),
+			Secure:      secure,
+			ReceivedAt:  start,
+		})
 	})
 }
 
-func MultipartHandler(next http.Handler, maxMemory int64) http.Handler {
+// BodyReaderHandler reads body so it will appear in request log.
+func BodyReaderHandler(next http.Handler, maxMemory int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Parse multipart otherwise it won't be read.
-		if ct := r.Header.Get("Content-Type"); strings.Contains(ct, "multipart") {
-			_ = r.ParseMultipartForm(maxMemory)
-		}
+		body, _ := ioutil.ReadAll(r.Body)
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// WriteTo copies everything from response recorder to action response writer.
-func WriteTo(w http.ResponseWriter, wr *httptest.ResponseRecorder) {
-	for k, v := range wr.HeaderMap {
-		w.Header()[k] = v
-	}
-	w.WriteHeader(wr.Code)
-	wr.Body.WriteTo(w)
 }

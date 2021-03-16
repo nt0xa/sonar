@@ -202,7 +202,7 @@ func TestClient(t *testing.T) {
 		{
 			actions.PayloadsCreateParams{
 				Name:            "test",
-				NotifyProtocols: []string{models.PayloadProtocolDNS},
+				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
 			},
 			map[string]matcher{
 				"Name":            equal("test"),
@@ -232,7 +232,7 @@ func TestClient(t *testing.T) {
 			actions.PayloadsUpdateParams{
 				Name:            "payload1",
 				NewName:         "test",
-				NotifyProtocols: []string{models.PayloadProtocolHTTP},
+				NotifyProtocols: []string{models.ProtoCategoryHTTP.String()},
 			},
 			map[string]matcher{
 				"Name":            equal("test"),
