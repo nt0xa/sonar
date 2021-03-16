@@ -45,10 +45,9 @@ type PayloadsCreateParams struct {
 func (p PayloadsCreateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
-		validation.Field(&p.NotifyProtocols, validation.Each(validation.In(
-			models.PayloadProtocolDNS,
-			models.PayloadProtocolHTTP,
-			models.PayloadProtocolSMTP,
+		validation.Field(&p.NotifyProtocols, validation.Each(valid.OneOf(
+			models.ProtoCategoriesAll.Strings(),
+			true,
 		))),
 	)
 }
@@ -64,7 +63,7 @@ func PayloadsCreateCommand(p *PayloadsCreateParams) (*cobra.Command, PrepareComm
 	}
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
-		models.PayloadProtocolsAll, "Protocols to notify")
+		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -85,7 +84,10 @@ type PayloadsUpdateParams struct {
 func (p PayloadsUpdateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
-		validation.Field(&p.NotifyProtocols, validation.Each(valid.OneOf(models.PayloadProtocolsAll, true))),
+		validation.Field(&p.NotifyProtocols, validation.Each(valid.OneOf(
+			models.ProtoCategoriesAll.Strings(),
+			true,
+		))),
 	)
 }
 

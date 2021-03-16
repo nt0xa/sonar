@@ -48,8 +48,11 @@ func TestCmd(t *testing.T) {
 			"new test -p dns,http",
 			"PayloadsCreate",
 			actions.PayloadsCreateParams{
-				Name:            "test",
-				NotifyProtocols: []string{models.PayloadProtocolDNS, models.PayloadProtocolHTTP},
+				Name: "test",
+				NotifyProtocols: []string{
+					models.ProtoCategoryDNS.String(),
+					models.ProtoCategoryHTTP.String(),
+				},
 			},
 			(actions.PayloadsCreateResult)(nil),
 		},
@@ -75,7 +78,7 @@ func TestCmd(t *testing.T) {
 			actions.PayloadsUpdateParams{
 				Name:            "old",
 				NewName:         "new",
-				NotifyProtocols: []string{models.PayloadProtocolDNS},
+				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
 			},
 			(actions.PayloadsUpdateResult)(nil),
 		},

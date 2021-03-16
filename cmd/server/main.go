@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
@@ -108,16 +106,7 @@ func main() {
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
 		func(e *dnsx.Event) {
-			events.Emit(&models.Event{
-				Protocol:   "dns",
-				RawData:    []byte(e.Msg.String()),
-				RemoteAddr: e.RemoteAddr,
-				ReceivedAt: e.ReceivedAt,
-				Meta: map[string]interface{}{
-					"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
-					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
-				},
-			})
+			events.Emit(server.DNSEvent(e))
 		},
 	)
 
@@ -169,15 +158,7 @@ func main() {
 			":80",
 			server.HTTPHandler(
 				func(e *httpx.Event) {
-					events.Emit(&models.Event{
-						Protocol: "http",
-						RawData:  append(e.RawRequest[:], e.RawResponse...),
-						Meta: map[string]interface{}{
-							"tls": e.Secure,
-						},
-						RemoteAddr: e.RemoteAddr,
-						ReceivedAt: e.ReceivedAt,
-					})
+					events.Emit(server.HTTPEvent(e))
 				},
 			),
 		)
@@ -197,15 +178,7 @@ func main() {
 			":443",
 			server.HTTPHandler(
 				func(e *httpx.Event) {
-					events.Emit(&models.Event{
-						Protocol: "https",
-						RawData:  append(e.RawRequest[:], e.RawResponse...),
-						Meta: map[string]interface{}{
-							"tls": e.Secure,
-						},
-						RemoteAddr: e.RemoteAddr,
-						ReceivedAt: e.ReceivedAt,
-					})
+					events.Emit(server.HTTPEvent(e))
 				},
 			),
 			httpx.TLSConfig(tlsConfig),
@@ -227,13 +200,7 @@ func main() {
 			server.SMTPListenerWrapper(1<<20, time.Second*5),
 			server.SMTPSession(cfg.Domain, tlsConfig,
 				func(e *smtpx.Event) {
-					events.Emit(&models.Event{
-						Protocol:   "smtp",
-						RawData:    e.Log,
-						Meta:       map[string]interface{}{},
-						RemoteAddr: e.RemoteAddr,
-						ReceivedAt: e.ReceivedAt,
-					})
+					events.Emit(server.SMTPEvent(e))
 				},
 			),
 		)

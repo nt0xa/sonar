@@ -34,7 +34,7 @@ func TestCreatePayload_Success(t *testing.T) {
 			"dns only",
 			actions.PayloadsCreateParams{
 				Name:            "test-dns",
-				NotifyProtocols: []string{models.PayloadProtocolDNS},
+				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
 			},
 		},
 	}
@@ -275,7 +275,7 @@ func TestUpdatePayload_Success(t *testing.T) {
 			"update notify protocols",
 			actions.PayloadsUpdateParams{
 				Name:            "payload1",
-				NotifyProtocols: []string{models.PayloadProtocolHTTP},
+				NotifyProtocols: []string{models.ProtoCategoryHTTP.String()},
 			},
 		},
 	}
