@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -78,10 +78,10 @@ func HTTPEvent(e *httpx.Event) *models.Event {
 		Secure: e.Secure,
 	}
 
-	reqBody, _ := io.ReadAll(e.Request.Body)
+	reqBody, _ := ioutil.ReadAll(e.Request.Body)
 	meta.Request.Body = base64.StdEncoding.EncodeToString(reqBody)
 
-	resBody, _ := io.ReadAll(e.Response.Body)
+	resBody, _ := ioutil.ReadAll(e.Response.Body)
 	meta.Response.Body = base64.StdEncoding.EncodeToString(resBody)
 
 	var proto models.Proto
