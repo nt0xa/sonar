@@ -38,7 +38,7 @@ func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) e
 	}{
 		p.Name,
 		e.Protocol.String(),
-		e.RemoteAddr.String(),
+		e.RemoteAddr,
 		e.ReceivedAt.Format("15:04:05 01.01.2006"),
 		e.Meta,
 	}
@@ -50,7 +50,7 @@ func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) e
 	bodyData := struct {
 		Data string
 	}{
-		string(e.Log),
+		string(e.RW),
 	}
 
 	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {
@@ -60,12 +60,12 @@ func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) e
 	if len(header.String()+body.String()) < maxMessageSize && utf8.ValidString(body.String()) {
 		tg.htmlMessage(u.Params.TelegramID, header.String()+body.String())
 	} else {
-		tg.docMessage(u.Params.TelegramID, "log.txt", header.String(), e.Log)
+		tg.docMessage(u.Params.TelegramID, "log.txt", header.String(), e.RW)
 	}
 
 	// For SMTP send log.eml for better preview.
 	if e.Protocol.Category() == models.ProtoCategorySMTP {
-		tg.docMessage(u.Params.TelegramID, "log.eml", header.String(), e.Log)
+		tg.docMessage(u.Params.TelegramID, "log.eml", header.String(), e.RW)
 	}
 
 	return nil

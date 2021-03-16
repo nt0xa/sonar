@@ -11,6 +11,7 @@ import (
 	"github.com/bi-zone/sonar/pkg/dnsrec"
 	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/fatih/structs"
 	"github.com/miekg/dns"
 )
 
@@ -62,14 +63,47 @@ func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Eve
 }
 
 func DNSEvent(e *dnsx.Event) *models.Event {
+
+	type Question struct {
+		Name  string `structs:"name"`
+		Qtype string `structs:"qtype"`
+	}
+
+	type Answer struct {
+		Name  string `structs:"name"`
+		Rtype string `structs:"rtype"`
+		TTL   uint32 `structs:"ttl"`
+	}
+
+	type Meta struct {
+		Question Question `structs:"question"`
+		Answer   []Answer `structs:"answer"`
+	}
+
+	meta := new(Meta)
+	w := ""
+
+	meta.Question.Name = strings.Trim(e.Msg.Question[0].Name, ".")
+	meta.Question.Qtype = dnsutils.QtypeString(e.Msg.Question[0].Qtype)
+
+	if len(e.Msg.Answer) > 0 {
+		for _, rr := range e.Msg.Answer {
+			meta.Answer = append(meta.Answer, Answer{
+				Name:  strings.Trim(rr.Header().Name, "."),
+				Rtype: dnsutils.QtypeString(rr.Header().Rrtype),
+				TTL:   rr.Header().Ttl,
+			})
+		}
+		w = e.Msg.Answer[0].String()
+	}
+
 	return &models.Event{
 		Protocol:   models.ProtoDNS,
-		Log:        []byte(e.Msg.String()),
-		RemoteAddr: e.RemoteAddr,
+		R:          []byte(e.Msg.Question[0].String()),
+		W:          []byte(w),
+		RW:         []byte(e.Msg.String()),
+		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
-		Meta: map[string]interface{}{
-			"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
-			"name":  strings.Trim(e.Msg.Question[0].Name, "."),
-		},
+		Meta:       models.Meta(structs.Map(meta)),
 	}
 }

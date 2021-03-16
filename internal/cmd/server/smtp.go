@@ -8,6 +8,7 @@ import (
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/pkg/netx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
+	"github.com/fatih/structs"
 )
 
 func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
@@ -31,9 +32,9 @@ func SMTPSession(domain string, tlsConfig *tls.Config, notify func(*smtpx.Event)
 func SMTPEvent(e *smtpx.Event) *models.Event {
 	return &models.Event{
 		Protocol:   models.ProtoSMTP,
-		Log:        e.Log,
-		Meta:       map[string]interface{}{},
-		RemoteAddr: e.RemoteAddr,
+		RW:         e.Log,
+		Meta:       structs.Map(e.Msg),
+		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}
 }

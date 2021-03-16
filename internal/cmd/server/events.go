@@ -37,7 +37,7 @@ func (h *EventsHandler) Start() error {
 
 		seen := make(map[string]struct{})
 
-		matches := subdomainRegexp.FindAllSubmatch(e.Log, -1)
+		matches := subdomainRegexp.FindAllSubmatch(e.RW, -1)
 		if len(matches) == 0 {
 			continue
 		}
@@ -56,8 +56,14 @@ func (h *EventsHandler) Start() error {
 				continue
 			}
 
+			e.PayloadID = p.ID
+
+			if err := h.db.EventsCreate(e); err != nil {
+				continue
+			}
+
 			// Skip if current event protocol is muted for payload.
-			if p.NotifyProtocols.Contains(e.Protocol.Category()) {
+			if !p.NotifyProtocols.Contains(e.Protocol.Category()) {
 				continue
 			}
 
