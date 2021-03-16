@@ -27,7 +27,7 @@ var (
 	ErrQuit    = errors.New("connection closed")
 )
 
-type Message struct {
+type Data struct {
 	Helo     string   `structs:"helo"`
 	Ehlo     string   `structs:"ehlo"`
 	MailFrom string   `structs:"mailFrom"`
@@ -38,7 +38,8 @@ type Message struct {
 type Event struct {
 	RemoteAddr net.Addr
 	Log        []byte
-	Msg        *Message
+	Data       *Data
+	Secure     bool
 	ReceivedAt time.Time
 }
 
@@ -58,7 +59,7 @@ type Session struct {
 
 	state int
 
-	msg *Message
+	msg *Data
 
 	mu sync.RWMutex
 }
@@ -84,7 +85,7 @@ func NewSession(conn net.Conn, domain string, tlsConfig *tls.Config, onClose fun
 		conv:    &buf,
 
 		state: stateHelo,
-		msg: &Message{
+		msg: &Data{
 			RcptTo: make([]string, 0),
 		},
 	}
@@ -95,10 +96,13 @@ func (s *Session) start(ctx context.Context) error {
 
 	if s.onClose != nil {
 		defer func() {
+			_, secure := s.conn.(*tls.Conn)
+
 			s.onClose(&Event{
 				RemoteAddr: s.conn.RemoteAddr(),
 				Log:        s.conv.Bytes(),
-				Msg:        s.msg,
+				Data:       s.msg,
+				Secure:     secure,
 				ReceivedAt: start,
 			})
 		}()

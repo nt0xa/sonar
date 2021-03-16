@@ -30,10 +30,21 @@ func SMTPSession(domain string, tlsConfig *tls.Config, notify func(*smtpx.Event)
 }
 
 func SMTPEvent(e *smtpx.Event) *models.Event {
+
+	type Meta struct {
+		Data   *smtpx.Data `structs:"data"`
+		Secure bool        `structs:"secure"`
+	}
+
+	meta := &Meta{
+		Data:   e.Data,
+		Secure: e.Secure,
+	}
+
 	return &models.Event{
 		Protocol:   models.ProtoSMTP,
 		RW:         e.Log,
-		Meta:       structs.Map(e.Msg),
+		Meta:       structs.Map(meta),
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}
