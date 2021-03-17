@@ -29,8 +29,7 @@ import (
 
 // Flags
 var (
-	logs    bool
-	verbose bool
+	proxy string
 )
 
 var _ = func() bool {
@@ -39,8 +38,7 @@ var _ = func() bool {
 }()
 
 func init() {
-	flag.BoolVar(&logs, "test.logs", false, "Enables logger output.")
-	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
+	flag.StringVar(&proxy, "test.proxy", "", "Enables client proxy.")
 	flag.Parse()
 }
 
@@ -269,12 +267,11 @@ func TestClient(t *testing.T) {
 				TTL:         100,
 			},
 			map[string]matcher{
-				"Payload.Name":     equal("payload1"),
-				"Record.Name":      equal("test"),
-				"Record.Type":      equal(models.DNSTypeA),
-				"Record.TTL":       equal(100),
-				"Record.Values":    equal([]string{"10.1.1.2"}),
-				"Record.CreatedAt": withinDuration(time.Second * 5),
+				"Name":      equal("test.c1da9f3d"),
+				"Type":      equal(models.DNSTypeA),
+				"TTL":       equal(100),
+				"Values":    equal([]string{"10.1.1.2"}),
+				"CreatedAt": withinDuration(time.Second * 5),
 			},
 			nil,
 		},
@@ -286,8 +283,8 @@ func TestClient(t *testing.T) {
 				PayloadName: "payload1",
 			},
 			map[string]matcher{
-				"Records.0.Name": equal("test-a"),
-				"Records.8.Name": equal("test-rebind"),
+				"0.Name": equal("test-a.c1da9f3d"),
+				"8.Name": equal("test-rebind.c1da9f3d"),
 			},
 			nil,
 		},
@@ -301,7 +298,7 @@ func TestClient(t *testing.T) {
 				Type:        "a",
 			},
 			map[string]matcher{
-				"Record.Name": equal("test-a"),
+				"Name": equal("test-a.c1da9f3d"),
 			},
 			nil,
 		},

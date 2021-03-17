@@ -181,7 +181,7 @@ func APIServer(cfg *api.Config, db **database.DB, log logger.StdLogger, acts *ac
 func APIClient(srv **httptest.Server, token string, out **apiclient.Client) Global {
 	return &global{
 		setup: func() error {
-			*out = apiclient.New((*srv).URL, token, false)
+			*out = apiclient.New((*srv).URL, token, true, nil)
 			return nil
 		},
 	}

@@ -26,7 +26,6 @@ import (
 
 // Flags
 var (
-	logs    bool
 	verbose bool
 )
 
@@ -36,7 +35,6 @@ var _ = func() bool {
 }()
 
 func init() {
-	flag.BoolVar(&logs, "test.logs", false, "Enables logger output.")
 	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
 	flag.Parse()
 }
@@ -309,12 +307,12 @@ func TestAPI(t *testing.T) {
 			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
 			schema: (actions.DNSRecordsCreateResult)(nil),
 			result: map[string]matcher{
-				"$.record.name":      equal("test"),
-				"$.record.type":      equal("A"),
-				"$.record.ttl":       equal(100),
-				"$.record.strategy":  equal("all"),
-				"$.record.values":    equal([]interface{}{"127.0.0.1"}),
-				"$.record.createdAt": withinDuration(time.Second * 10),
+				"$.name":      equal("test.c1da9f3d"),
+				"$.type":      equal("A"),
+				"$.ttl":       equal(100),
+				"$.strategy":  equal("all"),
+				"$.values":    equal([]interface{}{"127.0.0.1"}),
+				"$.createdAt": withinDuration(time.Second * 10),
 			},
 			status: 201,
 		},
@@ -361,9 +359,9 @@ func TestAPI(t *testing.T) {
 			token:  User1Token,
 			schema: (actions.DNSRecordsListResult)(nil),
 			result: map[string]matcher{
-				"$.records":         length(9),
-				"$.records[0].name": equal("test-a"),
-				"$.records[1].name": equal("test-aaaa"),
+				"$":         length(9),
+				"$[0].name": equal("test-a.c1da9f3d"),
+				"$[1].name": equal("test-aaaa.c1da9f3d"),
 			},
 			status: 200,
 		},
@@ -386,7 +384,7 @@ func TestAPI(t *testing.T) {
 			token:  User1Token,
 			schema: (actions.DNSRecordsDeleteResult)(nil),
 			result: map[string]matcher{
-				"$.record.name": equal("test-a"),
+				"$.name": equal("test-a.c1da9f3d"),
 			},
 			status: 200,
 		},

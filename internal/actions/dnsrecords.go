@@ -84,9 +84,9 @@ func DNSRecordsCreateCommand(p *DNSRecordsCreateParams) (*cobra.Command, Prepare
 //
 
 type DNSRecordsDeleteParams struct {
-	PayloadName string `err:"payloadName" path:"payloadName"`
-	Name        string `err:"name"        path:"name"`
-	Type        string `err:"type"        path:"type"`
+	PayloadName string `err:"payload" path:"payload"`
+	Name        string `err:"name"    path:"name"`
+	Type        string `err:"type"    path:"type"`
 }
 
 func (p DNSRecordsDeleteParams) Validate() error {

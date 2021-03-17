@@ -32,7 +32,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Delete("/dnsrecords/{payloadName}/{name}/{type}"))
+		Delete("/dnsrecords/{payload}/{name}/{type}"))
 
 	if err != nil {
 		return nil, err
@@ -131,8 +131,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	var res actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetBody(params).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

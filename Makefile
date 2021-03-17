@@ -30,26 +30,21 @@ coverage:
 coverage-html:
 	@go tool cover -html=coverage.out
 
-.PHONY: mocks
-mock: mock-server mock-actions
-
-.PHONY: mock-server
-mock-server:
-	@mockery -dir pkg/server \
-		-output pkg/server/mocks \
-		-outpkg server_mocks \
-		-name RequestNotifier
+.PHONY: mock
+mock: mock-actions
 
 .PHONY: mock-actions
 mock-actions:
-	@mockery -dir internal/actions \
-		-output internal/actions/mock \
-		-outpkg actions_mock \
-		-name Actions
-	@mockery -dir internal/actions \
-		-output internal/actions/mock \
-		-outpkg actions_mock \
-		-name ResultHandler
+	@mockery \
+		--dir internal/actions \
+		--output internal/actions/mock \
+		--outpkg actions_mock \
+		--name Actions
+	@mockery \
+		--dir internal/actions \
+		--output internal/actions/mock \
+		--outpkg actions_mock \
+		--name ResultHandler
 
 #
 # Code generation
