@@ -96,7 +96,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 		if record.LastAnswer != nil &&
 			record.LastAccessedAt != nil &&
 			len(record.LastAnswer) > 0 &&
-			time.Now().UTC().Sub(*record.LastAccessedAt) < time.Second*3 {
+			time.Now().Sub(*record.LastAccessedAt) < time.Second*3 {
 			i := slice.FindIndex(record.Values, record.LastAnswer[0])
 			res = []dns.RR{rrs[min(i+1, len(rrs)-1)]}
 		} else {
@@ -107,7 +107,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 
 	// Update last answer and last answer time.
 	record.LastAnswer = dnsutils.RRsToStrings(res)
-	record.LastAccessedAt = pointer.Time(time.Now().UTC())
+	record.LastAccessedAt = pointer.Time(time.Now())
 
 	if err := h.DB.DNSRecordsUpdate(record); err != nil {
 		return nil, err

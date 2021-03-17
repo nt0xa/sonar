@@ -138,16 +138,15 @@ func (tg *Telegram) PayloadsDelete(ctx context.Context, res actions.PayloadsDele
 
 var (
 	dnsRecord = `
-{{- $p := $.Payload -}}
-{{- range $value := $r.Values -}}
-<code>{{ $r.Name }}.{{ $p.Subdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
+{{- $r := . -}}
+{{- range $value := .Values -}}
+<code>{{ $r.Name }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
 {{ end -}}`
 
-	dnsRecordTemplate = tpl(`{{ $r := .Record }}` + dnsRecord)
+	dnsRecordTemplate = tpl(dnsRecord)
 
 	dnsRecordsTemplate = tpl(fmt.Sprintf(`
-{{- range .Records -}}
-{{ $r := . }}
+{{- range . -}}
 %s
 {{ else }}nothing found{{ end }}`, dnsRecord))
 )
@@ -174,4 +173,19 @@ func (tg *Telegram) UsersCreate(ctx context.Context, res actions.UsersCreateResu
 
 func (tg *Telegram) UsersDelete(ctx context.Context, res actions.UsersDeleteResult) {
 	tg.txtResult(ctx, fmt.Sprintf("user %q deleted", res.Name))
+}
+
+//
+// Events
+//
+
+var (
+	eventsTemplate = tpl(`
+{{- range $e := . -}}
+<b>[{{ $e.ID }}]</b> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
+{{ else }}nothing found{{ end -}}`)
+)
+
+func (tg *Telegram) EventsList(ctx context.Context, res actions.EventsListResult) {
+	tg.tplResult(ctx, eventsTemplate, res)
 }

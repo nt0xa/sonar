@@ -56,12 +56,7 @@ func (p DNSRecordsCreateParams) Validate() error {
 	)
 }
 
-type DNSRecordsCreateResultData struct {
-	Payload *Payload   `json:"payload"`
-	Record  *DNSRecord `json:"record"`
-}
-
-type DNSRecordsCreateResult *DNSRecordsCreateResultData
+type DNSRecordsCreateResult *DNSRecord
 
 func DNSRecordsCreateCommand(p *DNSRecordsCreateParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -102,12 +97,7 @@ func (p DNSRecordsDeleteParams) Validate() error {
 	)
 }
 
-type DNSRecordsDeleteResultData struct {
-	Payload *Payload   `json:"payload"`
-	Record  *DNSRecord `json:"record"`
-}
-
-type DNSRecordsDeleteResult *DNSRecordsDeleteResultData
+type DNSRecordsDeleteResult *DNSRecord
 
 func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -128,7 +118,7 @@ func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams) (*cobra.Command, Prepare
 //
 
 type DNSRecordsListParams struct {
-	PayloadName string `err:"payloadName" path:"payloadName"`
+	PayloadName string `err:"payload" path:"payload"`
 }
 
 func (p DNSRecordsListParams) Validate() error {
@@ -137,12 +127,7 @@ func (p DNSRecordsListParams) Validate() error {
 	)
 }
 
-type DNSRecordsListResultData struct {
-	Payload *Payload     `json:"payload"`
-	Records []*DNSRecord `json:"records"`
-}
-
-type DNSRecordsListResult *DNSRecordsListResultData
+type DNSRecordsListResult []*DNSRecord
 
 func DNSRecordsListCommand(p *DNSRecordsListParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

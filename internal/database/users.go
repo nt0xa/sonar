@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fatih/structs"
+
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
-	"github.com/fatih/structs"
 )
 
 var usersInnerQuery = "" +
@@ -21,7 +22,7 @@ var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
 
 func (db *DB) UsersCreate(o *models.User) error {
 
-	o.CreatedAt = time.Now().UTC()
+	o.CreatedAt = time.Now()
 
 	if o.Params.APIToken == "" {
 		token, err := utils.GenerateRandomString(16)

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/models"
 )
 
@@ -31,7 +32,7 @@ func TestEventsCreate_Success(t *testing.T) {
 	err := db.EventsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
-	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 }
 
 func TestEventsGetByID_Success(t *testing.T) {
@@ -59,14 +60,45 @@ func TestEventsGetByID_NotExist(t *testing.T) {
 	assert.Error(t, err, sql.ErrNoRows.Error())
 }
 
-func TestEventsFindByPayloadID_Success(t *testing.T) {
+func TestEventsListByPayloadID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	l, err := db.EventsFindByPayloadID(1)
+	l, err := db.EventsListByPayloadID(1)
+	assert.NoError(t, err)
+	require.Len(t, l, 9)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 1)
+
+	l, err = db.EventsListByPayloadID(1,
+		database.EventsPagination(database.Pagination{
+			Count: 3,
+		}),
+	)
+	assert.NoError(t, err)
+	require.Len(t, l, 3)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 7)
+
+	l, err = db.EventsListByPayloadID(1,
+		database.EventsPagination(database.Pagination{
+			Count:  5,
+			Before: 7,
+		}),
+	)
+	assert.NoError(t, err)
+	require.Len(t, l, 5)
+	assert.EqualValues(t, l[0].ID, 6)
+	assert.EqualValues(t, l[len(l)-1].ID, 2)
+
+	l, err = db.EventsListByPayloadID(1,
+		database.EventsPagination(database.Pagination{
+			Count: 5,
+			After: 7,
+		}),
+	)
 	assert.NoError(t, err)
 	require.Len(t, l, 2)
-
-	assert.EqualValues(t, l[0].ID, 2)
-	assert.EqualValues(t, l[1].ID, 1)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 8)
 }

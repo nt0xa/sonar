@@ -27,7 +27,7 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 	err := db.DNSRecordsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
-	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 }
 
 func TestDNSRecordsCreate_Duplicate(t *testing.T) {

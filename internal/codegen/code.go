@@ -27,6 +27,12 @@ func (c *command) {{ .Name }}() *cobra.Command {
 			}
 		}
 
+		{{- if ne .Params.Name "" }}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+		{{ end }}
+
 		res, err := c.actions.{{ .Name }}(cmd.Context(){{ if ne .Params.Name "" }}, params{{ end }})
 		if err != nil {
 			return err

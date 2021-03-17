@@ -34,9 +34,10 @@ func main() {
 	var (
 		baseURL, token string
 		insecure       bool
+		proxy          *string
 	)
 
-	if baseURL = os.Getenv("SONAR_API_URL"); baseURL == "" {
+	if baseURL = os.Getenv("SONAR_URL"); baseURL == "" {
 		fatal("Empty SONAR_API_URL")
 	}
 
@@ -45,19 +46,23 @@ func main() {
 		fatal(err)
 	}
 
-	if token = os.Getenv("SONAR_API_TOKEN"); token == "" {
+	if token = os.Getenv("SONAR_TOKEN"); token == "" {
 		fatal("Empty SONAR_API_TOKEN")
 	}
 
-	if os.Getenv("SONAR_API_INSECURE") != "" {
+	if os.Getenv("SONAR_INSECURE") != "" {
 		insecure = true
+	}
+
+	if p := os.Getenv("SONAR_PROXY"); p != "" {
+		proxy = &p
 	}
 
 	//
 	// API client
 	//
 
-	client := apiclient.New(baseURL, token, insecure)
+	client := apiclient.New(baseURL, token, insecure, proxy)
 
 	//
 	// User

@@ -76,6 +76,16 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 
 	root.AddCommand(dns)
 
+	// Events
+	events := &cobra.Command{
+		Use:   "events",
+		Short: "Payloads events",
+	}
+
+	events.AddCommand(c.EventsList())
+
+	root.AddCommand(events)
+
 	// User
 	root.AddCommand(c.UserCurrent())
 

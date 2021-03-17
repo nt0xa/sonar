@@ -8,7 +8,7 @@ import (
 
 func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
 
-	o.CreatedAt = time.Now().UTC()
+	o.CreatedAt = time.Now()
 
 	nstmt, err := db.PrepareNamed(
 		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at) " +

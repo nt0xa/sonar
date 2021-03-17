@@ -95,7 +95,7 @@ func withinDuration(d time.Duration) matcher {
 		assert.True(t, ok, "expected value %+v to be string", value)
 		tt, err := time.Parse(time.RFC3339, ts)
 		require.NoError(t, err)
-		assert.WithinDuration(t, time.Now().UTC(), tt, d)
+		assert.WithinDuration(t, time.Now(), tt, d)
 	}
 }
 

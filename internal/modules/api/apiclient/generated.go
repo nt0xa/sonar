@@ -49,7 +49,25 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/dnsrecords/{payloadName}"))
+		Get("/dnsrecords/{payload}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams) (actions.EventsListResult, errors.Error) {
+	var res actions.EventsListResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/events/{payload}"))
 
 	if err != nil {
 		return nil, err
@@ -113,8 +131,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	var res actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
-		SetBody(params).
 		SetPathParams(toPath(params)).
+		SetBody(params).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

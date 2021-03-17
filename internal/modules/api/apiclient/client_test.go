@@ -112,7 +112,7 @@ func withinDuration(d time.Duration) matcher {
 		}
 
 		require.NoError(t, err)
-		assert.WithinDuration(t, time.Now().UTC(), tm, d)
+		assert.WithinDuration(t, time.Now(), tm, d)
 	}
 }
 
