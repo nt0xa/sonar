@@ -10,18 +10,19 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func DNSRecord(m *models.DNSRecord, subdomain string) *actions.DNSRecord {
+func DNSRecord(m *models.DNSRecord, payloadSubdomain string) *actions.DNSRecord {
 	if m == nil {
 		return nil
 	}
 
 	return &actions.DNSRecord{
-		Name:      m.Name + "." + subdomain,
-		Type:      m.Type,
-		TTL:       m.TTL,
-		Values:    m.Values,
-		Strategy:  m.Strategy,
-		CreatedAt: m.CreatedAt,
+		PayloadSubdomain: payloadSubdomain,
+		Name:             m.Name,
+		Type:             m.Type,
+		TTL:              m.TTL,
+		Values:           m.Values,
+		Strategy:         m.Strategy,
+		CreatedAt:        m.CreatedAt,
 	}
 }
 

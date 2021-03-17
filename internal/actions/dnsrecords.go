@@ -25,12 +25,13 @@ type DNSRecordsHandler interface {
 }
 
 type DNSRecord struct {
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	TTL       int       `json:"ttl"`
-	Values    []string  `json:"values"`
-	Strategy  string    `json:"strategy"`
-	CreatedAt time.Time `json:"createdAt"`
+	PayloadSubdomain string    `json:"payloadSubdomain"`
+	Name             string    `json:"name"`
+	Type             string    `json:"type"`
+	TTL              int       `json:"ttl"`
+	Values           []string  `json:"values"`
+	Strategy         string    `json:"strategy"`
+	CreatedAt        time.Time `json:"createdAt"`
 }
 
 //

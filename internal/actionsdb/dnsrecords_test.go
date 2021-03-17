@@ -90,7 +90,7 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, r)
 
-			assert.Equal(t, tt.p.Name+".c1da9f3d", r.Name)
+			assert.Equal(t, tt.p.Name, r.Name)
 		})
 	}
 }

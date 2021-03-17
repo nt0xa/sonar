@@ -267,7 +267,7 @@ func TestClient(t *testing.T) {
 				TTL:         100,
 			},
 			map[string]matcher{
-				"Name":      equal("test.c1da9f3d"),
+				"Name":      equal("test"),
 				"Type":      equal(models.DNSTypeA),
 				"TTL":       equal(100),
 				"Values":    equal([]string{"10.1.1.2"}),
@@ -283,8 +283,8 @@ func TestClient(t *testing.T) {
 				PayloadName: "payload1",
 			},
 			map[string]matcher{
-				"0.Name": equal("test-a.c1da9f3d"),
-				"8.Name": equal("test-rebind.c1da9f3d"),
+				"0.Name": equal("test-a"),
+				"8.Name": equal("test-rebind"),
 			},
 			nil,
 		},
@@ -298,7 +298,7 @@ func TestClient(t *testing.T) {
 				Type:        "a",
 			},
 			map[string]matcher{
-				"Name": equal("test-a.c1da9f3d"),
+				"Name": equal("test-a"),
 			},
 			nil,
 		},

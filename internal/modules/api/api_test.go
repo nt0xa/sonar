@@ -307,7 +307,7 @@ func TestAPI(t *testing.T) {
 			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
 			schema: (actions.DNSRecordsCreateResult)(nil),
 			result: map[string]matcher{
-				"$.name":      equal("test.c1da9f3d"),
+				"$.name":      equal("test"),
 				"$.type":      equal("A"),
 				"$.ttl":       equal(100),
 				"$.strategy":  equal("all"),
@@ -360,8 +360,8 @@ func TestAPI(t *testing.T) {
 			schema: (actions.DNSRecordsListResult)(nil),
 			result: map[string]matcher{
 				"$":         length(9),
-				"$[0].name": equal("test-a.c1da9f3d"),
-				"$[1].name": equal("test-aaaa.c1da9f3d"),
+				"$[0].name": equal("test-a"),
+				"$[1].name": equal("test-aaaa"),
 			},
 			status: 200,
 		},
@@ -384,7 +384,7 @@ func TestAPI(t *testing.T) {
 			token:  User1Token,
 			schema: (actions.DNSRecordsDeleteResult)(nil),
 			result: map[string]matcher{
-				"$.name": equal("test-a.c1da9f3d"),
+				"$.name": equal("test-a"),
 			},
 			status: 200,
 		},

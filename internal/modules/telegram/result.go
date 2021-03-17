@@ -140,7 +140,7 @@ var (
 	dnsRecord = `
 {{- $r := . -}}
 {{- range $value := .Values -}}
-<code>{{ $r.Name }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
+<code>{{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
 {{ end -}}`
 
 	dnsRecordTemplate = tpl(dnsRecord)
