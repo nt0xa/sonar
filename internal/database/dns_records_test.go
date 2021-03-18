@@ -112,3 +112,27 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, o, o2)
 }
+
+func TestDNSRecordsGetByPayloadID(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	l, err := db.DNSRecordsGetByPayloadID(1)
+	assert.NoError(t, err)
+	assert.Len(t, l, 9)
+	assert.EqualValues(t, 1, l[0].Index)
+	assert.EqualValues(t, 9, l[len(l)-1].Index)
+}
+
+func TestDNSRecordsGetByPayloadIDAndIndex(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.DNSRecordsGetByPayloadIDAndIndex(1, 2)
+	assert.NoError(t, err)
+	assert.EqualValues(t, "test-aaaa", o.Name)
+
+	// Not exist
+	_, err = db.DNSRecordsGetByPayloadIDAndIndex(1, 1337)
+	assert.Error(t, err)
+}
