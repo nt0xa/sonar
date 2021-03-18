@@ -2,68 +2,71 @@ package database
 
 import (
 	"fmt"
-	"strings"
 )
 
-type Pagination struct {
+type Page struct {
 	Count  uint
 	After  int64
 	Before int64
 }
 
-var defaultPagination = Pagination{Count: 10}
+var defaultPagination = Page{Count: 10}
 
-func (p *Pagination) IsZero() bool {
+func (p *Page) IsZero() bool {
 	return p.Count == 0 && p.After == 0 && p.Before == 0
 }
 
-func (p *Pagination) IsForward() bool {
+func (p *Page) IsForward() bool {
 	return p.After != 0
 }
 
-func (p *Pagination) IsBackward() bool {
+func (p *Page) IsBackward() bool {
 	return p.Before != 0
 }
 
-func condPrefix(query string) string {
-	var prefix string
-	if strings.Contains(query, "WHERE") {
-		prefix = " AND"
-	} else {
-		prefix = " WHERE"
-	}
-	return prefix
-}
+func paginate(
+	query string,
+	params map[string]interface{},
+	column string,
+	prefix string,
+	order string,
+	p Page,
+) (string, map[string]interface{}) {
 
-func nextPage(query string, col string, params map[string]interface{}, after int64) (string, map[string]interface{}) {
-	query += condPrefix(query) + fmt.Sprintf(" %s > :after", col)
-	params["after"] = after
-	return query, params
-}
+	var (
+		cmp string
+		ord string
 
-func prevPage(query string, col string, params map[string]interface{}, before int64) (string, map[string]interface{}) {
-	query = fmt.Sprintf(
-		"SELECT * FROM (%s%s %s < :before ORDER BY id ASC) AS p",
-		query,
-		condPrefix(query),
-		col,
+		page bool
 	)
-	params["before"] = before
-	return query, params
-}
 
-func paginate(query string, col string, params map[string]interface{}, p Pagination) (string, map[string]interface{}) {
 	if p.IsForward() {
-		query, params = nextPage(query, col, params, p.After)
+		page = true
+		cmp, ord = ">", "ASC"
+		params["paging"] = p.After
 	} else if p.IsBackward() {
-		query, params = prevPage(query, col, params, p.Before)
+		page = true
+		cmp, ord = "<", "DESC"
+		params["paging"] = p.Before
 	}
 
-	query += fmt.Sprintf(" ORDER BY %s DESC", col)
+	if page {
+		query = fmt.Sprintf(
+			"SELECT * FROM (%[1]s %[2]s %[3]s %[4]s :paging ORDER BY %[3]s %[5]s LIMIT :count) AS p",
+			query,  // subquery
+			prefix, // WHERE/AND
+			column, // id
+			cmp,    // </>
+			ord,    // ASC/DESC
+		)
+	}
 
-	if p.Count != 0 {
+	params["count"] = p.Count
+
+	query += fmt.Sprintf(" ORDER BY %s %s", column, order)
+
+	if !page {
 		query += " LIMIT :count"
-		params["count"] = p.Count
 	}
 
 	return query, params

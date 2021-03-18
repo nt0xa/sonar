@@ -16,7 +16,7 @@ func Event(m *models.Event) *actions.Event {
 	}
 
 	return &actions.Event{
-		ID:         m.ID,
+		Index:      m.Index,
 		Protocol:   m.Protocol.String(),
 		R:          "",
 		W:          "",
@@ -43,11 +43,12 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 	}
 
 	recs, err := act.db.EventsListByPayloadID(payload.ID,
-		database.EventsPagination(database.Pagination{
+		database.EventsPagination(database.Page{
 			Count:  p.Count,
 			After:  p.After,
 			Before: p.Before,
 		}),
+		database.EventsReverse(p.Reverse),
 	)
 	if err != nil {
 		return nil, errors.Internal(err)

@@ -160,12 +160,11 @@ func TestCmd(t *testing.T) {
 
 		{
 			"1",
-			"dns del -p payload -n name -t a",
+			"dns del -p payload 1",
 			"DNSRecordsDelete",
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload",
-				Name:        "name",
-				Type:        strings.ToLower(models.DNSTypeA),
+				Index:       1,
 			},
 			(actions.DNSRecordsDeleteResult)(nil),
 		},

@@ -32,7 +32,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Delete("/dnsrecords/{payload}/{name}/{type}"))
+		Delete("/dnsrecords/{payload}/{index}"))
 
 	if err != nil {
 		return nil, err

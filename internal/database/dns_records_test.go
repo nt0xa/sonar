@@ -24,10 +24,11 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 		Strategy:  models.DNSStrategyAll,
 	}
 
-	err := db.DNSRecordsCreate(o)
+	err := db.DNSRecordsCreate(o, true)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
+	assert.EqualValues(t, 10, o.Index)
 }
 
 func TestDNSRecordsCreate_Duplicate(t *testing.T) {
@@ -42,7 +43,7 @@ func TestDNSRecordsCreate_Duplicate(t *testing.T) {
 		Values:    []string{"127.0.0.1"},
 	}
 
-	err := db.DNSRecordsCreate(o)
+	err := db.DNSRecordsCreate(o, true)
 	assert.Error(t, err)
 }
 
@@ -65,21 +66,21 @@ func TestDNSRecordsGetByID_NotExist(t *testing.T) {
 	assert.Error(t, err, sql.ErrNoRows.Error())
 }
 
-func TestDNSRecordsGetByPayloadNameType_Success(t *testing.T) {
+func TestDNSRecordsGetByPayloadNameAndType_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameType(1, "test-a", models.DNSTypeA)
+	o, err := db.DNSRecordsGetByPayloadNameAndType(1, "test-a", models.DNSTypeA)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.Equal(t, int64(1), o.ID)
 }
 
-func TestDNSRecordsGetByPayloadNameType_NotExist(t *testing.T) {
+func TestDNSRecordsGetByPayloadNameAndType_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameType(1337, "dns1", models.DNSTypeA)
+	o, err := db.DNSRecordsGetByPayloadNameAndType(1337, "dns1", models.DNSTypeA)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.Error(t, err, sql.ErrNoRows.Error())

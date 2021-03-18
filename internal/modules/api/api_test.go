@@ -380,7 +380,7 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/payload1/test-a/a",
+			path:   "/dnsrecords/payload1/1",
 			token:  User1Token,
 			schema: (actions.DNSRecordsDeleteResult)(nil),
 			result: map[string]matcher{
@@ -390,7 +390,17 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/not-exist/test-a/a",
+			path:   "/dnsrecords/not-exist/1",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
+		{
+			method: "DELETE",
+			path:   "/dnsrecords/payload1/1337",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{

@@ -28,9 +28,10 @@ func fromPath(r *http.Request, dst interface{}) error {
 	}
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Metadata: nil,
-		Result:   dst,
-		TagName:  "path",
+		Metadata:         nil,
+		Result:           dst,
+		TagName:          "path",
+		WeaklyTypedInput: true,
 	})
 	if err != nil {
 		return errors.Internal(err)

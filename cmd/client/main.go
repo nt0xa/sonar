@@ -38,7 +38,7 @@ func main() {
 	)
 
 	if baseURL = os.Getenv("SONAR_URL"); baseURL == "" {
-		fatal("Empty SONAR_API_URL")
+		fatal("Empty SONAR_URL")
 	}
 
 	u, err := url.Parse(baseURL)
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	if token = os.Getenv("SONAR_TOKEN"); token == "" {
-		fatal("Empty SONAR_API_TOKEN")
+		fatal("Empty SONAR_TOKEN")
 	}
 
 	if os.Getenv("SONAR_INSECURE") != "" {

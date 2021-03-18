@@ -140,7 +140,7 @@ var (
 	dnsRecord = `
 {{- $r := . -}}
 {{- range $value := .Values -}}
-<code>{{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
+<b>[{{ $r.Index }}] - </b><code>{{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }}</code><code> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}</code>
 {{ end -}}`
 
 	dnsRecordTemplate = tpl(dnsRecord)
@@ -182,7 +182,7 @@ func (tg *Telegram) UsersDelete(ctx context.Context, res actions.UsersDeleteResu
 var (
 	eventsTemplate = tpl(`
 {{- range $e := . -}}
-<b>[{{ $e.ID }}]</b> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
+<b>[{{ $e.Index }}]</b> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
 {{ else }}nothing found{{ end -}}`)
 )
 

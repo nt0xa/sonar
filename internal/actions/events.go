@@ -19,7 +19,7 @@ type EventsHandler interface {
 }
 
 type Event struct {
-	ID         int64                  `json:"id"`
+	Index      int64                  `json:"index"`
 	Protocol   string                 `json:"protocol"`
 	R          string                 `json:"r,omitempty"`
 	W          string                 `json:"w,omitempty"`
@@ -35,9 +35,10 @@ type Event struct {
 
 type EventsListParams struct {
 	PayloadName string `err:"payload" path:"payload"`
-	Count       uint   `err:"cound" query:"count"`
-	After       int64  `err:"after" query:"after"`
-	Before      int64  `err:"before" query:"before"`
+	Count       uint   `err:"cound"   query:"count"`
+	After       int64  `err:"after"   query:"after"`
+	Before      int64  `err:"before"  query:"before"`
+	Reverse     bool   `err:"reverse" query:"reverse"`
 }
 
 func (p EventsListParams) Validate() error {
@@ -58,6 +59,7 @@ func EventsListCommand(p *EventsListParams) (*cobra.Command, PrepareCommandFunc)
 	cmd.Flags().UintVarP(&p.Count, "count", "c", 10, "Count of events")
 	cmd.Flags().Int64VarP(&p.After, "after", "a", 0, "After ID")
 	cmd.Flags().Int64VarP(&p.Before, "before", "b", 0, "Before ID")
+	cmd.Flags().BoolVarP(&p.Reverse, "reverse", "r", false, "List events in reversed order")
 
 	return cmd, nil
 }

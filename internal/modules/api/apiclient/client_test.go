@@ -294,8 +294,7 @@ func TestClient(t *testing.T) {
 		{
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "test-a",
-				Type:        "a",
+				Index:       1,
 			},
 			map[string]matcher{
 				"Name": equal("test-a"),

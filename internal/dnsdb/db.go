@@ -52,7 +52,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	for _, n := range dnsutils.MakeWildcards(subdomain) {
 
 		// TODO: add db query for multiple names.
-		record, err = h.DB.DNSRecordsGetByPayloadNameType(payload.ID, n, typ)
+		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(payload.ID, n, typ)
 		if err == sql.ErrNoRows {
 			continue
 		} else if err != nil {

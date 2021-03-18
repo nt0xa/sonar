@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/models"
@@ -34,18 +35,26 @@ func (db *DB) EventsGetByID(id int64) (*models.Event, error) {
 }
 
 type eventsListOptions struct {
-	Pagination
+	Page
+	Reverse bool
 }
 
 var defaultEventsListOptions = eventsListOptions{
-	Pagination: defaultPagination,
+	Page:    defaultPagination,
+	Reverse: false,
 }
 
 type EventsListOption func(*eventsListOptions)
 
-func EventsPagination(p Pagination) EventsListOption {
+func EventsPagination(p Page) EventsListOption {
 	return func(params *eventsListOptions) {
-		params.Pagination = p
+		params.Page = p
+	}
+}
+
+func EventsReverse(b bool) EventsListOption {
+	return func(params *eventsListOptions) {
+		params.Reverse = b
 	}
 }
 
@@ -58,14 +67,30 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 
 	params := make(map[string]interface{})
 
-	query := "SELECT * FROM events"
-
-	query += " WHERE payload_id = :payload_id"
+	query := "" +
+		"SELECT *, " +
+		"ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index " +
+		"FROM events WHERE payload_id = :payload_id"
 	params["payload_id"] = payloadID
 
-	if !options.Pagination.IsZero() {
-		query, params = paginate(query, "id", params, options.Pagination)
+	query = fmt.Sprintf("SELECT * FROM (%s) AS subq", query)
+
+	var order string
+
+	if options.Reverse {
+		order = "DESC"
+	} else {
+		order = "ASC"
 	}
+
+	query, params = paginate(
+		query,
+		params,
+		"index",
+		"WHERE",
+		order,
+		options.Page,
+	)
 
 	stmt, err := db.PrepareNamed(query)
 	if err != nil {

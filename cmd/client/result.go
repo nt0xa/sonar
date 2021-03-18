@@ -103,7 +103,7 @@ var (
 	dnsRecord = `
 {{- $r := . -}}
 {{- range $value := .Values -}}
-<bold>{{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }}</> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}
+<bold>[{{ $r.Index }}]</> - {{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }} {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}
 {{ end -}}`
 
 	dnsRecordTemplate = tpl(dnsRecord)
@@ -145,7 +145,7 @@ func (h *handler) UsersDelete(ctx context.Context, res actions.UsersDeleteResult
 var (
 	eventsTemplate = tpl(`
 {{- range $e := . -}}
-<bold>[{{ $e.ID }}]</> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
+<bold>[{{ $e.Index }}]</> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
 {{ else }}nothing found{{ end -}}`)
 )
 

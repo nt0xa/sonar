@@ -33,7 +33,7 @@ func toPath(src interface{}) map[string]string {
 			continue
 		}
 
-		dst[f.Tag("path")] = fmt.Sprintf("%s", f.Value())
+		dst[f.Tag("path")] = fmt.Sprintf("%v", f.Value())
 	}
 
 	return dst

@@ -64,38 +64,56 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
+	// Default
 	l, err := db.EventsListByPayloadID(1)
 	assert.NoError(t, err)
 	require.Len(t, l, 9)
-	assert.EqualValues(t, l[0].ID, 9)
-	assert.EqualValues(t, l[len(l)-1].ID, 1)
+	assert.EqualValues(t, l[0].ID, 1)
+	assert.EqualValues(t, l[len(l)-1].ID, 9)
 
 	l, err = db.EventsListByPayloadID(1,
-		database.EventsPagination(database.Pagination{
+		database.EventsPagination(database.Page{
 			Count: 3,
 		}),
 	)
+
+	// Count
 	assert.NoError(t, err)
 	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 9)
-	assert.EqualValues(t, l[len(l)-1].ID, 7)
+	assert.EqualValues(t, l[0].ID, 1)
+	assert.EqualValues(t, l[len(l)-1].ID, 3)
 
+	// Before
 	l, err = db.EventsListByPayloadID(1,
-		database.EventsPagination(database.Pagination{
+		database.EventsPagination(database.Page{
 			Count:  5,
 			Before: 7,
 		}),
 	)
 	assert.NoError(t, err)
 	require.Len(t, l, 5)
-	assert.EqualValues(t, l[0].ID, 6)
-	assert.EqualValues(t, l[len(l)-1].ID, 2)
+	assert.EqualValues(t, l[0].ID, 2)
+	assert.EqualValues(t, l[len(l)-1].ID, 6)
 
+	// After
 	l, err = db.EventsListByPayloadID(1,
-		database.EventsPagination(database.Pagination{
+		database.EventsPagination(database.Page{
 			Count: 5,
 			After: 7,
 		}),
+	)
+	assert.NoError(t, err)
+	require.Len(t, l, 2)
+	assert.EqualValues(t, l[0].ID, 8)
+	assert.EqualValues(t, l[len(l)-1].ID, 9)
+
+	// Reverse
+	l, err = db.EventsListByPayloadID(1,
+		database.EventsPagination(database.Page{
+			Count: 5,
+			After: 7,
+		}),
+		database.EventsReverse(true),
 	)
 	assert.NoError(t, err)
 	require.Len(t, l, 2)
