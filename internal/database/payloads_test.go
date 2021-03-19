@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bi-zone/sonar/internal/models"
 )
 
 func TestPayloadsCreate_Success(t *testing.T) {
@@ -24,7 +25,7 @@ func TestPayloadsCreate_Success(t *testing.T) {
 	err := db.PayloadsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
-	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 	assert.Equal(t, models.ProtoCategoriesAll, o.NotifyProtocols)
 }
 

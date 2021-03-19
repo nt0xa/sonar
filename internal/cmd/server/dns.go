@@ -65,14 +65,14 @@ func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Eve
 func DNSEvent(e *dnsx.Event) *models.Event {
 
 	type Question struct {
-		Name  string `structs:"name"`
-		Qtype string `structs:"qtype"`
+		Name string `structs:"name"`
+		Type string `structs:"type"`
 	}
 
 	type Answer struct {
-		Name  string `structs:"name"`
-		Rtype string `structs:"rtype"`
-		TTL   uint32 `structs:"ttl"`
+		Name string `structs:"name"`
+		Type string `structs:"type"`
+		TTL  uint32 `structs:"ttl"`
 	}
 
 	type Meta struct {
@@ -84,14 +84,14 @@ func DNSEvent(e *dnsx.Event) *models.Event {
 	w := ""
 
 	meta.Question.Name = strings.Trim(e.Msg.Question[0].Name, ".")
-	meta.Question.Qtype = dnsutils.QtypeString(e.Msg.Question[0].Qtype)
+	meta.Question.Type = dnsutils.QtypeString(e.Msg.Question[0].Qtype)
 
 	if len(e.Msg.Answer) > 0 {
 		for _, rr := range e.Msg.Answer {
 			meta.Answer = append(meta.Answer, Answer{
-				Name:  strings.Trim(rr.Header().Name, "."),
-				Rtype: dnsutils.QtypeString(rr.Header().Rrtype),
-				TTL:   rr.Header().Ttl,
+				Name: strings.Trim(rr.Header().Name, "."),
+				Type: dnsutils.QtypeString(rr.Header().Rrtype),
+				TTL:  rr.Header().Ttl,
 			})
 		}
 		w = e.Msg.Answer[0].String()

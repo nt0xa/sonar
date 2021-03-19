@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bi-zone/sonar/internal/models"
 )
 
 func TestUsersCreate_Success(t *testing.T) {
@@ -23,7 +24,7 @@ func TestUsersCreate_Success(t *testing.T) {
 
 	err := db.UsersCreate(o)
 	require.NoError(t, err)
-	assert.WithinDuration(t, time.Now().UTC(), o.CreatedAt, 5*time.Second)
+	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 
 	o2, err := db.UsersGetByID(o.ID)
 	require.NoError(t, err)

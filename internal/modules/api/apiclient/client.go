@@ -15,11 +15,15 @@ type Client struct {
 
 var _ actions.Actions = &Client{}
 
-func New(url string, token string, insecure bool) *Client {
+func New(url string, token string, insecure bool, proxy *string) *Client {
 	c := resty.New().
 		SetHostURL(url).
 		SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
 		SetHeader("Content-Type", "application/json")
+
+	if proxy != nil {
+		c.SetProxy(*proxy)
+	}
 
 	if insecure {
 		c.SetTLSClientConfig(&tls.Config{

@@ -1,25 +1,32 @@
 package database
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/models"
 )
 
-func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
+func (db *DB) DNSRecordsCreate(o *models.DNSRecord, withIndex bool) error {
 
-	o.CreatedAt = time.Now().UTC()
+	o.CreatedAt = time.Now()
 
-	nstmt, err := db.PrepareNamed(
+	query := "" +
 		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at) " +
-			"VALUES(:payload_id, :name, :type, :ttl, :values, :strategy, :last_answer, :last_accessed_at, :created_at) " +
-			"RETURNING id")
+		"VALUES(:payload_id, :name, :type, :ttl, :values, :strategy, :last_answer, :last_accessed_at, :created_at) " +
+		"RETURNING id"
+
+	if withIndex {
+		query += ", (SELECT COUNT(*) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1 AS index"
+	}
+
+	nstmt, err := db.PrepareNamed(query)
 
 	if err != nil {
 		return err
 	}
 
-	return nstmt.QueryRowx(o).Scan(&o.ID)
+	return nstmt.QueryRowx(o).Scan(&o.ID, &o.Index)
 }
 
 func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
@@ -51,7 +58,7 @@ func (db *DB) DNSRecordsGetByID(id int64) (*models.DNSRecord, error) {
 	return &o, nil
 }
 
-func (db *DB) DNSRecordsGetByPayloadNameType(payloadID int64, name string, typ string) (*models.DNSRecord, error) {
+func (db *DB) DNSRecordsGetByPayloadNameAndType(payloadID int64, name string, typ string) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
 	err := db.Get(&o,
@@ -68,11 +75,27 @@ func (db *DB) DNSRecordsGetByPayloadNameType(payloadID int64, name string, typ s
 func (db *DB) DNSRecordsGetByPayloadID(payloadID int64) ([]*models.DNSRecord, error) {
 	res := make([]*models.DNSRecord, 0)
 
-	err := db.Select(&res,
-		"SELECT * FROM dns_records WHERE payload_id = $1",
-		payloadID)
+	query := "SELECT *, " +
+		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
+		"FROM dns_records WHERE payload_id = $1"
+
+	err := db.Select(&res, query, payloadID)
 
 	return res, err
+}
+
+func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.DNSRecord, error) {
+	var o models.DNSRecord
+
+	query := "SELECT *, " +
+		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
+		"FROM dns_records WHERE payload_id = $1"
+
+	query = fmt.Sprintf("SELECT * FROM (%s) AS subq WHERE index = $2", query)
+
+	err := db.Get(&o, query, payloadID, index)
+
+	return &o, err
 }
 
 func (db *DB) DNSRecordsDelete(id int64) error {

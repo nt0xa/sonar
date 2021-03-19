@@ -29,8 +29,7 @@ import (
 
 // Flags
 var (
-	logs    bool
-	verbose bool
+	proxy string
 )
 
 var _ = func() bool {
@@ -39,8 +38,7 @@ var _ = func() bool {
 }()
 
 func init() {
-	flag.BoolVar(&logs, "test.logs", false, "Enables logger output.")
-	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
+	flag.StringVar(&proxy, "test.proxy", "", "Enables client proxy.")
 	flag.Parse()
 }
 
@@ -67,8 +65,8 @@ var (
 		testutils.Fixtures(&db, "../../../database/fixtures", &tf),
 		testutils.ActionsDB(&db, log, &acts),
 		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
-		testutils.APIClient(&srv, UserToken, &uc),
-		testutils.APIClient(&srv, AdminToken, &ac),
+		testutils.APIClient(&srv, UserToken, &uc, &proxy),
+		testutils.APIClient(&srv, AdminToken, &ac, &proxy),
 	)
 )
 
@@ -112,7 +110,7 @@ func withinDuration(d time.Duration) matcher {
 		}
 
 		require.NoError(t, err)
-		assert.WithinDuration(t, time.Now().UTC(), tm, d)
+		assert.WithinDuration(t, time.Now(), tm, d)
 	}
 }
 
@@ -269,12 +267,11 @@ func TestClient(t *testing.T) {
 				TTL:         100,
 			},
 			map[string]matcher{
-				"Payload.Name":     equal("payload1"),
-				"Record.Name":      equal("test"),
-				"Record.Type":      equal(models.DNSTypeA),
-				"Record.TTL":       equal(100),
-				"Record.Values":    equal([]string{"10.1.1.2"}),
-				"Record.CreatedAt": withinDuration(time.Second * 5),
+				"Name":      equal("test"),
+				"Type":      equal(models.DNSTypeA),
+				"TTL":       equal(100),
+				"Values":    equal([]string{"10.1.1.2"}),
+				"CreatedAt": withinDuration(time.Second * 5),
 			},
 			nil,
 		},
@@ -286,8 +283,8 @@ func TestClient(t *testing.T) {
 				PayloadName: "payload1",
 			},
 			map[string]matcher{
-				"Records.0.Name": equal("test-a"),
-				"Records.8.Name": equal("test-rebind"),
+				"0.Name": equal("test-a"),
+				"8.Name": equal("test-rebind"),
 			},
 			nil,
 		},
@@ -297,11 +294,10 @@ func TestClient(t *testing.T) {
 		{
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "test-a",
-				Type:        "a",
+				Index:       1,
 			},
 			map[string]matcher{
-				"Record.Name": equal("test-a"),
+				"Name": equal("test-a"),
 			},
 			nil,
 		},
@@ -342,6 +338,36 @@ func TestClient(t *testing.T) {
 			},
 			nil,
 		},
+
+		//
+		// Events
+		//
+
+		// List
+
+		{
+			actions.EventsListParams{
+				PayloadName: "payload1",
+			},
+			map[string]matcher{
+				"0.Protocol": equal("dns"),
+				"1.Protocol": equal("http"),
+			},
+			nil,
+		},
+
+		// Get
+
+		{
+			actions.EventsGetParams{
+				PayloadName: "payload1",
+				Index:       2,
+			},
+			map[string]matcher{
+				"Protocol": equal("http"),
+			},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -373,6 +399,12 @@ func TestClient(t *testing.T) {
 				res, err = uc.DNSRecordsList(context.Background(), p)
 			case actions.DNSRecordsDeleteParams:
 				res, err = uc.DNSRecordsDelete(context.Background(), p)
+
+			// Events
+			case actions.EventsListParams:
+				res, err = uc.EventsList(context.Background(), p)
+			case actions.EventsGetParams:
+				res, err = uc.EventsGet(context.Background(), p)
 
 			// Users
 			case actions.UsersCreateParams:

@@ -3,7 +3,9 @@ package api_test
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"regexp"
 	"testing"
@@ -26,8 +28,8 @@ import (
 
 // Flags
 var (
-	logs    bool
 	verbose bool
+	proxy   string
 )
 
 var _ = func() bool {
@@ -36,8 +38,8 @@ var _ = func() bool {
 }()
 
 func init() {
-	flag.BoolVar(&logs, "test.logs", false, "Enables logger output.")
 	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
+	flag.StringVar(&proxy, "test.proxy", "", "Enables verbose HTTP proxy.")
 	flag.Parse()
 }
 
@@ -95,7 +97,7 @@ func withinDuration(d time.Duration) matcher {
 		assert.True(t, ok, "expected value %+v to be string", value)
 		tt, err := time.Parse(time.RFC3339, ts)
 		require.NoError(t, err)
-		assert.WithinDuration(t, time.Now().UTC(), tt, d)
+		assert.WithinDuration(t, time.Now(), tt, d)
 	}
 }
 
@@ -304,23 +306,23 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
 			schema: (actions.DNSRecordsCreateResult)(nil),
 			result: map[string]matcher{
-				"$.record.name":      equal("test"),
-				"$.record.type":      equal("A"),
-				"$.record.ttl":       equal(100),
-				"$.record.strategy":  equal("all"),
-				"$.record.values":    equal([]interface{}{"127.0.0.1"}),
-				"$.record.createdAt": withinDuration(time.Second * 10),
+				"$.name":      equal("test"),
+				"$.type":      equal("A"),
+				"$.ttl":       equal(100),
+				"$.strategy":  equal("all"),
+				"$.values":    equal([]interface{}{"127.0.0.1"}),
+				"$.createdAt": withinDuration(time.Second * 10),
 			},
 			status: 201,
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"invalid": 1}`,
 			schema: &errors.BadFormatError{},
@@ -332,7 +334,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": ""}`,
 			schema: &errors.ValidationError{},
@@ -343,7 +345,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": "test-a", "type": "a", "ttl": 100, "strategy": "all", "values": ["127.0.0.1"]}`,
 			schema: &errors.ValidationError{},
@@ -357,19 +359,19 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "GET",
-			path:   "/dnsrecords/payload1",
+			path:   "/dns-records/payload1",
 			token:  User1Token,
 			schema: (actions.DNSRecordsListResult)(nil),
 			result: map[string]matcher{
-				"$.records":         length(9),
-				"$.records[0].name": equal("test-a"),
-				"$.records[1].name": equal("test-aaaa"),
+				"$":         length(9),
+				"$[0].name": equal("test-a"),
+				"$[1].name": equal("test-aaaa"),
 			},
 			status: 200,
 		},
 		{
 			method: "GET",
-			path:   "/dnsrecords/not-exist",
+			path:   "/dns-records/not-exist",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{
@@ -382,17 +384,27 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/payload1/test-a/a",
+			path:   "/dns-records/payload1/1",
 			token:  User1Token,
 			schema: (actions.DNSRecordsDeleteResult)(nil),
 			result: map[string]matcher{
-				"$.record.name": equal("test-a"),
+				"$.name": equal("test-a"),
 			},
 			status: 200,
 		},
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/not-exist/test-a/a",
+			path:   "/dns-records/not-exist/1",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
+		{
+			method: "DELETE",
+			path:   "/dns-records/payload1/1337",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{
@@ -509,6 +521,38 @@ func TestAPI(t *testing.T) {
 			},
 			status: 404,
 		},
+
+		//
+		// Events
+		//
+
+		// List
+
+		{
+			method: "GET",
+			path:   "/events/payload1",
+			token:  User1Token,
+			schema: (actions.EventsListResult)(nil),
+			result: map[string]matcher{
+				"$":             length(9),
+				"$[0].protocol": equal("dns"),
+				"$[1].protocol": equal("http"),
+			},
+			status: 200,
+		},
+
+		// Get
+
+		{
+			method: "GET",
+			path:   "/events/payload1/2",
+			token:  User1Token,
+			schema: (actions.EventsGetResult)(nil),
+			result: map[string]matcher{
+				"$.protocol": equal("http"),
+			},
+			status: 200,
+		},
 	}
 
 	for _, tt := range tests {
@@ -523,11 +567,21 @@ func TestAPI(t *testing.T) {
 				printers = append(printers, httpexpect.NewDebugPrinter(t, true))
 			}
 
-			e := httpexpect.WithConfig(httpexpect.Config{
+			cfg := httpexpect.Config{
 				BaseURL:  srv.URL,
 				Reporter: httpexpect.NewAssertReporter(t),
 				Printers: printers,
-			})
+			}
+
+			if proxy != "" {
+				proxyUrl, _ := url.Parse(proxy)
+				cfg.Client = &http.Client{
+					Transport: &http.Transport{
+						Proxy: http.ProxyURL(proxyUrl),
+					},
+				}
+			}
+			e := httpexpect.WithConfig(cfg)
 
 			req := e.Request(tt.method, tt.path)
 

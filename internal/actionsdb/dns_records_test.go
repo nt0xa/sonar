@@ -2,6 +2,7 @@ package actionsdb_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -90,7 +91,7 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, r)
 
-			assert.Equal(t, tt.p.Name, r.Record.Name)
+			assert.Equal(t, tt.p.Name, r.Name)
 		})
 	}
 }
@@ -260,22 +261,23 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 
 	tests := []struct {
 		name string
+		typ  string
 		p    actions.DNSRecordsDeleteParams
 	}{
 		{
 			"test-a",
+			"A",
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "test-a",
-				Type:        models.DNSTypeA,
+				Index:       1,
 			},
 		},
 		{
 			"test-aaaa",
+			"AAAA",
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "test-aaaa",
-				Type:        models.DNSTypeAAAA,
+				Index:       2,
 			},
 		},
 	}
@@ -292,6 +294,12 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 
 			_, err = acts.DNSRecordsDelete(ctx, tt.p)
 			assert.NoError(t, err)
+
+			p, err := db.PayloadsGetByUserAndName(u.ID, tt.p.PayloadName)
+			assert.NoError(t, err)
+
+			_, err = db.DNSRecordsGetByPayloadNameAndType(p.ID, tt.name, tt.typ)
+			assert.Error(t, err, sql.ErrNoRows)
 		})
 	}
 }
@@ -308,8 +316,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 			0,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "test-a",
-				Type:        models.DNSTypeA,
+				Index:       1,
 			},
 			&errors.InternalError{},
 		},
@@ -318,28 +325,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "",
-				Name:        "test-a",
-				Type:        models.DNSTypeA,
-			},
-			&errors.ValidationError{},
-		},
-		{
-			"empty name",
-			1,
-			actions.DNSRecordsDeleteParams{
-				PayloadName: "payload1",
-				Name:        "",
-				Type:        models.DNSTypeA,
-			},
-			&errors.ValidationError{},
-		},
-		{
-			"invalid record type",
-			1,
-			actions.DNSRecordsDeleteParams{
-				PayloadName: "payload1",
-				Name:        "test-a",
-				Type:        "invalid",
+				Index:       1,
 			},
 			&errors.ValidationError{},
 		},
@@ -348,18 +334,16 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "not-exist",
-				Name:        "test-a",
-				Type:        models.DNSTypeA,
+				Index:       1,
 			},
 			&errors.NotFoundError{},
 		},
 		{
-			"not existing record",
+			"not existing index",
 			1,
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload1",
-				Name:        "not-exist",
-				Type:        models.DNSTypeA,
+				Index:       1337,
 			},
 			&errors.NotFoundError{},
 		},
