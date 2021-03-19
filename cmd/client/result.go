@@ -101,16 +101,15 @@ func (h *handler) PayloadsDelete(ctx context.Context, res actions.PayloadsDelete
 
 var (
 	dnsRecord = `
-{{- $p := $.Payload -}}
-{{- range $value := $r.Values -}}
-<bold>{{ $r.Name }}.{{ $p.Subdomain }}.{{ domain }}</> {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}
+{{- $r := . -}}
+{{- range $value := .Values -}}
+<bold>[{{ $r.Index }}]</> - {{ $r.Name }}.{{ $r.PayloadSubdomain }}.{{ domain }} {{ $r.TTL }} IN {{ $r.Type }} {{ $value }}
 {{ end -}}`
 
-	dnsRecordTemplate = tpl(`{{ $r := .Record }}` + dnsRecord)
+	dnsRecordTemplate = tpl(dnsRecord)
 
 	dnsRecordsTemplate = tpl(fmt.Sprintf(`
-{{- range .Records -}}
-{{ $r := . }}
+{{- range . -}}
 %s
 {{ else }}nothing found{{ end -}}`, dnsRecord))
 )
@@ -137,4 +136,32 @@ func (h *handler) UsersCreate(ctx context.Context, res actions.UsersCreateResult
 
 func (h *handler) UsersDelete(ctx context.Context, res actions.UsersDeleteResult) {
 	h.txtResult(fmt.Sprintf("user %q deleted", res.Name))
+}
+
+//
+// Events
+//
+
+var (
+	event = `
+{{- $e := . -}}
+<bold>[{{ $e.Index }}]</> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}`
+
+	eventTemplate = tpl(event + `
+
+{{ $e.RW | b64dec }}
+`)
+
+	eventsTemplate = tpl(fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end -}}`, event))
+)
+
+func (h *handler) EventsList(ctx context.Context, res actions.EventsListResult) {
+	h.tplResult(eventsTemplate, res)
+}
+
+func (h *handler) EventsGet(ctx context.Context, res actions.EventsGetResult) {
+	h.tplResult(eventTemplate, res)
 }

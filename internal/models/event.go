@@ -8,6 +8,7 @@ import (
 )
 
 type Event struct {
+	Index      int64     `db:"index"`
 	ID         int64     `db:"id"`
 	PayloadID  int64     `db:"payload_id"`
 	Protocol   Proto     `db:"protocol"`

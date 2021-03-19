@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/models"
@@ -25,12 +26,14 @@ type DNSRecordsHandler interface {
 }
 
 type DNSRecord struct {
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	TTL       int       `json:"ttl"`
-	Values    []string  `json:"values"`
-	Strategy  string    `json:"strategy"`
-	CreatedAt time.Time `json:"createdAt"`
+	Index            int64     `json:"index"`
+	PayloadSubdomain string    `json:"payloadSubdomain"`
+	Name             string    `json:"name"`
+	Type             string    `json:"type"`
+	TTL              int       `json:"ttl"`
+	Values           []string  `json:"values"`
+	Strategy         string    `json:"strategy"`
+	CreatedAt        time.Time `json:"createdAt"`
 }
 
 //
@@ -56,12 +59,7 @@ func (p DNSRecordsCreateParams) Validate() error {
 	)
 }
 
-type DNSRecordsCreateResultData struct {
-	Payload *Payload   `json:"payload"`
-	Record  *DNSRecord `json:"record"`
-}
-
-type DNSRecordsCreateResult *DNSRecordsCreateResultData
+type DNSRecordsCreateResult *DNSRecord
 
 func DNSRecordsCreateCommand(p *DNSRecordsCreateParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -89,38 +87,37 @@ func DNSRecordsCreateCommand(p *DNSRecordsCreateParams) (*cobra.Command, Prepare
 //
 
 type DNSRecordsDeleteParams struct {
-	PayloadName string `err:"payloadName" path:"payloadName"`
-	Name        string `err:"name"        path:"name"`
-	Type        string `err:"type"        path:"type"`
+	PayloadName string `err:"payload" path:"payload"`
+	Index       int64  `err:"index"   path:"index"`
 }
 
 func (p DNSRecordsDeleteParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
-		validation.Field(&p.Name, validation.Required, validation.By(valid.Subdomain)),
-		validation.Field(&p.Type, valid.OneOf(models.DNSTypesAll, false)),
+		validation.Field(&p.Index, validation.Required),
 	)
 }
 
-type DNSRecordsDeleteResultData struct {
-	Payload *Payload   `json:"payload"`
-	Record  *DNSRecord `json:"record"`
-}
-
-type DNSRecordsDeleteResult *DNSRecordsDeleteResultData
+type DNSRecordsDeleteResult *DNSRecord
 
 func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "del",
-		Short: "Delete DNS records",
+		Use:   "del INDEX",
+		Short: "Delete DNS record",
+		Long:  "Delete DNS record identified by INDEX",
+		Args:  oneArg("INDEX"),
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().StringVarP(&p.Name, "name", "n", "", "Subdomain")
-	cmd.Flags().StringVarP(&p.Type, "type", "t", "A",
-		fmt.Sprintf("Record type (one of %s)", quoteAndJoin(models.DNSTypesAll)))
 
-	return cmd, nil
+	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
+		i, err := strconv.ParseInt(args[0], 10, 64)
+		if err != nil {
+			return errors.Validationf("invalid integer value %q", args[0])
+		}
+		p.Index = i
+		return nil
+	}
 }
 
 //
@@ -128,7 +125,7 @@ func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams) (*cobra.Command, Prepare
 //
 
 type DNSRecordsListParams struct {
-	PayloadName string `err:"payloadName" path:"payloadName"`
+	PayloadName string `err:"payload" path:"payload"`
 }
 
 func (p DNSRecordsListParams) Validate() error {
@@ -137,12 +134,7 @@ func (p DNSRecordsListParams) Validate() error {
 	)
 }
 
-type DNSRecordsListResultData struct {
-	Payload *Payload     `json:"payload"`
-	Records []*DNSRecord `json:"records"`
-}
-
-type DNSRecordsListResult *DNSRecordsListResultData
+type DNSRecordsListResult []*DNSRecord
 
 func DNSRecordsListCommand(p *DNSRecordsListParams) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

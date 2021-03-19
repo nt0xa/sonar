@@ -178,10 +178,14 @@ func APIServer(cfg *api.Config, db **database.DB, log logger.StdLogger, acts *ac
 	}
 }
 
-func APIClient(srv **httptest.Server, token string, out **apiclient.Client) Global {
+func APIClient(srv **httptest.Server, token string, out **apiclient.Client, proxy *string) Global {
 	return &global{
 		setup: func() error {
-			*out = apiclient.New((*srv).URL, token, false)
+			var p *string
+			if proxy != nil && *proxy != "" {
+				p = proxy
+			}
+			*out = apiclient.New((*srv).URL, token, true, p)
 			return nil
 		},
 	}

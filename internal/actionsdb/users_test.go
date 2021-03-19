@@ -13,7 +13,7 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func TestCreateUser_Success(t *testing.T) {
+func TestUsersCreate_Success(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 
@@ -63,7 +63,7 @@ func TestCreateUser_Success(t *testing.T) {
 	}
 }
 
-func TestCreateUser_Error(t *testing.T) {
+func TestUsersCreate_Error(t *testing.T) {
 	u, err := db.UsersGetByID(1)
 	require.NoError(t, err)
 

@@ -94,6 +94,8 @@ func HTTPEvent(e *httpx.Event) *models.Event {
 
 	return &models.Event{
 		Protocol:   proto,
+		R:          e.RawRequest,
+		W:          e.RawResponse,
 		RW:         append(e.RawRequest[:], e.RawResponse...),
 		Meta:       models.Meta(structs.Map(meta)),
 		RemoteAddr: e.RemoteAddr.String(),

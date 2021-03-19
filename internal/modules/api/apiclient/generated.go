@@ -15,7 +15,7 @@ func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Post("/dnsrecords"))
+		Post("/dns-records"))
 
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Delete("/dnsrecords/{payloadName}/{name}/{type}"))
+		Delete("/dns-records/{payload}/{index}"))
 
 	if err != nil {
 		return nil, err
@@ -49,7 +49,42 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/dnsrecords/{payloadName}"))
+		Get("/dns-records/{payload}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) EventsGet(ctx context.Context, params actions.EventsGetParams) (actions.EventsGetResult, errors.Error) {
+	var res actions.EventsGetResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/events/{payload}/{index}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams) (actions.EventsListResult, errors.Error) {
+	var res actions.EventsListResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/events/{payload}"))
 
 	if err != nil {
 		return nil, err

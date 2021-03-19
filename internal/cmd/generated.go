@@ -19,6 +19,9 @@ func (c *command) DNSRecordsCreate() *cobra.Command {
 				return err
 			}
 		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
 
 		res, err := c.actions.DNSRecordsCreate(cmd.Context(), params)
 		if err != nil {
@@ -44,6 +47,9 @@ func (c *command) DNSRecordsDelete() *cobra.Command {
 			if err := prepareFunc(cmd, args); err != nil {
 				return err
 			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
 		}
 
 		res, err := c.actions.DNSRecordsDelete(cmd.Context(), params)
@@ -71,6 +77,9 @@ func (c *command) DNSRecordsList() *cobra.Command {
 				return err
 			}
 		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
 
 		res, err := c.actions.DNSRecordsList(cmd.Context(), params)
 		if err != nil {
@@ -78,6 +87,64 @@ func (c *command) DNSRecordsList() *cobra.Command {
 		}
 
 		c.handler.DNSRecordsList(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
+func (c *command) EventsGet() *cobra.Command {
+	var params actions.EventsGetParams
+
+	cmd, prepareFunc := actions.EventsGetCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.EventsGet(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.EventsGet(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
+func (c *command) EventsList() *cobra.Command {
+	var params actions.EventsListParams
+
+	cmd, prepareFunc := actions.EventsListCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.EventsList(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.EventsList(cmd.Context(), res)
 
 		return nil
 	})
@@ -96,6 +163,9 @@ func (c *command) PayloadsCreate() *cobra.Command {
 			if err := prepareFunc(cmd, args); err != nil {
 				return err
 			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
 		}
 
 		res, err := c.actions.PayloadsCreate(cmd.Context(), params)
@@ -123,6 +193,9 @@ func (c *command) PayloadsDelete() *cobra.Command {
 				return err
 			}
 		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
 
 		res, err := c.actions.PayloadsDelete(cmd.Context(), params)
 		if err != nil {
@@ -149,6 +222,9 @@ func (c *command) PayloadsList() *cobra.Command {
 				return err
 			}
 		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
 
 		res, err := c.actions.PayloadsList(cmd.Context(), params)
 		if err != nil {
@@ -174,6 +250,9 @@ func (c *command) PayloadsUpdate() *cobra.Command {
 			if err := prepareFunc(cmd, args); err != nil {
 				return err
 			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
 		}
 
 		res, err := c.actions.PayloadsUpdate(cmd.Context(), params)
@@ -225,6 +304,9 @@ func (c *command) UsersCreate() *cobra.Command {
 				return err
 			}
 		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
 
 		res, err := c.actions.UsersCreate(cmd.Context(), params)
 		if err != nil {
@@ -250,6 +332,9 @@ func (c *command) UsersDelete() *cobra.Command {
 			if err := prepareFunc(cmd, args); err != nil {
 				return err
 			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
 		}
 
 		res, err := c.actions.UsersDelete(cmd.Context(), params)

@@ -10,18 +10,20 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func DNSRecord(m *models.DNSRecord) *actions.DNSRecord {
+func DNSRecord(m *models.DNSRecord, payloadSubdomain string) *actions.DNSRecord {
 	if m == nil {
 		return nil
 	}
 
 	return &actions.DNSRecord{
-		Name:      m.Name,
-		Type:      m.Type,
-		TTL:       m.TTL,
-		Values:    m.Values,
-		Strategy:  m.Strategy,
-		CreatedAt: m.CreatedAt,
+		Index:            m.Index,
+		PayloadSubdomain: payloadSubdomain,
+		Name:             m.Name,
+		Type:             m.Type,
+		TTL:              m.TTL,
+		Values:           m.Values,
+		Strategy:         m.Strategy,
+		CreatedAt:        m.CreatedAt,
 	}
 }
 
@@ -40,7 +42,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	if _, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {
+	if _, err := act.db.DNSRecordsGetByPayloadNameAndType(payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("dns records for payload %q with name %q and type %q already exist",
 			p.PayloadName, p.Name, p.Type)
 	}
@@ -54,14 +56,11 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		Strategy:  p.Strategy,
 	}
 
-	if err := act.db.DNSRecordsCreate(rec); err != nil {
+	if err := act.db.DNSRecordsCreate(rec, true); err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.DNSRecordsCreateResultData{
-		Payload: Payload(payload),
-		Record:  DNSRecord(rec),
-	}, nil
+	return DNSRecord(rec, payload.Subdomain), nil
 }
 
 func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (actions.DNSRecordsDeleteResult, errors.Error) {
@@ -79,10 +78,10 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	rec, err := act.db.DNSRecordsGetByPayloadNameType(payload.ID, p.Name, strings.ToUpper(p.Type))
+	rec, err := act.db.DNSRecordsGetByPayloadIDAndIndex(payload.ID, p.Index)
 	if err == sql.ErrNoRows {
-		return nil, errors.NotFoundf("dns record for payload %q with name %q and type %q not found",
-			p.PayloadName, p.Name, p.Type)
+		return nil, errors.NotFoundf("dns record for payload %q with index %d not found",
+			p.PayloadName, p.Index)
 	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -91,10 +90,7 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.DNSRecordsDeleteResultData{
-		Payload: Payload(payload),
-		Record:  DNSRecord(rec),
-	}, nil
+	return DNSRecord(rec, payload.Subdomain), nil
 }
 
 func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
@@ -120,11 +116,8 @@ func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsLi
 	res := make([]*actions.DNSRecord, 0)
 
 	for _, r := range recs {
-		res = append(res, DNSRecord(r))
+		res = append(res, DNSRecord(r, payload.Subdomain))
 	}
 
-	return &actions.DNSRecordsListResultData{
-		Payload: Payload(payload),
-		Records: res,
-	}, nil
+	return res, nil
 }

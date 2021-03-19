@@ -13,9 +13,10 @@ const maxMessageSize = 4096
 var (
 	messageHeaderTemplate = tpl(`
 <b>[{{ .Name }}]</b> {{ .Protocol }} from <code>{{ .RemoteAddr }}</code> at {{ .ReceivedAt }}
-{{- if eq .Protocol "SMTP" }}
-<b>Rcpt To:</b> {{ index .Meta "RcptTo" | join ", " }}
-<b>Mail From:</b> {{ index .Meta "MailFrom" | join ", " }}
+
+{{- if eq .Protocol "smtp" }}
+<b>Rcpt To:</b> {{ index (index .Meta "session") "rcptTo" | join ", " }}
+<b>Mail From:</b> {{ index (index .Meta "session") "mailFrom" | join ", " }}
 {{ end -}}
 `)
 	messageBodyTemplate = tpl(`
@@ -44,6 +45,7 @@ func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) e
 	}
 
 	if err := messageHeaderTemplate.Execute(&header, headerData); err != nil {
+		fmt.Println(err)
 		return fmt.Errorf("message header render error: %w", err)
 	}
 

@@ -2,7 +2,6 @@ package cmd_test
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -30,7 +29,6 @@ func prepare() (cmd.Command, *actions_mock.Actions, *actions_mock.ResultHandler)
 
 func TestCmd(t *testing.T) {
 	tests := []struct {
-		comment string
 		cmdline string
 		action  string
 		params  interface{}
@@ -44,7 +42,6 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"1",
 			"new test -p dns,http",
 			"PayloadsCreate",
 			actions.PayloadsCreateParams{
@@ -60,7 +57,6 @@ func TestCmd(t *testing.T) {
 		// List
 
 		{
-			"1",
 			"list substr",
 			"PayloadsList",
 			actions.PayloadsListParams{
@@ -72,7 +68,6 @@ func TestCmd(t *testing.T) {
 		// Update
 
 		{
-			"1",
 			"mod -n new -p dns old",
 			"PayloadsUpdate",
 			actions.PayloadsUpdateParams{
@@ -86,7 +81,6 @@ func TestCmd(t *testing.T) {
 		// Delete
 
 		{
-			"1",
 			"del test",
 			"PayloadsDelete",
 			actions.PayloadsDeleteParams{
@@ -102,7 +96,6 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"1",
 			"dns new -p payload -n name 192.168.1.1",
 			"DNSRecordsCreate",
 			actions.DNSRecordsCreateParams{
@@ -116,7 +109,6 @@ func TestCmd(t *testing.T) {
 			(actions.DNSRecordsCreateResult)(nil),
 		},
 		{
-			"2",
 			`dns new -p payload -n name -t mx -l 120 -s round-robin "10 mx.example.com."`,
 			"DNSRecordsCreate",
 			actions.DNSRecordsCreateParams{
@@ -130,7 +122,6 @@ func TestCmd(t *testing.T) {
 			(actions.DNSRecordsCreateResult)(nil),
 		},
 		{
-			"3",
 			`dns new -p payload -n name -t a -l 100 -s rebind 1.1.1.1 2.2.2.2 3.3.3.3`,
 			"DNSRecordsCreate",
 			actions.DNSRecordsCreateParams{
@@ -147,7 +138,6 @@ func TestCmd(t *testing.T) {
 		// List
 
 		{
-			"1",
 			"dns list -p payload",
 			"DNSRecordsList",
 			actions.DNSRecordsListParams{
@@ -159,13 +149,11 @@ func TestCmd(t *testing.T) {
 		// Delete
 
 		{
-			"1",
-			"dns del -p payload -n name -t a",
+			"dns del -p payload 1",
 			"DNSRecordsDelete",
 			actions.DNSRecordsDeleteParams{
 				PayloadName: "payload",
-				Name:        "name",
-				Type:        strings.ToLower(models.DNSTypeA),
+				Index:       1,
 			},
 			(actions.DNSRecordsDeleteResult)(nil),
 		},
@@ -177,7 +165,6 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"1",
 			"users new -a -p telegram.id=1337 -p api.token=token test",
 			"UsersCreate",
 			actions.UsersCreateParams{
@@ -194,7 +181,6 @@ func TestCmd(t *testing.T) {
 		// Delete
 
 		{
-			"1",
 			"users del test",
 			"UsersDelete",
 			actions.UsersDeleteParams{
@@ -208,16 +194,55 @@ func TestCmd(t *testing.T) {
 		//
 
 		{
-			"1",
 			"user",
 			"UserCurrent",
 			nil,
 			(actions.UserCurrentResult)(nil),
 		},
+
+		//
+		// Events
+		//
+
+		// List
+
+		{
+			"events list -p test -c 5 -a 3",
+			"EventsList",
+			actions.EventsListParams{
+				PayloadName: "test",
+				Count:       5,
+				After:       3,
+			},
+			(actions.EventsListResult)(nil),
+		},
+		{
+			"events list -p test -c 5 -b 3 -r",
+			"EventsList",
+			actions.EventsListParams{
+				PayloadName: "test",
+				Count:       5,
+				Before:      3,
+				Reverse:     true,
+			},
+			(actions.EventsListResult)(nil),
+		},
+
+		// Get
+
+		{
+			"events get -p test 5",
+			"EventsGet",
+			actions.EventsGetParams{
+				PayloadName: "test",
+				Index:       5,
+			},
+			(actions.EventsGetResult)(nil),
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%s_%s", tt.action, tt.comment), func(t *testing.T) {
+		t.Run(tt.action, func(t *testing.T) {
 			c, acts, hnd := prepare()
 
 			if tt.params != nil {

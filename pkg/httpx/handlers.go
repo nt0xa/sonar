@@ -82,15 +82,17 @@ func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
 
 		_, secure := conn.Conn.(*tls.Conn)
 
-		notify(&Event{
-			RemoteAddr:  conn.RemoteAddr(),
-			Request:     r,
-			RawRequest:  conn.R.Bytes(),
-			Response:    res,
-			RawResponse: conn.W.Bytes(),
-			Secure:      secure,
-			ReceivedAt:  start,
-		})
+		conn.OnClose = func() {
+			notify(&Event{
+				RemoteAddr:  conn.RemoteAddr(),
+				Request:     r,
+				RawRequest:  conn.R.Bytes(),
+				Response:    res,
+				RawResponse: conn.W.Bytes(),
+				Secure:      secure,
+				ReceivedAt:  start,
+			})
+		}
 	})
 }
 

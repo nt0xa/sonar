@@ -3,6 +3,7 @@ package apiclient
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/fatih/structs"
@@ -32,7 +33,7 @@ func toPath(src interface{}) map[string]string {
 			continue
 		}
 
-		dst[f.Tag("path")] = fmt.Sprintf("%s", f.Value())
+		dst[f.Tag("path")] = fmt.Sprintf("%v", f.Value())
 	}
 
 	return dst
@@ -41,6 +42,11 @@ func toPath(src interface{}) map[string]string {
 func handle(resp *resty.Response, err error) errors.Error {
 	if err != nil {
 		return errors.Internal(err)
+	}
+
+	if resp.IsError() &&
+		!strings.Contains(resp.Header().Get("Content-Type"), "application/json") {
+		return errors.Internalf(resp.String())
 	}
 
 	if resp.Error() != nil {

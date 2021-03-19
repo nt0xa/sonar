@@ -59,13 +59,20 @@ func (api *API) Router() http.Handler {
 		})
 	})
 
-	r.Route("/dnsrecords", func(r chi.Router) {
+	r.Route("/dns-records", func(r chi.Router) {
 		r.Post("/", api.DNSRecordsCreate)
-		r.Route("/{payloadName}", func(r chi.Router) {
+		r.Route("/{payload}", func(r chi.Router) {
 			r.Get("/", api.DNSRecordsList)
-			r.Route("/{name}/{type}", func(r chi.Router) {
+			r.Route("/{index}", func(r chi.Router) {
 				r.Delete("/", api.DNSRecordsDelete)
 			})
+		})
+	})
+
+	r.Route("/events", func(r chi.Router) {
+		r.Route("/{payload}", func(r chi.Router) {
+			r.Get("/", api.EventsList)
+			r.Get("/{index}", api.EventsGet)
 		})
 	})
 

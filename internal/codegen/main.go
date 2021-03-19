@@ -69,7 +69,9 @@ func main() {
 		}
 
 		// HTTP path (with paramters).
-		act.HTTPPath += "/" + strings.ToLower(regexp.MustCompile(`^[A-Z]+[a-z]+`).FindString(m.Name))
+		act.HTTPPath += "/" + strings.ToLower(pathName(
+			regexp.MustCompile(`^[A-Z]+[a-z]+`).FindString(m.Name),
+		))
 
 		// Actions arguments.
 		for j := 0; j < m.Type.NumIn(); j++ {
@@ -144,4 +146,22 @@ func contains(items []string, item string) bool {
 	}
 
 	return false
+}
+
+// DNSRecords -> DNS-Records
+// Users -> Users
+func pathName(s string) string {
+	for i := 0; i < len(s); i++ {
+		if s[i] > 'A' && s[i] < 'Z' {
+			continue
+		}
+
+		if i <= 1 {
+			break
+		}
+
+		return s[:i-1] + "-" + s[i-1:]
+	}
+
+	return s
 }
