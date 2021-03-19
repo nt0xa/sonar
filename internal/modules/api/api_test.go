@@ -306,7 +306,7 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
 			schema: (actions.DNSRecordsCreateResult)(nil),
@@ -322,7 +322,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"invalid": 1}`,
 			schema: &errors.BadFormatError{},
@@ -334,7 +334,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": ""}`,
 			schema: &errors.ValidationError{},
@@ -345,7 +345,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "POST",
-			path:   "/dnsrecords",
+			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": "test-a", "type": "a", "ttl": 100, "strategy": "all", "values": ["127.0.0.1"]}`,
 			schema: &errors.ValidationError{},
@@ -359,7 +359,7 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "GET",
-			path:   "/dnsrecords/payload1",
+			path:   "/dns-records/payload1",
 			token:  User1Token,
 			schema: (actions.DNSRecordsListResult)(nil),
 			result: map[string]matcher{
@@ -371,7 +371,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "GET",
-			path:   "/dnsrecords/not-exist",
+			path:   "/dns-records/not-exist",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{
@@ -384,7 +384,7 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/payload1/1",
+			path:   "/dns-records/payload1/1",
 			token:  User1Token,
 			schema: (actions.DNSRecordsDeleteResult)(nil),
 			result: map[string]matcher{
@@ -394,7 +394,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/not-exist/1",
+			path:   "/dns-records/not-exist/1",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{
@@ -404,7 +404,7 @@ func TestAPI(t *testing.T) {
 		},
 		{
 			method: "DELETE",
-			path:   "/dnsrecords/payload1/1337",
+			path:   "/dns-records/payload1/1337",
 			token:  User1Token,
 			schema: &errors.NotFoundError{},
 			result: map[string]matcher{

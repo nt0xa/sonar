@@ -59,7 +59,7 @@ func (api *API) Router() http.Handler {
 		})
 	})
 
-	r.Route("/dnsrecords", func(r chi.Router) {
+	r.Route("/dns-records", func(r chi.Router) {
 		r.Post("/", api.DNSRecordsCreate)
 		r.Route("/{payload}", func(r chi.Router) {
 			r.Get("/", api.DNSRecordsList)

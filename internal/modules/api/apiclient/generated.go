@@ -15,7 +15,7 @@ func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Post("/dnsrecords"))
+		Post("/dns-records"))
 
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecords
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Delete("/dnsrecords/{payload}/{index}"))
+		Delete("/dns-records/{payload}/{index}"))
 
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/dnsrecords/{payload}"))
+		Get("/dns-records/{payload}"))
 
 	if err != nil {
 		return nil, err
@@ -148,8 +148,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	var res actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetBody(params).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
