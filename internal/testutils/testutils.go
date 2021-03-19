@@ -182,7 +182,7 @@ func APIClient(srv **httptest.Server, token string, out **apiclient.Client, prox
 	return &global{
 		setup: func() error {
 			var p *string
-			if proxy != nil {
+			if proxy != nil && *proxy != "" {
 				p = proxy
 			}
 			*out = apiclient.New((*srv).URL, token, true, p)
