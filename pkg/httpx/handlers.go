@@ -67,22 +67,14 @@ func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
 
 		res := wr.Result()
 
-		for k, vv := range res.Header {
-			for _, v := range vv {
-				w.Header().Set(k, v)
-			}
-		}
-		w.WriteHeader(wr.Code)
-		w.Write(wr.Body.Bytes())
-
 		conn, ok := getConn(r).(*netx.LoggingConn)
 		if !ok {
 			return
 		}
 
-		_, secure := conn.Conn.(*tls.Conn)
-
 		conn.OnClose = func() {
+			_, secure := conn.Conn.(*tls.Conn)
+
 			notify(&Event{
 				RemoteAddr:  conn.RemoteAddr(),
 				Request:     r,
@@ -93,6 +85,14 @@ func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
 				ReceivedAt:  start,
 			})
 		}
+
+		for k, vv := range res.Header {
+			for _, v := range vv {
+				w.Header().Set(k, v)
+			}
+		}
+		w.WriteHeader(wr.Code)
+		w.Write(wr.Body.Bytes())
 	})
 }
 
