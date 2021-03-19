@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -129,6 +130,10 @@ func TestHTTPX(t *testing.T) {
 			},
 		},
 	}
+
+	var wg sync.WaitGroup
+
+	wg.Add(len(tests) * 2)
 
 	for _, tt := range tests {
 		for _, isTLS := range []bool{false, true} {
@@ -253,14 +258,16 @@ func TestHTTPX(t *testing.T) {
 					Dial: func(network, address string) (net.Conn, error) {
 						conn, err := net.Dial(network, address)
 
+						if err != nil {
+							return nil, err
+						}
+
 						// Set up mock calls.
 						// It is done here because otherwise it is not possible to
 						// know remote address of the connection.
 						notifier.
 							On("Notify",
-								mock.MatchedBy(func(addr net.Addr) bool {
-									return addr.String() == conn.LocalAddr().String()
-								}),
+								conn.LocalAddr(),
 								mock.MatchedBy(func(data []byte) bool {
 									for _, s := range contains {
 										if !strings.Contains(string(data), s) {
@@ -272,7 +279,10 @@ func TestHTTPX(t *testing.T) {
 								map[string]interface{}{
 									"tls": isTLS,
 								}).
-							Once()
+							Once().
+							Run(func(args mock.Arguments) {
+								wg.Done()
+							})
 
 						return conn, err
 					},
@@ -300,6 +310,10 @@ func TestHTTPX(t *testing.T) {
 				assert.Equal(t, 200, res.StatusCode)
 			})
 		}
+	}
+
+	if testutils.WaitTimeout(&wg, time.Second*5) {
+		t.Errorf("timeout")
 	}
 
 	notifier.AssertExpectations(t)

@@ -211,7 +211,7 @@ func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}
 				}
 			}()
 
-			if waitTimeout(&wg, 30*time.Second) {
+			if WaitTimeout(&wg, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
@@ -270,7 +270,7 @@ func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 				}
 			}()
 
-			if waitTimeout(&wg, 30*time.Second) {
+			if WaitTimeout(&wg, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
@@ -312,7 +312,7 @@ func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 				}
 			}()
 
-			if waitTimeout(&wg, 30*time.Second) {
+			if WaitTimeout(&wg, 30*time.Second) {
 				return errors.New("timeout waiting for server to start")
 			}
 
@@ -321,7 +321,7 @@ func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 	}
 }
 
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
 		defer close(c)
