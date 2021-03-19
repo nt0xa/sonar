@@ -48,7 +48,9 @@ type EventsListOption func(*eventsListOptions)
 
 func EventsPagination(p Page) EventsListOption {
 	return func(params *eventsListOptions) {
-		params.Page = p
+		if !p.IsZero() {
+			params.Page = p
+		}
 	}
 }
 

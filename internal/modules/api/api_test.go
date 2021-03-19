@@ -3,7 +3,9 @@ package api_test
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"regexp"
 	"testing"
@@ -27,6 +29,7 @@ import (
 // Flags
 var (
 	verbose bool
+	proxy   string
 )
 
 var _ = func() bool {
@@ -36,6 +39,7 @@ var _ = func() bool {
 
 func init() {
 	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
+	flag.StringVar(&proxy, "test.proxy", "", "Enables verbose HTTP proxy.")
 	flag.Parse()
 }
 
@@ -517,6 +521,38 @@ func TestAPI(t *testing.T) {
 			},
 			status: 404,
 		},
+
+		//
+		// Events
+		//
+
+		// List
+
+		{
+			method: "GET",
+			path:   "/events/payload1",
+			token:  User1Token,
+			schema: (actions.EventsListResult)(nil),
+			result: map[string]matcher{
+				"$":             length(9),
+				"$[0].protocol": equal("dns"),
+				"$[1].protocol": equal("http"),
+			},
+			status: 200,
+		},
+
+		// Get
+
+		{
+			method: "GET",
+			path:   "/events/payload1/2",
+			token:  User1Token,
+			schema: (actions.EventsGetResult)(nil),
+			result: map[string]matcher{
+				"$.protocol": equal("http"),
+			},
+			status: 200,
+		},
 	}
 
 	for _, tt := range tests {
@@ -531,11 +567,21 @@ func TestAPI(t *testing.T) {
 				printers = append(printers, httpexpect.NewDebugPrinter(t, true))
 			}
 
-			e := httpexpect.WithConfig(httpexpect.Config{
+			cfg := httpexpect.Config{
 				BaseURL:  srv.URL,
 				Reporter: httpexpect.NewAssertReporter(t),
 				Printers: printers,
-			})
+			}
+
+			if proxy != "" {
+				proxyUrl, _ := url.Parse(proxy)
+				cfg.Client = &http.Client{
+					Transport: &http.Transport{
+						Proxy: http.ProxyURL(proxyUrl),
+					},
+				}
+			}
+			e := httpexpect.WithConfig(cfg)
 
 			req := e.Request(tt.method, tt.path)
 

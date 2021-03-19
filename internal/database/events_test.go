@@ -120,3 +120,15 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	assert.EqualValues(t, l[0].ID, 9)
 	assert.EqualValues(t, l[len(l)-1].ID, 8)
 }
+
+func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.EventsGetByPayloadAndIndex(1, 1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, o.ID, 1)
+
+	o, err = db.EventsGetByPayloadAndIndex(1, 1337)
+	assert.Error(t, err)
+}

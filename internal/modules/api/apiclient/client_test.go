@@ -65,8 +65,8 @@ var (
 		testutils.Fixtures(&db, "../../../database/fixtures", &tf),
 		testutils.ActionsDB(&db, log, &acts),
 		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
-		testutils.APIClient(&srv, UserToken, &uc),
-		testutils.APIClient(&srv, AdminToken, &ac),
+		testutils.APIClient(&srv, UserToken, &uc, &proxy),
+		testutils.APIClient(&srv, AdminToken, &ac, &proxy),
 	)
 )
 
@@ -338,6 +338,36 @@ func TestClient(t *testing.T) {
 			},
 			nil,
 		},
+
+		//
+		// Events
+		//
+
+		// List
+
+		{
+			actions.EventsListParams{
+				PayloadName: "payload1",
+			},
+			map[string]matcher{
+				"0.Protocol": equal("dns"),
+				"1.Protocol": equal("http"),
+			},
+			nil,
+		},
+
+		// Get
+
+		{
+			actions.EventsGetParams{
+				PayloadName: "payload1",
+				Index:       2,
+			},
+			map[string]matcher{
+				"Protocol": equal("http"),
+			},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -369,6 +399,12 @@ func TestClient(t *testing.T) {
 				res, err = uc.DNSRecordsList(context.Background(), p)
 			case actions.DNSRecordsDeleteParams:
 				res, err = uc.DNSRecordsDelete(context.Background(), p)
+
+			// Events
+			case actions.EventsListParams:
+				res, err = uc.EventsList(context.Background(), p)
+			case actions.EventsGetParams:
+				res, err = uc.EventsGet(context.Background(), p)
 
 			// Users
 			case actions.UsersCreateParams:
