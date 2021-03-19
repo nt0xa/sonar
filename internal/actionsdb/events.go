@@ -3,6 +3,7 @@ package actionsdb
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
@@ -18,9 +19,9 @@ func Event(m *models.Event) *actions.Event {
 	return &actions.Event{
 		Index:      m.Index,
 		Protocol:   m.Protocol.String(),
-		R:          "",
-		W:          "",
-		RW:         "",
+		R:          base64.StdEncoding.EncodeToString(m.R),
+		W:          base64.StdEncoding.EncodeToString(m.W),
+		RW:         base64.StdEncoding.EncodeToString(m.RW),
 		Meta:       m.Meta,
 		RemoteAddr: m.RemoteAddr,
 		ReceivedAt: m.ReceivedAt,
@@ -61,4 +62,27 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 	}
 
 	return res, nil
+}
+
+func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) (actions.EventsGetResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
+	}
+
+	r, err := act.db.EventsGetByPayloadAndIndex(payload.ID, p.Index)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	return Event(r), nil
 }

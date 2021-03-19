@@ -180,12 +180,24 @@ func (tg *Telegram) UsersDelete(ctx context.Context, res actions.UsersDeleteResu
 //
 
 var (
-	eventsTemplate = tpl(`
-{{- range $e := . -}}
-<b>[{{ $e.Index }}]</b> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
-{{ else }}nothing found{{ end -}}`)
+	event = `
+{{- $e := . -}}
+<b>[{{ $e.Index }}]</b> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}`
+
+	eventTemplate = tpl(event + `
+
+{{ $e.RW | b64dec }}
+`)
+
+	eventsTemplate = tpl(fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end -}}`, event))
 )
 
 func (tg *Telegram) EventsList(ctx context.Context, res actions.EventsListResult) {
 	tg.tplResult(ctx, eventsTemplate, res)
+}
+
+func (tg *Telegram) EventsGet(ctx context.Context, res actions.EventsGetResult) {
 }

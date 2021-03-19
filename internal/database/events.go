@@ -105,3 +105,21 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 
 	return res, nil
 }
+
+func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.Event, error) {
+
+	query := "" +
+		"SELECT *, " +
+		"ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index " +
+		"FROM events WHERE payload_id = $1"
+
+	query = fmt.Sprintf("SELECT * FROM (%s) AS subq WHERE index = $2", query)
+
+	var res models.Event
+
+	if err := db.Get(&res, query, payloadID, index); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}

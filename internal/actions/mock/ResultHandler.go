@@ -30,6 +30,11 @@ func (_m *ResultHandler) DNSRecordsList(_a0 context.Context, _a1 actions.DNSReco
 	_m.Called(_a0, _a1)
 }
 
+// EventsGet provides a mock function with given fields: _a0, _a1
+func (_m *ResultHandler) EventsGet(_a0 context.Context, _a1 actions.EventsGetResult) {
+	_m.Called(_a0, _a1)
+}
+
 // EventsList provides a mock function with given fields: _a0, _a1
 func (_m *ResultHandler) EventsList(_a0 context.Context, _a1 actions.EventsListResult) {
 	_m.Called(_a0, _a1)

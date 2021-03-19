@@ -70,7 +70,10 @@ func (api *API) Router() http.Handler {
 	})
 
 	r.Route("/events", func(r chi.Router) {
-		r.Get("/{payload}", api.EventsList)
+		r.Route("/{payload}", func(r chi.Router) {
+			r.Get("/", api.EventsList)
+			r.Get("/{index}", api.EventsGet)
+		})
 	})
 
 	r.Group(func(r chi.Router) {

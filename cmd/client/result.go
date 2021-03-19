@@ -143,12 +143,25 @@ func (h *handler) UsersDelete(ctx context.Context, res actions.UsersDeleteResult
 //
 
 var (
-	eventsTemplate = tpl(`
-{{- range $e := . -}}
-<bold>[{{ $e.Index }}]</> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}
-{{ else }}nothing found{{ end -}}`)
+	event = `
+{{- $e := . -}}
+<bold>[{{ $e.Index }}]</> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}`
+
+	eventTemplate = tpl(event + `
+
+{{ $e.RW | b64dec }}
+`)
+
+	eventsTemplate = tpl(fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end -}}`, event))
 )
 
 func (h *handler) EventsList(ctx context.Context, res actions.EventsListResult) {
 	h.tplResult(eventsTemplate, res)
+}
+
+func (h *handler) EventsGet(ctx context.Context, res actions.EventsGetResult) {
+	h.tplResult(eventTemplate, res)
 }

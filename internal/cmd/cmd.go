@@ -83,6 +83,7 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 	}
 
 	events.AddCommand(c.EventsList())
+	events.AddCommand(c.EventsGet())
 
 	root.AddCommand(events)
 

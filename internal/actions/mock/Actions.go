@@ -92,6 +92,31 @@ func (_m *Actions) DNSRecordsList(_a0 context.Context, _a1 actions.DNSRecordsLis
 	return r0, r1
 }
 
+// EventsGet provides a mock function with given fields: _a0, _a1
+func (_m *Actions) EventsGet(_a0 context.Context, _a1 actions.EventsGetParams) (actions.EventsGetResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 actions.EventsGetResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.EventsGetParams) actions.EventsGetResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.EventsGetResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(context.Context, actions.EventsGetParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // EventsList provides a mock function with given fields: _a0, _a1
 func (_m *Actions) EventsList(_a0 context.Context, _a1 actions.EventsListParams) (actions.EventsListResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)

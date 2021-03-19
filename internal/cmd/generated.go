@@ -94,6 +94,35 @@ func (c *command) DNSRecordsList() *cobra.Command {
 	return cmd
 }
 
+func (c *command) EventsGet() *cobra.Command {
+	var params actions.EventsGetParams
+
+	cmd, prepareFunc := actions.EventsGetCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.EventsGet(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.EventsGet(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
 func (c *command) EventsList() *cobra.Command {
 	var params actions.EventsListParams
 
