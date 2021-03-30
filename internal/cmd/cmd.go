@@ -87,6 +87,18 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 
 	root.AddCommand(events)
 
+	// HTTP
+	http := &cobra.Command{
+		Use:   "http",
+		Short: "Manage HTTP routes",
+	}
+
+	http.AddCommand(c.HTTPRoutesCreate())
+	http.AddCommand(c.HTTPRoutesDelete())
+	http.AddCommand(c.HTTPRoutesList())
+
+	root.AddCommand(http)
+
 	// User
 	root.AddCommand(c.UserCurrent())
 

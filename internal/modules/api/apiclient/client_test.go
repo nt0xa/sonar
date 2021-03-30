@@ -368,6 +368,60 @@ func TestClient(t *testing.T) {
 			},
 			nil,
 		},
+
+		//
+		// HTTP routes
+		//
+
+		// Create
+
+		{
+			actions.HTTPRoutesCreateParams{
+				PayloadName: "payload1",
+				Method:      "PUT",
+				Path:        "/123",
+				Code:        302,
+				Headers: map[string][]string{
+					"Location": {"http://example.com"},
+				},
+				IsDynamic: true,
+			},
+			map[string]matcher{
+				"Method":    equal("PUT"),
+				"Path":      equal("/123"),
+				"Code":      equal(302),
+				"Headers":   equal(map[string][]string{"Location": {"http://example.com"}}),
+				"IsDynamic": equal(true),
+				"CreatedAt": withinDuration(time.Second * 5),
+			},
+			nil,
+		},
+
+		// List
+
+		{
+			actions.HTTPRoutesListParams{
+				PayloadName: "payload1",
+			},
+			map[string]matcher{
+				"0.Path": equal("/get"),
+				"3.Path": equal("/redirect"),
+			},
+			nil,
+		},
+
+		// Delete
+
+		{
+			actions.HTTPRoutesDeleteParams{
+				PayloadName: "payload1",
+				Index:       1,
+			},
+			map[string]matcher{
+				"Path": equal("/get"),
+			},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -411,6 +465,14 @@ func TestClient(t *testing.T) {
 				res, err = ac.UsersCreate(context.Background(), p)
 			case actions.UsersDeleteParams:
 				res, err = ac.UsersDelete(context.Background(), p)
+
+			// HTTP routes
+			case actions.HTTPRoutesCreateParams:
+				res, err = uc.HTTPRoutesCreate(context.Background(), p)
+			case actions.HTTPRoutesListParams:
+				res, err = uc.HTTPRoutesList(context.Background(), p)
+			case actions.HTTPRoutesDeleteParams:
+				res, err = uc.HTTPRoutesDelete(context.Background(), p)
 
 			// User
 			default:

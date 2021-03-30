@@ -101,6 +101,60 @@ func (api *API) EventsList(w http.ResponseWriter, r *http.Request) {
 	responseJSON(w, res, http.StatusOK)
 }
 
+func (api *API) HTTPRoutesCreate(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.HTTPRoutesCreateParams
+
+	if err := fromJSON(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.HTTPRoutesCreate(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusCreated)
+}
+
+func (api *API) HTTPRoutesDelete(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.HTTPRoutesDeleteParams
+
+	if err := fromPath(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.HTTPRoutesDelete(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
+func (api *API) HTTPRoutesList(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.HTTPRoutesListParams
+
+	if err := fromPath(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.HTTPRoutesList(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
 func (api *API) PayloadsCreate(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.PayloadsCreateParams

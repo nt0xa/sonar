@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/httpdb"
 	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/pkg/httpx"
@@ -26,11 +28,17 @@ func HTTPDefault(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("<html><body>%s</body></html>", rnd)))
 }
 
-func HTTPHandler(notify func(*httpx.Event)) http.Handler {
+func HTTPHandler(db *database.DB, origin string, notify func(*httpx.Event)) http.Handler {
 	return http.TimeoutHandler(
 		httpx.BodyReaderHandler(
 			httpx.MaxBytesHandler(
-				httpx.NotifyHandler(notify, http.HandlerFunc(HTTPDefault)),
+				httpx.NotifyHandler(
+					notify,
+					httpdb.Handler(
+						&httpdb.Routes{DB: db, Origin: origin},
+						http.HandlerFunc(HTTPDefault),
+					),
+				),
 				httpMaxBodyBytes,
 			),
 			httpMaxBodyBytes,
