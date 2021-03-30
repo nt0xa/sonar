@@ -17,6 +17,7 @@ type Actions interface {
 	DNSActions
 	UserActions
 	EventsActions
+	HTTPActions
 }
 
 type ResultHandler interface {
@@ -25,6 +26,7 @@ type ResultHandler interface {
 	UsersHandler
 	UserHandler
 	EventsHandler
+	HTTPRoutesHandler
 }
 
 type PrepareCommandFunc func(*cobra.Command, []string) errors.Error

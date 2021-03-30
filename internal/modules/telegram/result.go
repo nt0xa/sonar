@@ -164,6 +164,35 @@ func (tg *Telegram) DNSRecordsDelete(ctx context.Context, res actions.DNSRecords
 }
 
 //
+// HTTP routes
+//
+
+var (
+	httpRoute = `
+{{- $r := . -}}
+<b>[{{ $r.Index }}] - </b>{{ $r.Method }} {{ $r.Path }} -> {{ $r.Code }}`
+
+	httpRouteTemplate = tpl(httpRoute)
+
+	httpRoutesTemplate = tpl(fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end }}`, httpRoute))
+)
+
+func (tg *Telegram) HTTPRoutesCreate(ctx context.Context, res actions.HTTPRoutesCreateResult) {
+	tg.tplResult(ctx, httpRouteTemplate, res)
+}
+
+func (tg *Telegram) HTTPRoutesList(ctx context.Context, res actions.HTTPRoutesListResult) {
+	tg.tplResult(ctx, httpRoutesTemplate, res)
+}
+
+func (tg *Telegram) HTTPRoutesDelete(ctx context.Context, res actions.HTTPRoutesDeleteResult) {
+	tg.txtResult(ctx, "http route deleted")
+}
+
+//
 // Users
 //
 

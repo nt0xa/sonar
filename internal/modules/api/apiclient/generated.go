@@ -93,6 +93,57 @@ func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams
 	return res, nil
 }
 
+func (c *Client) HTTPRoutesCreate(ctx context.Context, params actions.HTTPRoutesCreateParams) (actions.HTTPRoutesCreateResult, errors.Error) {
+	var res actions.HTTPRoutesCreateResult
+
+	err := handle(c.client.R().
+		SetBody(params).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Post("/http-routes"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) HTTPRoutesDelete(ctx context.Context, params actions.HTTPRoutesDeleteParams) (actions.HTTPRoutesDeleteResult, errors.Error) {
+	var res actions.HTTPRoutesDeleteResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Delete("/http-routes/{payload}/{index}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) HTTPRoutesList(ctx context.Context, params actions.HTTPRoutesListParams) (actions.HTTPRoutesListResult, errors.Error) {
+	var res actions.HTTPRoutesListResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/http-routes/{payload}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
 	var res actions.PayloadsCreateResult
 

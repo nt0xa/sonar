@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -18,11 +19,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/pkg/httpx"
 )
 
 var (
+	db *database.DB
+
 	srvHTTP httpx.Server
 
 	tlsConfig *tls.Config
@@ -32,8 +36,12 @@ var (
 
 	g = testutils.Globals(
 		testutils.TLSConfig("../../test/cert.pem", "../../test/key.pem", &tlsConfig),
-		testutils.HTTPX(notifier.Notify, nil, &srvHTTP),
-		testutils.HTTPX(notifier.Notify, &tlsConfig, &srvHTTPS),
+		testutils.DB(&database.Config{
+			DSN:        os.Getenv("SONAR_DB_DSN"),
+			Migrations: "../../internal/database/migrations",
+		}, &db),
+		testutils.HTTPX(&db, notifier.Notify, nil, &srvHTTP),
+		testutils.HTTPX(&db, notifier.Notify, &tlsConfig, &srvHTTPS),
 	)
 )
 

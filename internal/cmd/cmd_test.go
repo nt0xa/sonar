@@ -239,6 +239,52 @@ func TestCmd(t *testing.T) {
 			},
 			(actions.EventsGetResult)(nil),
 		},
+
+		//
+		// HTTP
+		//
+
+		// Create
+
+		{
+			"http -p payload new -m POST -P /test -c 201 -H 'Content-Type: application/json' -d test",
+			"HTTPRoutesCreate",
+			actions.HTTPRoutesCreateParams{
+				PayloadName: "payload",
+				Method:      "POST",
+				Path:        "/test",
+				Code:        201,
+				Headers: map[string][]string{
+					"Content-Type": {"application/json"},
+				},
+				Body:      "dGVzdA==",
+				IsDynamic: true,
+			},
+			(actions.HTTPRoutesCreateResult)(nil),
+		},
+
+		// List
+
+		{
+			"http list -p payload",
+			"HTTPRoutesList",
+			actions.HTTPRoutesListParams{
+				PayloadName: "payload",
+			},
+			(actions.HTTPRoutesListResult)(nil),
+		},
+
+		// Delete
+
+		{
+			"http del -p payload 1",
+			"HTTPRoutesDelete",
+			actions.HTTPRoutesDeleteParams{
+				PayloadName: "payload",
+				Index:       1,
+			},
+			(actions.HTTPRoutesDeleteResult)(nil),
+		},
 	}
 
 	for _, tt := range tests {

@@ -1,6 +1,7 @@
 package valid
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -99,6 +100,18 @@ func DNSRecord(typ string) validation.Rule {
 	}
 
 	return validation.Required
+}
+
+func Base64(value interface{}) error {
+	val, _ := value.(string)
+
+	_, err := base64.StdEncoding.DecodeString(val)
+
+	if err != nil {
+		return fmt.Errorf("invalid base64 data")
+	}
+
+	return nil
 }
 
 type OneOfRule struct {

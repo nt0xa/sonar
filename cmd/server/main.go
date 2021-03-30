@@ -157,6 +157,8 @@ func main() {
 		srv := httpx.New(
 			":80",
 			server.HTTPHandler(
+				db,
+				cfg.Domain,
 				func(e *httpx.Event) {
 					events.Emit(server.HTTPEvent(e))
 				},
@@ -177,6 +179,8 @@ func main() {
 		srv := httpx.New(
 			":443",
 			server.HTTPHandler(
+				db,
+				cfg.Domain,
 				func(e *httpx.Event) {
 					events.Emit(server.HTTPEvent(e))
 				},

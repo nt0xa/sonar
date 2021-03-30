@@ -553,6 +553,130 @@ func TestAPI(t *testing.T) {
 			},
 			status: 200,
 		},
+
+		//
+		// HTTP routes
+		//
+
+		// Create
+
+		{
+			method: "POST",
+			path:   "/http-routes",
+			token:  User1Token,
+			json: `{
+				"payloadName": "payload1",
+				"method": "GET",
+				"path": "/test",
+				"code": 200,
+				"headers": {"Test":["test"]},
+				"body": "dGVzdA==",
+				"isDynamic": true
+			}`,
+			schema: (actions.HTTPRoutesCreateResult)(nil),
+			result: map[string]matcher{
+				"$.method":    equal("GET"),
+				"$.path":      equal("/test"),
+				"$.code":      equal(200),
+				"$.headers":   equal(map[string]interface{}{"Test": []interface{}{"test"}}),
+				"$.body":      equal("dGVzdA=="),
+				"$.isDynamic": equal(true),
+				"$.createdAt": withinDuration(time.Second * 10),
+			},
+			status: 201,
+		},
+		{
+			method: "POST",
+			path:   "/http-routes",
+			token:  User1Token,
+			json:   `{"invalid": 1}`,
+			schema: &errors.BadFormatError{},
+			result: map[string]matcher{
+				"$.message": contains("format"),
+				"$.details": contains("json"),
+			},
+			status: 400,
+		},
+		{
+			method: "POST",
+			path:   "/http-routes",
+			token:  User1Token,
+			json:   `{"payloadName": "payload1", "path": ""}`,
+			schema: &errors.ValidationError{},
+			result: map[string]matcher{
+				"$.message": contains("validation"),
+			},
+			status: 400,
+		},
+		{
+			method: "POST",
+			path:   "/http-routes",
+			token:  User1Token,
+			json:   `{"payloadName": "payload1", "method": "GET", "path": "/get", "code": 200}`,
+			schema: &errors.ValidationError{},
+			result: map[string]matcher{
+				"$.message": contains("conflict"),
+			},
+			status: 409,
+		},
+
+		// List
+
+		{
+			method: "GET",
+			path:   "/http-routes/payload1",
+			token:  User1Token,
+			schema: (actions.HTTPRoutesListResult)(nil),
+			result: map[string]matcher{
+				"$":         length(5),
+				"$[0].path": equal("/get"),
+				"$[1].path": equal("/post"),
+			},
+			status: 200,
+		},
+		{
+			method: "GET",
+			path:   "/http-routes/not-exist",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
+
+		// Delete
+
+		{
+			method: "DELETE",
+			path:   "/http-routes/payload1/1",
+			token:  User1Token,
+			schema: (actions.HTTPRoutesDeleteResult)(nil),
+			result: map[string]matcher{
+				"$.path": equal("/get"),
+			},
+			status: 200,
+		},
+		{
+			method: "DELETE",
+			path:   "/http-routes/not-exist/1",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
+		{
+			method: "DELETE",
+			path:   "/http-routes/payload1/1337",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
 	}
 
 	for _, tt := range tests {

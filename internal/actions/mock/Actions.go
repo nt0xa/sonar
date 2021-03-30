@@ -142,6 +142,81 @@ func (_m *Actions) EventsList(_a0 context.Context, _a1 actions.EventsListParams)
 	return r0, r1
 }
 
+// HTTPRoutesCreate provides a mock function with given fields: _a0, _a1
+func (_m *Actions) HTTPRoutesCreate(_a0 context.Context, _a1 actions.HTTPRoutesCreateParams) (actions.HTTPRoutesCreateResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 actions.HTTPRoutesCreateResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.HTTPRoutesCreateParams) actions.HTTPRoutesCreateResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.HTTPRoutesCreateResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(context.Context, actions.HTTPRoutesCreateParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// HTTPRoutesDelete provides a mock function with given fields: _a0, _a1
+func (_m *Actions) HTTPRoutesDelete(_a0 context.Context, _a1 actions.HTTPRoutesDeleteParams) (actions.HTTPRoutesDeleteResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 actions.HTTPRoutesDeleteResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.HTTPRoutesDeleteParams) actions.HTTPRoutesDeleteResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.HTTPRoutesDeleteResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(context.Context, actions.HTTPRoutesDeleteParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
+// HTTPRoutesList provides a mock function with given fields: _a0, _a1
+func (_m *Actions) HTTPRoutesList(_a0 context.Context, _a1 actions.HTTPRoutesListParams) (actions.HTTPRoutesListResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	var r0 actions.HTTPRoutesListResult
+	if rf, ok := ret.Get(0).(func(context.Context, actions.HTTPRoutesListParams) actions.HTTPRoutesListResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.HTTPRoutesListResult)
+		}
+	}
+
+	var r1 errors.Error
+	if rf, ok := ret.Get(1).(func(context.Context, actions.HTTPRoutesListParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // PayloadsCreate provides a mock function with given fields: _a0, _a1
 func (_m *Actions) PayloadsCreate(_a0 context.Context, _a1 actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)

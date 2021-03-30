@@ -14,7 +14,7 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func TestCreateDNSRecord_Success(t *testing.T) {
+func TestDNSRecordsCreate_Success(t *testing.T) {
 
 	tests := []struct {
 		name string
@@ -96,7 +96,7 @@ func TestCreateDNSRecord_Success(t *testing.T) {
 	}
 }
 
-func TestCreateDNSRecord_Error(t *testing.T) {
+func TestDNSRecordsCreate_Error(t *testing.T) {
 
 	tests := []struct {
 		name   string
@@ -257,7 +257,7 @@ func TestCreateDNSRecord_Error(t *testing.T) {
 	}
 }
 
-func TestDeleteDNSRecord_Success(t *testing.T) {
+func TestDNSRecordsDelete_Success(t *testing.T) {
 
 	tests := []struct {
 		name string
@@ -304,7 +304,7 @@ func TestDeleteDNSRecord_Success(t *testing.T) {
 	}
 }
 
-func TestDeleteDNSRecord_Error(t *testing.T) {
+func TestDNSRecordsDelete_Error(t *testing.T) {
 	tests := []struct {
 		name   string
 		userID int
@@ -370,7 +370,7 @@ func TestDeleteDNSRecord_Error(t *testing.T) {
 	}
 }
 
-func TestListDNSRecords_Success(t *testing.T) {
+func TestDNSRecordsList_Success(t *testing.T) {
 
 	tests := []struct {
 		name  string
@@ -403,13 +403,14 @@ func TestListDNSRecords_Success(t *testing.T) {
 
 			ctx := actionsdb.SetUser(context.Background(), u)
 
-			_, err = acts.DNSRecordsList(ctx, tt.p)
+			list, err := acts.DNSRecordsList(ctx, tt.p)
 			assert.NoError(t, err)
+			assert.Len(t, list, tt.count)
 		})
 	}
 }
 
-func TestListDNSRecords_Error(t *testing.T) {
+func TestDNSRecordsList_Error(t *testing.T) {
 
 	tests := []struct {
 		name   string
