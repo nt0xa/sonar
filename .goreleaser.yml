@@ -35,6 +35,20 @@ archives:
       windows: Windows
       amd64: x86_64
 
+brews:
+  - name: sonar
+
+    ids:
+    - client
+    - bar
+
+    tap:
+      owner: bi-zone
+      name: homebrew-tap
+
+    install: |
+      bin.install "sonar"
+
 checksum:
   name_template: 'checksums.txt'
 
