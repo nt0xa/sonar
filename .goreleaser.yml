@@ -27,7 +27,8 @@ builds:
       - amd64
 
 archives:
-  - builds:
+  - id: client
+    builds:
      - client
     replacements:
       darwin: Darwin
