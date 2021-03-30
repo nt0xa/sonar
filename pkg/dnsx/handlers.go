@@ -161,6 +161,7 @@ func (h *challengeHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 func handleSucceed(w dns.ResponseWriter, r *dns.Msg, answer []dns.RR) {
 	m := new(dns.Msg)
+	m.Authoritative = true
 	m.SetReply(r)
 	m.Answer = answer
 	_ = w.WriteMsg(m)

@@ -41,6 +41,13 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 		return nil, err
 	}
 
+	count, err := h.DB.DNSRecordsGetCountByPayloadID(payload.ID)
+	if err != nil {
+		return nil, err
+	} else if count == 0 {
+		return nil, nil
+	}
+
 	// Build payload subdomain.
 	// [test1 test2 0a88a087] -> test1.test2
 	subdomain := strings.Join(parts[:len(parts)-1], ".")
