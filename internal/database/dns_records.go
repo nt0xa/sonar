@@ -84,6 +84,16 @@ func (db *DB) DNSRecordsGetByPayloadID(payloadID int64) ([]*models.DNSRecord, er
 	return res, err
 }
 
+func (db *DB) DNSRecordsGetCountByPayloadID(payloadID int64) (int, error) {
+	var res int
+
+	query := "SELECT COUNT(*) FROM dns_records WHERE payload_id = $1"
+
+	err := db.Get(&res, query, payloadID)
+
+	return res, err
+}
+
 func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
