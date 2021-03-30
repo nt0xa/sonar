@@ -124,6 +124,19 @@ func TestDNSRecordsGetByPayloadID(t *testing.T) {
 	assert.EqualValues(t, 9, l[len(l)-1].Index)
 }
 
+func TestDNSRecordsGetCountByPayloadID(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	res, err := db.DNSRecordsGetCountByPayloadID(1)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 9, res)
+
+	res, err = db.DNSRecordsGetCountByPayloadID(2)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0, res)
+}
+
 func TestDNSRecordsGetByPayloadIDAndIndex(t *testing.T) {
 	setup(t)
 	defer teardown(t)
