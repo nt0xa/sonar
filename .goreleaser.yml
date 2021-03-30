@@ -40,7 +40,6 @@ brews:
 
     ids:
     - client
-    - bar
 
     tap:
       owner: bi-zone
