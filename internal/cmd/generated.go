@@ -152,6 +152,93 @@ func (c *command) EventsList() *cobra.Command {
 	return cmd
 }
 
+func (c *command) HTTPRoutesCreate() *cobra.Command {
+	var params actions.HTTPRoutesCreateParams
+
+	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.HTTPRoutesCreate(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.HTTPRoutesCreate(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
+func (c *command) HTTPRoutesDelete() *cobra.Command {
+	var params actions.HTTPRoutesDeleteParams
+
+	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.HTTPRoutesDelete(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.HTTPRoutesDelete(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
+func (c *command) HTTPRoutesList() *cobra.Command {
+	var params actions.HTTPRoutesListParams
+
+	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params)
+
+	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
+
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+		if err := params.Validate(); err != nil {
+			return errors.Validation(err)
+		}
+
+		res, err := c.actions.HTTPRoutesList(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		c.handler.HTTPRoutesList(cmd.Context(), res)
+
+		return nil
+	})
+
+	return cmd
+}
+
 func (c *command) PayloadsCreate() *cobra.Command {
 	var params actions.PayloadsCreateParams
 

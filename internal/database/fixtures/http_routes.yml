@@ -1,0 +1,54 @@
+- id: 1
+  payload_id: 1
+  method: GET
+  path: /get
+  code: 200
+  headers:
+    Test: [test]
+    Dynamic: ['Header: {{ .Header "test" }}']
+  body: 'Body: {{ .Query "test" }}'
+  is_dynamic: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 2
+  payload_id: 1
+  method: POST
+  path: /post
+  code: 201
+  headers:
+    Test: [test]
+  body: 'Body: {{ .Form "test" }}'
+  is_dynamic: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 3
+  payload_id: 1
+  method: DELETE
+  path: /delete
+  code: 200
+  headers:
+    Test: [test]
+  body: '{{ .Method }} {{ .Scheme }} {{ .Path }} {{ .RawQuery }} {{ .RequestURI }}'
+  is_dynamic: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 4
+  payload_id: 1
+  method: GET
+  path: /redirect
+  code: 302
+  headers:
+    Location: [http://example.com]
+  body: body
+  is_dynamic: false
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 5
+  payload_id: 1
+  method: ANY
+  path: /route/{test}
+  code: 200
+  headers: {}
+  body: 'Route: {{ .URLParam "test" }}'
+  is_dynamic: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'

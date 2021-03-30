@@ -69,6 +69,16 @@ func (api *API) Router() http.Handler {
 		})
 	})
 
+	r.Route("/http-routes", func(r chi.Router) {
+		r.Post("/", api.HTTPRoutesCreate)
+		r.Route("/{payload}", func(r chi.Router) {
+			r.Get("/", api.HTTPRoutesList)
+			r.Route("/{index}", func(r chi.Router) {
+				r.Delete("/", api.HTTPRoutesDelete)
+			})
+		})
+	})
+
 	r.Route("/events", func(r chi.Router) {
 		r.Route("/{payload}", func(r chi.Router) {
 			r.Get("/", api.EventsList)

@@ -237,13 +237,13 @@ func TLSConfig(cert, key string, out **tls.Config) Global {
 	}
 }
 
-func HTTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, srv *httpx.Server) Global {
+func HTTPX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, srv *httpx.Server) Global {
 	return &global{
 		setup: func() error {
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
-			h := server.HTTPHandler(func(e *httpx.Event) {
+			h := server.HTTPHandler(*db, TestDomain, func(e *httpx.Event) {
 				notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]interface{}{
 					"tls": e.Secure,
 				})

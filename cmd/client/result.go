@@ -127,6 +127,35 @@ func (h *handler) DNSRecordsDelete(ctx context.Context, res actions.DNSRecordsDe
 }
 
 //
+// HTTP routes
+//
+
+var (
+	httpRoute = `
+{{- $r := . -}}
+<bold>[{{ $r.Index }}]</> - {{ $r.Method }} {{ $r.Path }} -> {{ $r.Code }}`
+
+	httpRouteTemplate = tpl(httpRoute)
+
+	httpRoutesTemplate = tpl(fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end }}`, httpRoute))
+)
+
+func (h *handler) HTTPRoutesCreate(ctx context.Context, res actions.HTTPRoutesCreateResult) {
+	h.tplResult(httpRouteTemplate, res)
+}
+
+func (h *handler) HTTPRoutesList(ctx context.Context, res actions.HTTPRoutesListResult) {
+	h.tplResult(httpRoutesTemplate, res)
+}
+
+func (h *handler) HTTPRoutesDelete(ctx context.Context, res actions.HTTPRoutesDeleteResult) {
+	h.txtResult("http route deleted")
+}
+
+//
 // Users
 //
 

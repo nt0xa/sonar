@@ -40,6 +40,21 @@ func (_m *ResultHandler) EventsList(_a0 context.Context, _a1 actions.EventsListR
 	_m.Called(_a0, _a1)
 }
 
+// HTTPRoutesCreate provides a mock function with given fields: _a0, _a1
+func (_m *ResultHandler) HTTPRoutesCreate(_a0 context.Context, _a1 actions.HTTPRoutesCreateResult) {
+	_m.Called(_a0, _a1)
+}
+
+// HTTPRoutesDelete provides a mock function with given fields: _a0, _a1
+func (_m *ResultHandler) HTTPRoutesDelete(_a0 context.Context, _a1 actions.HTTPRoutesDeleteResult) {
+	_m.Called(_a0, _a1)
+}
+
+// HTTPRoutesList provides a mock function with given fields: _a0, _a1
+func (_m *ResultHandler) HTTPRoutesList(_a0 context.Context, _a1 actions.HTTPRoutesListResult) {
+	_m.Called(_a0, _a1)
+}
+
 // PayloadsCreate provides a mock function with given fields: _a0, _a1
 func (_m *ResultHandler) PayloadsCreate(_a0 context.Context, _a1 actions.PayloadsCreateResult) {
 	_m.Called(_a0, _a1)
