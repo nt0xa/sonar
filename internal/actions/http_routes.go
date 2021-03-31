@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
@@ -79,7 +78,6 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 
 	var (
 		headers []string
-		file    bool
 	)
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
@@ -89,9 +87,6 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
 	cmd.Flags().IntVarP(&p.Code, "code", "c", 200, "Response status code")
 	cmd.Flags().BoolVarP(&p.IsDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
-
-	// TODO: only for console client
-	cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		hh := make(map[string][]string)
@@ -110,18 +105,7 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 		}
 		p.Headers = hh
 
-		var body []byte
-
-		if file {
-			b, err := ioutil.ReadFile(args[0])
-			if err != nil {
-				return errors.Validationf("fail to read file %q", args[0])
-			}
-			body = b
-		} else {
-			body = []byte(args[0])
-		}
-
+		body := []byte(args[0])
 		p.Body = base64.StdEncoding.EncodeToString(body)
 
 		return nil
