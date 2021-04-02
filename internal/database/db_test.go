@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
@@ -16,11 +15,8 @@ var (
 	tf *testfixtures.Context
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "migrations",
-		}, &db),
-		testutils.Fixtures(&db, "fixtures", &tf),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
 	)
 )
 

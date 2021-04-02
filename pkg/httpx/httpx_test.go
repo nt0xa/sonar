@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -35,11 +34,8 @@ var (
 	notifier = &testutils.NotifierMock{}
 
 	g = testutils.Globals(
-		testutils.TLSConfig("../../test/cert.pem", "../../test/key.pem", &tlsConfig),
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../../internal/database/migrations",
-		}, &db),
+		testutils.TLSConfig(&tlsConfig),
+		testutils.DB(&db),
 		testutils.HTTPX(&db, notifier.Notify, nil, &srvHTTP),
 		testutils.HTTPX(&db, notifier.Notify, &tlsConfig, &srvHTTPS),
 	)

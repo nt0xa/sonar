@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -58,11 +57,8 @@ var (
 	log = logrus.New()
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../../database/migrations",
-		}, &db),
-		testutils.Fixtures(&db, "../../database/fixtures", &tf),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
 		testutils.ActionsDB(&db, log, &acts),
 		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
 	)

@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
@@ -21,11 +20,8 @@ var (
 	log = logrus.New()
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../database/migrations",
-		}, &db),
-		testutils.Fixtures(&db, "../database/fixtures", &tf),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
 		testutils.ActionsDB(&db, log, &acts),
 	)
 )
