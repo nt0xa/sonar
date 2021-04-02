@@ -3,7 +3,6 @@ package dnsx_test
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
 	"testing"
 
@@ -29,11 +28,8 @@ var (
 	notifier = &testutils.NotifierMock{}
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../../internal/database/migrations",
-		}, &db),
-		testutils.Fixtures(&db, "../../internal/database/fixtures", &tf),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
 		testutils.DNSX(&db, notifier.Notify, &h, &srv),
 	)
 )

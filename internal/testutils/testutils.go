@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -27,6 +29,14 @@ import (
 	"github.com/bi-zone/sonar/pkg/dnsx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
+)
+
+var (
+	_, b, _, _ = runtime.Caller(0)
+
+	BasePath   = filepath.Dir(b)
+	TestDomain = "sonar.local"
+	TestIP     = net.ParseIP("127.0.0.1")
 )
 
 type Global interface {
@@ -105,19 +115,19 @@ func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]
 	m.Called(remoteAddr, data, meta)
 }
 
-var (
-	TestDomain = "sonar.local"
-	TestIP     = net.ParseIP("127.0.0.1")
-)
+func DB(out **database.DB) Global {
 
-func DB(cfg *database.Config, out **database.DB) Global {
 	return &global{
 		setup: func() error {
-			if err := cfg.Validate(); err != nil {
-				return err
+			var dsn string
+			if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
+				return fmt.Errorf("empty SONAR_DB_DSN")
 			}
 
-			db, err := database.New(cfg)
+			db, err := database.New(&database.Config{
+				DSN:        dsn,
+				Migrations: BasePath + "/../database/migrations",
+			})
 			if err != nil {
 				return fmt.Errorf("fail to init database: %w", err)
 			}
@@ -140,10 +150,14 @@ func DB(cfg *database.Config, out **database.DB) Global {
 	}
 }
 
-func Fixtures(db **database.DB, path string, out **testfixtures.Context) Global {
+func Fixtures(db **database.DB, out **testfixtures.Context) Global {
 	return &global{
 		setup: func() error {
-			fixtures, err := testfixtures.NewFolder((*db).DB.DB, &testfixtures.PostgreSQL{}, path)
+			fixtures, err := testfixtures.NewFolder(
+				(*db).DB.DB,
+				&testfixtures.PostgreSQL{},
+				BasePath+"/../database/fixtures",
+			)
 			if err != nil {
 				return fmt.Errorf("fail to load fixtures: %w", err)
 			}
@@ -220,10 +234,13 @@ func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}
 	}
 }
 
-func TLSConfig(cert, key string, out **tls.Config) Global {
+func TLSConfig(out **tls.Config) Global {
 	return &global{
 		setup: func() error {
-			cert, err := tls.LoadX509KeyPair(cert, key)
+			cert, err := tls.LoadX509KeyPair(
+				BasePath+"/../../test/cert.pem",
+				BasePath+"/../../test/key.pem",
+			)
 			if err != nil {
 				return err
 			}

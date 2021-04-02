@@ -24,7 +24,7 @@ var (
 	notifier = &testutils.NotifierMock{}
 
 	g = testutils.Globals(
-		testutils.TLSConfig("../../test/cert.pem", "../../test/key.pem", &tlsConfig),
+		testutils.TLSConfig(&tlsConfig),
 		testutils.SMTPX(notifier.Notify, &tlsConfig, false, &srv),
 		testutils.SMTPX(notifier.Notify, &tlsConfig, true, &srvTLS),
 	)

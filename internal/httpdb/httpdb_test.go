@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"testing"
 	"time"
 
@@ -49,12 +48,9 @@ var (
 	srvHTTPS  httpx.Server
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../../internal/database/migrations",
-		}, &db),
-		testutils.Fixtures(&db, "../../internal/database/fixtures", &tf),
-		testutils.TLSConfig("../../test/cert.pem", "../../test/key.pem", &tlsConfig),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
+		testutils.TLSConfig(&tlsConfig),
 		testutils.HTTPX(&db, notify, nil, &srvHTTP),
 		testutils.HTTPX(&db, notify, &tlsConfig, &srvHTTPS),
 	)
