@@ -3,7 +3,6 @@ package dnsdb_test
 import (
 	"fmt"
 	"net"
-	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
@@ -27,11 +26,8 @@ var (
 	notifier = &testutils.NotifierMock{}
 
 	g = testutils.Globals(
-		testutils.DB(&database.Config{
-			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../database/migrations",
-		}, &db),
-		testutils.Fixtures(&db, "../database/fixtures", &tf),
+		testutils.DB(&db),
+		testutils.Fixtures(&db, &tf),
 		testutils.DNSX(&db, notify, &h, &srv),
 	)
 )
