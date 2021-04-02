@@ -1,16 +1,14 @@
-package dnsx_test
+package dnsdb_test
 
 import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
@@ -31,12 +29,15 @@ var (
 	g = testutils.Globals(
 		testutils.DB(&database.Config{
 			DSN:        os.Getenv("SONAR_DB_DSN"),
-			Migrations: "../../internal/database/migrations",
+			Migrations: "../database/migrations",
 		}, &db),
-		testutils.Fixtures(&db, "../../internal/database/fixtures", &tf),
-		testutils.DNSX(&db, notifier.Notify, &h, &srv),
+		testutils.Fixtures(&db, "../database/fixtures", &tf),
+		testutils.DNSX(&db, notify, &h, &srv),
 	)
 )
+
+// We don't about notifications here, notifications are tested in dnsx_test.
+func notify(net.Addr, []byte, map[string]interface{}) {}
 
 func TestMain(m *testing.M) {
 	testutils.TestMain(m, g)
@@ -67,6 +68,57 @@ var tests = []struct {
 	{"c1da9f3d.sonar.local.", dns.TypeA, [][]string{
 		{"127.0.0.1"},
 	}},
+
+	// Dynamic
+	{"test-a.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+	{"test-aaaa.c1da9f3d.sonar.local.", dns.TypeAAAA, [][]string{
+		{"2001:db8:85a3::8a2e:370:7334"},
+	}},
+	{"test-mx.c1da9f3d.sonar.local.", dns.TypeMX, [][]string{
+		{"10 mx.sonar.local"},
+	}},
+	{"test-txt.c1da9f3d.sonar.local.", dns.TypeTXT, [][]string{
+		{"txt1", "txt2"},
+	}},
+	{"test-cname.c1da9f3d.sonar.local.", dns.TypeCNAME, [][]string{
+		{"example.com"},
+	}},
+	{"test.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+	{"test2.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+
+	// Strategies
+	{"test-all.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+	}},
+	{"test-round-robin.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+		{"192.168.1.2", "192.168.1.3", "192.168.1.1"},
+		{"192.168.1.3", "192.168.1.1", "192.168.1.2"},
+		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
+	}},
+	{"test-rebind.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+		{"192.168.1.2"},
+		{"192.168.1.3"},
+		{"192.168.1.3"},
+	}},
+
+	// No fallback if any custom DNS records added
+	{"test.6564e0c7.sonar.local.", dns.TypeA, [][]string{
+		{"1.1.1.1"},
+	}},
+	{"test.6564e0c7.sonar.local.", dns.TypeAAAA, [][]string{
+		{},
+	}},
+	{"test.6564e0c7.sonar.local.", dns.TypeMX, [][]string{
+		{},
+	}},
 }
 
 func TestDNS(t *testing.T) {
@@ -76,10 +128,6 @@ func TestDNS(t *testing.T) {
 		t.Run(tname, func(t *testing.T) {
 			setup(t)
 			defer teardown(t)
-
-			name := tt.name
-
-			remoteAddr := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 31337}
 
 			msg := new(dns.Msg)
 			msg.Id = dns.Id()
@@ -91,22 +139,9 @@ func TestDNS(t *testing.T) {
 				Qclass: dns.ClassINET,
 			}
 
-			c := &dns.Client{
-				Dialer: &net.Dialer{
-					LocalAddr: remoteAddr,
-				},
-			}
+			c := new(dns.Client)
 
 			for i := 0; i < len(tt.results); i++ {
-				notifier.
-					On("Notify", remoteAddr, mock.MatchedBy(func(data []byte) bool {
-						return strings.Contains(string(data), name)
-					}),
-						map[string]interface{}{
-							"qtype": dns.Type(tt.qtype).String(),
-							"name":  strings.Trim(tt.name, "."),
-						}).
-					Return()
 
 				in, _, err := c.Exchange(msg, "127.0.0.1:1053")
 				require.NoError(t, err)
