@@ -77,7 +77,7 @@ func main() {
 	// Command
 	//
 
-	root := cmd.New(client, &handler{u.Hostname()}, nil).Root(user)
+	root := cmd.New(client, &terminalHandler{u.Hostname()}, nil).Root(user)
 	root.AddCommand(completionCmd)
 	root.SilenceErrors = true
 	root.SilenceUsage = true
