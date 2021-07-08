@@ -9,8 +9,9 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/gookit/color"
+
+	"github.com/bi-zone/sonar/internal/actions"
 )
 
 func tpl(s string) *template.Template {
@@ -25,6 +26,8 @@ func tpl(s string) *template.Template {
 		Parse(s),
 	)
 }
+
+var _ actions.ResultHandler = &terminalHandler{}
 
 type terminalHandler struct {
 	domain string
@@ -58,8 +61,10 @@ func (h *terminalHandler) tplResult(tpl *template.Template, data interface{}) {
 //
 
 var userCurrentTemplate = tpl("" +
-	"<bold>Telegram ID:</> {{ .TelegramID }}\n" +
-	"<bold>API token:</> {{ .APIToken }}",
+	"<bold>Name:</> {{ .Name }}\n" +
+	"<bold>Telegram ID:</> {{ .Params.TelegramID }}\n" +
+	"<bold>API token:</> {{ .Params.APIToken }}\n" +
+	"<bold>Admin:</> {{ .IsAdmin }}",
 )
 
 func (h *terminalHandler) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
