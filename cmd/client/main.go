@@ -10,6 +10,7 @@ import (
 	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
 	"github.com/bi-zone/sonar/internal/utils/slice"
 	"github.com/gookit/color"
+	"github.com/spf13/cobra"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 			slice.StringsContains(os.Args, "-h") ||
 			slice.StringsContains(os.Args, "--help")) {
 		root := cmd.New(nil, nil, nil).Root(&actions.User{})
+		addJSONFlag(root)
 		root.AddCommand(completionCmd)
 		root.Execute()
 		return
@@ -77,13 +79,39 @@ func main() {
 	// Command
 	//
 
-	root := cmd.New(client, &handler{u.Hostname()}, nil).Root(user)
+	var handler actions.ResultHandler
+
+	// Args are is not yet parsed so just seach for "--json".
+	if slice.StringsContains(os.Args, "--json") {
+		handler = &jsonHandler{os.Stdout}
+	} else {
+		handler = &terminalHandler{u.Hostname()}
+	}
+
+	root := cmd.New(client, handler, nil).Root(user)
 	root.AddCommand(completionCmd)
+	addJSONFlag(root)
 	root.SilenceErrors = true
 	root.SilenceUsage = true
+
 	if err := root.Execute(); err != nil {
 		fatal(err)
 	}
+}
+
+func addJSONFlag(root *cobra.Command) {
+	for _, cmd := range root.Commands() {
+		if cmd.HasSubCommands() {
+			addJSONFlag(cmd)
+		}
+
+		if cmd.Name() == "help" || cmd.Name() == "completion" {
+			continue
+		}
+
+		cmd.Flags().Bool("json", false, "JSON output")
+	}
+
 }
 
 func fatal(data interface{}) {
