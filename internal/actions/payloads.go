@@ -30,6 +30,7 @@ type Payload struct {
 	Subdomain       string    `json:"subdomain"`
 	Name            string    `json:"name"`
 	NotifyProtocols []string  `json:"notifyProtocols"`
+	StoreEvents     bool      `json:"storeEvents"`
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
@@ -40,6 +41,7 @@ type Payload struct {
 type PayloadsCreateParams struct {
 	Name            string   `err:"name"            json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
+	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsCreateParams) Validate() error {
@@ -64,6 +66,7 @@ func PayloadsCreateCommand(p *PayloadsCreateParams) (*cobra.Command, PrepareComm
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
 		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
+	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -79,6 +82,7 @@ type PayloadsUpdateParams struct {
 	Name            string   `err:"name"            json:"-"               path:"name"`
 	NewName         string   `err:"newName"         json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
+	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsUpdateParams) Validate() error {
@@ -103,6 +107,7 @@ func PayloadsUpdateCommand(p *PayloadsUpdateParams) (*cobra.Command, PrepareComm
 
 	cmd.Flags().StringP("name", "n", "", "Payload name")
 	cmd.Flags().StringSliceP("protocols", "p", []string{}, "Protocols to notify")
+	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
