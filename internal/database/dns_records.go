@@ -26,6 +26,8 @@ func (db *DB) DNSRecordsCreate(o *models.DNSRecord, withIndex bool) error {
 		return err
 	}
 
+	defer nstmt.Close()
+
 	return nstmt.QueryRowx(o).Scan(&o.ID, &o.Index)
 }
 
