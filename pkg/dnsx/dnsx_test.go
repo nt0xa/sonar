@@ -16,6 +16,7 @@ import (
 	"github.com/bi-zone/sonar/pkg/dnsrec"
 	"github.com/bi-zone/sonar/pkg/dnsx"
 
+	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/testutils"
 )
@@ -34,7 +35,7 @@ var (
 	g = testutils.Globals(
 		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
-		testutils.DNSX(&db, notifier.Notify, &h, &srv),
+		testutils.DNSX(&server.DNSConfig{}, &db, notifier.Notify, &h, &srv),
 	)
 )
 

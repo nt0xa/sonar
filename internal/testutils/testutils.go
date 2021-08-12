@@ -205,13 +205,13 @@ func APIClient(srv **httptest.Server, token string, out **apiclient.Client, prox
 	}
 }
 
-func DNSX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{}), h *dnsx.HandlerProvider, srv *dnsx.Server) Global {
+func DNSX(cfg *server.DNSConfig, db **database.DB, notify func(net.Addr, []byte, map[string]interface{}), h *dnsx.HandlerProvider, srv *dnsx.Server) Global {
 	return &global{
 		setup: func() error {
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
-			*h = server.DNSHandler(*db, TestDomain, TestIP, func(e *dnsx.Event) {
+			*h = server.DNSHandler(cfg, *db, TestDomain, TestIP, func(e *dnsx.Event) {
 				notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
 					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
 					"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),

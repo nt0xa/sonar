@@ -1,10 +1,12 @@
 package server
 
 import (
+	"io/ioutil"
 	"net"
 	"strings"
 
 	"github.com/fatih/structs"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/miekg/dns"
 
 	"github.com/bi-zone/sonar/internal/database"
@@ -38,15 +40,45 @@ var dnsTemplate = tpl.MustParse(`
 @ 60 IN CAA 60 issue "letsencrypt.org"
 `)
 
-func DNSDefaultRecords(origin string, ip net.IP) *dnsrec.Records {
-	s, _ := tpl.RenderToString(dnsTemplate, ip)
+type DNSConfig struct {
+	Zone string `json:"zone"`
+}
+
+func (c DNSConfig) Validate() error {
+	return validation.ValidateStruct(&c)
+}
+
+func parseDNSRecords(s, origin string, ip net.IP) *dnsrec.Records {
 	rrs := dnsutils.Must(dnsutils.ParseRecords(s, origin))
 	return dnsrec.New(rrs)
 }
 
-func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Event)) dnsx.HandlerProvider {
+func DNSDefaultRecords(origin string, ip net.IP) *dnsrec.Records {
+	s, _ := tpl.RenderToString(dnsTemplate, ip)
+	return parseDNSRecords(s, origin, ip)
+}
+
+func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsrec.Records {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil
+	}
+	return parseDNSRecords(string(data), origin, ip)
+}
+
+func DNSHandler(cfg *DNSConfig, db *database.DB, origin string, ip net.IP, notify func(*dnsx.Event)) dnsx.HandlerProvider {
 	// Do not handle DNS queries which are not subdomains of the origin.
 	h := dns.NewServeMux()
+
+	var fallback dns.Handler
+
+	defaultRecords := DNSDefaultRecords(origin, ip)
+
+	if extraRecords := DNSZoneFileRecords(cfg.Zone, origin, ip); extraRecords != nil {
+		fallback = dnsx.ChainHandler(extraRecords, dnsx.RecordSetHandler(defaultRecords))
+	} else {
+		fallback = dnsx.RecordSetHandler(defaultRecords)
+	}
 
 	h.Handle(origin,
 		dnsx.NotifyHandler(
@@ -55,7 +87,7 @@ func DNSHandler(db *database.DB, origin string, ip net.IP, notify func(*dnsx.Eve
 				// Database records.
 				&dnsdb.Records{DB: db, Origin: origin},
 				// Fallback records.
-				dnsx.RecordSetHandler(DNSDefaultRecords(origin, ip)),
+				fallback,
 			),
 		),
 	)
