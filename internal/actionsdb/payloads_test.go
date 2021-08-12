@@ -371,7 +371,7 @@ func TestUpdatePayload_Error(t *testing.T) {
 			ctx,
 			actions.PayloadsUpdateParams{
 				Name:        "payload1",
-				StoreEvents: -1,
+				StoreEvents: -10,
 			},
 			&errors.ValidationError{},
 		},
