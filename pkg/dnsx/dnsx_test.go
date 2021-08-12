@@ -8,14 +8,16 @@ import (
 
 	"github.com/go-testfixtures/testfixtures"
 	"github.com/miekg/dns"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/pkg/dnsrec"
 	"github.com/bi-zone/sonar/pkg/dnsx"
+
+	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/testutils"
 )
 
 var (
@@ -26,9 +28,11 @@ var (
 	srv dnsx.Server
 
 	notifier = &testutils.NotifierMock{}
+	log      = logrus.New()
 
+	// TODO: don't use testutils
 	g = testutils.Globals(
-		testutils.DB(&db),
+		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
 		testutils.DNSX(&db, notifier.Notify, &h, &srv),
 	)

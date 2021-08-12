@@ -20,20 +20,12 @@ func (db *DB) DNSRecordsCreate(o *models.DNSRecord, withIndex bool) error {
 		query += ", (SELECT COUNT(*) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1 AS index"
 	}
 
-	nstmt, err := db.PrepareNamed(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer nstmt.Close()
-
-	return nstmt.QueryRowx(o).Scan(&o.ID, &o.Index)
+	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
 }
 
 func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
 
-	_, err := db.NamedExec(
+	return db.NamedExec(
 		"UPDATE dns_records SET "+
 			"payload_id = :payload_id, "+
 			"name = :name, "+
@@ -44,8 +36,6 @@ func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
 			"last_answer = :last_answer, "+
 			"last_accessed_at = :last_accessed_at "+
 			"WHERE id = :id", o)
-
-	return err
 }
 
 func (db *DB) DNSRecordsGetByID(id int64) (*models.DNSRecord, error) {
@@ -111,6 +101,5 @@ func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*m
 }
 
 func (db *DB) DNSRecordsDelete(id int64) error {
-	_, err := db.Exec("DELETE FROM dns_records WHERE id = $1", id)
-	return err
+	return db.Exec("DELETE FROM dns_records WHERE id = $1", id)
 }

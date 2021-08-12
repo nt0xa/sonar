@@ -115,7 +115,7 @@ func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]
 	m.Called(remoteAddr, data, meta)
 }
 
-func DB(out **database.DB) Global {
+func DB(out **database.DB, log logger.StdLogger) Global {
 
 	return &global{
 		setup: func() error {
@@ -127,7 +127,7 @@ func DB(out **database.DB) Global {
 			db, err := database.New(&database.Config{
 				DSN:        dsn,
 				Migrations: BasePath + "/../database/migrations",
-			})
+			}, log)
 			if err != nil {
 				return fmt.Errorf("fail to init database: %w", err)
 			}

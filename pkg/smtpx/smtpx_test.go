@@ -23,6 +23,7 @@ var (
 
 	notifier = &testutils.NotifierMock{}
 
+	// TODO: don't use testutils
 	g = testutils.Globals(
 		testutils.TLSConfig(&tlsConfig),
 		testutils.SMTPX(notifier.Notify, &tlsConfig, false, &srv),
