@@ -144,4 +144,7 @@ func TestEventsDeleteOutOfLimit(t *testing.T) {
 	list, err = db.EventsListByPayloadID(1)
 	assert.NoError(t, err)
 	assert.Len(t, list, 5)
+
+	err = db.EventsDeleteOutOfLimit(2, 5)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
