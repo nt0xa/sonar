@@ -99,6 +99,8 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 		return nil, err
 	}
 
+	defer stmt.Close()
+
 	res := make([]*models.Event, 0)
 
 	if err := stmt.Select(&res, params); err != nil {
