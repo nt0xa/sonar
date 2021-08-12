@@ -119,7 +119,7 @@ func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.
 
 func (db *DB) EventsDeleteOutOfLimit(payloadID int64, limit int) error {
 	var minID int
-	query := "SELECT MIN(id) FROM (SELECT id FROM events WHERE payload_id = $1 ORDER BY id DESC LIMIT $2) q"
+	query := "SELECT COALESCE(MIN(id), 0) FROM (SELECT id FROM events WHERE payload_id = $1 ORDER BY id DESC LIMIT $2) q"
 	if err := db.Get(&minID, query, payloadID, limit); err != nil {
 		return err
 	}
