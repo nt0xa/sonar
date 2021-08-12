@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/testutils"
 	"github.com/bi-zone/sonar/pkg/dnsrec"
@@ -30,7 +31,7 @@ var (
 	g = testutils.Globals(
 		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
-		testutils.DNSX(&db, notify, &h, &srv),
+		testutils.DNSX(&server.DNSConfig{}, &db, notify, &h, &srv),
 	)
 )
 
