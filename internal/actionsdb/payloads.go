@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/bi-zone/sonar/internal/utils/slice"
@@ -20,6 +20,7 @@ func Payload(m *models.Payload) *actions.Payload {
 		Subdomain:       m.Subdomain,
 		Name:            m.Name,
 		NotifyProtocols: m.NotifyProtocols.Strings(),
+		StoreEvents:     m.StoreEvents,
 		CreatedAt:       m.CreatedAt,
 	}
 }
@@ -48,6 +49,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		Subdomain:       subdomain,
 		Name:            p.Name,
 		NotifyProtocols: models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...),
+		StoreEvents:     p.StoreEvents,
 	}
 
 	err = act.db.PayloadsCreate(payload)
@@ -81,6 +83,10 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 
 	if p.NotifyProtocols != nil {
 		payload.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
+	}
+
+	if p.StoreEvents >= 0 {
+		payload.StoreEvents = p.StoreEvents
 	}
 
 	err = act.db.PayloadsUpdate(payload)

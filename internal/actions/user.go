@@ -3,8 +3,9 @@ package actions
 import (
 	"context"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/spf13/cobra"
+
+	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
 type UserActions interface {

@@ -5,10 +5,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/fatih/structs"
+
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/pkg/netx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
-	"github.com/fatih/structs"
 )
 
 func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {

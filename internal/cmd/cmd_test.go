@@ -5,13 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
-	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bi-zone/sonar/internal/actions"
+	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
+	"github.com/bi-zone/sonar/internal/cmd"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 var (
@@ -42,7 +43,7 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"new test -p dns,http",
+			"new test -p dns,http -e 50",
 			"PayloadsCreate",
 			actions.PayloadsCreateParams{
 				Name: "test",
@@ -50,6 +51,7 @@ func TestCmd(t *testing.T) {
 					models.ProtoCategoryDNS.String(),
 					models.ProtoCategoryHTTP.String(),
 				},
+				StoreEvents: 50,
 			},
 			(actions.PayloadsCreateResult)(nil),
 		},
@@ -68,12 +70,13 @@ func TestCmd(t *testing.T) {
 		// Update
 
 		{
-			"mod -n new -p dns old",
+			"mod -n new -p dns old -e 10",
 			"PayloadsUpdate",
 			actions.PayloadsUpdateParams{
 				Name:            "old",
 				NewName:         "new",
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
+				StoreEvents:     10,
 			},
 			(actions.PayloadsUpdateResult)(nil),
 		},

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 func TestEventsCreate_Success(t *testing.T) {
@@ -131,4 +131,17 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 
 	o, err = db.EventsGetByPayloadAndIndex(1, 1337)
 	assert.Error(t, err)
+}
+
+func TestEventsDeleteOutOfLimit(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	err := db.EventsDeleteOutOfLimit(1, 5)
+	assert.NoError(t, err)
+
+	var list []*models.Event
+	list, err = db.EventsListByPayloadID(1)
+	assert.NoError(t, err)
+	assert.Len(t, list, 5)
 }

@@ -4,15 +4,16 @@ import (
 	"net"
 	"strings"
 
+	"github.com/fatih/structs"
+	"github.com/miekg/dns"
+
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/dnsdb"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils/tpl"
 	"github.com/bi-zone/sonar/pkg/dnsrec"
 	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
-	"github.com/fatih/structs"
-	"github.com/miekg/dns"
 )
 
 var dnsTemplate = tpl.MustParse(`

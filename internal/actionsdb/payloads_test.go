@@ -9,7 +9,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/actionsdb"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
@@ -37,6 +37,14 @@ func TestCreatePayload_Success(t *testing.T) {
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
 			},
 		},
+		{
+			"store events",
+			actions.PayloadsCreateParams{
+				Name:            "test-dns",
+				StoreEvents:     100,
+				NotifyProtocols: []string{},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -49,7 +57,8 @@ func TestCreatePayload_Success(t *testing.T) {
 
 			assert.NotNil(t, r)
 			assert.Equal(t, tt.p.Name, r.Name)
-			assert.Equal(t, tt.p.NotifyProtocols, []string(r.NotifyProtocols))
+			assert.Equal(t, tt.p.NotifyProtocols, r.NotifyProtocols)
+			assert.Equal(t, tt.p.StoreEvents, r.StoreEvents)
 		})
 	}
 }
@@ -89,6 +98,24 @@ func TestCreatePayload_Error(t *testing.T) {
 				Name: "payload1",
 			},
 			&errors.ConflictError{},
+		},
+		{
+			"invalid store events",
+			ctx,
+			actions.PayloadsCreateParams{
+				Name:        "test",
+				StoreEvents: 999999,
+			},
+			&errors.ValidationError{},
+		},
+		{
+			"invalid store events",
+			ctx,
+			actions.PayloadsCreateParams{
+				Name:        "test",
+				StoreEvents: -1,
+			},
+			&errors.ValidationError{},
 		},
 	}
 
@@ -278,6 +305,13 @@ func TestUpdatePayload_Success(t *testing.T) {
 				NotifyProtocols: []string{models.ProtoCategoryHTTP.String()},
 			},
 		},
+		{
+			"update stored events",
+			actions.PayloadsUpdateParams{
+				Name:        "payload1",
+				StoreEvents: 8,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -295,6 +329,10 @@ func TestUpdatePayload_Success(t *testing.T) {
 
 			if tt.p.NotifyProtocols != nil {
 				assert.Equal(t, tt.p.NotifyProtocols, []string(r.NotifyProtocols))
+			}
+
+			if tt.p.StoreEvents >= 0 {
+				assert.Equal(t, tt.p.StoreEvents, r.StoreEvents)
 			}
 		})
 	}
@@ -325,6 +363,15 @@ func TestUpdatePayload_Error(t *testing.T) {
 			ctx,
 			actions.PayloadsUpdateParams{
 				Name: "",
+			},
+			&errors.ValidationError{},
+		},
+		{
+			"invalid stored events",
+			ctx,
+			actions.PayloadsUpdateParams{
+				Name:        "payload1",
+				StoreEvents: -10,
 			},
 			&errors.ValidationError{},
 		},
