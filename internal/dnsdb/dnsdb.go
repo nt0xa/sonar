@@ -8,7 +8,7 @@ import (
 	"github.com/miekg/dns"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils/pointer"
 	"github.com/bi-zone/sonar/internal/utils/slice"
 	"github.com/bi-zone/sonar/pkg/dnsutils"

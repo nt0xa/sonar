@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 type contextKey string

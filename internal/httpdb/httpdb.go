@@ -7,9 +7,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/go-chi/chi"
+
+	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 type Routes struct {

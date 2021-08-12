@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 func (db *DB) EventsCreate(o *models.Event) error {
@@ -124,4 +124,14 @@ func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.
 	}
 
 	return &res, nil
+}
+
+func (db *DB) EventsDeleteOutOfLimit(payloadID int64, limit int) error {
+	var minID int
+	query := "SELECT MIN(id) FROM (SELECT id FROM events WHERE payload_id = $1 ORDER BY id DESC LIMIT $2) q"
+	if err := db.Get(&minID, query, payloadID, limit); err != nil {
+		return err
+	}
+	_, err := db.Exec("DELETE FROM events WHERE id < $1", minID)
+	return err
 }

@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
@@ -58,8 +58,16 @@ func (h *EventsHandler) Start() error {
 
 			e.PayloadID = p.ID
 
-			if err := h.db.EventsCreate(e); err != nil {
-				continue
+			// Store event in database
+			if p.StoreEvents > 0 {
+				if err := h.db.EventsCreate(e); err != nil {
+					continue
+				}
+
+				// Delete out of limit events
+				if err := h.db.EventsDeleteOutOfLimit(p.ID, p.StoreEvents); err != nil {
+					continue
+				}
 			}
 
 			// Skip if current event protocol is muted for payload.

@@ -11,8 +11,6 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-
-	"github.com/bi-zone/sonar/internal/models"
 )
 
 var (
@@ -83,19 +81,19 @@ func DNSRecord(typ string) validation.Rule {
 
 	switch typ {
 
-	case models.DNSTypeA:
+	case "A":
 		return is.IPv4
 
-	case models.DNSTypeAAAA:
+	case "AAAA":
 		return is.IPv6
 
-	case models.DNSTypeMX:
+	case "MX":
 		return validation.By(MX)
 
-	case models.DNSTypeTXT:
+	case "TXT":
 		return validation.Required
 
-	case models.DNSTypeCNAME:
+	case "CNAME":
 		return validation.By(FQDN)
 	}
 

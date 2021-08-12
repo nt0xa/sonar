@@ -6,7 +6,7 @@ import (
 
 	"github.com/fatih/structs"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils"
 )
 

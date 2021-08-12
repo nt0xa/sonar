@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
