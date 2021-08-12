@@ -76,7 +76,7 @@ func (h *terminalHandler) UserCurrent(ctx context.Context, res actions.UserCurre
 //
 
 var (
-	payload = `<bold>[{{ .Name }}]</> - {{ .Subdomain }}.{{ domain }} ({{ .NotifyProtocols | join ", " }})`
+	payload = `<bold>[{{ .Name }}]</> - {{ .Subdomain }}.{{ domain }} ({{ .NotifyProtocols | join ", " }}) ({{ .StoreEvents }})`
 
 	payloadTemplate = tpl(payload)
 

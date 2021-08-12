@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
-	"github.com/bi-zone/sonar/internal/modules/api"
-	"github.com/bi-zone/sonar/internal/modules/telegram"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/sirupsen/logrus"
+
+	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/bi-zone/sonar/internal/modules/api"
+	"github.com/bi-zone/sonar/internal/modules/telegram"
 )
 
 type Controller interface {

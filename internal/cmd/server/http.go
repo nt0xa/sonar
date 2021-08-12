@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fatih/structs"
+
 	"github.com/bi-zone/sonar/internal/database"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/httpdb"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/pkg/httpx"
-	"github.com/fatih/structs"
 )
 
 // TODO: as parameters

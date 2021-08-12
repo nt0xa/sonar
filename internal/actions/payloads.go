@@ -7,7 +7,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 	"github.com/bi-zone/sonar/internal/utils/valid"
 )
@@ -30,7 +30,7 @@ type Payload struct {
 	Subdomain       string    `json:"subdomain"`
 	Name            string    `json:"name"`
 	NotifyProtocols []string  `json:"notifyProtocols"`
-	StoreEvents     bool      `json:"storeEvents"`
+	StoreEvents     int       `json:"storeEvents"`
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
@@ -41,7 +41,7 @@ type Payload struct {
 type PayloadsCreateParams struct {
 	Name            string   `err:"name"            json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
+	StoreEvents     int      `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsCreateParams) Validate() error {
@@ -51,6 +51,7 @@ func (p PayloadsCreateParams) Validate() error {
 			models.ProtoCategoriesAll.Strings(),
 			true,
 		))),
+		validation.Field(&p.StoreEvents, validation.Min(0), validation.Max(100)),
 	)
 }
 
@@ -66,7 +67,7 @@ func PayloadsCreateCommand(p *PayloadsCreateParams) (*cobra.Command, PrepareComm
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
 		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
-	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
+	cmd.Flags().IntVarP(&p.StoreEvents, "events", "e", 0, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -82,7 +83,7 @@ type PayloadsUpdateParams struct {
 	Name            string   `err:"name"            json:"-"               path:"name"`
 	NewName         string   `err:"newName"         json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
+	StoreEvents     int      `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsUpdateParams) Validate() error {
@@ -92,6 +93,8 @@ func (p PayloadsUpdateParams) Validate() error {
 			models.ProtoCategoriesAll.Strings(),
 			true,
 		))),
+		// We need -1 here to find out if the value was changed
+		validation.Field(&p.StoreEvents, validation.Min(-1), validation.Max(100)),
 	)
 }
 
@@ -105,23 +108,12 @@ func PayloadsUpdateCommand(p *PayloadsUpdateParams) (*cobra.Command, PrepareComm
 		Args:  oneArg("NAME"),
 	}
 
-	cmd.Flags().StringP("name", "n", "", "Payload name")
-	cmd.Flags().StringSliceP("protocols", "p", []string{}, "Protocols to notify")
-	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
+	cmd.Flags().StringVarP(&p.NewName, "name", "n", "", "Payload name")
+	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p", nil, "Protocols to notify")
+	cmd.Flags().IntVarP(&p.StoreEvents, "events", "e", -1, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
-
-		if cmd.Flags().Changed("name") {
-			newName, _ := cmd.Flags().GetString("name")
-			p.NewName = newName
-		}
-
-		if cmd.Flags().Changed("protocols") {
-			protocols, _ := cmd.Flags().GetStringSlice("protocols")
-			p.NotifyProtocols = protocols
-		}
-
 		return nil
 	}
 }

@@ -5,13 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
-	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bi-zone/sonar/internal/actions"
+	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
+	"github.com/bi-zone/sonar/internal/cmd"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 var (

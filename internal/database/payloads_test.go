@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 func TestPayloadsCreate_Success(t *testing.T) {
@@ -20,6 +20,7 @@ func TestPayloadsCreate_Success(t *testing.T) {
 		Subdomain:       "8a8b58beaf",
 		Name:            "test",
 		NotifyProtocols: models.ProtoCategoriesAll,
+		StoreEvents:     10,
 	}
 
 	err := db.PayloadsCreate(o)
@@ -27,6 +28,7 @@ func TestPayloadsCreate_Success(t *testing.T) {
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 	assert.Equal(t, models.ProtoCategoriesAll, o.NotifyProtocols)
+	assert.Equal(t, 10, o.StoreEvents)
 }
 
 func TestPayloadsCreate_Duplicate(t *testing.T) {
@@ -177,6 +179,7 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 
 	o.Name = "payload1_updated"
 	o.NotifyProtocols = models.ProtoCategories("dns")
+	o.StoreEvents = 100
 
 	err = db.PayloadsUpdate(o)
 	require.NoError(t, err)

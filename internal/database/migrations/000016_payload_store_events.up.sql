@@ -1,1 +1,1 @@
-ALTER TABLE payloads ADD COLUMN store_events BOOL NOT NULL DEFAULT false;
+ALTER TABLE payloads ADD COLUMN store_events INT NOT NULL DEFAULT 0;

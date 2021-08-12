@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/bi-zone/sonar/internal/actionsdb"
 	"github.com/bi-zone/sonar/internal/cmd"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/actionsdb"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/utils"
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )

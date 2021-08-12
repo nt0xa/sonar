@@ -19,7 +19,7 @@ import (
 
 	"github.com/bi-zone/sonar/internal/actions"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/internal/modules/api"
 	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
 	"github.com/bi-zone/sonar/internal/testutils"
@@ -197,11 +197,13 @@ func TestClient(t *testing.T) {
 			actions.PayloadsCreateParams{
 				Name:            "test",
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
+				StoreEvents:     10,
 			},
 			map[string]matcher{
 				"Name":            equal("test"),
 				"Subdomain":       regex(regexp.MustCompile("^[a-f0-9]{8}$")),
 				"NotifyProtocols": equal([]string{"dns"}),
+				"StoreEvents":     equal(10),
 				"CreatedAt":       withinDuration(time.Second * 5),
 			},
 			nil,

@@ -108,7 +108,7 @@ func (tg *Telegram) UserCurrent(ctx context.Context, res actions.UserCurrentResu
 //
 
 var (
-	payload = `<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ domain }}</code> ({{ .NotifyProtocols | join ", " }})`
+	payload = `<b>[{{ .Name }}]</b> - <code>{{ .Subdomain }}.{{ domain }}</code> ({{ .NotifyProtocols | join ", " }}) ({{ .StoreEvents }})`
 
 	payloadTemplate = tpl(payload)
 

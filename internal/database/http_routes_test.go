@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bi-zone/sonar/internal/database/models"
 )
 
 func TestHTTPRoutesCreate_Success(t *testing.T) {

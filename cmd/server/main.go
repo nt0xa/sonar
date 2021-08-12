@@ -13,7 +13,7 @@ import (
 	"github.com/bi-zone/sonar/internal/actionsdb"
 	"github.com/bi-zone/sonar/internal/cmd/server"
 	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/models"
+	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/pkg/dnsx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"

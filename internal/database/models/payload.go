@@ -10,6 +10,6 @@ type Payload struct {
 	Subdomain       string             `db:"subdomain"`
 	Name            string             `db:"name"`
 	NotifyProtocols ProtoCategoryArray `db:"notify_protocols"`
-	StoreEvents     bool               `db:"store_events"`
+	StoreEvents     int                `db:"store_events"`
 	CreatedAt       time.Time          `db:"created_at"`
 }
