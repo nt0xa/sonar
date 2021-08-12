@@ -23,6 +23,8 @@ func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
 		return err
 	}
 
+	defer nstmt.Close()
+
 	return nstmt.QueryRowx(o).Scan(&o.ID, &o.Index)
 }
 

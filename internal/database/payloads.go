@@ -16,10 +16,11 @@ func (db *DB) PayloadsCreate(o *models.Payload) error {
 		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, store_events, created_at) " +
 			"VALUES(:subdomain, :user_id, :name, :notify_protocols, :store_events, :created_at) RETURNING id")
 
-
 	if err != nil {
 		return err
 	}
+
+	defer nstmt.Close()
 
 	return nstmt.QueryRowx(o).Scan(&o.ID)
 }

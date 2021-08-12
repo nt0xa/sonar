@@ -45,6 +45,8 @@ func (db *DB) UsersCreate(o *models.User) error {
 		return err
 	}
 
+	defer nstmt.Close()
+
 	if err := nstmt.QueryRowx(o).Scan(&o.ID); err != nil {
 		return err
 	}
