@@ -1,8 +1,8 @@
 package server
 
 import (
+	"io/ioutil"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/fatih/structs"
@@ -59,7 +59,7 @@ func DNSDefaultRecords(origin string, ip net.IP) *dnsrec.Records {
 }
 
 func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsrec.Records {
-	data, err := os.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil
 	}
