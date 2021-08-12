@@ -57,7 +57,7 @@ var (
 	log = logrus.New()
 
 	g = testutils.Globals(
-		testutils.DB(&db),
+		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
 		testutils.ActionsDB(&db, log, &acts),
 		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),

@@ -46,7 +46,7 @@ func main() {
 	// DB
 	//
 
-	db, err := database.New(&cfg.DB)
+	db, err := database.New(&cfg.DB, log)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"net"
 	"regexp"
 
@@ -65,7 +66,7 @@ func (h *EventsHandler) Start() error {
 				}
 
 				// Delete out of limit events
-				if err := h.db.EventsDeleteOutOfLimit(p.ID, p.StoreEvents); err != nil {
+				if err := h.db.EventsDeleteOutOfLimit(p.ID, p.StoreEvents); err != nil && err != sql.ErrNoRows {
 					continue
 				}
 			}

@@ -37,26 +37,20 @@ func (db *DB) UsersCreate(o *models.User) error {
 		return err
 	}
 
-	nstmt, err := tx.PrepareNamed(
+	query := "" +
 		"INSERT INTO users (name, is_admin, created_by, created_at) " +
-			"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id")
+		"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id"
 
-	if err != nil {
-		return err
-	}
-
-	defer nstmt.Close()
-
-	if err := nstmt.QueryRowx(o).Scan(&o.ID); err != nil {
+	if err := tx.NamedQueryRowx(query, o).Scan(&o.ID); err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	for _, f := range structs.Fields(o.Params) {
-		_, err = tx.Exec(
+		if err := tx.Exec(
 			"INSERT INTO user_params (user_id, key, value) "+
-				"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value())
-
-		if err != nil {
+				"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
@@ -102,8 +96,7 @@ func (db *DB) UsersGetByParam(key models.UserParamsKey, value interface{}) (*mod
 }
 
 func (db *DB) UsersDelete(id int64) error {
-	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
-	return err
+	return db.Exec("DELETE FROM users WHERE id = $1", id)
 }
 
 func (db *DB) UsersUpdate(o *models.User) error {
@@ -112,7 +105,7 @@ func (db *DB) UsersUpdate(o *models.User) error {
 		return err
 	}
 
-	_, err = db.NamedExec(
+	err = tx.NamedExec(
 		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
@@ -120,11 +113,9 @@ func (db *DB) UsersUpdate(o *models.User) error {
 	}
 
 	for _, f := range structs.Fields(o.Params) {
-		_, err = tx.Exec(
+		if err := tx.Exec(
 			"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
-			f.Value(), o.ID, f.Tag("json"))
-
-		if err != nil {
+			f.Value(), o.ID, f.Tag("json")); err != nil {
 			return err
 		}
 	}

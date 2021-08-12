@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
@@ -11,11 +12,12 @@ import (
 )
 
 var (
-	db *database.DB
-	tf *testfixtures.Context
+	db  *database.DB
+	tf  *testfixtures.Context
+	log = logrus.New()
 
 	g = testutils.Globals(
-		testutils.DB(&db),
+		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
 	)
 )
