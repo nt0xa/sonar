@@ -102,6 +102,7 @@ func main() {
 	waitDNS.Add(1)
 
 	dnsHandler := server.DNSHandler(
+		&cfg.DNS,
 		db,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
