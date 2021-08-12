@@ -38,6 +38,8 @@ var dnsTemplate = tpl.MustParse(`
 * 60 IN MX 10 mx
 
 @ 60 IN CAA 60 issue "letsencrypt.org"
+@ SOA ns1 hostmaster 1337 86400 7200 4000000 11200
+* SOA ns1 hostmaster 1337 86400 7200 4000000 11200
 `)
 
 type DNSConfig struct {
