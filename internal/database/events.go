@@ -11,15 +11,11 @@ func (db *DB) EventsCreate(o *models.Event) error {
 
 	o.CreatedAt = time.Now()
 
-	nstmt, err := db.PrepareNamed("" +
+	query := "" +
 		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
-		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at) RETURNING id")
+		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at) RETURNING id"
 
-	if err != nil {
-		return err
-	}
-
-	return nstmt.QueryRowx(o).Scan(&o.ID)
+	return db.NamedQueryRowx(query, o).Scan(&o.ID)
 }
 
 func (db *DB) EventsGetByID(id int64) (*models.Event, error) {
@@ -94,16 +90,9 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 		options.Page,
 	)
 
-	stmt, err := db.PrepareNamed(query)
-	if err != nil {
-		return nil, err
-	}
-
-	defer stmt.Close()
-
 	res := make([]*models.Event, 0)
 
-	if err := stmt.Select(&res, params); err != nil {
+	if err := db.NamedSelect(&res, query, params); err != nil {
 		return nil, err
 	}
 
@@ -134,6 +123,5 @@ func (db *DB) EventsDeleteOutOfLimit(payloadID int64, limit int) error {
 	if err := db.Get(&minID, query, payloadID, limit); err != nil {
 		return err
 	}
-	_, err := db.Exec("DELETE FROM events WHERE id < $1", minID)
-	return err
+	return db.Exec("DELETE FROM events WHERE id < $1", minID)
 }

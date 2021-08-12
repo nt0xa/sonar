@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -32,10 +33,12 @@ var (
 	srvHTTPS  httpx.Server
 
 	notifier = &testutils.NotifierMock{}
+	log      = logrus.New()
 
+	// TODO: don't use testutils
 	g = testutils.Globals(
 		testutils.TLSConfig(&tlsConfig),
-		testutils.DB(&db),
+		testutils.DB(&db, log),
 		testutils.HTTPX(&db, notifier.Notify, nil, &srvHTTP),
 		testutils.HTTPX(&db, notifier.Notify, &tlsConfig, &srvHTTPS),
 	)

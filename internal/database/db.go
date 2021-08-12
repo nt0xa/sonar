@@ -3,19 +3,23 @@ package database
 import (
 	"fmt"
 
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+
+	"github.com/jmoiron/sqlx"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+
+	"github.com/bi-zone/sonar/internal/utils/logger"
 )
 
 type DB struct {
 	*sqlx.DB
+	log        logger.StdLogger
 	migrations string
 }
 
-func New(cfg *Config) (*DB, error) {
+func New(cfg *Config, log logger.StdLogger) (*DB, error) {
 
 	db, err := sqlx.Connect("postgres", cfg.DSN)
 
@@ -23,7 +27,7 @@ func New(cfg *Config) (*DB, error) {
 		return nil, fmt.Errorf("new: fail to connect to database: %w", err)
 	}
 
-	return &DB{db, cfg.Migrations}, nil
+	return &DB{db, log, cfg.Migrations}, nil
 }
 
 func (db *DB) Migrate() error {

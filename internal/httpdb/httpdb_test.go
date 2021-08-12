@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-testfixtures/testfixtures"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bi-zone/sonar/internal/database"
@@ -46,9 +47,10 @@ var (
 
 	tlsConfig *tls.Config
 	srvHTTPS  httpx.Server
+	log       = logrus.New()
 
 	g = testutils.Globals(
-		testutils.DB(&db),
+		testutils.DB(&db, log),
 		testutils.Fixtures(&db, &tf),
 		testutils.TLSConfig(&tlsConfig),
 		testutils.HTTPX(&db, notify, nil, &srvHTTP),

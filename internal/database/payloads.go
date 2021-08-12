@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,22 +11,16 @@ func (db *DB) PayloadsCreate(o *models.Payload) error {
 
 	o.CreatedAt = time.Now()
 
-	nstmt, err := db.PrepareNamed(
+	query := "" +
 		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, store_events, created_at) " +
-			"VALUES(:subdomain, :user_id, :name, :notify_protocols, :store_events, :created_at) RETURNING id")
+		"VALUES(:subdomain, :user_id, :name, :notify_protocols, :store_events, :created_at) RETURNING id"
 
-	if err != nil {
-		return err
-	}
-
-	defer nstmt.Close()
-
-	return nstmt.QueryRowx(o).Scan(&o.ID)
+	return db.NamedQueryRowx(query, o).Scan(&o.ID)
 }
 
 func (db *DB) PayloadsUpdate(o *models.Payload) error {
 
-	_, err := db.NamedExec(
+	return db.NamedExec(
 		"UPDATE payloads SET "+
 			"subdomain = :subdomain, "+
 			"user_id = :user_id, "+
@@ -36,7 +29,6 @@ func (db *DB) PayloadsUpdate(o *models.Payload) error {
 			"store_events = :store_events "+
 			"WHERE id = :id", o)
 
-	return err
 }
 
 func (db *DB) PayloadGetByID(id int64) (*models.Payload, error) {
@@ -96,17 +88,5 @@ func (db *DB) PayloadsFindByUserAndName(userID int64, name string) ([]*models.Pa
 }
 
 func (db *DB) PayloadsDelete(id int64) error {
-	res, err := db.Exec("DELETE FROM payloads WHERE id = $1", id)
-
-	if err != nil {
-		return err
-	}
-
-	if n, err := res.RowsAffected(); err != nil {
-		return err
-	} else if n != 1 {
-		return sql.ErrNoRows
-	}
-
-	return nil
+	return db.Exec("DELETE FROM payloads WHERE id = $1", id)
 }
