@@ -51,7 +51,8 @@ func (p PayloadsCreateParams) Validate() error {
 			models.ProtoCategoriesAll.Strings(),
 			true,
 		))),
-		validation.Field(&p.StoreEvents, validation.Min(0), validation.Max(100)),
+		// TODO: Get max from config
+		validation.Field(&p.StoreEvents, validation.Min(0), validation.Max(1000)),
 	)
 }
 
@@ -94,7 +95,7 @@ func (p PayloadsUpdateParams) Validate() error {
 			true,
 		))),
 		// We need -1 here to find out if the value was changed
-		validation.Field(&p.StoreEvents, validation.Min(-1), validation.Max(100)),
+		validation.Field(&p.StoreEvents, validation.Min(-1), validation.Max(1000)),
 	)
 }
 
@@ -110,6 +111,7 @@ func PayloadsUpdateCommand(p *PayloadsUpdateParams) (*cobra.Command, PrepareComm
 
 	cmd.Flags().StringVarP(&p.NewName, "name", "n", "", "Payload name")
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p", nil, "Protocols to notify")
+	// We need -1 here to find out if the value was changed
 	cmd.Flags().IntVarP(&p.StoreEvents, "events", "e", -1, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
