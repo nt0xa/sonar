@@ -202,12 +202,11 @@ func main() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
 			":25",
-			server.SMTPListenerWrapper(1<<20, time.Second*5),
-			server.SMTPSession(cfg.Domain, tlsConfig,
-				func(e *smtpx.Event) {
-					events.Emit(server.SMTPEvent(e))
-				},
-			),
+			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
+			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
+			smtpx.OnClose(func(e *smtpx.Event) {
+				events.Emit(server.SMTPEvent(e))
+			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {

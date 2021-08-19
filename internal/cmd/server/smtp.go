@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/tls"
 	"net"
 	"time"
 
@@ -21,12 +20,6 @@ func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Lis
 			},
 			IdleTimeout: idleTimeout,
 		}
-	}
-}
-
-func SMTPSession(domain string, tlsConfig *tls.Config, notify func(*smtpx.Event)) func(net.Conn) *smtpx.Session {
-	return func(conn net.Conn) *smtpx.Session {
-		return smtpx.NewSession(conn, domain, tlsConfig, notify)
 	}
 }
 

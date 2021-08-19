@@ -16,14 +16,13 @@ import (
 )
 
 var (
-	srv smtpx.Server
+	srv *smtpx.Server
 
 	tlsConfig *tls.Config
-	srvTLS    smtpx.Server
+	srvTLS    *smtpx.Server
 
 	notifier = &testutils.NotifierMock{}
 
-	// TODO: don't use testutils
 	g = testutils.Globals(
 		testutils.TLSConfig(&tlsConfig),
 		testutils.SMTPX(notifier.Notify, &tlsConfig, false, &srv),

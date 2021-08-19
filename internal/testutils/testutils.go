@@ -296,7 +296,7 @@ func HTTPX(db **database.DB, notify func(net.Addr, []byte, map[string]interface{
 	}
 }
 
-func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, isTLS bool, srv *smtpx.Server) Global {
+func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, isTLS bool, srv **smtpx.Server) Global {
 	return &global{
 		setup: func() error {
 			wg := sync.WaitGroup{}
@@ -304,24 +304,23 @@ func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 
 			options := []smtpx.Option{
 				smtpx.NotifyStartedFunc(wg.Done),
+				smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
+				smtpx.OnClose(func(e *smtpx.Event) {
+
+					notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+				}),
 			}
 
 			var addr string
-
 			if isTLS {
 				addr = ":1465"
-				options = append(options, smtpx.TLSConfig(*tlsConfig))
 			} else {
 				addr = ":1025"
 			}
 
-			*srv = smtpx.New(addr,
-				server.SMTPListenerWrapper(1<<20, time.Second*5),
-				server.SMTPSession(TestDomain, *tlsConfig, func(e *smtpx.Event) {
-					notify(e.RemoteAddr, e.Log, map[string]interface{}{})
-				}),
-				options...,
-			)
+			options = append(options, smtpx.TLSConfig(*tlsConfig, isTLS))
+
+			*srv = smtpx.New(addr, options...)
 
 			go func() {
 				if err := (*srv).ListenAndServe(); err != nil {

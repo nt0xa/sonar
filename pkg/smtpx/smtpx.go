@@ -2,45 +2,46 @@ package smtpx
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 
 	"github.com/bi-zone/sonar/pkg/netx"
 )
 
-type Server interface {
-	ListenAndServe() error
-}
-
-type ListenerWrapFunc func(net.Listener) net.Listener
-
-type NewSessionFunc func(net.Conn) *Session
-
-type server struct {
+type Server struct {
 	server *netx.Server
 }
 
-func New(addr string, wrap ListenerWrapFunc, sess NewSessionFunc, opts ...Option) Server {
+func New(addr string, opts ...Option) *Server {
 	options := defaultOptions
 
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	return &server{
+	var tlsConfig *tls.Config
+
+	// Start TLS server only if secure flag is set.
+	if options.secure {
+		tlsConfig = options.tlsConfig
+	}
+
+	return &Server{
 		server: &netx.Server{
 			Addr:              addr,
-			TLSConfig:         options.tlsConfig,
+			TLSConfig:         tlsConfig,
 			NotifyStartedFunc: options.notifyStartedFunc,
-			ListenerWrapper:   wrap,
+			ListenerWrapper:   options.listenerWrapper,
 			ConnectionHandler: func(conn net.Conn) error {
 				ctx, cancel := context.WithTimeout(context.Background(), options.sessionTimeout)
 				defer cancel()
-				return sess(conn).start(ctx)
+				return handleConn(ctx, conn, options)
 			},
 		},
 	}
+
 }
 
-func (s *server) ListenAndServe() error {
+func (s *Server) ListenAndServe() error {
 	return s.server.ListenAndServe()
 }

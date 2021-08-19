@@ -2,22 +2,28 @@ package smtpx
 
 import (
 	"crypto/tls"
+	"net"
 	"time"
 )
+
+type options struct {
+	sessionTimeout    time.Duration
+	tlsConfig         *tls.Config
+	secure            bool
+	notifyStartedFunc func()
+	listenerWrapper   func(net.Listener) net.Listener
+	onClose           func(*Event)
+	messages          Msg
+}
 
 var defaultOptions = options{
 	sessionTimeout:    time.Second * 30,
 	tlsConfig:         nil,
-	maxSessionBytes:   1 << 20,
+	secure:            false,
 	notifyStartedFunc: func() {},
-}
-
-type options struct {
-	idleTimeout       time.Duration
-	sessionTimeout    time.Duration
-	tlsConfig         *tls.Config
-	notifyStartedFunc func()
-	maxSessionBytes   int64
+	listenerWrapper:   func(l net.Listener) net.Listener { return l },
+	onClose:           func(e *Event) {},
+	messages:          Msg{"", ""},
 }
 
 type Option func(*options)
@@ -28,9 +34,10 @@ func SessionTimeout(d time.Duration) Option {
 	}
 }
 
-func TLSConfig(c *tls.Config) Option {
+func TLSConfig(c *tls.Config, secure bool) Option {
 	return func(opts *options) {
 		opts.tlsConfig = c
+		opts.secure = secure
 	}
 }
 
@@ -40,8 +47,21 @@ func NotifyStartedFunc(f func()) Option {
 	}
 }
 
-func MaxSessionBytes(n int64) Option {
+func ListenerWrapper(f func(net.Listener) net.Listener) Option {
 	return func(opts *options) {
-		opts.maxSessionBytes = n
+		opts.listenerWrapper = f
 	}
+}
+
+func OnClose(f func(*Event)) Option {
+	return func(opts *options) {
+		opts.onClose = f
+	}
+}
+
+func Messages(m Msg) Option {
+	return func(opts *options) {
+		opts.messages = m
+	}
+
 }
