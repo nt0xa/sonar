@@ -27,6 +27,7 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/logger"
 	"github.com/bi-zone/sonar/pkg/dnsutils"
 	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/bi-zone/sonar/pkg/ftpx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
 )
@@ -321,6 +322,45 @@ func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 			options = append(options, smtpx.TLSConfig(*tlsConfig, isTLS))
 
 			*srv = smtpx.New(addr, options...)
+
+			go func() {
+				if err := (*srv).ListenAndServe(); err != nil {
+					log.Fatal(fmt.Errorf("fail to start server: %w", err))
+				}
+			}()
+
+			if WaitTimeout(&wg, 30*time.Second) {
+				return errors.New("timeout waiting for server to start")
+			}
+
+			return nil
+		},
+	}
+}
+
+func FTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls.Config, isTLS bool, srv **ftpx.Server) Global {
+	return &global{
+		setup: func() error {
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+
+			options := []ftpx.Option{
+				ftpx.NotifyStartedFunc(wg.Done),
+				ftpx.ListenerWrapper(server.FTPListenerWrapper(1<<20, time.Second*5)),
+				ftpx.OnClose(func(e *ftpx.Event) {
+					notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+				}),
+			}
+
+			var addr string
+			if isTLS {
+				addr = ":10022"
+				options = append(options, ftpx.TLSConfig(*tlsConfig))
+			} else {
+				addr = ":10021"
+			}
+
+			*srv = ftpx.New(addr, options...)
 
 			go func() {
 				if err := (*srv).ListenAndServe(); err != nil {
