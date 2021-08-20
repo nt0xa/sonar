@@ -354,10 +354,10 @@ func FTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tls
 
 			var addr string
 			if isTLS {
-				addr = ":1022"
+				addr = ":10022"
 				options = append(options, ftpx.TLSConfig(*tlsConfig))
 			} else {
-				addr = ":1021"
+				addr = ":10021"
 			}
 
 			*srv = ftpx.New(addr, options...)

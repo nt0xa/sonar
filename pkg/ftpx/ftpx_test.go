@@ -92,11 +92,11 @@ func TestFTP(t *testing.T) {
 			// Connect to server
 			if tt.tls {
 				// TLS connection
-				conn, err = tls.Dial("tcp", "localhost:1022", tlsConfig)
+				conn, err = tls.Dial("tcp", "localhost:10022", tlsConfig)
 				require.NoError(st, err)
 			} else {
 				// Simple TCP connection
-				conn, err = net.Dial("tcp", "localhost:1021")
+				conn, err = net.Dial("tcp", "localhost:10021")
 				require.NoError(st, err)
 			}
 			defer conn.Close()
