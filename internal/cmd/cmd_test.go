@@ -309,7 +309,7 @@ func TestCmd(t *testing.T) {
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, err = c.Exec(ctx, &actions.User{IsAdmin: true}, args)
+			_, err = c.Exec(ctx, &actions.User{IsAdmin: true}, true, args)
 
 			assert.NoError(t, err)
 

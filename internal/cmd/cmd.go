@@ -28,8 +28,8 @@ type command struct {
 }
 
 type Command interface {
-	Root(*actions.User) *cobra.Command
-	Exec(context.Context, *actions.User, []string) (string, errors.Error)
+	Root(*actions.User, bool) *cobra.Command
+	Exec(context.Context, *actions.User, bool, []string) (string, errors.Error)
 }
 
 func New(actions actions.Actions, handler actions.ResultHandler, preExec PreExec) Command {
@@ -40,7 +40,7 @@ func New(actions actions.Actions, handler actions.ResultHandler, preExec PreExec
 	}
 }
 
-func (c *command) Root(u *actions.User) *cobra.Command {
+func (c *command) Root(u *actions.User, local bool) *cobra.Command {
 	var root = &cobra.Command{
 		Use:   "sonar",
 		Short: "CLI to control sonar server",
@@ -59,10 +59,10 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 	}
 
 	// Main payloads commands
-	root.AddCommand(c.PayloadsCreate())
-	root.AddCommand(c.PayloadsList())
-	root.AddCommand(c.PayloadsUpdate())
-	root.AddCommand(c.PayloadsDelete())
+	root.AddCommand(c.PayloadsCreate(local))
+	root.AddCommand(c.PayloadsList(local))
+	root.AddCommand(c.PayloadsUpdate(local))
+	root.AddCommand(c.PayloadsDelete(local))
 
 	// DNS
 	dns := &cobra.Command{
@@ -70,9 +70,9 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 		Short: "Manage DNS records",
 	}
 
-	dns.AddCommand(c.DNSRecordsCreate())
-	dns.AddCommand(c.DNSRecordsDelete())
-	dns.AddCommand(c.DNSRecordsList())
+	dns.AddCommand(c.DNSRecordsCreate(local))
+	dns.AddCommand(c.DNSRecordsDelete(local))
+	dns.AddCommand(c.DNSRecordsList(local))
 
 	root.AddCommand(dns)
 
@@ -82,8 +82,8 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 		Short: "Payloads events",
 	}
 
-	events.AddCommand(c.EventsList())
-	events.AddCommand(c.EventsGet())
+	events.AddCommand(c.EventsList(local))
+	events.AddCommand(c.EventsGet(local))
 
 	root.AddCommand(events)
 
@@ -93,14 +93,14 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 		Short: "Manage HTTP routes",
 	}
 
-	http.AddCommand(c.HTTPRoutesCreate())
-	http.AddCommand(c.HTTPRoutesDelete())
-	http.AddCommand(c.HTTPRoutesList())
+	http.AddCommand(c.HTTPRoutesCreate(local))
+	http.AddCommand(c.HTTPRoutesDelete(local))
+	http.AddCommand(c.HTTPRoutesList(local))
 
 	root.AddCommand(http)
 
 	// User
-	root.AddCommand(c.UserCurrent())
+	root.AddCommand(c.UserCurrent(local))
 
 	// Users
 	if u.IsAdmin {
@@ -109,8 +109,8 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 			Short: "Manage users",
 		}
 
-		users.AddCommand(c.UsersCreate())
-		users.AddCommand(c.UsersDelete())
+		users.AddCommand(c.UsersCreate(local))
+		users.AddCommand(c.UsersDelete(local))
 
 		root.AddCommand(users)
 	}
@@ -118,8 +118,8 @@ func (c *command) Root(u *actions.User) *cobra.Command {
 	return root
 }
 
-func (c *command) Exec(ctx context.Context, u *actions.User, args []string) (string, errors.Error) {
-	root := c.Root(u)
+func (c *command) Exec(ctx context.Context, u *actions.User, local bool, args []string) (string, errors.Error) {
+	root := c.Root(u, local)
 
 	if c.preExec != nil {
 		c.preExec(root, u)

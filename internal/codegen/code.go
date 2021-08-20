@@ -10,13 +10,13 @@ import (
 )
 
 {{ range . }}
-func (c *command) {{ .Name }}() *cobra.Command {
+func (c *command) {{ .Name }}(local bool) *cobra.Command {
 	{{- if ne .Params.Name "" }}
 	var params actions.{{ .Params.Name }}
 
-	cmd, prepareFunc := actions.{{ .Name }}Command(&params)
+	cmd, prepareFunc := actions.{{ .Name }}Command(&params, local)
 	{{ else }}
-	cmd, prepareFunc := actions.{{ .Name }}Command()
+	cmd, prepareFunc := actions.{{ .Name }}Command(local)
 	{{ end }}
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {

@@ -137,7 +137,9 @@ func (tg *Telegram) Start() error {
 		ctx = actionsdb.SetUser(ctx, user)
 		args, _ := shlex.Split(strings.TrimLeft(update.Message.Text, "/"))
 
-		if out, err := tg.cmd.Exec(ctx, actionsdb.User(user), args); err != nil {
+		// It is important to pass false as "local" here to disable
+		// dangerous commands.
+		if out, err := tg.cmd.Exec(ctx, actionsdb.User(user), false, args); err != nil {
 			tg.handleError(chat.ID, err)
 		} else if out != "" {
 			tg.htmlMessage(chat.ID, out)

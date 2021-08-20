@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
@@ -70,7 +71,7 @@ func (p HTTPRoutesCreateParams) Validate() error {
 
 type HTTPRoutesCreateResult *HTTPRoute
 
-func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new BODY",
 		Short: "Create new HTTP route",
@@ -79,6 +80,7 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 
 	var (
 		headers []string
+		file    bool
 	)
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
@@ -88,6 +90,12 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
 	cmd.Flags().IntVarP(&p.Code, "code", "c", 200, "Response status code")
 	cmd.Flags().BoolVarP(&p.IsDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
+
+	// Add file flag only for local client, i.e. terminal.
+	// Otherwise anyone will be able to read files from server using telegram client.
+	if local {
+		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
+	}
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		hh := make(map[string][]string)
@@ -106,7 +114,18 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams) (*cobra.Command, Prepare
 		}
 		p.Headers = hh
 
-		body := []byte(args[0])
+		var body []byte
+
+		if file {
+			b, err := ioutil.ReadFile(args[0])
+			if err != nil {
+				return errors.Validationf("fail to read file %q", args[0])
+			}
+			body = b
+		} else {
+			body = []byte(args[0])
+		}
+
 		p.Body = base64.StdEncoding.EncodeToString(body)
 
 		return nil
@@ -131,7 +150,7 @@ func (p HTTPRoutesDeleteParams) Validate() error {
 
 type HTTPRoutesDeleteResult *HTTPRoute
 
-func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del INDEX",
 		Short: "Delete HTTP route",
@@ -167,7 +186,7 @@ func (p HTTPRoutesListParams) Validate() error {
 
 type HTTPRoutesListResult []*HTTPRoute
 
-func HTTPRoutesListCommand(p *HTTPRoutesListParams) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesListCommand(p *HTTPRoutesListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List HTTP routes",

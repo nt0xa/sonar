@@ -58,7 +58,7 @@ func (p PayloadsCreateParams) Validate() error {
 
 type PayloadsCreateResult *Payload
 
-func PayloadsCreateCommand(p *PayloadsCreateParams) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new NAME",
 		Short: "Create new payload",
@@ -101,7 +101,7 @@ func (p PayloadsUpdateParams) Validate() error {
 
 type PayloadsUpdateResult *Payload
 
-func PayloadsUpdateCommand(p *PayloadsUpdateParams) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "mod NAME",
 		Short: "Modify existing payload",
@@ -135,7 +135,7 @@ func (p PayloadsDeleteParams) Validate() error {
 
 type PayloadsDeleteResult *Payload
 
-func PayloadsDeleteCommand(p *PayloadsDeleteParams) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsDeleteCommand(p *PayloadsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del NAME",
 		Short: "Delete payload",
@@ -163,7 +163,7 @@ func (p PayloadsListParams) Validate() error {
 
 type PayloadsListResult []*Payload
 
-func PayloadsListCommand(p *PayloadsListParams) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsListCommand(p *PayloadsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list SUBSTR",
 		Short: "List payloads",
