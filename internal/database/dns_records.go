@@ -1,24 +1,20 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/database/models"
 )
 
-func (db *DB) DNSRecordsCreate(o *models.DNSRecord, withIndex bool) error {
+func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
 
 	o.CreatedAt = time.Now()
 
 	query := "" +
-		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at) " +
-		"VALUES(:payload_id, :name, :type, :ttl, :values, :strategy, :last_answer, :last_accessed_at, :created_at) " +
-		"RETURNING id"
-
-	if withIndex {
-		query += ", (SELECT COUNT(*) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1 AS index"
-	}
+		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at, index) " +
+		"VALUES(:payload_id, :name, :type, :ttl, :values, :strategy, :last_answer, :last_accessed_at, :created_at," +
+		" (SELECT COALESCE(MAX(index), 0) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1) " +
+		"RETURNING id, index"
 
 	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
 }
@@ -67,11 +63,7 @@ func (db *DB) DNSRecordsGetByPayloadNameAndType(payloadID int64, name string, ty
 func (db *DB) DNSRecordsGetByPayloadID(payloadID int64) ([]*models.DNSRecord, error) {
 	res := make([]*models.DNSRecord, 0)
 
-	query := "SELECT *, " +
-		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM dns_records WHERE payload_id = $1"
-
-	err := db.Select(&res, query, payloadID)
+	err := db.Select(&res, "SELECT * FROM dns_records WHERE payload_id = $1 ORDER BY id ASC", payloadID)
 
 	return res, err
 }
@@ -89,12 +81,7 @@ func (db *DB) DNSRecordsGetCountByPayloadID(payloadID int64) (int, error) {
 func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
-	query := "SELECT *, " +
-		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM dns_records WHERE payload_id = $1"
-
-	query = fmt.Sprintf("SELECT * FROM (%s) AS subq WHERE index = $2", query)
-
+	query := "SELECT * FROM dns_records WHERE payload_id = $1 AND index = $2 ORDER BY id ASC"
 	err := db.Get(&o, query, payloadID, index)
 
 	return &o, err

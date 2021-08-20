@@ -1,5 +1,6 @@
 - id: 1
   payload_id: 1
+  index: 1
   method: GET
   path: /get
   code: 200
@@ -12,6 +13,7 @@
 
 - id: 2
   payload_id: 1
+  index: 2
   method: POST
   path: /post
   code: 201
@@ -23,6 +25,7 @@
 
 - id: 3
   payload_id: 1
+  index: 3
   method: DELETE
   path: /delete
   code: 200
@@ -34,6 +37,7 @@
 
 - id: 4
   payload_id: 1
+  index: 4
   method: GET
   path: /redirect
   code: 302
@@ -45,6 +49,7 @@
 
 - id: 5
   payload_id: 1
+  index: 5
   method: ANY
   path: /route/{test}
   code: 200

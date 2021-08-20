@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/database/models"
@@ -12,10 +11,10 @@ func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
 	o.CreatedAt = time.Now()
 
 	query := "" +
-		"INSERT INTO http_routes (payload_id, method, path, code, headers, body, is_dynamic, created_at) " +
-		"VALUES(:payload_id, :method, :path, :code, :headers, :body, :is_dynamic, :created_at) " +
-		"RETURNING id, " +
-		"(SELECT COUNT(*) FROM http_routes hr WHERE hr.payload_id = :payload_id) + 1 AS index"
+		"INSERT INTO http_routes (payload_id, method, path, code, headers, body, is_dynamic, created_at, index) " +
+		"VALUES(:payload_id, :method, :path, :code, :headers, :body, :is_dynamic, :created_at, " +
+		"(SELECT COALESCE(MAX(index), 0) FROM http_routes hr WHERE hr.payload_id = :payload_id) + 1) " +
+		"RETURNING id, index"
 
 	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
 }
@@ -51,9 +50,7 @@ func (db *DB) HTTPRoutesGetByID(id int64) (*models.HTTPRoute, error) {
 func (db *DB) HTTPRoutesGetByPayloadID(payloadID int64) ([]*models.HTTPRoute, error) {
 	res := make([]*models.HTTPRoute, 0)
 
-	query := "SELECT *, " +
-		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM http_routes WHERE payload_id = $1"
+	query := "SELECT * FROM http_routes WHERE payload_id = $1"
 
 	err := db.Select(&res, query, payloadID)
 
@@ -77,12 +74,7 @@ func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(payloadID int64, method string
 func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.HTTPRoute, error) {
 	var o models.HTTPRoute
 
-	query := "SELECT *, " +
-		"ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM http_routes WHERE payload_id = $1"
-
-	query = fmt.Sprintf("SELECT * FROM (%s) AS subq WHERE index = $2", query)
-
+	query := "SELECT * FROM http_routes WHERE payload_id = $1 AND index = $2"
 	err := db.Get(&o, query, payloadID, index)
 
 	return &o, err
