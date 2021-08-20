@@ -56,7 +56,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		Strategy:  p.Strategy,
 	}
 
-	if err := act.db.DNSRecordsCreate(rec, true); err != nil {
+	if err := act.db.DNSRecordsCreate(rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
