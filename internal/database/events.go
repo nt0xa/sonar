@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/bi-zone/sonar/internal/database/models"
@@ -12,10 +11,12 @@ func (db *DB) EventsCreate(o *models.Event) error {
 	o.CreatedAt = time.Now()
 
 	query := "" +
-		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
-		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at) RETURNING id"
+		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at, index) " +
+		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at," +
+		" (SELECT COALESCE(MAX(index), 0) FROM events e WHERE e.payload_id = :payload_id) + 1) " +
+		"RETURNING id, index"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID)
+	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
 }
 
 func (db *DB) EventsGetByID(id int64) (*models.Event, error) {
@@ -65,13 +66,8 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 
 	params := make(map[string]interface{})
 
-	query := "" +
-		"SELECT *, " +
-		"ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM events WHERE payload_id = :payload_id"
+	query := "SELECT * FROM (SELECT * FROM events WHERE payload_id = :payload_id ORDER BY id ASC) subq"
 	params["payload_id"] = payloadID
-
-	query = fmt.Sprintf("SELECT * FROM (%s) AS subq", query)
 
 	var order string
 
@@ -100,13 +96,7 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 }
 
 func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.Event, error) {
-
-	query := "" +
-		"SELECT *, " +
-		"ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index " +
-		"FROM events WHERE payload_id = $1"
-
-	query = fmt.Sprintf("SELECT * FROM (%s) AS subq WHERE index = $2", query)
+	query := "SELECT * FROM events WHERE payload_id = $1 AND index = $2"
 
 	var res models.Event
 

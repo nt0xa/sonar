@@ -24,7 +24,7 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 		Strategy:  models.DNSStrategyAll,
 	}
 
-	err := db.DNSRecordsCreate(o, true)
+	err := db.DNSRecordsCreate(o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -43,7 +43,7 @@ func TestDNSRecordsCreate_Duplicate(t *testing.T) {
 		Values:    []string{"127.0.0.1"},
 	}
 
-	err := db.DNSRecordsCreate(o, true)
+	err := db.DNSRecordsCreate(o)
 	assert.Error(t, err)
 }
 
