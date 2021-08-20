@@ -21,7 +21,7 @@ type Routes struct {
 func (rr *Routes) Router(host string) (chi.Router, error) {
 
 	// Get payload domain from "Host" header.
-	parts := strings.Split(strings.TrimRight(host, "."+rr.Origin), ".")
+	parts := strings.Split(strings.Replace(host, "."+rr.Origin, "", 1), ".")
 	domain := parts[len(parts)-1]
 
 	// Find payload by domain.
@@ -106,6 +106,10 @@ func (rr *Routes) handleFn(route *models.HTTPRoute) http.HandlerFunc {
 
 type Data struct {
 	r *http.Request
+}
+
+func (d *Data) Host() string {
+	return d.r.Host
 }
 
 func (d *Data) Method() string {

@@ -22,7 +22,7 @@ func main() {
 			os.Args[1] == "completion" ||
 			slice.StringsContains(os.Args, "-h") ||
 			slice.StringsContains(os.Args, "--help")) {
-		root := cmd.New(nil, nil, nil).Root(&actions.User{})
+		root := cmd.New(nil, nil, nil).Root(&actions.User{}, true)
 		addJSONFlag(root)
 		root.AddCommand(completionCmd)
 		root.Execute()
@@ -88,7 +88,7 @@ func main() {
 		handler = &terminalHandler{u.Hostname()}
 	}
 
-	root := cmd.New(client, handler, nil).Root(user)
+	root := cmd.New(client, handler, nil).Root(user, true)
 	root.AddCommand(completionCmd)
 	addJSONFlag(root)
 	root.SilenceErrors = true

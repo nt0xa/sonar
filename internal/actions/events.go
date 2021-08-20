@@ -52,7 +52,7 @@ func (p EventsListParams) Validate() error {
 
 type EventsListResult []*Event
 
-func EventsListCommand(p *EventsListParams) (*cobra.Command, PrepareCommandFunc) {
+func EventsListCommand(p *EventsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List payload events",
@@ -85,7 +85,7 @@ func (p EventsGetParams) Validate() error {
 
 type EventsGetResult *Event
 
-func EventsGetCommand(p *EventsGetParams) (*cobra.Command, PrepareCommandFunc) {
+func EventsGetCommand(p *EventsGetParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "get INDEX",
 		Short: "Get payload event by INDEX",
