@@ -15,6 +15,7 @@ import (
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/models"
 	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/bi-zone/sonar/pkg/ftpx"
 	"github.com/bi-zone/sonar/pkg/httpx"
 	"github.com/bi-zone/sonar/pkg/smtpx"
 )
@@ -206,6 +207,26 @@ func main() {
 			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
 			smtpx.OnClose(func(e *smtpx.Event) {
 				events.Emit(server.SMTPEvent(e))
+			}),
+		)
+
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatalf("Failed start SMTP handler: %s", err.Error())
+		}
+	}()
+
+	//
+	// FTP
+	//
+
+	go func() {
+		// Pass TLS config to be able to handle "STARTTLS" command.
+		srv := ftpx.New(
+			":21",
+			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
+			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
+			ftpx.OnClose(func(e *ftpx.Event) {
+				events.Emit(server.FTPEvent(e))
 			}),
 		)
 
