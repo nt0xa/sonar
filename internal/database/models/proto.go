@@ -38,6 +38,7 @@ var (
 	ProtoHTTP  = Proto{"http"}
 	ProtoHTTPS = Proto{"https"}
 	ProtoSMTP  = Proto{"smtp"}
+	ProtoFTP   = Proto{"ftp"}
 )
 
 type ProtoCategory struct {
@@ -52,12 +53,14 @@ var (
 	ProtoCategoryDNS  = ProtoCategory{"dns"}
 	ProtoCategoryHTTP = ProtoCategory{"http"}
 	ProtoCategorySMTP = ProtoCategory{"smtp"}
+	ProtoCategoryFTP  = ProtoCategory{"ftp"}
 )
 
 var ProtoCategoriesAll = ProtoCategoryArray{
 	ProtoCategoryDNS,
 	ProtoCategoryHTTP,
 	ProtoCategorySMTP,
+	ProtoCategoryFTP,
 }
 
 func ProtoToCategory(p Proto) ProtoCategory {
@@ -68,6 +71,8 @@ func ProtoToCategory(p Proto) ProtoCategory {
 		return ProtoCategoryHTTP
 	case ProtoSMTP:
 		return ProtoCategorySMTP
+	case ProtoFTP:
+		return ProtoCategoryFTP
 	}
 
 	panic(fmt.Sprintf("invalid protocol: %s", p))
