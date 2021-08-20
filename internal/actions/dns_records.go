@@ -62,7 +62,7 @@ func (p DNSRecordsCreateParams) Validate() error {
 
 type DNSRecordsCreateResult *DNSRecord
 
-func DNSRecordsCreateCommand(p *DNSRecordsCreateParams) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new VALUES",
 		Short: "Create new DNS records",
@@ -101,7 +101,7 @@ func (p DNSRecordsDeleteParams) Validate() error {
 
 type DNSRecordsDeleteResult *DNSRecord
 
-func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del INDEX",
 		Short: "Delete DNS record",
@@ -137,7 +137,7 @@ func (p DNSRecordsListParams) Validate() error {
 
 type DNSRecordsListResult []*DNSRecord
 
-func DNSRecordsListCommand(p *DNSRecordsListParams) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsListCommand(p *DNSRecordsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List DNS records",

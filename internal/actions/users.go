@@ -45,7 +45,7 @@ func (p UsersCreateParams) Validate() error {
 
 type UsersCreateResult *User
 
-func UsersCreateCommand(p *UsersCreateParams) (*cobra.Command, PrepareCommandFunc) {
+func UsersCreateCommand(p *UsersCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new NAME",
 		Short: "Create new user",
@@ -83,7 +83,7 @@ func (p UsersDeleteParams) Validate() error {
 
 type UsersDeleteResult *User
 
-func UsersDeleteCommand(p *UsersDeleteParams) (*cobra.Command, PrepareCommandFunc) {
+func UsersDeleteCommand(p *UsersDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del NAME",
 		Short: "Delete user",

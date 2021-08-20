@@ -18,7 +18,7 @@ type UserHandler interface {
 
 type UserCurrentResult *User
 
-func UserCurrentCommand() (*cobra.Command, PrepareCommandFunc) {
+func UserCurrentCommand(local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "user",
 		Short: "Get current user info",

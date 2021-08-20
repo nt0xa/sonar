@@ -7,10 +7,10 @@ import (
 	"github.com/bi-zone/sonar/internal/utils/errors"
 )
 
-func (c *command) DNSRecordsCreate() *cobra.Command {
+func (c *command) DNSRecordsCreate(local bool) *cobra.Command {
 	var params actions.DNSRecordsCreateParams
 
-	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&params)
+	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -36,10 +36,10 @@ func (c *command) DNSRecordsCreate() *cobra.Command {
 	return cmd
 }
 
-func (c *command) DNSRecordsDelete() *cobra.Command {
+func (c *command) DNSRecordsDelete(local bool) *cobra.Command {
 	var params actions.DNSRecordsDeleteParams
 
-	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&params)
+	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -65,10 +65,10 @@ func (c *command) DNSRecordsDelete() *cobra.Command {
 	return cmd
 }
 
-func (c *command) DNSRecordsList() *cobra.Command {
+func (c *command) DNSRecordsList(local bool) *cobra.Command {
 	var params actions.DNSRecordsListParams
 
-	cmd, prepareFunc := actions.DNSRecordsListCommand(&params)
+	cmd, prepareFunc := actions.DNSRecordsListCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -94,10 +94,10 @@ func (c *command) DNSRecordsList() *cobra.Command {
 	return cmd
 }
 
-func (c *command) EventsGet() *cobra.Command {
+func (c *command) EventsGet(local bool) *cobra.Command {
 	var params actions.EventsGetParams
 
-	cmd, prepareFunc := actions.EventsGetCommand(&params)
+	cmd, prepareFunc := actions.EventsGetCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -123,10 +123,10 @@ func (c *command) EventsGet() *cobra.Command {
 	return cmd
 }
 
-func (c *command) EventsList() *cobra.Command {
+func (c *command) EventsList(local bool) *cobra.Command {
 	var params actions.EventsListParams
 
-	cmd, prepareFunc := actions.EventsListCommand(&params)
+	cmd, prepareFunc := actions.EventsListCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -152,10 +152,10 @@ func (c *command) EventsList() *cobra.Command {
 	return cmd
 }
 
-func (c *command) HTTPRoutesCreate() *cobra.Command {
+func (c *command) HTTPRoutesCreate(local bool) *cobra.Command {
 	var params actions.HTTPRoutesCreateParams
 
-	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params)
+	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -181,10 +181,10 @@ func (c *command) HTTPRoutesCreate() *cobra.Command {
 	return cmd
 }
 
-func (c *command) HTTPRoutesDelete() *cobra.Command {
+func (c *command) HTTPRoutesDelete(local bool) *cobra.Command {
 	var params actions.HTTPRoutesDeleteParams
 
-	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params)
+	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -210,10 +210,10 @@ func (c *command) HTTPRoutesDelete() *cobra.Command {
 	return cmd
 }
 
-func (c *command) HTTPRoutesList() *cobra.Command {
+func (c *command) HTTPRoutesList(local bool) *cobra.Command {
 	var params actions.HTTPRoutesListParams
 
-	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params)
+	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -239,10 +239,10 @@ func (c *command) HTTPRoutesList() *cobra.Command {
 	return cmd
 }
 
-func (c *command) PayloadsCreate() *cobra.Command {
+func (c *command) PayloadsCreate(local bool) *cobra.Command {
 	var params actions.PayloadsCreateParams
 
-	cmd, prepareFunc := actions.PayloadsCreateCommand(&params)
+	cmd, prepareFunc := actions.PayloadsCreateCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -268,10 +268,10 @@ func (c *command) PayloadsCreate() *cobra.Command {
 	return cmd
 }
 
-func (c *command) PayloadsDelete() *cobra.Command {
+func (c *command) PayloadsDelete(local bool) *cobra.Command {
 	var params actions.PayloadsDeleteParams
 
-	cmd, prepareFunc := actions.PayloadsDeleteCommand(&params)
+	cmd, prepareFunc := actions.PayloadsDeleteCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -297,10 +297,10 @@ func (c *command) PayloadsDelete() *cobra.Command {
 	return cmd
 }
 
-func (c *command) PayloadsList() *cobra.Command {
+func (c *command) PayloadsList(local bool) *cobra.Command {
 	var params actions.PayloadsListParams
 
-	cmd, prepareFunc := actions.PayloadsListCommand(&params)
+	cmd, prepareFunc := actions.PayloadsListCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -326,10 +326,10 @@ func (c *command) PayloadsList() *cobra.Command {
 	return cmd
 }
 
-func (c *command) PayloadsUpdate() *cobra.Command {
+func (c *command) PayloadsUpdate(local bool) *cobra.Command {
 	var params actions.PayloadsUpdateParams
 
-	cmd, prepareFunc := actions.PayloadsUpdateCommand(&params)
+	cmd, prepareFunc := actions.PayloadsUpdateCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -355,8 +355,8 @@ func (c *command) PayloadsUpdate() *cobra.Command {
 	return cmd
 }
 
-func (c *command) UserCurrent() *cobra.Command {
-	cmd, prepareFunc := actions.UserCurrentCommand()
+func (c *command) UserCurrent(local bool) *cobra.Command {
+	cmd, prepareFunc := actions.UserCurrentCommand(local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -379,10 +379,10 @@ func (c *command) UserCurrent() *cobra.Command {
 	return cmd
 }
 
-func (c *command) UsersCreate() *cobra.Command {
+func (c *command) UsersCreate(local bool) *cobra.Command {
 	var params actions.UsersCreateParams
 
-	cmd, prepareFunc := actions.UsersCreateCommand(&params)
+	cmd, prepareFunc := actions.UsersCreateCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -408,10 +408,10 @@ func (c *command) UsersCreate() *cobra.Command {
 	return cmd
 }
 
-func (c *command) UsersDelete() *cobra.Command {
+func (c *command) UsersDelete(local bool) *cobra.Command {
 	var params actions.UsersDeleteParams
 
-	cmd, prepareFunc := actions.UsersDeleteCommand(&params)
+	cmd, prepareFunc := actions.UsersDeleteCommand(&params, local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
