@@ -294,7 +294,9 @@ func (s *session) handleEhlo(args string) error {
 	}
 
 	if s.tlsConfig == nil {
-		return s.writeLine("250-STARTTLS")
+		if err := s.writeLine("250-STARTTLS"); err != nil {
+			return err
+		}
 	}
 
 	return s.writeLine("250 HELO")
