@@ -208,6 +208,7 @@ func main() {
 			smtpx.OnClose(func(e *smtpx.Event) {
 				events.Emit(server.SMTPEvent(e))
 			}),
+			smtpx.TLSConfig(tlsConfig, false),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
