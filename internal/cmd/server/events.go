@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net"
 	"regexp"
+	"strings"
 
 	"github.com/bi-zone/sonar/internal/database"
 	"github.com/bi-zone/sonar/internal/database/models"
@@ -12,7 +13,7 @@ import (
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
 
 var (
-	subdomainRegexp = regexp.MustCompile("[a-f0-9]{8}")
+	subdomainRegexp = regexp.MustCompile("[a-fA-F0-9]{8}")
 )
 
 type EventsHandler struct {
@@ -44,7 +45,7 @@ func (h *EventsHandler) Start() error {
 		}
 
 		for _, m := range matches {
-			d := string(m[0])
+			d := strings.ToLower(string(m[0]))
 
 			if _, ok := seen[d]; !ok {
 				seen[d] = struct{}{}
