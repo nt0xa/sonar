@@ -293,7 +293,7 @@ func (s *session) handleEhlo(args string) error {
 		return err
 	}
 
-	if s.tlsConfig == nil {
+	if s.tlsConfig != nil {
 		if err := s.writeLine("250-STARTTLS"); err != nil {
 			return err
 		}
