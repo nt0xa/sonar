@@ -274,7 +274,9 @@ func TestHTTPX(t *testing.T) {
 						// know remote address of the connection.
 						notifier.
 							On("Notify",
-								conn.LocalAddr(),
+								mock.MatchedBy(func(addr net.Addr) bool {
+									return conn.LocalAddr().String() == addr.String()
+								}),
 								mock.MatchedBy(func(data []byte) bool {
 									for _, s := range contains {
 										if !strings.Contains(string(data), s) {
