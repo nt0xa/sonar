@@ -106,14 +106,18 @@ func TestSMTP(t *testing.T) {
 			contains := []string{tt.from, tt.to, tt.subj, tt.body}
 
 			notifier.
-				On("Notify", conn.LocalAddr(), mock.MatchedBy(func(data []byte) bool {
-					for _, s := range contains {
-						if !strings.Contains(string(data), s) {
-							return false
+				On("Notify",
+					mock.MatchedBy(func(addr net.Addr) bool {
+						return conn.LocalAddr().String() == addr.String()
+					}),
+					mock.MatchedBy(func(data []byte) bool {
+						for _, s := range contains {
+							if !strings.Contains(string(data), s) {
+								return false
+							}
 						}
-					}
-					return true
-				}), mock.Anything).
+						return true
+					}), mock.Anything).
 				Return().
 				Once()
 
