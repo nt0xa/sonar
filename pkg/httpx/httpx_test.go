@@ -2,12 +2,15 @@ package httpx_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"strings"
 	"sync"
@@ -326,4 +329,42 @@ func TestHTTPX(t *testing.T) {
 	}
 
 	notifier.AssertExpectations(t)
+}
+
+func TestKeepAlive(t *testing.T) {
+	clientTrace := &httptrace.ClientTrace{
+		GotConn: func(info httptrace.GotConnInfo) {
+			assert.False(t, info.Reused, "Connection must not be reused")
+		},
+	}
+	traceCtx := httptrace.WithClientTrace(context.Background(), clientTrace)
+
+	notifier.
+		On("Notify",
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+		).
+		Times(2)
+
+		// 1st request
+	req, err := http.NewRequestWithContext(traceCtx, http.MethodGet, "http://localhost:1080", nil)
+	require.NoError(t, err)
+
+	res, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	_, err = io.Copy(ioutil.Discard, res.Body)
+	require.NoError(t, err)
+
+	res.Body.Close()
+
+	// 2nd request
+	req, err = http.NewRequestWithContext(traceCtx, http.MethodGet, "http://localhost:1080", nil)
+	require.NoError(t, err)
+
+	res, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	http.DefaultClient.CloseIdleConnections()
 }
