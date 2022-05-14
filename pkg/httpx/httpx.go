@@ -43,20 +43,24 @@ func New(addr string, h http.Handler, opts ...Option) Server {
 		opt(&options)
 	}
 
+	srv := &http.Server{
+		ConnContext: func(ctx context.Context, conn net.Conn) context.Context {
+			return saveConn(ctx, conn)
+		},
+		Handler:        h,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   5 * time.Second,
+		MaxHeaderBytes: 1 << 12,
+	}
+
+	srv.SetKeepAlivesEnabled(false)
+
 	return &server{
 		addr:              addr,
 		handler:           h,
 		notifyStartedFunc: options.notifyStartedFunc,
 		tlsConfig:         options.tlsConfig,
-		server: &http.Server{
-			ConnContext: func(ctx context.Context, conn net.Conn) context.Context {
-				return saveConn(ctx, conn)
-			},
-			Handler:        h,
-			ReadTimeout:    5 * time.Second,
-			WriteTimeout:   5 * time.Second,
-			MaxHeaderBytes: 1 << 12,
-		},
+		server:            srv,
 	}
 }
 
