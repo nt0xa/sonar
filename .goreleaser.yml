@@ -45,7 +45,8 @@ brews:
     tap:
       owner: russtone
       name: homebrew
-
+      token: "{{ .Env.HOMEBREW_PAT }}"
+      
     install: |
       bin.install "sonar"
 
