@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bi-zone/sonar/pkg/netx"
+	"github.com/russtone/sonar/pkg/netx"
 )
 
 type Server interface {

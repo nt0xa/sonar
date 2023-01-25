@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {

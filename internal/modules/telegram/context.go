@@ -3,7 +3,7 @@ package telegram
 import (
 	"context"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 type contextKey string

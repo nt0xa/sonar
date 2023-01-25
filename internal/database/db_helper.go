@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/bi-zone/sonar/internal/utils/logger"
+	"github.com/russtone/sonar/internal/utils/logger"
 	"github.com/jmoiron/sqlx"
 )
 

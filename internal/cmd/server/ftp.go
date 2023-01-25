@@ -4,9 +4,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/pkg/ftpx"
-	"github.com/bi-zone/sonar/pkg/netx"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/pkg/ftpx"
+	"github.com/russtone/sonar/pkg/netx"
 	"github.com/fatih/structs"
 )
 

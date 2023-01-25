@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/modules/api/apiclient"
-	"github.com/bi-zone/sonar/internal/utils/slice"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/cmd"
+	"github.com/russtone/sonar/internal/modules/api/apiclient"
+	"github.com/russtone/sonar/internal/utils/slice"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )

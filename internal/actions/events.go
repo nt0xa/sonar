@@ -8,7 +8,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 type EventsActions interface {

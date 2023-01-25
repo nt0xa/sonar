@@ -7,11 +7,11 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/modules/api"
-	"github.com/bi-zone/sonar/internal/modules/telegram"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/modules/api"
+	"github.com/russtone/sonar/internal/modules/telegram"
 )
 
 type Controller interface {

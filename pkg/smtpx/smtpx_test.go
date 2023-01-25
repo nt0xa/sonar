@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/testutils"
-	"github.com/bi-zone/sonar/pkg/smtpx"
+	"github.com/russtone/sonar/internal/testutils"
+	"github.com/russtone/sonar/pkg/smtpx"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

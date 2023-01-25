@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 func TestPayloadsCreate_Success(t *testing.T) {

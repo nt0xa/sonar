@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	actions_mock "github.com/bi-zone/sonar/internal/actions/mock"
-	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/actions"
+	actions_mock "github.com/russtone/sonar/internal/actions/mock"
+	"github.com/russtone/sonar/internal/cmd"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 var (

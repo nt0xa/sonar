@@ -9,11 +9,11 @@ import (
 
 	"github.com/fatih/structs"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/httpdb"
-	"github.com/bi-zone/sonar/internal/utils"
-	"github.com/bi-zone/sonar/pkg/httpx"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/httpdb"
+	"github.com/russtone/sonar/internal/utils"
+	"github.com/russtone/sonar/pkg/httpx"
 )
 
 // TODO: as parameters

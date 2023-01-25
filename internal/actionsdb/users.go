@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func User(m *models.User) *actions.User {

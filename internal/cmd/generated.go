@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func (c *command) DNSRecordsCreate(local bool) *cobra.Command {

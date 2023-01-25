@@ -3,8 +3,8 @@ package apiclient
 import (
 	"context"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecordsCreateParams) (actions.DNSRecordsCreateResult, errors.Error) {

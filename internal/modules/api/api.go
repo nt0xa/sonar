@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/utils/logger"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/utils/logger"
 )
 
 type API struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func oneArg(name string) cobra.PositionalArgs {

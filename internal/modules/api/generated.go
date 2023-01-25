@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actions"
 )
 
 func (api *API) DNSRecordsCreate(w http.ResponseWriter, r *http.Request) {

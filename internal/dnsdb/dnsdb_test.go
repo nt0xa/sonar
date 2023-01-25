@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/cmd/server"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/testutils"
-	"github.com/bi-zone/sonar/pkg/dnsrec"
-	"github.com/bi-zone/sonar/pkg/dnsx"
+	"github.com/russtone/sonar/internal/cmd/server"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/testutils"
+	"github.com/russtone/sonar/pkg/dnsrec"
+	"github.com/russtone/sonar/pkg/dnsx"
 )
 
 var (

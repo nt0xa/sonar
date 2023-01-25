@@ -10,7 +10,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actions"
 )
 
 type Options struct {

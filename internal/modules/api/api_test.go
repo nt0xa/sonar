@@ -17,12 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/modules/api"
-	"github.com/bi-zone/sonar/internal/testutils"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/modules/api"
+	"github.com/russtone/sonar/internal/testutils"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 // Flags

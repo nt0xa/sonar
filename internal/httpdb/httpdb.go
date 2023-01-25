@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 type Routes struct {

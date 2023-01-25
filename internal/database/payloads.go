@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) PayloadsCreate(o *models.Payload) error {

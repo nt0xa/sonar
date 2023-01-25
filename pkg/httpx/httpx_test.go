@@ -22,9 +22,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/testutils"
-	"github.com/bi-zone/sonar/pkg/httpx"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/testutils"
+	"github.com/russtone/sonar/pkg/httpx"
 )
 
 var (
