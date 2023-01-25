@@ -7,9 +7,9 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils/errors"
-	"github.com/bi-zone/sonar/internal/utils/valid"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/valid"
 )
 
 type PayloadsActions interface {

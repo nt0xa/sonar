@@ -10,7 +10,7 @@ import (
 	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/miekg/dns"
 
-	"github.com/bi-zone/sonar/pkg/dnsutils"
+	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 // RecordGetter is an interface which must be implemented by any

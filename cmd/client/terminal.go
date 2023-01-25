@@ -11,7 +11,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/gookit/color"
 
-	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actions"
 )
 
 func tpl(s string) *template.Template {

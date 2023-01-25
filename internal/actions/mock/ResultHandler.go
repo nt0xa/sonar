@@ -5,7 +5,7 @@ package actions_mock
 import (
 	context "context"
 
-	actions "github.com/bi-zone/sonar/internal/actions"
+	actions "github.com/russtone/sonar/internal/actions"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -7,7 +7,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/bi-zone/sonar/pkg/dnsutils"
+	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 // Records represents in memory stored DNS records.

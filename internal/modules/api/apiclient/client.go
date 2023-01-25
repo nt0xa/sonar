@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actions"
 )
 
 type Client struct {

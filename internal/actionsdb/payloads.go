@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils"
-	"github.com/bi-zone/sonar/internal/utils/errors"
-	"github.com/bi-zone/sonar/internal/utils/slice"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils"
+	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/slice"
 )
 
 func Payload(m *models.Payload) *actions.Payload {

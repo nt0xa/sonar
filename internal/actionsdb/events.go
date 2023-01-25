@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func Event(m *models.Event) *actions.Event {

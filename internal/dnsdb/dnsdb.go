@@ -7,11 +7,11 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils/pointer"
-	"github.com/bi-zone/sonar/internal/utils/slice"
-	"github.com/bi-zone/sonar/pkg/dnsutils"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils/pointer"
+	"github.com/russtone/sonar/internal/utils/slice"
+	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 // Records searches for DNS records in the database.

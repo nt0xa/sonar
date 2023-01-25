@@ -3,7 +3,7 @@ package database
 import (
 	"time"
 
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) EventsCreate(o *models.Event) error {

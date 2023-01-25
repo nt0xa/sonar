@@ -7,9 +7,9 @@ import (
 	"html/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/actionsdb"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actionsdb"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 var (

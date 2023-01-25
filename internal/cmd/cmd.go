@@ -7,8 +7,8 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 //go:generate go run ./internal/codegen/*.go -type cmd

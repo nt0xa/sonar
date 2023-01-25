@@ -10,14 +10,14 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bi-zone/sonar/internal/actionsdb"
-	"github.com/bi-zone/sonar/internal/cmd/server"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/pkg/dnsx"
-	"github.com/bi-zone/sonar/pkg/ftpx"
-	"github.com/bi-zone/sonar/pkg/httpx"
-	"github.com/bi-zone/sonar/pkg/smtpx"
+	"github.com/russtone/sonar/internal/actionsdb"
+	"github.com/russtone/sonar/internal/cmd/server"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/pkg/dnsx"
+	"github.com/russtone/sonar/pkg/ftpx"
+	"github.com/russtone/sonar/pkg/httpx"
+	"github.com/russtone/sonar/pkg/smtpx"
 )
 
 func main() {

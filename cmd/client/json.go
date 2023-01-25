@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/bi-zone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actions"
 )
 
 var _ actions.ResultHandler = &jsonHandler{}

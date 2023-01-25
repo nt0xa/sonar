@@ -3,8 +3,8 @@ package actionsdb
 import (
 	"context"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 func (act *dbactions) UserCurrent(ctx context.Context) (actions.UserCurrentResult, errors.Error) {

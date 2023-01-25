@@ -13,7 +13,7 @@ import (
 	"github.com/go-acme/lego/v3/log"
 	"github.com/go-acme/lego/v3/registration"
 
-	"github.com/bi-zone/sonar/pkg/certstorage"
+	"github.com/russtone/sonar/pkg/certstorage"
 )
 
 type CertMgr struct {

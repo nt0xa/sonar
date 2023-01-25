@@ -12,13 +12,13 @@ import (
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 
-	"github.com/bi-zone/sonar/internal/actions"
-	"github.com/bi-zone/sonar/internal/actionsdb"
-	"github.com/bi-zone/sonar/internal/cmd"
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
-	"github.com/bi-zone/sonar/internal/utils"
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actionsdb"
+	"github.com/russtone/sonar/internal/cmd"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 type Telegram struct {

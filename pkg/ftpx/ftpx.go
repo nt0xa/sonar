@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/bi-zone/sonar/pkg/netx"
+	"github.com/russtone/sonar/pkg/netx"
 )
 
 type Server struct {

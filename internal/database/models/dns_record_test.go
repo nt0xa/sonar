@@ -6,7 +6,7 @@ import (
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 func TestDNSRecordsQtype(t *testing.T) {

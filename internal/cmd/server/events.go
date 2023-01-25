@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bi-zone/sonar/internal/database"
-	"github.com/bi-zone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/database"
+	"github.com/russtone/sonar/internal/database/models"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})

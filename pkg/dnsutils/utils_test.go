@@ -7,7 +7,7 @@ import (
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/bi-zone/sonar/pkg/dnsutils"
+	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 func TestRRToString(t *testing.T) {

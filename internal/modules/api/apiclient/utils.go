@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/bi-zone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/errors"
 	"github.com/fatih/structs"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/schema"
