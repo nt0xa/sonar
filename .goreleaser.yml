@@ -43,9 +43,8 @@ brews:
     - client
 
     tap:
-      owner: bi-zone
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      owner: russtone
+      name: homebrew
 
     install: |
       bin.install "sonar"
@@ -61,10 +60,10 @@ changelog:
 
 dockers:
 - image_templates:
-    - "ghcr.io/bi-zone/sonar:latest"
-    - "ghcr.io/bi-zone/sonar:{{.Major}}"
-    - "ghcr.io/bi-zone/sonar:{{.Major}}.{{.Minor}}"
-    - "ghcr.io/bi-zone/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
+    - "ghcr.io/russtone/sonar:latest"
+    - "ghcr.io/russtone/sonar:{{.Major}}"
+    - "ghcr.io/russtone/sonar:{{.Major}}.{{.Minor}}"
+    - "ghcr.io/russtone/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
   build_flag_templates:
     - "--pull"
     - "--label=org.opencontainers.image.created={{.Date}}"
