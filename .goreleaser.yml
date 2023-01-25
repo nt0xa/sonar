@@ -25,6 +25,21 @@ builds:
       - windows
     goarch:
       - amd64
+      - arm
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: 'arm'
+      - goos: windows
+        goarch: 'arm64'
+
+  ignore:
+    - goos: darwin
+      goarch: '386'
+    - goos: windows
+      goarch: 'arm'
+    - goos: windows
+      goarch: 'arm64'
 
 archives:
   - id: client
