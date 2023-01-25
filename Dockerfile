@@ -1,4 +1,4 @@
-ARG go_version=1.16
+ARG go_version=1.19
 
 FROM golang:${go_version} AS builder
 WORKDIR /opt/app
