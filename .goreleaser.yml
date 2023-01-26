@@ -51,7 +51,7 @@ brews:
 
     tap:
       owner: russtone
-      name: homebrew-tap
+      name: homebrew-sonar
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
       
     install: |
