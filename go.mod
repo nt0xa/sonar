@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/schema v1.2.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.0.16
 	github.com/lib/pq v1.10.7
 	github.com/miekg/dns v1.1.50
 	github.com/mitchellh/mapstructure v1.5.0

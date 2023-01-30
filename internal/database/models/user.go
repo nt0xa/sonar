@@ -14,6 +14,7 @@ type UserParamsKey string
 const (
 	UserTelegramID UserParamsKey = "telegram.id"
 	UserAPIToken   UserParamsKey = "api.token"
+	UserLarkID     UserParamsKey = "lark.userid"
 )
 
 var UserParamsKeys = []string{string(UserTelegramID), string(UserAPIToken)}
@@ -30,6 +31,7 @@ type User struct {
 type UserParams struct {
 	TelegramID int64  `json:"telegram.id" mapstructure:"telegram.id"`
 	APIToken   string `json:"api.token"   mapstructure:"api.token"`
+	LarkUserID string `json:"lark.userid" mapstructure:"lark.userid"`
 }
 
 func (p UserParams) Value() (driver.Value, error) {
