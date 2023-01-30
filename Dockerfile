@@ -14,5 +14,5 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /opt/app
 COPY --from=builder /opt/app/server .
 COPY ./internal/database/migrations ./migrations
-EXPOSE 53/udp 25 80 443
+EXPOSE 53/udp 21 25 80 443
 CMD ["./server"]

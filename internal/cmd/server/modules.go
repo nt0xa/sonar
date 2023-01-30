@@ -11,6 +11,7 @@ import (
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/modules/api"
+	"github.com/russtone/sonar/internal/modules/lark"
 	"github.com/russtone/sonar/internal/modules/telegram"
 )
 
@@ -23,16 +24,21 @@ type Notifier interface {
 }
 
 type ModulesConfig struct {
-	Enabled  []string        `json:"enabled"`
+	Enabled []string `json:"enabled"`
+
+	// TODO: dynamic modules config (something like json.RawMessage) to be able to not include
+	// unnecessary modules in binary.
 	Telegram telegram.Config `json:"telegram"`
 	API      api.Config      `json:"api"`
+	Lark     lark.Config     `json:"lark"`
 }
 
 func (c ModulesConfig) Validate() error {
 	rules := make([]*validation.FieldRules, 0)
 	rules = append(rules, validation.Field(&c.Enabled,
-		validation.Each(validation.In("telegram", "api"))))
+		validation.Each(validation.In("telegram", "api", "lark"))))
 
+	// TODO: dynamic modules registration. Something like sql drivers
 	for _, name := range c.Enabled {
 		switch name {
 
@@ -41,6 +47,9 @@ func (c ModulesConfig) Validate() error {
 
 		case "api":
 			rules = append(rules, validation.Field(&c.API))
+
+		case "lark":
+			rules = append(rules, validation.Field(&c.Lark))
 		}
 	}
 
@@ -64,6 +73,8 @@ func Modules(
 		err error
 	)
 
+	// TODO: dynamic modules registration. Something like sql drivers
+	// + build tags to include/exclude some modules from build
 	for _, name := range cfg.Enabled {
 		switch name {
 
@@ -72,6 +83,9 @@ func Modules(
 
 		case "api":
 			m, err = api.New(&cfg.API, db, log, tls, actions)
+
+		case "lark":
+			m, err = lark.New(&cfg.Lark, db, actions, domain)
 
 		}
 

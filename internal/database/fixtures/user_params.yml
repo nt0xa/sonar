@@ -27,3 +27,18 @@
   user_id: 3
   key: api.token
   value: a33bfdbfb3c62feb7ea59314dbd17426
+
+- id: 7
+  user_id: 1
+  key: lark.userid
+  value: 8b55131
+
+- id: 8
+  user_id: 2
+  key: lark.userid
+  value: 8b2494d
+
+- id: 9
+  user_id: 3
+  key: lark.userid
+  value: bca2924
