@@ -85,7 +85,7 @@ func Modules(
 			m, err = api.New(&cfg.API, db, log, tls, actions)
 
 		case "lark":
-			m, err = lark.New(&cfg.Lark, db, actions, domain)
+			m, err = lark.New(&cfg.Lark, db, tls, actions, domain)
 
 		}
 
