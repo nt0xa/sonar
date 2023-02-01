@@ -38,11 +38,12 @@ type Lark struct {
 	cmd     cmd.Command
 	actions actions.Actions
 	client  *lark.Client
+	tls     *tls.Config
 
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (*Lark, error) {
+func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Actions, domain string) (*Lark, error) {
 
 	httpClient := http.DefaultClient
 
@@ -62,7 +63,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 
 	}
 
-  // TODO: better logging
+	// TODO: better logging
 	var client = lark.NewClient(
 		cfg.AppID,
 		cfg.AppSecret,
@@ -85,6 +86,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		cfg:     cfg,
 		domain:  domain,
 		actions: actions,
+		tls:     tlsConfig,
 	}
 
 	lrk.cmd = cmd.New(actions, lrk, lrk.preExec)
@@ -145,12 +147,20 @@ func (lrk *Lark) Start() error {
 			},
 		)
 
-		// TODO: take path from config
-	http.HandleFunc("/webhook/event", httpserverext.NewEventHandlerFunc(handler,
+	mux := http.NewServeMux()
+
+	// TODO: take path from config
+	mux.HandleFunc("/webhook/event", httpserverext.NewEventHandlerFunc(handler,
 		larkevent.WithLogLevel(larkcore.LogLevelDebug)))
 
 	// TODO: take port from config
-	return http.ListenAndServe(":31338", nil)
+	srv := http.Server{
+		Addr:      ":31338",
+		Handler:   mux,
+		TLSConfig: lrk.tls,
+	}
+
+	return srv.ListenAndServeTLS("", "")
 }
 
 // TODO: add common notifier module
