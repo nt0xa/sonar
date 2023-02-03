@@ -6,11 +6,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"sync"
+	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	"github.com/google/shlex"
@@ -19,6 +22,7 @@ import (
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	"github.com/larksuite/oapi-sdk-go/v3/core/httpserverext"
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
+	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
@@ -95,28 +99,130 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 }
 
 func (lrk *Lark) preExec(root *cobra.Command, u *actions.User) {
+	root.SetHelpTemplate(helpTemplate)
+	root.SetUsageTemplate(usageTemplate)
 }
 
 func (lrk *Lark) Start() error {
 
+	// Sometimes the same event is sent several times, so keep recent event ids
+	// to prevent handling the same event more than once.
+	recentEvents := map[string]time.Time{}
+	recentEventsMutex := sync.Mutex{}
+
+	ticker := time.NewTicker(10 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				toRemove := make([]string, 0)
+
+				for eventID, handledAt := range recentEvents {
+
+					// Cleanup events after 10m
+					// TODO: config
+					if time.Since(handledAt) > time.Minute*5 {
+						toRemove = append(toRemove, eventID)
+					}
+				}
+
+				recentEventsMutex.Lock()
+				for _, eventID := range toRemove {
+					delete(recentEvents, eventID)
+				}
+				recentEventsMutex.Unlock()
+			}
+		}
+	}()
+
 	handler := dispatcher.NewEventDispatcher(lrk.cfg.VerificationToken, lrk.cfg.EncryptKey).
 		OnP2MessageReceiveV1(
 			func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
-				fmt.Println(larkcore.Prettify(event))
+
+				ts, err := strconv.ParseInt(*event.Event.Message.CreateTime, 10, 64)
+				if err != nil {
+					return nil
+				}
+
+				// Do not handle for old events
+				// TODO: config
+				if time.Since(time.UnixMilli(ts)) > time.Minute*5 {
+					return nil
+				}
+
+				eventID := event.EventV2Base.Header.EventID
+
+				recentEventsMutex.Lock()
+				if _, ok := recentEvents[eventID]; ok {
+					recentEventsMutex.Unlock()
+
+					// Event was already handled
+					return nil
+				}
+				recentEvents[eventID] = time.Now()
+				recentEventsMutex.Unlock()
 
 				userID := event.Event.Sender.SenderId.UserId
 				msgID := event.Event.Message.MessageId
 
 				if userID == nil || msgID == nil {
 					// TODO: better error
-					return fmt.Errorf("lark: invalid user_id or message_id")
+					return nil
 				}
 
-				user, err := lrk.db.UsersGetByParam(models.UserLarkID, *userID)
-				if err != nil {
-					// TODO: logging
-					fmt.Println(err)
-					return err
+				var user *models.User
+
+				if lrk.cfg.DepartmentID != "" {
+					// TODO: save last check date in user and don't request departement every time.
+					resp, err := lrk.client.Contact.User.Get(ctx,
+						larkcontact.NewGetUserReqBuilder().
+							UserId(*userID).
+							UserIdType(larkim.UserIdTypeUserId).
+							Build())
+
+					if err != nil {
+						// TODO: logging
+						fmt.Println(err)
+						return nil
+					}
+
+					found := false
+					for _, departmentID := range resp.Data.User.DepartmentIds {
+						if departmentID == lrk.cfg.DepartmentID {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						// TODO: logging & better message
+						lrk.mdMessage(*userID, msgID, "access denied")
+						return nil
+					}
+
+					user, err = lrk.db.UsersGetByParam(models.UserLarkID, *userID)
+					if user == nil && lrk.cfg.DepartmentID != "" {
+						// Create user
+						user = &models.User{
+							Name: *resp.Data.User.Name,
+							Params: models.UserParams{
+								LarkUserID: *resp.Data.User.UserId,
+							},
+						}
+						if err := lrk.db.UsersCreate(user); err != nil {
+							// TODO: logging
+							fmt.Println(err)
+							return nil
+						}
+					}
+
+				} else {
+					user, err = lrk.db.UsersGetByParam(models.UserLarkID, *userID)
+					if err != nil {
+						// TODO: logging
+						fmt.Println(err)
+						return nil
+					}
 				}
 
 				type TextMessage struct {
@@ -128,7 +234,7 @@ func (lrk *Lark) Start() error {
 				if err := json.Unmarshal([]byte(*event.Event.Message.Content), &msg); err != nil {
 					// TODO: logging
 					fmt.Println(err)
-					return err
+					return nil
 				}
 
 				ctx = SetMessageID(ctx, *msgID)
@@ -140,7 +246,7 @@ func (lrk *Lark) Start() error {
 				if out, err := lrk.cmd.Exec(ctx, actionsdb.User(user), false, args); err != nil {
 					lrk.handleError(*userID, msgID, err)
 				} else if out != "" {
-					lrk.mdMesssage(*userID, msgID, out)
+					lrk.txtMessage(*userID, msgID, out)
 				}
 
 				return nil
@@ -160,7 +266,11 @@ func (lrk *Lark) Start() error {
 		TLSConfig: lrk.tls,
 	}
 
-	return srv.ListenAndServeTLS("", "")
+	if lrk.cfg.TLSEnabled {
+		return srv.ListenAndServeTLS("", "")
+	} else {
+		return srv.ListenAndServe()
+	}
 }
 
 // TODO: add common notifier module
@@ -171,20 +281,28 @@ func (lrk *Lark) handleError(userID string, msgID *string, err errors.Error) {
 }
 
 func (lrk *Lark) txtMessage(userID string, msgID *string, txt string) {
-	content := larkim.NewTextMsgBuilder().
-		Text(txt).
+	config := larkcard.NewMessageCardConfig().
+		WideScreenMode(true).
+		EnableForward(true).
+		UpdateMulti(false).
 		Build()
 
-	resp, err := lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType(larkim.ReceiveIdTypeUserId).
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			MsgType(larkim.MsgTypeText).
-			ReceiveId(userID).
-			Content(content).
-			Build()).
-		Build())
+	// Elements
+	div := larkcard.NewMessageCardDiv().
+		Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
+			Text(larkcard.NewMessageCardPlainText().
+				Content(txt).
+				Build()).
+			IsShort(true).
+			Build()}).
+		Build()
 
-	fmt.Println(resp, err)
+	card := larkcard.NewMessageCard().
+		Config(config).
+		Elements([]larkcard.MessageCardElement{div}).
+		Build()
+
+	lrk.cardMessage(userID, msgID, card)
 }
 
 func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
@@ -219,7 +337,7 @@ func (lrk *Lark) cardMessage(userID string, msgID *string, card *larkcard.Messag
 	lrk.sendMessage(userID, msgID, content)
 }
 
-func (lrk *Lark) mdMesssage(userID string, msgID *string, md string) {
+func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
 	config := larkcard.NewMessageCardConfig().
 		WideScreenMode(true).
 		EnableForward(true).
@@ -318,9 +436,9 @@ func (lrk *Lark) txtResult(ctx context.Context, txt string) {
 	}
 
 	if msgID, err := GetMessageID(ctx); err == nil && msgID != nil {
-		lrk.mdMesssage(u.Params.LarkUserID, msgID, txt)
+		lrk.mdMessage(u.Params.LarkUserID, msgID, txt)
 	} else {
-		lrk.mdMesssage(u.Params.LarkUserID, nil, txt)
+		lrk.mdMessage(u.Params.LarkUserID, nil, txt)
 	}
 }
 
