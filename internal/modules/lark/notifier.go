@@ -14,10 +14,6 @@ import (
 var (
 	messageHeaderTemplate = tpl(`[{{ .Name }}] {{ .Protocol | upper }} from {{ .RemoteAddr }} at {{ .ReceivedAt }}`)
 	messageBodyTemplate   = tpl(`
-{{- if eq .Protocol "smtp" }}
-**Rcpt To:** {{ index (index .Meta "session") "rcptTo" | join ", " }}
-**Mail From:** {{ index (index .Meta "session") "mailFrom" | join ", " }}
-{{ end }}
 {{ .Data }}
 `)
 )
@@ -91,7 +87,7 @@ func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) erro
 		// Elements
 		div := larkcard.NewMessageCardDiv().
 			Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
-				Text(larkcard.NewMessageCardLarkMd().
+				Text(larkcard.NewMessageCardPlainText().
 					Content(body.String()).
 					Build()).
 				IsShort(true).

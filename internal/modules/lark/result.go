@@ -17,8 +17,8 @@ var (
 
 	usageTemplate = `
 Usage:{{if .Runnable}}{{if .HasParent}}
-  {{.UseLine | replace "sonarctl " "/"}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
-	{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command]{{end}}{{if gt (len .Aliases) 0}}
+  {{.UseLine | replace "sonar " "/"}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+	{{if .HasParent}}{{.CommandPath | replace "sonar " "/"}} {{else}}/{{end}}[command]{{end}}{{if gt (len .Aliases) 0}}
 
 Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
@@ -38,7 +38,7 @@ Global Flags:
 Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
-Use "{{if .HasParent}}{{.CommandPath | replace "sonarctl " "/"}} {{else}}/{{end}}[command] --help" for more information about a command.{{end}}
+Use "{{if .HasParent}}{{.CommandPath | replace "sonar " "/"}} {{else}}/{{end}}[command] --help" for more information about a command.{{end}}
 `
 
 	codeTemplate = tpl(`{{ . }}`)
