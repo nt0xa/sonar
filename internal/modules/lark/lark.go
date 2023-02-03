@@ -6,13 +6,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"text/template"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/Masterminds/sprig"
@@ -99,6 +99,8 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 }
 
 func (lrk *Lark) preExec(root *cobra.Command, u *actions.User) {
+	root.SetHelpTemplate(helpTemplate)
+	root.SetUsageTemplate(usageTemplate)
 }
 
 func (lrk *Lark) Start() error {
@@ -244,7 +246,7 @@ func (lrk *Lark) Start() error {
 				if out, err := lrk.cmd.Exec(ctx, actionsdb.User(user), false, args); err != nil {
 					lrk.handleError(*userID, msgID, err)
 				} else if out != "" {
-					lrk.mdMessage(*userID, msgID, out)
+					lrk.txtMessage(*userID, msgID, out)
 				}
 
 				return nil
@@ -275,24 +277,32 @@ func (lrk *Lark) Start() error {
 // use something like capabilities to determine if current notifier supports specific features.
 
 func (lrk *Lark) handleError(userID string, msgID *string, err errors.Error) {
-	lrk.mdMessage(userID, msgID, err.Error())
+	lrk.txtMessage(userID, msgID, err.Error())
 }
 
 func (lrk *Lark) txtMessage(userID string, msgID *string, txt string) {
-	content := larkim.NewTextMsgBuilder().
-		Text(txt).
+	config := larkcard.NewMessageCardConfig().
+		WideScreenMode(true).
+		EnableForward(true).
+		UpdateMulti(false).
 		Build()
 
-	resp, err := lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType(larkim.ReceiveIdTypeUserId).
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			MsgType(larkim.MsgTypeText).
-			ReceiveId(userID).
-			Content(content).
-			Build()).
-		Build())
+	// Elements
+	div := larkcard.NewMessageCardDiv().
+		Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
+			Text(larkcard.NewMessageCardPlainText().
+				Content(txt).
+				Build()).
+			IsShort(true).
+			Build()}).
+		Build()
 
-	fmt.Println(resp, err)
+	card := larkcard.NewMessageCard().
+		Config(config).
+		Elements([]larkcard.MessageCardElement{div}).
+		Build()
+
+	lrk.cardMessage(userID, msgID, card)
 }
 
 func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
