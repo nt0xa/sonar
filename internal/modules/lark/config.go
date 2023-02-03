@@ -10,8 +10,10 @@ type Config struct {
 	AppSecret         string `json:"app_secret"`
 	VerificationToken string `json:"verification_token"`
 	EncryptKey        string `json:"encrypt_key"`
+	TLSEnabled        bool   `json:"tls_enabled" default:"true"`
 	ProxyURL          string `json:"proxy_url"`
-	ProxyInsecure     bool `json:"proxy_insecure"`
+	ProxyInsecure     bool   `json:"proxy_insecure"`
+	DepartmentID      string `json:"department_id"`
 }
 
 func (c Config) Validate() error {
