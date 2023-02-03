@@ -3,10 +3,8 @@ package lark
 import (
 	"bytes"
 	"fmt"
-	"text/template"
 	"unicode/utf8"
 
-	"github.com/Masterminds/sprig"
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	"github.com/russtone/sonar/internal/database/models"
 )
@@ -14,25 +12,11 @@ import (
 // https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create#:~:text=The%20maximum%20size%20of%20the,request%20body%20is%20150%20KB.
 
 var (
-	messageHeaderTemplate = tplTxt(`[{{ .Name }}] {{ .Protocol | upper }} from {{ .RemoteAddr }} at {{ .ReceivedAt }}`)
-	messageBodyTemplate   = tplTxt(`
+	messageHeaderTemplate = tpl(`[{{ .Name }}] {{ .Protocol | upper }} from {{ .RemoteAddr }} at {{ .ReceivedAt }}`)
+	messageBodyTemplate   = tpl(`
 {{ .Data }}
 `)
 )
-
-// TODO: move to utils
-func tplTxt(s string) *template.Template {
-	return template.Must(template.
-		New("").
-		Funcs(sprig.TxtFuncMap()).
-		Funcs(template.FuncMap{
-			// This is nesessary for templates to compile.
-			// It will be replaced later with correct function.
-			"domain": func() string { return "" },
-		}).
-		Parse(s),
-	)
-}
 
 func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) error {
 
