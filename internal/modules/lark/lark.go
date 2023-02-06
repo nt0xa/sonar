@@ -72,7 +72,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 		cfg.AppID,
 		cfg.AppSecret,
 		lark.WithLogReqAtDebug(true),
-		lark.WithLogLevel(larkcore.LogLevelInfo),
+		lark.WithLogLevel(larkcore.LogLevelDebug),
 		lark.WithHttpClient(httpClient))
 
 	// Check that AppID and AppSecret are valid
@@ -170,9 +170,32 @@ func (lrk *Lark) Start() error {
 					return nil
 				}
 
-				var user *models.User
+				user, err := lrk.db.UsersGetByParam(models.UserLarkID, *userID)
 
-				if lrk.cfg.DepartmentID != "" {
+				switch lrk.cfg.Auth.Mode {
+				case AuthModeAnyone:
+					// Anyone who can see the bot can use it
+
+					if user == nil {
+						// Create user if not exists
+						user = &models.User{
+							Name: fmt.Sprintf("user-%s", *userID),
+							Params: models.UserParams{
+								LarkUserID: *userID,
+							},
+						}
+
+						if err := lrk.db.UsersCreate(user); err != nil {
+							// TODO: logging
+							lrk.mdMessage(*userID, msgID, "internal error")
+							return nil
+						}
+					}
+					break
+
+				case AuthModeDepartmentID:
+					// Anyone from specified department can access the bot
+
 					// TODO: save last check date in user and don't request departement every time.
 					resp, err := lrk.client.Contact.User.Get(ctx,
 						larkcontact.NewGetUserReqBuilder().
@@ -183,12 +206,13 @@ func (lrk *Lark) Start() error {
 					if err != nil {
 						// TODO: logging
 						fmt.Println(err)
+						lrk.mdMessage(*userID, msgID, "internal error")
 						return nil
 					}
 
 					found := false
 					for _, departmentID := range resp.Data.User.DepartmentIds {
-						if departmentID == lrk.cfg.DepartmentID {
+						if departmentID == lrk.cfg.Auth.DepartmentID {
 							found = true
 							break
 						}
@@ -200,8 +224,7 @@ func (lrk *Lark) Start() error {
 						return nil
 					}
 
-					user, err = lrk.db.UsersGetByParam(models.UserLarkID, *userID)
-					if user == nil && lrk.cfg.DepartmentID != "" {
+					if user == nil {
 						// Create user
 						user = &models.User{
 							Name: *resp.Data.User.Name,
@@ -214,14 +237,6 @@ func (lrk *Lark) Start() error {
 							fmt.Println(err)
 							return nil
 						}
-					}
-
-				} else {
-					user, err = lrk.db.UsersGetByParam(models.UserLarkID, *userID)
-					if err != nil {
-						// TODO: logging
-						fmt.Println(err)
-						return nil
 					}
 				}
 
