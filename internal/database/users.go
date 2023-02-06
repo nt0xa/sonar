@@ -47,11 +47,15 @@ func (db *DB) UsersCreate(o *models.User) error {
 	}
 
 	for _, f := range structs.Fields(o.Params) {
-		if err := tx.Exec(
-			"INSERT INTO user_params (user_id, key, value) "+
-				"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
-			tx.Rollback()
-			return err
+    // Filter zero values here, because if for example "telegram" module is disabled we will have
+    // conflict error for all users with telegram id 0.
+		if !f.IsZero() {
+			if err := tx.Exec(
+				"INSERT INTO user_params (user_id, key, value) "+
+					"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
