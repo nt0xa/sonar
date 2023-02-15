@@ -101,6 +101,9 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 func (lrk *Lark) preExec(root *cobra.Command, u *actions.User) {
 	root.SetHelpTemplate(helpTemplate)
 	root.SetUsageTemplate(usageTemplate)
+  root.CompletionOptions = cobra.CompletionOptions{
+    DisableDefaultCmd: true,
+  }
 }
 
 func (lrk *Lark) Start() error {
