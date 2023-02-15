@@ -47,8 +47,8 @@ func (db *DB) UsersCreate(o *models.User) error {
 	}
 
 	for _, f := range structs.Fields(o.Params) {
-    // Filter zero values here, because if for example "telegram" module is disabled we will have
-    // conflict error for all users with telegram id 0.
+		// Filter zero values here, because if for example "telegram" module is disabled we will have
+		// conflict error for all users with telegram id 0.
 		if !f.IsZero() {
 			if err := tx.Exec(
 				"INSERT INTO user_params (user_id, key, value) "+
@@ -113,14 +113,20 @@ func (db *DB) UsersUpdate(o *models.User) error {
 		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	for _, f := range structs.Fields(o.Params) {
-		if err := tx.Exec(
-			"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
-			f.Value(), o.ID, f.Tag("json")); err != nil {
-			return err
+		// Filter zero values here, because if for example "telegram" module is disabled we will have
+		// conflict error for all users with telegram id 0.
+		if !f.IsZero() {
+			if err := tx.Exec(
+				"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
+				f.Value(), o.ID, f.Tag("json")); err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
