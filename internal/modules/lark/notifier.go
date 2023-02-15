@@ -3,6 +3,8 @@ package lark
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
@@ -16,6 +18,7 @@ var (
 	messageBodyTemplate   = tpl(`
 {{ .Data }}
 `)
+	emailRegexp = regexp.MustCompile("(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,24})")
 )
 
 func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) error {
@@ -41,12 +44,18 @@ func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) erro
 		return fmt.Errorf("message header render error: %w", err)
 	}
 
+	data := string(e.RW)
+
+	for _, m := range emailRegexp.FindAllString(data, -1) {
+		data = strings.ReplaceAll(data, m, strings.Replace(m, "@", "(AT)", 1))
+	}
+
 	bodyData := struct {
 		Data     string
 		Protocol string
 		Meta     map[string]interface{}
 	}{
-		string(e.RW),
+    data,
 		e.Protocol.String(),
 		e.Meta,
 	}
