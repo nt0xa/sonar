@@ -172,6 +172,9 @@ func (tg *Telegram) isDeletedFromGroup(msg *tgbotapi.Message) bool {
 func (tg *Telegram) preExec(root *cobra.Command, u *actions.User) {
 	root.SetHelpTemplate(helpTemplate)
 	root.SetUsageTemplate(usageTemplate)
+	root.CompletionOptions = cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "id",
