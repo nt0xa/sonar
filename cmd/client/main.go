@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/gookit/color"
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/modules/api/apiclient"
 	"github.com/russtone/sonar/internal/utils/slice"
-	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,6 @@ func main() {
 			slice.StringsContains(os.Args, "--help")) {
 		root := cmd.New(nil, nil, nil).Root(&actions.User{}, true)
 		addJSONFlag(root)
-		root.AddCommand(completionCmd)
 		root.Execute()
 		return
 	}
@@ -89,15 +88,17 @@ func main() {
 	}
 
 	root := cmd.New(client, handler, nil).Root(user, true)
-	root.AddCommand(completionCmd)
 	addJSONFlag(root)
 	root.SilenceErrors = true
 	root.SilenceUsage = true
+
 
 	if err := root.Execute(); err != nil {
 		fatal(err)
 	}
 }
+
+var jsonOutput bool
 
 func addJSONFlag(root *cobra.Command) {
 	for _, cmd := range root.Commands() {
@@ -109,7 +110,7 @@ func addJSONFlag(root *cobra.Command) {
 			continue
 		}
 
-		cmd.Flags().Bool("json", false, "JSON output")
+		cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output")
 	}
 
 }
