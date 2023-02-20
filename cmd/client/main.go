@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"reflect"
 
 	"github.com/adrg/xdg"
 	"github.com/gookit/color"
@@ -132,6 +133,14 @@ func addContextCmd(cfg *Config, root *cobra.Command) {
 
 			if err := viper.WriteConfig(); err != nil {
 				fatalf("Fail to update config: %v", err)
+			}
+
+			// Print values from current context.
+			fields := reflect.VisibleFields(reflect.TypeOf(cfg.Context))
+			v := reflect.ValueOf(cfg.Context)
+			for _, field := range fields {
+				color.Bold.Print(field.Tag.Get("mapstructure") + ": ")
+				color.Println(v.FieldByName(field.Name))
 			}
 
 			return nil
