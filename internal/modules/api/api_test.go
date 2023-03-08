@@ -148,7 +148,7 @@ func TestAPI(t *testing.T) {
 			method: "POST",
 			path:   "/payloads",
 			token:  User1Token,
-			json:   `{"name": "test", "notifyProtocols": ["dns", "smtp"], "storeEvents": 10}`,
+			json:   `{"name": "test", "notifyProtocols": ["dns", "smtp"], "storeEvents": true}`,
 			schema: (actions.PayloadsCreateResult)(nil),
 			result: map[string]matcher{
 				"$.subdomain": regex(regexp.MustCompile("^[a-f0-9]{8}$")),
@@ -159,7 +159,7 @@ func TestAPI(t *testing.T) {
 						models.ProtoCategorySMTP.String(),
 					},
 				),
-				"$.storeEvents": equal(10),
+				"$.storeEvents": equal(true),
 				"$.createdAt":   withinDuration(time.Second * 10),
 			},
 			status: 201,
@@ -185,18 +185,6 @@ func TestAPI(t *testing.T) {
 			result: map[string]matcher{
 				"$.message":     contains("validation"),
 				"$.errors.name": notEmpty(),
-			},
-			status: 400,
-		},
-		{
-			method: "POST",
-			path:   "/payloads",
-			token:  User1Token,
-			json:   `{"name": "test", "storeEvents": -1}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message":            contains("validation"),
-				"$.errors.storeEvents": notEmpty(),
 			},
 			status: 400,
 		},
@@ -243,12 +231,12 @@ func TestAPI(t *testing.T) {
 			method: "PUT",
 			path:   "/payloads/payload1",
 			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": 11}`,
+			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": false}`,
 			schema: (actions.PayloadsUpdateResult)(nil),
 			result: map[string]matcher{
 				"$.name":            equal("test"),
 				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
-				"$.storeEvents":     equal(11),
+				"$.storeEvents":     equal(false),
 			},
 			status: 200,
 		},
@@ -256,12 +244,12 @@ func TestAPI(t *testing.T) {
 			method: "PUT",
 			path:   "/payloads/payload1",
 			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": -1}`,
+			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": null}`,
 			schema: (actions.PayloadsUpdateResult)(nil),
 			result: map[string]matcher{
 				"$.name":            equal("test"),
 				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
-				"$.storeEvents":     equal(50), // Must not be changed
+				"$.storeEvents":     equal(true), // Must not be changed
 			},
 			status: 200,
 		},
@@ -286,18 +274,6 @@ func TestAPI(t *testing.T) {
 			result: map[string]matcher{
 				"$.message":                contains("validation"),
 				"$.errors.notifyProtocols": notEmpty(),
-			},
-			status: 400,
-		},
-		{
-			method: "PUT",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			json:   `{"storeEvents": 999999}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message":            contains("validation"),
-				"$.errors.storeEvents": notEmpty(),
 			},
 			status: 400,
 		},

@@ -197,13 +197,13 @@ func TestClient(t *testing.T) {
 			actions.PayloadsCreateParams{
 				Name:            "test",
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
-				StoreEvents:     10,
+				StoreEvents:     true,
 			},
 			map[string]matcher{
 				"Name":            equal("test"),
 				"Subdomain":       regex(regexp.MustCompile("^[a-f0-9]{8}$")),
 				"NotifyProtocols": equal([]string{"dns"}),
-				"StoreEvents":     equal(10),
+				"StoreEvents":     equal(true),
 				"CreatedAt":       withinDuration(time.Second * 5),
 			},
 			nil,

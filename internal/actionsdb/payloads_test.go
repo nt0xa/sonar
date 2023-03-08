@@ -11,6 +11,7 @@ import (
 	"github.com/russtone/sonar/internal/actionsdb"
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/russtone/sonar/internal/utils/pointer"
 )
 
 func TestCreatePayload_Success(t *testing.T) {
@@ -41,7 +42,7 @@ func TestCreatePayload_Success(t *testing.T) {
 			"store events",
 			actions.PayloadsCreateParams{
 				Name:            "test-dns",
-				StoreEvents:     100,
+				StoreEvents:     true,
 				NotifyProtocols: []string{},
 			},
 		},
@@ -98,24 +99,6 @@ func TestCreatePayload_Error(t *testing.T) {
 				Name: "payload1",
 			},
 			&errors.ConflictError{},
-		},
-		{
-			"invalid store events",
-			ctx,
-			actions.PayloadsCreateParams{
-				Name:        "test",
-				StoreEvents: 999999,
-			},
-			&errors.ValidationError{},
-		},
-		{
-			"invalid store events",
-			ctx,
-			actions.PayloadsCreateParams{
-				Name:        "test",
-				StoreEvents: -1,
-			},
-			&errors.ValidationError{},
 		},
 	}
 
@@ -309,7 +292,7 @@ func TestUpdatePayload_Success(t *testing.T) {
 			"update stored events",
 			actions.PayloadsUpdateParams{
 				Name:        "payload1",
-				StoreEvents: 8,
+				StoreEvents: pointer.Bool(true),
 			},
 		},
 	}
@@ -331,8 +314,8 @@ func TestUpdatePayload_Success(t *testing.T) {
 				assert.Equal(t, tt.p.NotifyProtocols, []string(r.NotifyProtocols))
 			}
 
-			if tt.p.StoreEvents >= 0 {
-				assert.Equal(t, tt.p.StoreEvents, r.StoreEvents)
+			if tt.p.StoreEvents != nil {
+				assert.Equal(t, *tt.p.StoreEvents, r.StoreEvents)
 			}
 		})
 	}
@@ -363,15 +346,6 @@ func TestUpdatePayload_Error(t *testing.T) {
 			ctx,
 			actions.PayloadsUpdateParams{
 				Name: "",
-			},
-			&errors.ValidationError{},
-		},
-		{
-			"invalid stored events",
-			ctx,
-			actions.PayloadsUpdateParams{
-				Name:        "payload1",
-				StoreEvents: -10,
 			},
 			&errors.ValidationError{},
 		},

@@ -30,7 +30,7 @@ type Payload struct {
 	Subdomain       string    `json:"subdomain"`
 	Name            string    `json:"name"`
 	NotifyProtocols []string  `json:"notifyProtocols"`
-	StoreEvents     int       `json:"storeEvents"`
+	StoreEvents     bool      `json:"storeEvents"`
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
@@ -41,7 +41,7 @@ type Payload struct {
 type PayloadsCreateParams struct {
 	Name            string   `err:"name"            json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     int      `err:"storeEvents"     json:"storeEvents"`
+	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsCreateParams) Validate() error {
@@ -51,8 +51,6 @@ func (p PayloadsCreateParams) Validate() error {
 			models.ProtoCategoriesAll.Strings(),
 			true,
 		))),
-		// TODO: Get max from config
-		validation.Field(&p.StoreEvents, validation.Min(0), validation.Max(1000)),
 	)
 }
 
@@ -68,7 +66,7 @@ func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command,
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
 		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
-	cmd.Flags().IntVarP(&p.StoreEvents, "events", "e", 0, "Store events in database")
+	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -84,7 +82,7 @@ type PayloadsUpdateParams struct {
 	Name            string   `err:"name"            json:"-"               path:"name"`
 	NewName         string   `err:"newName"         json:"name"`
 	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     int      `err:"storeEvents"     json:"storeEvents"`
+	StoreEvents     *bool    `err:"storeEvents"     json:"storeEvents"`
 }
 
 func (p PayloadsUpdateParams) Validate() error {
@@ -94,8 +92,6 @@ func (p PayloadsUpdateParams) Validate() error {
 			models.ProtoCategoriesAll.Strings(),
 			true,
 		))),
-		// We need -1 here to find out if the value was changed
-		validation.Field(&p.StoreEvents, validation.Min(-1), validation.Max(1000)),
 	)
 }
 
@@ -109,13 +105,19 @@ func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command,
 		Args:  oneArg("NAME"),
 	}
 
+	var storeEvents bool
+
 	cmd.Flags().StringVarP(&p.NewName, "name", "n", "", "Payload name")
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p", nil, "Protocols to notify")
-	// We need -1 here to find out if the value was changed
-	cmd.Flags().IntVarP(&p.StoreEvents, "events", "e", -1, "Store events in database")
+	cmd.Flags().BoolVarP(&storeEvents, "events", "e", false, "Store events in database")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
+
+		if cmd.Flags().Lookup("events").Changed {
+			p.StoreEvents = &storeEvents
+		}
+
 		return nil
 	}
 }

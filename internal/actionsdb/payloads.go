@@ -85,8 +85,8 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		payload.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
 	}
 
-	if p.StoreEvents >= 0 {
-		payload.StoreEvents = p.StoreEvents
+	if p.StoreEvents != nil {
+		payload.StoreEvents = *p.StoreEvents
 	}
 
 	err = act.db.PayloadsUpdate(payload)

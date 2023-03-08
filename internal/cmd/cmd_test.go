@@ -13,6 +13,7 @@ import (
 	actions_mock "github.com/russtone/sonar/internal/actions/mock"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/utils/pointer"
 )
 
 var (
@@ -43,7 +44,7 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"new test -p dns,http -e 50",
+			"new test -p dns,http -e",
 			"PayloadsCreate",
 			actions.PayloadsCreateParams{
 				Name: "test",
@@ -51,7 +52,7 @@ func TestCmd(t *testing.T) {
 					models.ProtoCategoryDNS.String(),
 					models.ProtoCategoryHTTP.String(),
 				},
-				StoreEvents: 50,
+				StoreEvents: true,
 			},
 			(actions.PayloadsCreateResult)(nil),
 		},
@@ -70,13 +71,13 @@ func TestCmd(t *testing.T) {
 		// Update
 
 		{
-			"mod -n new -p dns old -e 10",
+			"mod -n new -p dns old -e=false",
 			"PayloadsUpdate",
 			actions.PayloadsUpdateParams{
 				Name:            "old",
 				NewName:         "new",
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
-				StoreEvents:     10,
+				StoreEvents:     pointer.Bool(false),
 			},
 			(actions.PayloadsUpdateResult)(nil),
 		},
