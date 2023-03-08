@@ -35,6 +35,7 @@ func (h *EventsHandler) AddNotifier(name string, notifier Notifier) {
 }
 
 func (h *EventsHandler) Start() error {
+	// TODO: use goroutines pool
 	for e := range h.events {
 
 		seen := make(map[string]struct{})
@@ -61,13 +62,13 @@ func (h *EventsHandler) Start() error {
 			e.PayloadID = p.ID
 
 			// Store event in database
-			if p.StoreEvents > 0 {
+			if p.StoreEvents {
 				if err := h.db.EventsCreate(e); err != nil {
 					continue
 				}
 
 				// Delete out of limit events
-				if err := h.db.EventsDeleteOutOfLimit(p.ID, p.StoreEvents); err != nil && err != sql.ErrNoRows {
+				if err := h.db.EventsDeleteOutOfLimit(p.ID, 1000 /* TODO: from config */); err != nil && err != sql.ErrNoRows {
 					continue
 				}
 			}
