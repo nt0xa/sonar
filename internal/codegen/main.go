@@ -24,8 +24,10 @@ func init() {
 }
 
 type Action struct {
-	Name   string
-	Params struct {
+	Name     string
+	Resource string
+	Verb     string
+	Params   struct {
 		Name  string
 		Types []string
 	}
@@ -60,12 +62,27 @@ func main() {
 		// HTTP Method (for API and API client).
 		if strings.Contains(m.Name, "Create") {
 			act.HTTPMethod = "POST"
+			act.Resource = strings.Replace(m.Name, "Create", "", 1)
+			act.Verb = "Create"
 		} else if strings.Contains(m.Name, "Update") {
 			act.HTTPMethod = "PUT"
+			act.Resource = strings.Replace(m.Name, "Update", "", 1)
+			act.Verb = "Update"
 		} else if strings.Contains(m.Name, "Delete") {
 			act.HTTPMethod = "DELETE"
-		} else {
+			act.Resource = strings.Replace(m.Name, "Delete", "", 1)
+			act.Verb = "Delete"
+		} else if strings.Contains(m.Name, "Get") {
 			act.HTTPMethod = "GET"
+			act.Resource = strings.Replace(m.Name, "Get", "", 1)
+			act.Verb = "Get"
+		} else if strings.Contains(m.Name, "List") {
+			act.HTTPMethod = "GET"
+			act.Resource = strings.Replace(m.Name, "List", "", 1)
+			act.Verb = "List"
+		} else {
+			fmt.Fprintf(os.Stderr, "invalid name: %q\n", m.Name)
+			os.Exit(1)
 		}
 
 		// HTTP path (with paramters).

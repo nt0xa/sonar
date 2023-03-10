@@ -48,13 +48,13 @@ Use "{{if .HasParent}}{{.CommandPath | replace "sonar " "/"}} {{else}}/{{end}}[c
 // User
 //
 
-var userCurrentTemplate = tpl("" +
+var profileGetTemplate = tpl("" +
 	"**Lark ID:** {{ .Params.LarkUserID }}\n" +
 	"**API token:** {{ .Params.APIToken }}",
 )
 
-func (lrk *Lark) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
-	lrk.tplResult(ctx, userCurrentTemplate, res)
+func (lrk *Lark) ProfileGet(ctx context.Context, res actions.ProfileGetResult) {
+	lrk.tplResult(ctx, profileGetTemplate, res)
 }
 
 //

@@ -8,19 +8,19 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-type UserActions interface {
-	UserCurrent(context.Context) (UserCurrentResult, errors.Error)
+type ProfileActions interface {
+	ProfileGet(context.Context) (ProfileGetResult, errors.Error)
 }
 
-type UserHandler interface {
-	UserCurrent(context.Context, UserCurrentResult)
+type ProfileHandler interface {
+	ProfileGet(context.Context, ProfileGetResult)
 }
 
-type UserCurrentResult *User
+type ProfileGetResult *User
 
-func UserCurrentCommand(local bool) (*cobra.Command, PrepareCommandFunc) {
+func ProfileGetCommand(local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "user",
+		Use:   "profile",
 		Short: "Get current user info",
 	}
 

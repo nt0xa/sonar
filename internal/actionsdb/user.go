@@ -7,7 +7,7 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func (act *dbactions) UserCurrent(ctx context.Context) (actions.UserCurrentResult, errors.Error) {
+func (act *dbactions) ProfileGet(ctx context.Context) (actions.ProfileGetResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)

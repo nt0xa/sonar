@@ -70,7 +70,7 @@ func main() {
 	// User
 	//
 
-	user, err := client.UserCurrent(context.Background())
+	user, err := client.ProfileGet(context.Background())
 	if err != nil {
 		fatal(err)
 	}

@@ -213,13 +213,13 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	return res, nil
 }
 
-func (c *Client) UserCurrent(ctx context.Context) (actions.UserCurrentResult, errors.Error) {
-	var res actions.UserCurrentResult
+func (c *Client) ProfileGet(ctx context.Context) (actions.ProfileGetResult, errors.Error) {
+	var res actions.ProfileGetResult
 
 	err := handle(c.client.R().SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/user"))
+		Get("/profile"))
 
 	if err != nil {
 		return nil, err

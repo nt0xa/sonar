@@ -198,10 +198,10 @@ func TestCmd(t *testing.T) {
 		//
 
 		{
-			"user",
-			"UserCurrent",
+			"profile",
+			"ProfileGet",
 			nil,
-			(actions.UserCurrentResult)(nil),
+			(actions.ProfileGetResult)(nil),
 		},
 
 		//

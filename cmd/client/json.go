@@ -22,7 +22,7 @@ func (h *jsonHandler) json(data interface{}) {
 // User
 //
 
-func (h *jsonHandler) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
+func (h *jsonHandler) ProfileGet(ctx context.Context, res actions.ProfileGetResult) {
 	h.json(res)
 }
 

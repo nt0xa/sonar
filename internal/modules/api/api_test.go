@@ -430,9 +430,9 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "GET",
-			path:   "/user",
+			path:   "/profile",
 			token:  User1Token,
-			schema: (actions.UserCurrentResult)(nil),
+			schema: (actions.ProfileGetResult)(nil),
 			result: map[string]matcher{
 				"$.name": equal("user1"),
 			},

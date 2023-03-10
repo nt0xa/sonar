@@ -94,13 +94,13 @@ func (tg *Telegram) tplResult(ctx context.Context, tpl *template.Template, data 
 // User
 //
 
-var userCurrentTemplate = tpl("" +
+var profileGetTemplate = tpl("" +
 	"<b>Telegram ID:</b> <code>{{ .Params.TelegramID }}</code>\n" +
 	"<b>API token:</b> <code>{{ .Params.APIToken }}</code>",
 )
 
-func (tg *Telegram) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
-	tg.tplResult(ctx, userCurrentTemplate, res)
+func (tg *Telegram) ProfileGet(ctx context.Context, res actions.ProfileGetResult) {
+	tg.tplResult(ctx, profileGetTemplate, res)
 }
 
 //

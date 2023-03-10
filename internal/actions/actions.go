@@ -15,7 +15,7 @@ type Actions interface {
 	PayloadsActions
 	UsersActions
 	DNSActions
-	UserActions
+	ProfileActions
 	EventsActions
 	HTTPActions
 }
@@ -24,7 +24,7 @@ type ResultHandler interface {
 	PayloadsHandler
 	DNSRecordsHandler
 	UsersHandler
-	UserHandler
+	ProfileHandler
 	EventsHandler
 	HTTPRoutesHandler
 }

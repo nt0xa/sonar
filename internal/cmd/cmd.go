@@ -100,7 +100,7 @@ func (c *command) Root(u *actions.User, local bool) *cobra.Command {
 	root.AddCommand(http)
 
 	// User
-	root.AddCommand(c.UserCurrent(local))
+	root.AddCommand(c.ProfileGet(local))
 
 	// Users
 	if u.IsAdmin {

@@ -355,8 +355,8 @@ func (c *command) PayloadsUpdate(local bool) *cobra.Command {
 	return cmd
 }
 
-func (c *command) UserCurrent(local bool) *cobra.Command {
-	cmd, prepareFunc := actions.UserCurrentCommand(local)
+func (c *command) ProfileGet(local bool) *cobra.Command {
+	cmd, prepareFunc := actions.ProfileGetCommand(local)
 
 	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
 
@@ -366,12 +366,12 @@ func (c *command) UserCurrent(local bool) *cobra.Command {
 			}
 		}
 
-		res, err := c.actions.UserCurrent(cmd.Context())
+		res, err := c.actions.ProfileGet(cmd.Context())
 		if err != nil {
 			return err
 		}
 
-		c.handler.UserCurrent(cmd.Context(), res)
+		c.handler.ProfileGet(cmd.Context(), res)
 
 		return nil
 	})

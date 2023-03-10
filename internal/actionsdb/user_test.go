@@ -17,13 +17,13 @@ func TestUserCurrent_Success(t *testing.T) {
 
 	ctx := actionsdb.SetUser(context.Background(), u)
 
-	usr, err := acts.UserCurrent(ctx)
+	usr, err := acts.ProfileGet(ctx)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "user1", usr.Name)
 }
 
 func TestUserCurrent_Error(t *testing.T) {
-	_, err := acts.UserCurrent(context.Background())
+	_, err := acts.ProfileGet(context.Background())
 	assert.Error(t, err)
 	assert.IsType(t, &errors.InternalError{}, err)
 }

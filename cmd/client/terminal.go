@@ -60,15 +60,15 @@ func (h *terminalHandler) tplResult(tpl *template.Template, data interface{}) {
 // User
 //
 
-var userCurrentTemplate = tpl("" +
+var profileGetTemplate = tpl("" +
 	"<bold>Name:</> {{ .Name }}\n" +
 	"<bold>Telegram ID:</> {{ .Params.TelegramID }}\n" +
 	"<bold>API token:</> {{ .Params.APIToken }}\n" +
 	"<bold>Admin:</> {{ .IsAdmin }}",
 )
 
-func (h *terminalHandler) UserCurrent(ctx context.Context, res actions.UserCurrentResult) {
-	h.tplResult(userCurrentTemplate, res)
+func (h *terminalHandler) ProfileGet(ctx context.Context, res actions.ProfileGetResult) {
+	h.tplResult(profileGetTemplate, res)
 }
 
 //

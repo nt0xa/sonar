@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/russtone/sonar/internal/utils/errors"
 	"github.com/fatih/structs"
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/schema"
+	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 var encoder = schema.NewEncoder()
