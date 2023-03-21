@@ -348,8 +348,8 @@ func TestClient(t *testing.T) {
 				PayloadName: "payload1",
 			},
 			map[string]matcher{
-				"0.Protocol": equal("dns"),
-				"1.Protocol": equal("http"),
+				"0.Protocol": equal("http"),
+				"8.Protocol": equal("dns"),
 			},
 			nil,
 		},
