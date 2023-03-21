@@ -68,8 +68,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	l, err := db.EventsListByPayloadID(1)
 	assert.NoError(t, err)
 	require.Len(t, l, 9)
-	assert.EqualValues(t, l[0].ID, 1)
-	assert.EqualValues(t, l[len(l)-1].ID, 9)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 1)
 
 	l, err = db.EventsListByPayloadID(1,
 		database.EventsPagination(database.Page{
@@ -80,8 +80,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	// Count
 	assert.NoError(t, err)
 	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 1)
-	assert.EqualValues(t, l[len(l)-1].ID, 3)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 7)
 
 	// Before
 	l, err = db.EventsListByPayloadID(1,
@@ -92,8 +92,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	require.Len(t, l, 5)
-	assert.EqualValues(t, l[0].ID, 2)
-	assert.EqualValues(t, l[len(l)-1].ID, 6)
+	assert.EqualValues(t, l[0].ID, 6)
+	assert.EqualValues(t, l[len(l)-1].ID, 2)
 
 	// After
 	l, err = db.EventsListByPayloadID(1,
@@ -104,8 +104,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	require.Len(t, l, 2)
-	assert.EqualValues(t, l[0].ID, 8)
-	assert.EqualValues(t, l[len(l)-1].ID, 9)
+	assert.EqualValues(t, l[0].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Reverse
 	l, err = db.EventsListByPayloadID(1,
@@ -117,8 +117,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	require.Len(t, l, 2)
-	assert.EqualValues(t, l[0].ID, 9)
-	assert.EqualValues(t, l[len(l)-1].ID, 8)
+	assert.EqualValues(t, l[0].ID, 8)
+	assert.EqualValues(t, l[len(l)-1].ID, 9)
 }
 
 func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
