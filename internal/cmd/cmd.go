@@ -136,7 +136,7 @@ func (c *Command) Exec(ctx context.Context, args []string) {
 
 	profile, err := c.actions.ProfileGet(ctx)
 	if err != nil {
-		c.handler.OnResult(ctx, actions.ErrorResult{errors.Unauthorized()})
+		c.handler.OnResult(ctx, actions.ErrorResult{err})
 		return
 	}
 
