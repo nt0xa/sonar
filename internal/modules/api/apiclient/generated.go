@@ -7,8 +7,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecordsCreateParams) (actions.DNSRecordsCreateResult, errors.Error) {
-	var res actions.DNSRecordsCreateResult
+func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResult, errors.Error) {
+	var res *actions.DNSRecordsCreateResult
 
 	err := handle(c.client.R().
 		SetBody(params).
@@ -24,8 +24,8 @@ func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecords
 	return res, nil
 }
 
-func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecordsDeleteParams) (actions.DNSRecordsDeleteResult, errors.Error) {
-	var res actions.DNSRecordsDeleteResult
+func (c *Client) DNSRecordsDelete(ctx context.Context, params actions.DNSRecordsDeleteParams) (*actions.DNSRecordsDeleteResult, errors.Error) {
+	var res *actions.DNSRecordsDeleteResult
 
 	err := handle(c.client.R().
 		SetPathParams(toPath(params)).
@@ -58,8 +58,8 @@ func (c *Client) DNSRecordsList(ctx context.Context, params actions.DNSRecordsLi
 	return res, nil
 }
 
-func (c *Client) EventsGet(ctx context.Context, params actions.EventsGetParams) (actions.EventsGetResult, errors.Error) {
-	var res actions.EventsGetResult
+func (c *Client) EventsGet(ctx context.Context, params actions.EventsGetParams) (*actions.EventsGetResult, errors.Error) {
+	var res *actions.EventsGetResult
 
 	err := handle(c.client.R().
 		SetPathParams(toPath(params)).
@@ -93,8 +93,8 @@ func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams
 	return res, nil
 }
 
-func (c *Client) HTTPRoutesCreate(ctx context.Context, params actions.HTTPRoutesCreateParams) (actions.HTTPRoutesCreateResult, errors.Error) {
-	var res actions.HTTPRoutesCreateResult
+func (c *Client) HTTPRoutesCreate(ctx context.Context, params actions.HTTPRoutesCreateParams) (*actions.HTTPRoutesCreateResult, errors.Error) {
+	var res *actions.HTTPRoutesCreateResult
 
 	err := handle(c.client.R().
 		SetBody(params).
@@ -110,8 +110,8 @@ func (c *Client) HTTPRoutesCreate(ctx context.Context, params actions.HTTPRoutes
 	return res, nil
 }
 
-func (c *Client) HTTPRoutesDelete(ctx context.Context, params actions.HTTPRoutesDeleteParams) (actions.HTTPRoutesDeleteResult, errors.Error) {
-	var res actions.HTTPRoutesDeleteResult
+func (c *Client) HTTPRoutesDelete(ctx context.Context, params actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {
+	var res *actions.HTTPRoutesDeleteResult
 
 	err := handle(c.client.R().
 		SetPathParams(toPath(params)).
@@ -144,8 +144,8 @@ func (c *Client) HTTPRoutesList(ctx context.Context, params actions.HTTPRoutesLi
 	return res, nil
 }
 
-func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
-	var res actions.PayloadsCreateResult
+func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCreateParams) (*actions.PayloadsCreateResult, errors.Error) {
+	var res *actions.PayloadsCreateResult
 
 	err := handle(c.client.R().
 		SetBody(params).
@@ -161,8 +161,8 @@ func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCrea
 	return res, nil
 }
 
-func (c *Client) PayloadsDelete(ctx context.Context, params actions.PayloadsDeleteParams) (actions.PayloadsDeleteResult, errors.Error) {
-	var res actions.PayloadsDeleteResult
+func (c *Client) PayloadsDelete(ctx context.Context, params actions.PayloadsDeleteParams) (*actions.PayloadsDeleteResult, errors.Error) {
+	var res *actions.PayloadsDeleteResult
 
 	err := handle(c.client.R().
 		SetPathParams(toPath(params)).
@@ -195,8 +195,8 @@ func (c *Client) PayloadsList(ctx context.Context, params actions.PayloadsListPa
 	return res, nil
 }
 
-func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpdateParams) (actions.PayloadsUpdateResult, errors.Error) {
-	var res actions.PayloadsUpdateResult
+func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpdateParams) (*actions.PayloadsUpdateResult, errors.Error) {
+	var res *actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
 		SetBody(params).
@@ -213,8 +213,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	return res, nil
 }
 
-func (c *Client) ProfileGet(ctx context.Context) (actions.ProfileGetResult, errors.Error) {
-	var res actions.ProfileGetResult
+func (c *Client) ProfileGet(ctx context.Context) (*actions.ProfileGetResult, errors.Error) {
+	var res *actions.ProfileGetResult
 
 	err := handle(c.client.R().SetError(&APIError{}).
 		SetResult(&res).
@@ -228,8 +228,8 @@ func (c *Client) ProfileGet(ctx context.Context) (actions.ProfileGetResult, erro
 	return res, nil
 }
 
-func (c *Client) UsersCreate(ctx context.Context, params actions.UsersCreateParams) (actions.UsersCreateResult, errors.Error) {
-	var res actions.UsersCreateResult
+func (c *Client) UsersCreate(ctx context.Context, params actions.UsersCreateParams) (*actions.UsersCreateResult, errors.Error) {
+	var res *actions.UsersCreateResult
 
 	err := handle(c.client.R().
 		SetBody(params).
@@ -245,8 +245,8 @@ func (c *Client) UsersCreate(ctx context.Context, params actions.UsersCreatePara
 	return res, nil
 }
 
-func (c *Client) UsersDelete(ctx context.Context, params actions.UsersDeleteParams) (actions.UsersDeleteResult, errors.Error) {
-	var res actions.UsersDeleteResult
+func (c *Client) UsersDelete(ctx context.Context, params actions.UsersDeleteParams) (*actions.UsersDeleteResult, errors.Error) {
+	var res *actions.UsersDeleteResult
 
 	err := handle(c.client.R().
 		SetPathParams(toPath(params)).

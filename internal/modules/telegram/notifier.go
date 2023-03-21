@@ -27,7 +27,6 @@ var (
 )
 
 func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) error {
-
 	var header, body bytes.Buffer
 
 	headerData := struct {

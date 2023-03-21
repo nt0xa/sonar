@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
-	"strings"
 
+	"github.com/Masterminds/sprig"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/google/shlex"
-	"github.com/spf13/cobra"
 
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/actionsdb"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/results"
 	"github.com/russtone/sonar/internal/utils"
 	"github.com/russtone/sonar/internal/utils/errors"
 )
@@ -25,7 +25,7 @@ type Telegram struct {
 	api     *tgbotapi.BotAPI
 	db      *database.DB
 	cfg     *Config
-	cmd     cmd.Command
+	cmd     *cmd.Command
 	actions actions.Actions
 	bot     tgbotapi.User
 
@@ -67,7 +67,38 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		actions: actions,
 	}
 
-	tg.cmd = cmd.New(actions, tg, tg.preExec)
+	tg.cmd = cmd.New(
+		actions,
+		&results.Text{
+			Templates: results.DefaultTemplates(results.TemplateOptions{
+				Markup: map[string]string{
+					"<bold>":   "<b>",
+					"</bold>":  "</b>",
+					"<code>":   "<code>",
+					"</code>":  "</code>",
+					"<error>":  "",
+					"</error>": "",
+					"<pre>":    "<pre>",
+					"</pre>":   "</pre>",
+				},
+				ExtraFuncs: template.FuncMap{
+					"domain": func() string {
+						return domain
+					},
+				},
+				HTML: true,
+			}),
+			OnText: func(ctx context.Context, message string) {
+				chatID, err := GetChatID(ctx)
+				if err != nil {
+					// TODO: logging
+					return
+				}
+				tg.htmlMessage(chatID, message)
+			},
+		},
+		cmd.PreExec(cmd.DefaultMessengersPreExec),
+	)
 
 	return tg, nil
 }
@@ -124,26 +155,16 @@ func (tg *Telegram) Start() error {
 			continue
 		}
 
-		var user *models.User
+		ctx := SetChatID(context.Background(), chat.ID)
 
 		// Only registered users should be able to use bot.
 		if chat.IsGroup() && fromUser == nil {
-			user = nil
+			ctx = actionsdb.SetUser(ctx, nil)
 		} else {
-			user = chatUser
+			ctx = actionsdb.SetUser(ctx, chatUser)
 		}
 
-		ctx := SetChatID(context.Background(), chat.ID)
-		ctx = actionsdb.SetUser(ctx, user)
-		args, _ := shlex.Split(strings.TrimLeft(update.Message.Text, "/"))
-
-		// It is important to pass false as "local" here to disable
-		// dangerous commands.
-		if out, err := tg.cmd.Exec(ctx, actionsdb.User(user), false, args); err != nil {
-			tg.handleError(chat.ID, err)
-		} else if out != "" {
-			tg.htmlMessage(chat.ID, out)
-		}
+		tg.cmd.ParseAndExec(ctx, update.Message.Text)
 	}
 
 	return nil
@@ -169,30 +190,23 @@ func (tg *Telegram) isDeletedFromGroup(msg *tgbotapi.Message) bool {
 	return msg.LeftChatMember != nil && msg.LeftChatMember.ID == tg.bot.ID
 }
 
-func (tg *Telegram) preExec(root *cobra.Command, u *actions.User) {
-	root.SetHelpTemplate(helpTemplate)
-	root.SetUsageTemplate(usageTemplate)
-	root.CompletionOptions = cobra.CompletionOptions{
-		DisableDefaultCmd: true,
-	}
-
-	cmd := &cobra.Command{
-		Use:   "id",
-		Short: "Show current telegram chat id",
-		RunE: cmd.RunE(func(cmd *cobra.Command, args []string) errors.Error {
-			chatID, err := GetChatID(cmd.Context())
-			if err != nil {
-				return errors.Internal(err)
-			}
-
-			tg.txtMessage(chatID, fmt.Sprintf("%d", chatID))
-
-			return nil
-		}),
-	}
-
-	root.AddCommand(cmd)
-}
+// TODO
+// func (tg *Telegram) preExec(root *cobra.Command, u *actions.User) {
+// 	cmd := &cobra.Command{
+// 		Use:   "id",
+// 		Short: "Show current telegram chat id",
+// 		Run: func(cmd *cobra.Command, args []string) {
+// 			chatID, err := GetChatID(cmd.Context())
+// 			if err != nil {
+// 				return errors.Internal(err)
+// 			}
+//
+// 			tg.txtMessage(chatID, fmt.Sprintf("%d", chatID))
+// 		},
+// 	}
+//
+// 	root.AddCommand(cmd)
+// }
 
 func (tg *Telegram) handleError(chatID int64, err errors.Error) {
 	tg.txtMessage(chatID, err.Error())
@@ -215,7 +229,10 @@ func (tg *Telegram) htmlMessage(chatID int64, html string) {
 	)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.DisableWebPagePreview = true
-	tg.api.Send(msg)
+	_, err := tg.api.Send(msg)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (tg *Telegram) docMessage(chatID int64, name string, caption string, data []byte) {
@@ -229,3 +246,50 @@ func (tg *Telegram) docMessage(chatID int64, name string, caption string, data [
 	msg.ParseMode = tgbotapi.ModeHTML
 	tg.api.Send(msg)
 }
+
+func tpl(s string) *template.Template {
+	return template.Must(template.
+		New("").
+		Funcs(sprig.FuncMap()).
+		Funcs(template.FuncMap{
+			// This is nesessary for templates to compile.
+			// It will be replaced later with correct function.
+			"domain": func() string { return "" },
+		}).
+		Parse(s),
+	)
+}
+
+func (tg *Telegram) getDomain() string {
+	return tg.domain
+}
+
+func (tg *Telegram) txtResult(ctx context.Context, txt string) {
+	u, err := actionsdb.GetUser(ctx)
+	if err != nil {
+		return
+	}
+
+	tg.txtMessage(u.Params.TelegramID, txt)
+}
+
+func (tg *Telegram) tplResult(ctx context.Context, tpl *template.Template, data interface{}) {
+	u, err := actionsdb.GetUser(ctx)
+	if err != nil {
+		return
+	}
+
+	tpl.Funcs(template.FuncMap{
+		"domain": tg.getDomain,
+	})
+
+	buf := &bytes.Buffer{}
+
+	if err := tpl.Execute(buf, data); err != nil {
+		tg.handleError(u.Params.TelegramID, errors.Internal(err))
+	}
+
+	tg.htmlMessage(u.Params.TelegramID, buf.String())
+}
+
+var codeTemplate = tpl(`<code>{{ . }}</code>`)

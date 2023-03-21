@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"context"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
@@ -20,13 +22,28 @@ type Actions interface {
 	HTTPActions
 }
 
+type Result interface {
+	ResultID() string
+}
+
+type TextResult struct {
+	Text string
+}
+
+func (s TextResult) ResultID() string {
+	return "text"
+}
+
+type ErrorResult struct {
+	Error errors.Error
+}
+
+func (e ErrorResult) ResultID() string {
+	return "error"
+}
+
 type ResultHandler interface {
-	PayloadsHandler
-	DNSRecordsHandler
-	UsersHandler
-	ProfileHandler
-	EventsHandler
-	HTTPRoutesHandler
+	OnResult(context.Context, Result)
 }
 
 type PrepareCommandFunc func(*cobra.Command, []string) errors.Error

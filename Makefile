@@ -46,6 +46,9 @@ mock-actions:
 		--outpkg actions_mock \
 		--name ResultHandler
 
+.PHONY: mock-deps
+	@go install github.com/vektra/mockery/v2@latest
+
 #
 # Code generation
 #

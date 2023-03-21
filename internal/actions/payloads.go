@@ -13,17 +13,10 @@ import (
 )
 
 type PayloadsActions interface {
-	PayloadsCreate(context.Context, PayloadsCreateParams) (PayloadsCreateResult, errors.Error)
-	PayloadsUpdate(context.Context, PayloadsUpdateParams) (PayloadsUpdateResult, errors.Error)
-	PayloadsDelete(context.Context, PayloadsDeleteParams) (PayloadsDeleteResult, errors.Error)
+	PayloadsCreate(context.Context, PayloadsCreateParams) (*PayloadsCreateResult, errors.Error)
+	PayloadsUpdate(context.Context, PayloadsUpdateParams) (*PayloadsUpdateResult, errors.Error)
+	PayloadsDelete(context.Context, PayloadsDeleteParams) (*PayloadsDeleteResult, errors.Error)
 	PayloadsList(context.Context, PayloadsListParams) (PayloadsListResult, errors.Error)
-}
-
-type PayloadsHandler interface {
-	PayloadsCreate(context.Context, PayloadsCreateResult)
-	PayloadsList(context.Context, PayloadsListResult)
-	PayloadsUpdate(context.Context, PayloadsUpdateResult)
-	PayloadsDelete(context.Context, PayloadsDeleteResult)
 }
 
 type Payload struct {
@@ -54,7 +47,13 @@ func (p PayloadsCreateParams) Validate() error {
 	)
 }
 
-type PayloadsCreateResult *Payload
+type PayloadsCreateResult struct {
+	Payload
+}
+
+func (r PayloadsCreateResult) ResultID() string {
+	return "payloads/create"
+}
 
 func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -95,7 +94,13 @@ func (p PayloadsUpdateParams) Validate() error {
 	)
 }
 
-type PayloadsUpdateResult *Payload
+type PayloadsUpdateResult struct {
+	Payload
+}
+
+func (r PayloadsUpdateResult) ResultID() string {
+	return "payloads/update"
+}
 
 func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -135,7 +140,13 @@ func (p PayloadsDeleteParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type PayloadsDeleteResult *Payload
+type PayloadsDeleteResult struct {
+	Payload
+}
+
+func (r PayloadsDeleteResult) ResultID() string {
+	return "payloads/delete"
+}
 
 func PayloadsDeleteCommand(p *PayloadsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -163,7 +174,11 @@ func (p PayloadsListParams) Validate() error {
 	return nil
 }
 
-type PayloadsListResult []*Payload
+type PayloadsListResult []Payload
+
+func (r PayloadsListResult) ResultID() string {
+	return "payloads/list"
+}
 
 func PayloadsListCommand(p *PayloadsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

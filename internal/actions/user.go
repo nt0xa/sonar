@@ -9,14 +9,16 @@ import (
 )
 
 type ProfileActions interface {
-	ProfileGet(context.Context) (ProfileGetResult, errors.Error)
+	ProfileGet(context.Context) (*ProfileGetResult, errors.Error)
 }
 
-type ProfileHandler interface {
-	ProfileGet(context.Context, ProfileGetResult)
+type ProfileGetResult struct {
+	User
 }
 
-type ProfileGetResult *User
+func (r ProfileGetResult) ResultID() string {
+	return "profile/get"
+}
 
 func ProfileGetCommand(local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

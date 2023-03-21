@@ -10,12 +10,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func DNSRecord(m *models.DNSRecord, payloadSubdomain string) *actions.DNSRecord {
-	if m == nil {
-		return nil
-	}
-
-	return &actions.DNSRecord{
+func DNSRecord(m models.DNSRecord, payloadSubdomain string) actions.DNSRecord {
+	return actions.DNSRecord{
 		Index:            m.Index,
 		PayloadSubdomain: payloadSubdomain,
 		Name:             m.Name,
@@ -27,7 +23,7 @@ func DNSRecord(m *models.DNSRecord, payloadSubdomain string) *actions.DNSRecord 
 	}
 }
 
-func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecordsCreateParams) (actions.DNSRecordsCreateResult, errors.Error) {
+func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -60,10 +56,10 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return DNSRecord(rec, payload.Subdomain), nil
+	return &actions.DNSRecordsCreateResult{DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
-func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (actions.DNSRecordsDeleteResult, errors.Error) {
+func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (*actions.DNSRecordsDeleteResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -90,7 +86,7 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return DNSRecord(rec, payload.Subdomain), nil
+	return &actions.DNSRecordsDeleteResult{DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
@@ -113,10 +109,10 @@ func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsLi
 		return nil, errors.Internal(err)
 	}
 
-	res := make([]*actions.DNSRecord, 0)
+	res := make([]actions.DNSRecord, 0)
 
 	for _, r := range recs {
-		res = append(res, DNSRecord(r, payload.Subdomain))
+		res = append(res, DNSRecord(*r, payload.Subdomain))
 	}
 
 	return res, nil

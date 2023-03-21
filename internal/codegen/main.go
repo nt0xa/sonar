@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 	"text/template"
 
@@ -24,16 +23,16 @@ func init() {
 }
 
 type Action struct {
-	Name     string
-	Resource string
-	Verb     string
+	Name     string // DNSRecordsCreate
+	Resource string // dns-records
+	Verb     string // create
 	Params   struct {
-		Name  string
-		Types []string
+		TypeName string   // DNSRecordsCreateParams
+		Types    []string // ["JSON", "Path", "Query"]
 	}
-	Result     string
-	HTTPMethod string
-	HTTPPath   string
+	Result     string // DNSRecordsCreateResult
+	HTTPMethod string // POST
+	HTTPPath   string // /dns-records
 }
 
 var tags = map[string]string{
@@ -62,33 +61,31 @@ func main() {
 		// HTTP Method (for API and API client).
 		if strings.Contains(m.Name, "Create") {
 			act.HTTPMethod = "POST"
-			act.Resource = strings.Replace(m.Name, "Create", "", 1)
-			act.Verb = "Create"
+			act.Resource = resourceName(strings.Replace(m.Name, "Create", "", 1))
+			act.Verb = "create"
 		} else if strings.Contains(m.Name, "Update") {
 			act.HTTPMethod = "PUT"
-			act.Resource = strings.Replace(m.Name, "Update", "", 1)
-			act.Verb = "Update"
+			act.Resource = resourceName(strings.Replace(m.Name, "Update", "", 1))
+			act.Verb = "update"
 		} else if strings.Contains(m.Name, "Delete") {
 			act.HTTPMethod = "DELETE"
-			act.Resource = strings.Replace(m.Name, "Delete", "", 1)
-			act.Verb = "Delete"
+			act.Resource = resourceName(strings.Replace(m.Name, "Delete", "", 1))
+			act.Verb = "delete"
 		} else if strings.Contains(m.Name, "Get") {
 			act.HTTPMethod = "GET"
-			act.Resource = strings.Replace(m.Name, "Get", "", 1)
-			act.Verb = "Get"
+			act.Resource = resourceName(strings.Replace(m.Name, "Get", "", 1))
+			act.Verb = "get"
 		} else if strings.Contains(m.Name, "List") {
 			act.HTTPMethod = "GET"
-			act.Resource = strings.Replace(m.Name, "List", "", 1)
-			act.Verb = "List"
+			act.Resource = resourceName(strings.Replace(m.Name, "List", "", 1))
+			act.Verb = "list"
 		} else {
 			fmt.Fprintf(os.Stderr, "invalid name: %q\n", m.Name)
 			os.Exit(1)
 		}
 
 		// HTTP path (with paramters).
-		act.HTTPPath += "/" + strings.ToLower(pathName(
-			regexp.MustCompile(`^[A-Z]+[a-z]+`).FindString(m.Name),
-		))
+		act.HTTPPath = "/" + act.Resource
 
 		// Actions arguments.
 		for j := 0; j < m.Type.NumIn(); j++ {
@@ -99,7 +96,7 @@ func main() {
 				continue
 			}
 
-			act.Params.Name = arg.Name()
+			act.Params.TypeName = arg.Name()
 
 			// Iterate parameters fields and save which
 			// of them came from path, query and json.
@@ -124,11 +121,11 @@ func main() {
 			res := m.Type.Out(j)
 
 			// We only need *Result return type.
-			if !strings.Contains(res.Name(), "Result") {
+			if !strings.Contains(res.String(), "Result") {
 				continue
 			}
 
-			act.Result = res.Name()
+			act.Result = res.String()
 		}
 
 		acts = append(acts, act)
@@ -165,9 +162,9 @@ func contains(items []string, item string) bool {
 	return false
 }
 
-// DNSRecords -> DNS-Records
-// Users -> Users
-func pathName(s string) string {
+// DNSRecords -> dns-records
+// Users -> users
+func resourceName(s string) string {
 	for i := 0; i < len(s); i++ {
 		if s[i] > 'A' && s[i] < 'Z' {
 			continue
@@ -177,8 +174,8 @@ func pathName(s string) string {
 			break
 		}
 
-		return s[:i-1] + "-" + s[i-1:]
+		return strings.ToLower(s[:i-1] + "-" + s[i-1:])
 	}
 
-	return s
+	return strings.ToLower(s)
 }

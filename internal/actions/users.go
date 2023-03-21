@@ -12,13 +12,8 @@ import (
 )
 
 type UsersActions interface {
-	UsersCreate(context.Context, UsersCreateParams) (UsersCreateResult, errors.Error)
-	UsersDelete(context.Context, UsersDeleteParams) (UsersDeleteResult, errors.Error)
-}
-
-type UsersHandler interface {
-	UsersCreate(context.Context, UsersCreateResult)
-	UsersDelete(context.Context, UsersDeleteResult)
+	UsersCreate(context.Context, UsersCreateParams) (*UsersCreateResult, errors.Error)
+	UsersDelete(context.Context, UsersDeleteParams) (*UsersDeleteResult, errors.Error)
 }
 
 type User struct {
@@ -43,7 +38,13 @@ func (p UsersCreateParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type UsersCreateResult *User
+type UsersCreateResult struct {
+	User
+}
+
+func (r UsersCreateResult) ResultID() string {
+	return "users/create"
+}
 
 func UsersCreateCommand(p *UsersCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -81,7 +82,13 @@ func (p UsersDeleteParams) Validate() error {
 		validation.Field(&p.Name, validation.Required))
 }
 
-type UsersDeleteResult *User
+type UsersDeleteResult struct {
+	User
+}
+
+func (r UsersDeleteResult) ResultID() string {
+	return "users/delete"
+}
 
 func UsersDeleteCommand(p *UsersDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

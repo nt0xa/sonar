@@ -13,7 +13,7 @@ import (
 
 type EventsActions interface {
 	EventsList(context.Context, EventsListParams) (EventsListResult, errors.Error)
-	EventsGet(context.Context, EventsGetParams) (EventsGetResult, errors.Error)
+	EventsGet(context.Context, EventsGetParams) (*EventsGetResult, errors.Error)
 }
 
 type EventsHandler interface {
@@ -50,7 +50,11 @@ func (p EventsListParams) Validate() error {
 	)
 }
 
-type EventsListResult []*Event
+type EventsListResult []Event
+
+func (r EventsListResult) ResultID() string {
+	return "events/list"
+}
 
 func EventsListCommand(p *EventsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -83,7 +87,13 @@ func (p EventsGetParams) Validate() error {
 	)
 }
 
-type EventsGetResult *Event
+type EventsGetResult struct {
+	Event
+}
+
+func (r EventsGetResult) ResultID() string {
+	return "events/get"
+}
 
 func EventsGetCommand(p *EventsGetParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

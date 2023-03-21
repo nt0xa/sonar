@@ -11,12 +11,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/slice"
 )
 
-func Payload(m *models.Payload) *actions.Payload {
-	if m == nil {
-		return nil
-	}
-
-	return &actions.Payload{
+func Payload(m models.Payload) actions.Payload {
+	return actions.Payload{
 		Subdomain:       m.Subdomain,
 		Name:            m.Name,
 		NotifyProtocols: m.NotifyProtocols.Strings(),
@@ -25,7 +21,7 @@ func Payload(m *models.Payload) *actions.Payload {
 	}
 }
 
-func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCreateParams) (actions.PayloadsCreateResult, errors.Error) {
+func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCreateParams) (*actions.PayloadsCreateResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -44,7 +40,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Internal(err)
 	}
 
-	payload := &models.Payload{
+	rec := &models.Payload{
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            p.Name,
@@ -52,15 +48,15 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		StoreEvents:     p.StoreEvents,
 	}
 
-	err = act.db.PayloadsCreate(payload)
+	err = act.db.PayloadsCreate(rec)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return Payload(payload), nil
+	return &actions.PayloadsCreateResult{Payload(*rec)}, nil
 }
 
-func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpdateParams) (actions.PayloadsUpdateResult, errors.Error) {
+func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpdateParams) (*actions.PayloadsUpdateResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -70,7 +66,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
+	rec, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.Name)
 	} else if err != nil {
@@ -78,26 +74,26 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 	}
 
 	if p.NewName != "" {
-		payload.Name = p.NewName
+		rec.Name = p.NewName
 	}
 
 	if p.NotifyProtocols != nil {
-		payload.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
+		rec.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
 	}
 
 	if p.StoreEvents != nil {
-		payload.StoreEvents = *p.StoreEvents
+		rec.StoreEvents = *p.StoreEvents
 	}
 
-	err = act.db.PayloadsUpdate(payload)
+	err = act.db.PayloadsUpdate(rec)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return Payload(payload), nil
+	return &actions.PayloadsUpdateResult{Payload(*rec)}, nil
 }
 
-func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (actions.PayloadsDeleteResult, errors.Error) {
+func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (*actions.PayloadsDeleteResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -107,18 +103,18 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
+	rec, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
 	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	if err := act.db.PayloadsDelete(payload.ID); err != nil {
+	if err := act.db.PayloadsDelete(rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return Payload(payload), nil
+	return &actions.PayloadsDeleteResult{Payload(*rec)}, nil
 }
 
 func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListParams) (actions.PayloadsListResult, errors.Error) {
@@ -131,15 +127,15 @@ func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListPa
 		return nil, errors.Validation(err)
 	}
 
-	payloads, err := act.db.PayloadsFindByUserAndName(u.ID, p.Name)
+	recs, err := act.db.PayloadsFindByUserAndName(u.ID, p.Name)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	res := make([]*actions.Payload, 0)
+	res := make([]actions.Payload, 0)
 
-	for _, p := range payloads {
-		res = append(res, Payload(p))
+	for _, r := range recs {
+		res = append(res, Payload(*r))
 	}
 
 	return res, nil
