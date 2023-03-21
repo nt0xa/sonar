@@ -472,9 +472,9 @@ func TestClient(t *testing.T) {
 			case actions.HTTPRoutesDeleteParams:
 				res, err = uc.HTTPRoutesDelete(context.Background(), p)
 
-			// User
+			// Profile
 			default:
-				res, err = uc.UserCurrent(context.Background())
+				res, err = uc.ProfileGet(context.Background())
 			}
 
 			if tt.err != nil {

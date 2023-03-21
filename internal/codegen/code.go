@@ -10,38 +10,40 @@ import (
 )
 
 {{ range . }}
-func (c *command) {{ .Name }}(local bool) *cobra.Command {
-	{{- if ne .Params.Name "" }}
-	var params actions.{{ .Params.Name }}
+func (c *Command) {{ .Name }}() *cobra.Command {
+	{{- if ne .Params.TypeName "" }}
+	var params actions.{{ .Params.TypeName }}
 
-	cmd, prepareFunc := actions.{{ .Name }}Command(&params, local)
+	cmd, prepareFunc := actions.{{ .Name }}Command(&params, c.local)
 	{{ else }}
-	cmd, prepareFunc := actions.{{ .Name }}Command(local)
+	cmd, prepareFunc := actions.{{ .Name }}Command(c.local)
 	{{ end }}
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 
-		{{- if ne .Params.Name "" }}
+		{{- if ne .Params.TypeName "" }}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 		{{ end }}
 
-		res, err := c.actions.{{ .Name }}(cmd.Context(){{ if ne .Params.Name "" }}, params{{ end }})
+		res, err := c.actions.{{ .Name }}(cmd.Context(){{ if ne .Params.TypeName "" }}, params{{ end }})
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.{{ .Name }}(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 
 	return cmd
@@ -59,8 +61,8 @@ import (
 
 {{ range . }}
 func (api *API) {{ .Name }}(w http.ResponseWriter, r *http.Request) {
-	{{ if ne .Params.Name "" }}
-	var params actions.{{ .Params.Name }}
+	{{ if ne .Params.TypeName "" }}
+	var params actions.{{ .Params.TypeName }}
 	{{ end }}
 
 	{{- range .Params.Types }}
@@ -70,7 +72,7 @@ func (api *API) {{ .Name }}(w http.ResponseWriter, r *http.Request) {
 	}
 	{{ end }}
 
-	res, err := api.actions.{{ .Name }}(r.Context(){{ if ne .Params.Name "" }}, params{{ end }})
+	res, err := api.actions.{{ .Name }}(r.Context(){{ if ne .Params.TypeName "" }}, params{{ end }})
 	if err != nil {
 		api.handleError(w, r, err)
 		return
@@ -92,8 +94,8 @@ import (
 )
 
 {{ range . }}
-func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.Name "" }}, params actions.{{ .Params.Name }}{{ end }}) (actions.{{ .Result }}, errors.Error) {
-	var res actions.{{ .Result }}
+func (c *Client) {{ .Name }}(ctx context.Context{{ if ne .Params.TypeName "" }}, params actions.{{ .Params.TypeName }}{{ end }}) ({{ .Result }}, errors.Error) {
+	var res {{ .Result }}
 
 	err := handle(c.client.R().
 		{{- range .Params.Types }}

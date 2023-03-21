@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"html/template"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/adrg/xdg"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,23 +17,15 @@ import (
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/modules/api/apiclient"
+	"github.com/russtone/sonar/internal/results"
 	"github.com/russtone/sonar/internal/utils/slice"
 )
 
-func main() {
+func init() {
+	validation.ErrorTag = "err"
+}
 
-	// Allow "help" and "completion" commands to execute without any
-	// API requests.
-	if len(os.Args) > 1 &&
-		(os.Args[1] == "help" ||
-			os.Args[1] == "completion" ||
-			slice.StringsContains(os.Args, "-h") ||
-			slice.StringsContains(os.Args, "--help")) {
-		root := cmd.New(nil, nil, nil).Root(&actions.User{}, true)
-		addJSONFlag(root)
-		root.Execute()
-		return
-	}
+func main() {
 
 	//
 	// Config
@@ -66,14 +62,6 @@ func main() {
 
 	client := apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
 
-	//
-	// User
-	//
-
-	user, err := client.UserCurrent(context.Background())
-	if err != nil {
-		fatal(err)
-	}
 
 	//
 	// Command
@@ -83,23 +71,55 @@ func main() {
 
 	// Args are is not yet parsed so just seach for "--json".
 	if slice.StringsContains(os.Args, "--json") {
-		handler = &jsonHandler{os.Stdout}
+		handler = &results.JSON{Encoder: json.NewEncoder(os.Stdout)}
 	} else {
-		handler = &terminalHandler{srv.BaseURL().Hostname()}
+		handler = &results.Text{
+			Templates: results.DefaultTemplates(results.TemplateOptions{
+				Markup: map[string]string{
+					"<bold>":   "<bold>",
+					"</bold>":  "</>",
+					"<code>":   "",
+					"</code>":  "",
+					"<pre>":    "",
+					"</pre>":   "",
+					"<error>":  "<fg=red;op=bold>",
+					"</error>": "</>",
+				},
+				ExtraFuncs: template.FuncMap{
+					"domain": func() string {
+						return srv.BaseURL().Hostname()
+					},
+				},
+			}),
+			OnText: func(ctx context.Context, message string) {
+				if !strings.HasSuffix(message, "\n") {
+					message += "\n"
+				}
+				color.Print(message)
+			},
+		}
 	}
 
-	root := cmd.New(client, handler, nil).Root(user, true)
-	addJSONFlag(root)
-	addContextCmd(&cfg, root)
-	root.SilenceErrors = true
-	root.SilenceUsage = true
+	c := cmd.New(
+		client,
+		handler,
+		cmd.Local(),
+		cmd.PreExec(preExec(&cfg)),
+	)
 
-	if err := root.Execute(); err != nil {
-		fatal(err)
-	}
+	c.Exec(context.Background(), os.Args[1:])
 }
 
 var jsonOutput bool
+
+func preExec(cfg *Config) func(context.Context, *cobra.Command) {
+	return func(ctx context.Context, root *cobra.Command) {
+		addJSONFlag(root)
+		addContextCmd(cfg, root)
+		root.SilenceErrors = true
+		root.SilenceUsage = true
+	}
+}
 
 func addJSONFlag(root *cobra.Command) {
 	for _, cmd := range root.Commands() {
@@ -121,7 +141,7 @@ func addContextCmd(cfg *Config, root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "ctx",
 		Short: "Change current context parameters",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 
 			if err := viper.Unmarshal(&cfg); err != nil {
 				fatalf("Fail to unmarshal config: %v", err)
@@ -142,8 +162,6 @@ func addContextCmd(cfg *Config, root *cobra.Command) {
 				color.Bold.Print(field.Tag.Get("mapstructure") + ": ")
 				color.Println(v.FieldByName(field.Name))
 			}
-
-			return nil
 		},
 	}
 

@@ -19,15 +19,9 @@ import (
 )
 
 type HTTPActions interface {
-	HTTPRoutesCreate(context.Context, HTTPRoutesCreateParams) (HTTPRoutesCreateResult, errors.Error)
-	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteParams) (HTTPRoutesDeleteResult, errors.Error)
+	HTTPRoutesCreate(context.Context, HTTPRoutesCreateParams) (*HTTPRoutesCreateResult, errors.Error)
+	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteParams) (*HTTPRoutesDeleteResult, errors.Error)
 	HTTPRoutesList(context.Context, HTTPRoutesListParams) (HTTPRoutesListResult, errors.Error)
-}
-
-type HTTPRoutesHandler interface {
-	HTTPRoutesCreate(context.Context, HTTPRoutesCreateResult)
-	HTTPRoutesList(context.Context, HTTPRoutesListResult)
-	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteResult)
 }
 
 type HTTPRoute struct {
@@ -69,7 +63,13 @@ func (p HTTPRoutesCreateParams) Validate() error {
 	)
 }
 
-type HTTPRoutesCreateResult *HTTPRoute
+type HTTPRoutesCreateResult struct {
+	HTTPRoute
+}
+
+func (r HTTPRoutesCreateResult) ResultID() string {
+	return "http-routes/create"
+}
 
 func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -148,7 +148,13 @@ func (p HTTPRoutesDeleteParams) Validate() error {
 	)
 }
 
-type HTTPRoutesDeleteResult *HTTPRoute
+type HTTPRoutesDeleteResult struct {
+	HTTPRoute
+}
+
+func (r HTTPRoutesDeleteResult) ResultID() string {
+	return "http-routes/delete"
+}
 
 func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -184,7 +190,11 @@ func (p HTTPRoutesListParams) Validate() error {
 	)
 }
 
-type HTTPRoutesListResult []*HTTPRoute
+type HTTPRoutesListResult []HTTPRoute
+
+func (r HTTPRoutesListResult) ResultID() string {
+	return "http-routes/list"
+}
 
 func HTTPRoutesListCommand(p *HTTPRoutesListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{

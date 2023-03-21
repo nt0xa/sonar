@@ -232,9 +232,9 @@ func (api *API) PayloadsUpdate(w http.ResponseWriter, r *http.Request) {
 	responseJSON(w, res, http.StatusOK)
 }
 
-func (api *API) UserCurrent(w http.ResponseWriter, r *http.Request) {
+func (api *API) ProfileGet(w http.ResponseWriter, r *http.Request) {
 
-	res, err := api.actions.UserCurrent(r.Context())
+	res, err := api.actions.ProfileGet(r.Context())
 	if err != nil {
 		api.handleError(w, r, err)
 		return

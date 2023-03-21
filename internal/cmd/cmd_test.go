@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/shlex"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/russtone/sonar/internal/actions"
@@ -17,14 +16,14 @@ import (
 )
 
 var (
-	ctx = context.WithValue(context.Background(), "key", "value")
+	ctx = context.Background()
 )
 
-func prepare() (cmd.Command, *actions_mock.Actions, *actions_mock.ResultHandler) {
+func prepare() (*cmd.Command, *actions_mock.Actions, *actions_mock.ResultHandler) {
 	actions := &actions_mock.Actions{}
 	handler := &actions_mock.ResultHandler{}
 
-	c := cmd.New(actions, handler, nil)
+	c := cmd.New(actions, handler)
 
 	return c, actions, handler
 }
@@ -54,7 +53,7 @@ func TestCmd(t *testing.T) {
 				},
 				StoreEvents: true,
 			},
-			(actions.PayloadsCreateResult)(nil),
+			&actions.PayloadsCreateResult{},
 		},
 
 		// List
@@ -65,7 +64,7 @@ func TestCmd(t *testing.T) {
 			actions.PayloadsListParams{
 				Name: "substr",
 			},
-			(actions.PayloadsListResult)(nil),
+			actions.PayloadsListResult{},
 		},
 
 		// Update
@@ -79,7 +78,7 @@ func TestCmd(t *testing.T) {
 				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
 				StoreEvents:     pointer.Bool(false),
 			},
-			(actions.PayloadsUpdateResult)(nil),
+			&actions.PayloadsUpdateResult{},
 		},
 
 		// Delete
@@ -90,7 +89,7 @@ func TestCmd(t *testing.T) {
 			actions.PayloadsDeleteParams{
 				Name: "test",
 			},
-			(actions.PayloadsDeleteResult)(nil),
+			&actions.PayloadsDeleteResult{},
 		},
 
 		//
@@ -110,7 +109,7 @@ func TestCmd(t *testing.T) {
 				Values:      []string{"192.168.1.1"},
 				Strategy:    models.DNSStrategyAll,
 			},
-			(actions.DNSRecordsCreateResult)(nil),
+			&actions.DNSRecordsCreateResult{},
 		},
 		{
 			`dns new -p payload -n name -t mx -l 120 -s round-robin "10 mx.example.com."`,
@@ -123,7 +122,7 @@ func TestCmd(t *testing.T) {
 				Values:      []string{"10 mx.example.com."},
 				Strategy:    models.DNSStrategyRoundRobin,
 			},
-			(actions.DNSRecordsCreateResult)(nil),
+			&actions.DNSRecordsCreateResult{},
 		},
 		{
 			`dns new -p payload -n name -t a -l 100 -s rebind 1.1.1.1 2.2.2.2 3.3.3.3`,
@@ -136,7 +135,7 @@ func TestCmd(t *testing.T) {
 				Values:      []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"},
 				Strategy:    models.DNSStrategyRebind,
 			},
-			(actions.DNSRecordsCreateResult)(nil),
+			&actions.DNSRecordsCreateResult{},
 		},
 
 		// List
@@ -147,7 +146,7 @@ func TestCmd(t *testing.T) {
 			actions.DNSRecordsListParams{
 				PayloadName: "payload",
 			},
-			(actions.DNSRecordsListResult)(nil),
+			actions.DNSRecordsListResult{},
 		},
 
 		// Delete
@@ -159,7 +158,7 @@ func TestCmd(t *testing.T) {
 				PayloadName: "payload",
 				Index:       1,
 			},
-			(actions.DNSRecordsDeleteResult)(nil),
+			&actions.DNSRecordsDeleteResult{},
 		},
 
 		//
@@ -179,7 +178,7 @@ func TestCmd(t *testing.T) {
 				},
 				IsAdmin: true,
 			},
-			(actions.UsersCreateResult)(nil),
+			&actions.UsersCreateResult{},
 		},
 
 		// Delete
@@ -190,7 +189,7 @@ func TestCmd(t *testing.T) {
 			actions.UsersDeleteParams{
 				Name: "test",
 			},
-			(actions.UsersDeleteResult)(nil),
+			&actions.UsersDeleteResult{},
 		},
 
 		//
@@ -198,10 +197,10 @@ func TestCmd(t *testing.T) {
 		//
 
 		{
-			"user",
-			"UserCurrent",
+			"profile",
+			"ProfileGet",
 			nil,
-			(actions.UserCurrentResult)(nil),
+			&actions.ProfileGetResult{},
 		},
 
 		//
@@ -218,7 +217,7 @@ func TestCmd(t *testing.T) {
 				Count:       5,
 				After:       3,
 			},
-			(actions.EventsListResult)(nil),
+			actions.EventsListResult{},
 		},
 		{
 			"events list -p test -c 5 -b 3 -r",
@@ -229,7 +228,7 @@ func TestCmd(t *testing.T) {
 				Before:      3,
 				Reverse:     true,
 			},
-			(actions.EventsListResult)(nil),
+			actions.EventsListResult{},
 		},
 
 		// Get
@@ -241,7 +240,7 @@ func TestCmd(t *testing.T) {
 				PayloadName: "test",
 				Index:       5,
 			},
-			(actions.EventsGetResult)(nil),
+			&actions.EventsGetResult{},
 		},
 
 		//
@@ -264,7 +263,7 @@ func TestCmd(t *testing.T) {
 				Body:      "dGVzdA==",
 				IsDynamic: true,
 			},
-			(actions.HTTPRoutesCreateResult)(nil),
+			&actions.HTTPRoutesCreateResult{},
 		},
 
 		// List
@@ -275,7 +274,7 @@ func TestCmd(t *testing.T) {
 			actions.HTTPRoutesListParams{
 				PayloadName: "payload",
 			},
-			(actions.HTTPRoutesListResult)(nil),
+			actions.HTTPRoutesListResult{},
 		},
 
 		// Delete
@@ -287,7 +286,7 @@ func TestCmd(t *testing.T) {
 				PayloadName: "payload",
 				Index:       1,
 			},
-			(actions.HTTPRoutesDeleteResult)(nil),
+			&actions.HTTPRoutesDeleteResult{},
 		},
 	}
 
@@ -305,14 +304,15 @@ func TestCmd(t *testing.T) {
 					Return(tt.result, nil)
 			}
 
-			hnd.On(tt.action, ctx, tt.result)
+			acts.On("ProfileGet", ctx).
+      Return(&actions.ProfileGetResult{User: actions.User{IsAdmin: true}}, nil)
+
+			hnd.On("OnResult", ctx, tt.result)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, err = c.Exec(ctx, &actions.User{IsAdmin: true}, true, args)
-
-			assert.NoError(t, err)
+			c.Exec(ctx, args)
 
 			acts.AssertExpectations(t)
 			hnd.AssertExpectations(t)

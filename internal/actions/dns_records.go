@@ -15,15 +15,9 @@ import (
 )
 
 type DNSActions interface {
-	DNSRecordsCreate(context.Context, DNSRecordsCreateParams) (DNSRecordsCreateResult, errors.Error)
-	DNSRecordsDelete(context.Context, DNSRecordsDeleteParams) (DNSRecordsDeleteResult, errors.Error)
+	DNSRecordsCreate(context.Context, DNSRecordsCreateParams) (*DNSRecordsCreateResult, errors.Error)
+	DNSRecordsDelete(context.Context, DNSRecordsDeleteParams) (*DNSRecordsDeleteResult, errors.Error)
 	DNSRecordsList(context.Context, DNSRecordsListParams) (DNSRecordsListResult, errors.Error)
-}
-
-type DNSRecordsHandler interface {
-	DNSRecordsCreate(context.Context, DNSRecordsCreateResult)
-	DNSRecordsList(context.Context, DNSRecordsListResult)
-	DNSRecordsDelete(context.Context, DNSRecordsDeleteResult)
 }
 
 type DNSRecord struct {
@@ -60,7 +54,13 @@ func (p DNSRecordsCreateParams) Validate() error {
 	)
 }
 
-type DNSRecordsCreateResult *DNSRecord
+type DNSRecordsCreateResult struct {
+	DNSRecord
+}
+
+func (r DNSRecordsCreateResult) ResultID() string {
+	return "dns-records/create"
+}
 
 func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -99,7 +99,13 @@ func (p DNSRecordsDeleteParams) Validate() error {
 	)
 }
 
-type DNSRecordsDeleteResult *DNSRecord
+type DNSRecordsDeleteResult struct {
+	DNSRecord
+}
+
+func (r DNSRecordsDeleteResult) ResultID() string {
+	return "dns-records/delete"
+}
 
 func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
@@ -135,7 +141,11 @@ func (p DNSRecordsListParams) Validate() error {
 	)
 }
 
-type DNSRecordsListResult []*DNSRecord
+type DNSRecordsListResult []DNSRecord
+
+func (r DNSRecordsListResult) ResultID() string {
+	return "dns-records/list"
+}
 
 func DNSRecordsListCommand(p *DNSRecordsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
