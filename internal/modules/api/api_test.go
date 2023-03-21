@@ -149,7 +149,7 @@ func TestAPI(t *testing.T) {
 			path:   "/payloads",
 			token:  User1Token,
 			json:   `{"name": "test", "notifyProtocols": ["dns", "smtp"], "storeEvents": true}`,
-			schema: (actions.PayloadsCreateResult)(nil),
+			schema: actions.PayloadsCreateResult{},
 			result: map[string]matcher{
 				"$.subdomain": regex(regexp.MustCompile("^[a-f0-9]{8}$")),
 				"$.name":      equal("test"),
@@ -232,7 +232,7 @@ func TestAPI(t *testing.T) {
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": false}`,
-			schema: (actions.PayloadsUpdateResult)(nil),
+			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
 				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
@@ -245,7 +245,7 @@ func TestAPI(t *testing.T) {
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": null}`,
-			schema: (actions.PayloadsUpdateResult)(nil),
+			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
 				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
@@ -295,7 +295,7 @@ func TestAPI(t *testing.T) {
 			method: "DELETE",
 			path:   "/payloads/payload1",
 			token:  User1Token,
-			schema: (actions.PayloadsDeleteResult)(nil),
+			schema: actions.PayloadsDeleteResult{},
 			status: 200,
 		},
 		{
@@ -320,7 +320,7 @@ func TestAPI(t *testing.T) {
 			path:   "/dns-records",
 			token:  User1Token,
 			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
-			schema: (actions.DNSRecordsCreateResult)(nil),
+			schema: actions.DNSRecordsCreateResult{},
 			result: map[string]matcher{
 				"$.name":      equal("test"),
 				"$.type":      equal("A"),
@@ -397,7 +397,7 @@ func TestAPI(t *testing.T) {
 			method: "DELETE",
 			path:   "/dns-records/payload1/1",
 			token:  User1Token,
-			schema: (actions.DNSRecordsDeleteResult)(nil),
+			schema: actions.DNSRecordsDeleteResult{},
 			result: map[string]matcher{
 				"$.name": equal("test-a"),
 			},
@@ -430,9 +430,9 @@ func TestAPI(t *testing.T) {
 
 		{
 			method: "GET",
-			path:   "/user",
+			path:   "/profile",
 			token:  User1Token,
-			schema: (actions.UserCurrentResult)(nil),
+			schema: actions.ProfileGetResult{},
 			result: map[string]matcher{
 				"$.name": equal("user1"),
 			},
@@ -469,7 +469,7 @@ func TestAPI(t *testing.T) {
 			path:   "/users",
 			token:  AdminToken,
 			json:   `{"name": "test", "params": {"api.token": "token", "telegram.id": 1234}}`,
-			schema: (actions.UsersCreateResult)(nil),
+			schema: actions.UsersCreateResult{},
 			result: map[string]matcher{
 				"$.name":                  equal("test"),
 				"$.isAdmin":               equal(false),
@@ -519,7 +519,7 @@ func TestAPI(t *testing.T) {
 			method: "DELETE",
 			path:   "/users/user1",
 			token:  AdminToken,
-			schema: (actions.UsersCreateResult)(nil),
+			schema: actions.UsersCreateResult{},
 			status: 200,
 		},
 		{
@@ -558,7 +558,7 @@ func TestAPI(t *testing.T) {
 			method: "GET",
 			path:   "/events/payload1/2",
 			token:  User1Token,
-			schema: (actions.EventsGetResult)(nil),
+			schema: actions.EventsGetResult{},
 			result: map[string]matcher{
 				"$.protocol": equal("http"),
 			},
@@ -584,7 +584,7 @@ func TestAPI(t *testing.T) {
 				"body": "dGVzdA==",
 				"isDynamic": true
 			}`,
-			schema: (actions.HTTPRoutesCreateResult)(nil),
+			schema: actions.HTTPRoutesCreateResult{},
 			result: map[string]matcher{
 				"$.method":    equal("GET"),
 				"$.path":      equal("/test"),
@@ -662,7 +662,7 @@ func TestAPI(t *testing.T) {
 			method: "DELETE",
 			path:   "/http-routes/payload1/1",
 			token:  User1Token,
-			schema: (actions.HTTPRoutesDeleteResult)(nil),
+			schema: actions.HTTPRoutesDeleteResult{},
 			result: map[string]matcher{
 				"$.path": equal("/get"),
 			},

@@ -7,432 +7,461 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func (c *command) DNSRecordsCreate(local bool) *cobra.Command {
+func (c *Command) DNSRecordsCreate() *cobra.Command {
 	var params actions.DNSRecordsCreateParams
 
-	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&params, local)
+	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.DNSRecordsCreate(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.DNSRecordsCreate(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) DNSRecordsDelete(local bool) *cobra.Command {
+func (c *Command) DNSRecordsDelete() *cobra.Command {
 	var params actions.DNSRecordsDeleteParams
 
-	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&params, local)
+	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.DNSRecordsDelete(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.DNSRecordsDelete(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) DNSRecordsList(local bool) *cobra.Command {
+func (c *Command) DNSRecordsList() *cobra.Command {
 	var params actions.DNSRecordsListParams
 
-	cmd, prepareFunc := actions.DNSRecordsListCommand(&params, local)
+	cmd, prepareFunc := actions.DNSRecordsListCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.DNSRecordsList(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.DNSRecordsList(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) EventsGet(local bool) *cobra.Command {
+func (c *Command) EventsGet() *cobra.Command {
 	var params actions.EventsGetParams
 
-	cmd, prepareFunc := actions.EventsGetCommand(&params, local)
+	cmd, prepareFunc := actions.EventsGetCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.EventsGet(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.EventsGet(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) EventsList(local bool) *cobra.Command {
+func (c *Command) EventsList() *cobra.Command {
 	var params actions.EventsListParams
 
-	cmd, prepareFunc := actions.EventsListCommand(&params, local)
+	cmd, prepareFunc := actions.EventsListCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.EventsList(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.EventsList(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) HTTPRoutesCreate(local bool) *cobra.Command {
+func (c *Command) HTTPRoutesCreate() *cobra.Command {
 	var params actions.HTTPRoutesCreateParams
 
-	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params, local)
+	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.HTTPRoutesCreate(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.HTTPRoutesCreate(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) HTTPRoutesDelete(local bool) *cobra.Command {
+func (c *Command) HTTPRoutesDelete() *cobra.Command {
 	var params actions.HTTPRoutesDeleteParams
 
-	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params, local)
+	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.HTTPRoutesDelete(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.HTTPRoutesDelete(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) HTTPRoutesList(local bool) *cobra.Command {
+func (c *Command) HTTPRoutesList() *cobra.Command {
 	var params actions.HTTPRoutesListParams
 
-	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params, local)
+	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.HTTPRoutesList(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.HTTPRoutesList(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) PayloadsCreate(local bool) *cobra.Command {
+func (c *Command) PayloadsCreate() *cobra.Command {
 	var params actions.PayloadsCreateParams
 
-	cmd, prepareFunc := actions.PayloadsCreateCommand(&params, local)
+	cmd, prepareFunc := actions.PayloadsCreateCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.PayloadsCreate(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.PayloadsCreate(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) PayloadsDelete(local bool) *cobra.Command {
+func (c *Command) PayloadsDelete() *cobra.Command {
 	var params actions.PayloadsDeleteParams
 
-	cmd, prepareFunc := actions.PayloadsDeleteCommand(&params, local)
+	cmd, prepareFunc := actions.PayloadsDeleteCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.PayloadsDelete(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.PayloadsDelete(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) PayloadsList(local bool) *cobra.Command {
+func (c *Command) PayloadsList() *cobra.Command {
 	var params actions.PayloadsListParams
 
-	cmd, prepareFunc := actions.PayloadsListCommand(&params, local)
+	cmd, prepareFunc := actions.PayloadsListCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.PayloadsList(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.PayloadsList(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) PayloadsUpdate(local bool) *cobra.Command {
+func (c *Command) PayloadsUpdate() *cobra.Command {
 	var params actions.PayloadsUpdateParams
 
-	cmd, prepareFunc := actions.PayloadsUpdateCommand(&params, local)
+	cmd, prepareFunc := actions.PayloadsUpdateCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.PayloadsUpdate(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.PayloadsUpdate(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) UserCurrent(local bool) *cobra.Command {
-	cmd, prepareFunc := actions.UserCurrentCommand(local)
+func (c *Command) ProfileGet() *cobra.Command {
+	cmd, prepareFunc := actions.ProfileGetCommand(c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 
-		res, err := c.actions.UserCurrent(cmd.Context())
+		res, err := c.actions.ProfileGet(cmd.Context())
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.UserCurrent(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) UsersCreate(local bool) *cobra.Command {
+func (c *Command) UsersCreate() *cobra.Command {
 	var params actions.UsersCreateParams
 
-	cmd, prepareFunc := actions.UsersCreateCommand(&params, local)
+	cmd, prepareFunc := actions.UsersCreateCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.UsersCreate(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.UsersCreate(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }
 
-func (c *command) UsersDelete(local bool) *cobra.Command {
+func (c *Command) UsersDelete() *cobra.Command {
 	var params actions.UsersDeleteParams
 
-	cmd, prepareFunc := actions.UsersDeleteCommand(&params, local)
+	cmd, prepareFunc := actions.UsersDeleteCommand(&params, c.local)
 
-	cmd.RunE = RunE(func(cmd *cobra.Command, args []string) errors.Error {
-
+	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				return err
+				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			return errors.Validation(err)
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			return
 		}
 
 		res, err := c.actions.UsersDelete(cmd.Context(), params)
 		if err != nil {
-			return err
+			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			return
 		}
 
-		c.handler.UsersDelete(cmd.Context(), res)
+		c.handler.OnResult(cmd.Context(), res)
 
-		return nil
-	})
+		return
+	}
 
 	return cmd
 }

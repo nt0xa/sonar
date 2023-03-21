@@ -11,12 +11,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func HTTPRoute(m *models.HTTPRoute, payloadSubdomain string) *actions.HTTPRoute {
-	if m == nil {
-		return nil
-	}
-
-	return &actions.HTTPRoute{
+func HTTPRoute(m models.HTTPRoute, payloadSubdomain string) actions.HTTPRoute {
+	return actions.HTTPRoute{
 		Index:            m.Index,
 		PayloadSubdomain: payloadSubdomain,
 		Method:           m.Method,
@@ -29,7 +25,7 @@ func HTTPRoute(m *models.HTTPRoute, payloadSubdomain string) *actions.HTTPRoute 
 	}
 }
 
-func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutesCreateParams) (actions.HTTPRoutesCreateResult, errors.Error) {
+func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutesCreateParams) (*actions.HTTPRoutesCreateResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -69,10 +65,10 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	return HTTPRoute(rec, payload.Subdomain), nil
+	return &actions.HTTPRoutesCreateResult{HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
-func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (actions.HTTPRoutesDeleteResult, errors.Error) {
+func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -99,7 +95,7 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	return HTTPRoute(rec, payload.Subdomain), nil
+	return &actions.HTTPRoutesDeleteResult{HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesListParams) (actions.HTTPRoutesListResult, errors.Error) {
@@ -122,10 +118,10 @@ func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesLi
 		return nil, errors.Internal(err)
 	}
 
-	res := make([]*actions.HTTPRoute, 0)
+	res := make([]actions.HTTPRoute, 0)
 
 	for _, r := range recs {
-		res = append(res, HTTPRoute(r, payload.Subdomain))
+		res = append(res, HTTPRoute(*r, payload.Subdomain))
 	}
 
 	return res, nil

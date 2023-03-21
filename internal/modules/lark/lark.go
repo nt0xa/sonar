@@ -10,13 +10,11 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
 
 	"github.com/Masterminds/sprig"
-	"github.com/google/shlex"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
@@ -26,20 +24,20 @@ import (
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
-	"github.com/spf13/cobra"
 
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/actionsdb"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/results"
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 type Lark struct {
 	db      *database.DB
 	cfg     *Config
-	cmd     cmd.Command
+	cmd     *cmd.Command
 	actions actions.Actions
 	client  *lark.Client
 	tls     *tls.Config
@@ -93,17 +91,38 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 		tls:     tlsConfig,
 	}
 
-	lrk.cmd = cmd.New(actions, lrk, lrk.preExec)
+	lrk.cmd = cmd.New(
+		actions,
+		&results.Text{
+			Templates: results.DefaultTemplates(results.TemplateOptions{
+				Markup: map[string]string{
+					"<bold>":   "**",
+					"</bold>":  "**",
+					"<code>":   "",
+					"</code>":  "",
+					"<pre>":    "",
+					"</pre>":   "",
+					"<error>":  "",
+					"</error>": "",
+				},
+				ExtraFuncs: template.FuncMap{
+					"domain": func() string { return domain },
+				},
+			}),
+			OnText: func(ctx context.Context, message string) {
+				msgID, err := GetMessageID(ctx)
+				if err != nil {
+					// TODO: logs
+					return
+				}
+				// TODO: refactor
+				lrk.mdMessage("", msgID, message)
+			},
+		},
+		cmd.PreExec(cmd.DefaultMessengersPreExec),
+	)
 
 	return lrk, nil
-}
-
-func (lrk *Lark) preExec(root *cobra.Command, u *actions.User) {
-	root.SetHelpTemplate(helpTemplate)
-	root.SetUsageTemplate(usageTemplate)
-  root.CompletionOptions = cobra.CompletionOptions{
-    DisableDefaultCmd: true,
-  }
 }
 
 func (lrk *Lark) Start() error {
@@ -257,15 +276,8 @@ func (lrk *Lark) Start() error {
 
 				ctx = SetMessageID(ctx, *msgID)
 				ctx = actionsdb.SetUser(ctx, user)
-				args, _ := shlex.Split(strings.TrimLeft(msg.Text, "/"))
 
-				// It is important to pass false as "local" here to disable
-				// dangerous commands.
-				if out, err := lrk.cmd.Exec(ctx, actionsdb.User(user), false, args); err != nil {
-					lrk.handleError(*userID, msgID, err)
-				} else if out != "" {
-					lrk.txtMessage(*userID, msgID, out)
-				}
+				lrk.cmd.ParseAndExec(ctx, msg.Text)
 
 				return nil
 			},
@@ -441,36 +453,4 @@ func tpl(s string) *template.Template {
 		}).
 		Parse(s),
 	)
-}
-
-func (lrk *Lark) getDomain() string {
-	return lrk.domain
-}
-
-func (lrk *Lark) txtResult(ctx context.Context, txt string) {
-	u, err := actionsdb.GetUser(ctx)
-	if err != nil {
-		return
-	}
-
-	if msgID, err := GetMessageID(ctx); err == nil && msgID != nil {
-		lrk.mdMessage(u.Params.LarkUserID, msgID, txt)
-	} else {
-		lrk.mdMessage(u.Params.LarkUserID, nil, txt)
-	}
-}
-
-func (lrk *Lark) tplResult(ctx context.Context, tpl *template.Template, data interface{}) {
-	tpl.Funcs(template.FuncMap{
-		"domain": lrk.getDomain,
-	})
-
-	buf := &bytes.Buffer{}
-
-	if err := tpl.Execute(buf, data); err != nil {
-		// lrk.handleError(u.Params.LarkUserID, nil, errors.Internal(err))
-		log.Println(err)
-	}
-
-	lrk.txtResult(ctx, buf.String())
 }

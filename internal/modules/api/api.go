@@ -48,7 +48,7 @@ func (api *API) Router() http.Handler {
 
 	r.Use(api.checkAuth())
 
-	r.Get("/user", api.UserCurrent)
+	r.Get("/profile", api.ProfileGet)
 
 	r.Route("/payloads", func(r chi.Router) {
 		r.Get("/", api.PayloadsList)

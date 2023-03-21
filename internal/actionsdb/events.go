@@ -11,12 +11,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func Event(m *models.Event) *actions.Event {
-	if m == nil {
-		return nil
-	}
-
-	return &actions.Event{
+func Event(m models.Event) actions.Event {
+	return actions.Event{
 		Index:      m.Index,
 		Protocol:   m.Protocol.String(),
 		R:          base64.StdEncoding.EncodeToString(m.R),
@@ -55,16 +51,16 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 		return nil, errors.Internal(err)
 	}
 
-	res := make([]*actions.Event, 0)
+	res := make([]actions.Event, 0)
 
 	for _, r := range recs {
-		res = append(res, Event(r))
+		res = append(res, Event(*r))
 	}
 
 	return res, nil
 }
 
-func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) (actions.EventsGetResult, errors.Error) {
+func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) (*actions.EventsGetResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -84,5 +80,5 @@ func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) 
 		return nil, errors.Internal(err)
 	}
 
-	return Event(r), nil
+	return &actions.EventsGetResult{Event(*r)}, nil
 }

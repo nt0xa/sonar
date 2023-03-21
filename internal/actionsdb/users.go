@@ -9,12 +9,8 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
-func User(m *models.User) *actions.User {
-	if m == nil {
-		return nil
-	}
-
-	return &actions.User{
+func User(m models.User) actions.User {
+	return actions.User{
 		Name:      m.Name,
 		Params:    m.Params,
 		IsAdmin:   m.IsAdmin,
@@ -22,7 +18,7 @@ func User(m *models.User) *actions.User {
 	}
 }
 
-func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreateParams) (actions.UsersCreateResult, errors.Error) {
+func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreateParams) (*actions.UsersCreateResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -38,33 +34,33 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 
 	// TODO: check telegram.id and api.token duplicate
 
-	user := &models.User{
+	rec := &models.User{
 		Name:      p.Name,
 		Params:    p.Params,
 		IsAdmin:   p.IsAdmin,
 		CreatedBy: &u.ID,
 	}
 
-	if err := act.db.UsersCreate(user); err != nil {
+	if err := act.db.UsersCreate(rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return User(user), nil
+	return &actions.UsersCreateResult{User(*rec)}, nil
 }
 
-func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeleteParams) (actions.UsersDeleteResult, errors.Error) {
+func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeleteParams) (*actions.UsersDeleteResult, errors.Error) {
 	if err := p.Validate(); err != nil {
 		return nil, errors.Validation(err)
 	}
 
-	user, err := act.db.UsersGetByName(p.Name)
+	rec, err := act.db.UsersGetByName(p.Name)
 	if err != nil {
 		return nil, errors.NotFoundf("user with name %q not found", p.Name)
 	}
 
-	if err := act.db.UsersDelete(user.ID); err != nil {
+	if err := act.db.UsersDelete(rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return User(user), nil
+	return &actions.UsersDeleteResult{User(*rec)}, nil
 }
