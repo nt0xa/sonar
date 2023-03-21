@@ -72,9 +72,9 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 	var order string
 
 	if options.Reverse {
-		order = "DESC"
-	} else {
 		order = "ASC"
+	} else {
+		order = "DESC"
 	}
 
 	query, params = paginate(
