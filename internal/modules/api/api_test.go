@@ -546,8 +546,8 @@ func TestAPI(t *testing.T) {
 			schema: (actions.EventsListResult)(nil),
 			result: map[string]matcher{
 				"$":             length(9),
-				"$[0].protocol": equal("dns"),
-				"$[1].protocol": equal("http"),
+				"$[0].protocol": equal("http"),
+				"$[8].protocol": equal("dns"),
 			},
 			status: 200,
 		},

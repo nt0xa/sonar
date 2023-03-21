@@ -31,7 +31,7 @@ func TestEventsList_Success(t *testing.T) {
 				Count:       10,
 			},
 			9,
-			1, 9,
+			9, 1,
 		},
 		{
 			"count",
@@ -40,7 +40,7 @@ func TestEventsList_Success(t *testing.T) {
 				Count:       5,
 			},
 			5,
-			1, 5,
+			9, 5,
 		},
 		{
 			"after",
@@ -50,7 +50,7 @@ func TestEventsList_Success(t *testing.T) {
 				After:       4,
 			},
 			5,
-			5, 9,
+			9, 5,
 		},
 		{
 			"before",
@@ -60,7 +60,7 @@ func TestEventsList_Success(t *testing.T) {
 				Before:      9,
 			},
 			5,
-			4, 8,
+			8, 4,
 		},
 		{
 			"reverse",
@@ -71,7 +71,7 @@ func TestEventsList_Success(t *testing.T) {
 				Reverse:     true,
 			},
 			5,
-			8, 4,
+			4, 8,
 		},
 	}
 
