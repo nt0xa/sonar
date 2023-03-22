@@ -11,6 +11,11 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
+const (
+	UsersCreateResultID = "users/create"
+	UsersDeleteResultID = "users/delete"
+)
+
 type UsersActions interface {
 	UsersCreate(context.Context, UsersCreateParams) (*UsersCreateResult, errors.Error)
 	UsersDelete(context.Context, UsersDeleteParams) (*UsersDeleteResult, errors.Error)
@@ -43,7 +48,7 @@ type UsersCreateResult struct {
 }
 
 func (r UsersCreateResult) ResultID() string {
-	return "users/create"
+	return UsersCreateResultID
 }
 
 func UsersCreateCommand(p *UsersCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -87,7 +92,7 @@ type UsersDeleteResult struct {
 }
 
 func (r UsersDeleteResult) ResultID() string {
-	return "users/delete"
+	return UsersDeleteResultID
 }
 
 func UsersDeleteCommand(p *UsersDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {

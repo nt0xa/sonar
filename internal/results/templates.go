@@ -151,6 +151,14 @@ var eventsList = fmt.Sprintf(`
 %s
 {{ else }}nothing found{{ end -}}`, event)
 
+//
+// Text
+//
+
 var text = "{{ .Text }}"
+
+//
+// Error
+//
 
 var err = "<error>{{ .Error }}</error>"
