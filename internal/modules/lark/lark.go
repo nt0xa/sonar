@@ -45,7 +45,7 @@ type Lark struct {
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Actions, domain string) (*Lark, error) {
+func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actions, domain string) (*Lark, error) {
 
 	httpClient := http.DefaultClient
 
@@ -87,12 +87,12 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 		db:      db,
 		cfg:     cfg,
 		domain:  domain,
-		actions: actions,
+		actions: acts,
 		tls:     tlsConfig,
 	}
 
 	lrk.cmd = cmd.New(
-		actions,
+		acts,
 		&results.Text{
 			Templates: results.DefaultTemplates(results.TemplateOptions{
 				Markup: map[string]string{
@@ -109,14 +109,22 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, actions actions.Ac
 					"domain": func() string { return domain },
 				},
 			}),
-			OnText: func(ctx context.Context, message string) {
+			OnText: func(ctx context.Context, id, message string) {
 				msgID, err := GetMessageID(ctx)
 				if err != nil {
 					// TODO: logs
 					return
 				}
+
+				if id != actions.TextResultID {
+					lrk.mdMessage("", msgID, message)
+				} else {
+          // Otherwise:
+          // * all "--" will be replaced with "-",
+          // * quotes replaced with "smart quotes"
+					lrk.txtMessage("", msgID, message)
+				}
 				// TODO: refactor
-				lrk.mdMessage("", msgID, message)
 			},
 		},
 		cmd.PreExec(cmd.DefaultMessengersPreExec),

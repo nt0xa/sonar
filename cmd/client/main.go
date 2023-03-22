@@ -91,7 +91,7 @@ func main() {
 					},
 				},
 			}),
-			OnText: func(ctx context.Context, message string) {
+			OnText: func(ctx context.Context, id, message string) {
 				if !strings.HasSuffix(message, "\n") {
 					message += "\n"
 				}

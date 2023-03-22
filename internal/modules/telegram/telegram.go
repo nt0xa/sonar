@@ -88,7 +88,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 				},
 				HTML: true,
 			}),
-			OnText: func(ctx context.Context, message string) {
+			OnText: func(ctx context.Context, id, message string) {
 				chatID, err := GetChatID(ctx)
 				if err != nil {
 					// TODO: logging
