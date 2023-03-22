@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -108,6 +109,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 				ExtraFuncs: template.FuncMap{
 					"domain": func() string { return domain },
 				},
+				HTML: false,
 			}),
 			OnText: func(ctx context.Context, id, message string) {
 				msgID, err := GetMessageID(ctx)
@@ -116,15 +118,36 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 					return
 				}
 
-				if id != actions.TextResultID && id != actions.EventsGetResultID {
-					lrk.mdMessage("", msgID, message)
-				} else {
-          // Otherwise:
-          // * all "--" will be replaced with "-",
-          // * quotes replaced with "smart quotes"
+				switch id {
+
+				case actions.TextResultID:
+					// Otherwise:
+					// * all "--" will be replaced with "-",
+					// * quotes replaced with "smart quotes"
 					lrk.txtMessage("", msgID, message)
+					break
+
+				case actions.EventsGetResultID:
+					// TODO: refactor after code blocks will be supported
+					lines := strings.SplitN(message, "\n", 2)
+					lrk.cardMessage("", msgID, []*larkcard.MessageCardField{
+						larkcard.NewMessageCardField().
+							Text(larkcard.NewMessageCardLarkMd().
+								Content(lines[0] + "\n").
+								Build()).
+							Build(),
+						larkcard.NewMessageCardField().
+							Text(larkcard.NewMessageCardPlainText().
+								Content(lines[1]).
+								Build()).
+							Build(),
+					})
+
+				default:
+					lrk.mdMessage("", msgID, message)
+
 				}
-				// TODO: refactor
+
 			},
 		},
 		cmd.PreExec(cmd.DefaultMessengersPreExec),
@@ -319,28 +342,19 @@ func (lrk *Lark) handleError(userID string, msgID *string, err errors.Error) {
 }
 
 func (lrk *Lark) txtMessage(userID string, msgID *string, txt string) {
-	config := larkcard.NewMessageCardConfig().
-		WideScreenMode(true).
-		EnableForward(true).
-		UpdateMulti(false).
-		Build()
+	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{larkcard.NewMessageCardField().
+		Text(larkcard.NewMessageCardPlainText().
+			Content(txt).
+			Build()).
+		Build()})
+}
 
-	// Elements
-	div := larkcard.NewMessageCardDiv().
-		Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
-			Text(larkcard.NewMessageCardPlainText().
-				Content(txt).
-				Build()).
-			IsShort(true).
-			Build()}).
-		Build()
-
-	card := larkcard.NewMessageCard().
-		Config(config).
-		Elements([]larkcard.MessageCardElement{div}).
-		Build()
-
-	lrk.cardMessage(userID, msgID, card)
+func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
+	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{larkcard.NewMessageCardField().
+		Text(larkcard.NewMessageCardLarkMd().
+			Content(md).
+			Build()).
+		Build()})
 }
 
 func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
@@ -366,16 +380,7 @@ func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
 	}
 }
 
-func (lrk *Lark) cardMessage(userID string, msgID *string, card *larkcard.MessageCard) {
-	content, err := card.String()
-	if err != nil {
-		log.Println(err)
-	}
-
-	lrk.sendMessage(userID, msgID, content)
-}
-
-func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
+func (lrk *Lark) cardMessage(userID string, msgID *string, fields []*larkcard.MessageCardField) {
 	config := larkcard.NewMessageCardConfig().
 		WideScreenMode(true).
 		EnableForward(true).
@@ -384,12 +389,7 @@ func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
 
 	// Elements
 	div := larkcard.NewMessageCardDiv().
-		Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
-			Text(larkcard.NewMessageCardLarkMd().
-				Content(md).
-				Build()).
-			IsShort(true).
-			Build()}).
+		Fields(fields).
 		Build()
 
 	card := larkcard.NewMessageCard().
@@ -397,7 +397,14 @@ func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
 		Elements([]larkcard.MessageCardElement{div}).
 		Build()
 
-	lrk.cardMessage(userID, msgID, card)
+	content, err := card.String()
+	if err != nil {
+		// TODO: logging
+		log.Println(err)
+		return
+	}
+
+	lrk.sendMessage(userID, msgID, content)
 }
 
 func (lrk *Lark) docMessage(chatID string, name string, caption string, data []byte) {
