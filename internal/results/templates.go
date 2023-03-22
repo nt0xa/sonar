@@ -74,11 +74,14 @@ func DefaultTemplates(opts TemplateOptions) map[string]Template {
 // Profile
 //
 
-var profileGet = "" +
-	"<bold>Name:</bold> <code>{{ .Name }}</code>\n" +
-	"<bold>Telegram ID:</bold> <code>{{ .Params.TelegramID }}</code>\n" +
-	"<bold>API token:</bold> <code>{{ .Params.APIToken }}</code>\n" +
-	"<bold>Admin:</bold> <code>{{ .IsAdmin }}</code>"
+var profileGet = `
+<bold>Name:</bold> <code>{{ .Name }}</code>
+{{ if .Params.TelegramID }}<bold>Telegram ID:</bold> <code>{{ .Params.TelegramID }}</code>
+{{ end -}}
+{{ if .Params.LarkUserID }}<bold>Lark ID:</bold> <code>{{ .Params.LarkUserID }}</code>
+{{ end -}}
+<bold>API token:</bold> <code>{{ .Params.APIToken }}</code>
+<bold>Admin:</bold> <code>{{ .IsAdmin }}</code>`
 
 //
 // Payloads
