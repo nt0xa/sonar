@@ -3,6 +3,7 @@ package lark
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -55,7 +56,7 @@ func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) erro
 		Protocol string
 		Meta     map[string]interface{}
 	}{
-    data,
+		data,
 		e.Protocol.String(),
 		e.Meta,
 	}
@@ -108,7 +109,15 @@ func (lrk *Lark) Notify(u *models.User, p *models.Payload, e *models.Event) erro
 			Header(cardHeader).
 			Elements([]larkcard.MessageCardElement{div}).
 			Build()
-		lrk.cardMessage(u.Params.LarkUserID, nil, card)
+
+		content, err := card.String()
+		if err != nil {
+			// TODO: logging
+			log.Println(err)
+			return err
+		}
+
+		lrk.sendMessage(u.Params.LarkUserID, nil, content)
 	} else {
 		lrk.docMessage(u.Params.LarkUserID,
 			fmt.Sprintf("log-%s-%s.txt", p.Name, e.ReceivedAt.Format("15-04-05_02-Jan-2006")),
