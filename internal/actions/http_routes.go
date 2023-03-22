@@ -18,6 +18,12 @@ import (
 	"github.com/russtone/sonar/internal/utils/valid"
 )
 
+const (
+	HTTPRoutesCreateResultID = "http-routes/create"
+	HTTPRoutesDeleteResultID = "http-routes/delete"
+	HTTPRoutesListResultID   = "http-routes/list"
+)
+
 type HTTPActions interface {
 	HTTPRoutesCreate(context.Context, HTTPRoutesCreateParams) (*HTTPRoutesCreateResult, errors.Error)
 	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteParams) (*HTTPRoutesDeleteResult, errors.Error)
@@ -68,7 +74,7 @@ type HTTPRoutesCreateResult struct {
 }
 
 func (r HTTPRoutesCreateResult) ResultID() string {
-	return "http-routes/create"
+	return HTTPRoutesCreateResultID
 }
 
 func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -153,7 +159,7 @@ type HTTPRoutesDeleteResult struct {
 }
 
 func (r HTTPRoutesDeleteResult) ResultID() string {
-	return "http-routes/delete"
+	return HTTPRoutesDeleteResultID
 }
 
 func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -193,7 +199,7 @@ func (p HTTPRoutesListParams) Validate() error {
 type HTTPRoutesListResult []HTTPRoute
 
 func (r HTTPRoutesListResult) ResultID() string {
-	return "http-routes/list"
+	return HTTPRoutesListResultID
 }
 
 func HTTPRoutesListCommand(p *HTTPRoutesListParams, local bool) (*cobra.Command, PrepareCommandFunc) {

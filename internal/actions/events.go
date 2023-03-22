@@ -11,6 +11,11 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
+const (
+	EventsListResultID = "events/list"
+	EventsGetResultID  = "events/get"
+)
+
 type EventsActions interface {
 	EventsList(context.Context, EventsListParams) (EventsListResult, errors.Error)
 	EventsGet(context.Context, EventsGetParams) (*EventsGetResult, errors.Error)
@@ -53,7 +58,7 @@ func (p EventsListParams) Validate() error {
 type EventsListResult []Event
 
 func (r EventsListResult) ResultID() string {
-	return "events/list"
+	return EventsListResultID
 }
 
 func EventsListCommand(p *EventsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -92,7 +97,7 @@ type EventsGetResult struct {
 }
 
 func (r EventsGetResult) ResultID() string {
-	return "events/get"
+	return EventsGetResultID
 }
 
 func EventsGetCommand(p *EventsGetParams, local bool) (*cobra.Command, PrepareCommandFunc) {

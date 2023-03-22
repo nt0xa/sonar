@@ -14,6 +14,12 @@ import (
 	"github.com/russtone/sonar/internal/utils/valid"
 )
 
+const (
+	DNSRecordsCreateResultID = "dns-records/create"
+	DNSRecordsDeleteResultID = "dns-records/delete"
+	DNSRecordsListResultID   = "dns-records/list"
+)
+
 type DNSActions interface {
 	DNSRecordsCreate(context.Context, DNSRecordsCreateParams) (*DNSRecordsCreateResult, errors.Error)
 	DNSRecordsDelete(context.Context, DNSRecordsDeleteParams) (*DNSRecordsDeleteResult, errors.Error)
@@ -59,7 +65,7 @@ type DNSRecordsCreateResult struct {
 }
 
 func (r DNSRecordsCreateResult) ResultID() string {
-	return "dns-records/create"
+	return DNSRecordsCreateResultID
 }
 
 func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -104,7 +110,7 @@ type DNSRecordsDeleteResult struct {
 }
 
 func (r DNSRecordsDeleteResult) ResultID() string {
-	return "dns-records/delete"
+	return DNSRecordsDeleteResultID
 }
 
 func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -144,7 +150,7 @@ func (p DNSRecordsListParams) Validate() error {
 type DNSRecordsListResult []DNSRecord
 
 func (r DNSRecordsListResult) ResultID() string {
-	return "dns-records/list"
+	return DNSRecordsListResultID
 }
 
 func DNSRecordsListCommand(p *DNSRecordsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {

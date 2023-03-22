@@ -116,7 +116,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 					return
 				}
 
-				if id != actions.TextResultID {
+				if id != actions.TextResultID && id != actions.EventsGetResultID {
 					lrk.mdMessage("", msgID, message)
 				} else {
           // Otherwise:
