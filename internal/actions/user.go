@@ -8,6 +8,10 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
+const (
+	ProfileGetResultID = "profile/get"
+)
+
 type ProfileActions interface {
 	ProfileGet(context.Context) (*ProfileGetResult, errors.Error)
 }
@@ -17,7 +21,7 @@ type ProfileGetResult struct {
 }
 
 func (r ProfileGetResult) ResultID() string {
-	return "profile/get"
+	return ProfileGetResultID
 }
 
 func ProfileGetCommand(local bool) (*cobra.Command, PrepareCommandFunc) {

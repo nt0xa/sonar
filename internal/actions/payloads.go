@@ -12,6 +12,13 @@ import (
 	"github.com/russtone/sonar/internal/utils/valid"
 )
 
+const (
+	PayloadsCreateResultID = "payloads/create"
+	PayloadsUpdateResultID = "payloads/update"
+	PayloadsDeleteResultID = "payloads/delete"
+	PayloadsListResultID   = "payloads/list"
+)
+
 type PayloadsActions interface {
 	PayloadsCreate(context.Context, PayloadsCreateParams) (*PayloadsCreateResult, errors.Error)
 	PayloadsUpdate(context.Context, PayloadsUpdateParams) (*PayloadsUpdateResult, errors.Error)
@@ -52,7 +59,7 @@ type PayloadsCreateResult struct {
 }
 
 func (r PayloadsCreateResult) ResultID() string {
-	return "payloads/create"
+	return PayloadsCreateResultID
 }
 
 func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -99,7 +106,7 @@ type PayloadsUpdateResult struct {
 }
 
 func (r PayloadsUpdateResult) ResultID() string {
-	return "payloads/update"
+	return PayloadsUpdateResultID
 }
 
 func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -145,7 +152,7 @@ type PayloadsDeleteResult struct {
 }
 
 func (r PayloadsDeleteResult) ResultID() string {
-	return "payloads/delete"
+	return PayloadsDeleteResultID
 }
 
 func PayloadsDeleteCommand(p *PayloadsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
@@ -177,7 +184,7 @@ func (p PayloadsListParams) Validate() error {
 type PayloadsListResult []Payload
 
 func (r PayloadsListResult) ResultID() string {
-	return "payloads/list"
+	return PayloadsListResultID
 }
 
 func PayloadsListCommand(p *PayloadsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
