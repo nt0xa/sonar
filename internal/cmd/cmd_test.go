@@ -305,7 +305,7 @@ func TestCmd(t *testing.T) {
 			}
 
 			acts.On("ProfileGet", ctx).
-      Return(&actions.ProfileGetResult{User: actions.User{IsAdmin: true}}, nil)
+				Return(&actions.ProfileGetResult{User: actions.User{IsAdmin: true}}, nil)
 
 			hnd.On("OnResult", ctx, tt.result)
 
