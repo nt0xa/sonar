@@ -82,12 +82,12 @@ func (api *API) EventsList(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.EventsListParams
 
-	if err := fromQuery(r, &params); err != nil {
+	if err := fromPath(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
 
-	if err := fromPath(r, &params); err != nil {
+	if err := fromQuery(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}

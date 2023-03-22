@@ -26,20 +26,26 @@ type Result interface {
 	ResultID() string
 }
 
+const (
+  TextResultID = "text"
+  ErrorResultID = "error"
+)
+
 type TextResult struct {
 	Text string
 }
 
 func (s TextResult) ResultID() string {
-	return "text"
+	return TextResultID
 }
+
 
 type ErrorResult struct {
 	Error errors.Error
 }
 
 func (e ErrorResult) ResultID() string {
-	return "error"
+	return ErrorResultID
 }
 
 type ResultHandler interface {
