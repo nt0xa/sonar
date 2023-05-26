@@ -1,14 +1,12 @@
 package database
 
 import (
-	"time"
-
 	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) EventsCreate(o *models.Event) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = now()
 
 	query := "" +
 		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at, index) " +

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-acme/lego/v3/challenge"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/russtone/sonar/internal/utils/logger"
 	"github.com/russtone/sonar/internal/utils/valid"
 	"github.com/russtone/sonar/pkg/certmgr"
-	"github.com/go-acme/lego/v3/challenge"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type TLSConfig struct {

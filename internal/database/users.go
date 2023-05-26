@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/fatih/structs"
 
@@ -22,7 +21,7 @@ var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
 
 func (db *DB) UsersCreate(o *models.User) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = now()
 
 	if o.Params.APIToken == "" {
 		token, err := utils.GenerateRandomString(16)

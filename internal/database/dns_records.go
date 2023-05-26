@@ -1,14 +1,12 @@
 package database
 
 import (
-	"time"
-
 	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = now()
 
 	query := "" +
 		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at, index) " +

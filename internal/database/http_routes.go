@@ -1,14 +1,12 @@
 package database
 
 import (
-	"time"
-
 	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = now()
 
 	query := "" +
 		"INSERT INTO http_routes (payload_id, method, path, code, headers, body, is_dynamic, created_at, index) " +

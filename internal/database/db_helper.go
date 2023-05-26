@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 
-	"github.com/russtone/sonar/internal/utils/logger"
 	"github.com/jmoiron/sqlx"
+	"github.com/russtone/sonar/internal/utils/logger"
 )
 
 func (db *DB) NamedQueryRowx(query string, arg interface{}) *row {
