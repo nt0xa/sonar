@@ -308,7 +308,7 @@ func SMTPX(notify func(net.Addr, []byte, map[string]interface{}), tlsConfig **tl
 				smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
 				smtpx.OnClose(func(e *smtpx.Event) {
 
-					notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+					notify(e.RemoteAddr, e.RW, map[string]interface{}{})
 				}),
 			}
 

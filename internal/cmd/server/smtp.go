@@ -51,7 +51,9 @@ func SMTPEvent(e *smtpx.Event) *models.Event {
 
 	return &models.Event{
 		Protocol:   models.ProtoSMTP,
-		RW:         e.Log,
+		RW:         e.RW,
+		R:          e.R,
+		W:          e.W,
 		Meta:       structs.Map(meta),
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
