@@ -77,7 +77,6 @@ func (c *Server) BaseURL() *url.URL {
 	return u
 }
 
-
 func (c *Server) ProxyURL() *url.URL {
 	if c.Proxy == nil {
 		return nil

@@ -2,20 +2,27 @@ package database
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/russtone/sonar/internal/database/models"
 )
 
 func (db *DB) PayloadsCreate(o *models.Payload) error {
 
-	o.CreatedAt = time.Now()
+	o.CreatedAt = now()
 
 	query := "" +
 		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, store_events, created_at) " +
 		"VALUES(:subdomain, :user_id, :name, :notify_protocols, :store_events, :created_at) RETURNING id"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID)
+	if err := db.NamedQueryRowx(query, o).Scan(&o.ID); err != nil {
+		return err
+	}
+
+	for _, observer := range db.obserers {
+		observer.PayloadCreated(*o)
+	}
+
+	return nil
 }
 
 func (db *DB) PayloadsUpdate(o *models.Payload) error {
@@ -88,5 +95,21 @@ func (db *DB) PayloadsFindByUserAndName(userID int64, name string) ([]*models.Pa
 }
 
 func (db *DB) PayloadsDelete(id int64) error {
-	return db.Exec("DELETE FROM payloads WHERE id = $1", id)
+	var o models.Payload
+
+	if err := db.Get(&o, "DELETE FROM payloads WHERE id = $1 RETURNING *", id); err != nil {
+		return err
+	}
+
+	for _, observer := range db.obserers {
+		observer.PayloadDeleted(o)
+	}
+
+	return nil
+}
+
+func (db *DB) PayloadsGetAllSubdomains() ([]string, error) {
+	res := make([]string, 0)
+	err := db.Select(&res, "SELECT subdomain FROM payloads")
+	return res, err
 }

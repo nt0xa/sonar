@@ -2,10 +2,13 @@ package server
 
 import (
 	"database/sql"
+	"fmt"
 	"net"
 	"regexp"
 	"strings"
+	"sync"
 
+	"github.com/russtone/sonar/internal/cache"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
 )
@@ -17,16 +20,21 @@ var (
 )
 
 type EventsHandler struct {
-	db        *database.DB
-	events    chan *models.Event
-	notifiers map[string]Notifier
+	db           *database.DB
+	cache        cache.Cache
+	workersCount int
+	workersWg    sync.WaitGroup
+	events       chan *models.Event
+	notifiers    map[string]Notifier
 }
 
-func NewEventsHandler(db *database.DB, capacity int) *EventsHandler {
+func NewEventsHandler(db *database.DB, cache cache.Cache, workers int, capacity int) *EventsHandler {
 	return &EventsHandler{
-		db:        db,
-		events:    make(chan *models.Event, capacity),
-		notifiers: make(map[string]Notifier),
+		db:           db,
+		cache:        cache,
+		workersCount: workers,
+		events:       make(chan *models.Event, capacity),
+		notifiers:    make(map[string]Notifier),
 	}
 }
 
@@ -35,18 +43,33 @@ func (h *EventsHandler) AddNotifier(name string, notifier Notifier) {
 }
 
 func (h *EventsHandler) Start() error {
-	// TODO: use goroutines pool
+	for i := 0; i < h.workersCount; i++ {
+		h.workersWg.Add(1)
+		go h.worker(i)
+	}
+
+	return nil
+}
+
+func (h *EventsHandler) worker(id int) {
+	defer h.workersWg.Done()
+
 	for e := range h.events {
 
 		seen := make(map[string]struct{})
 
-		matches := subdomainRegexp.FindAllSubmatch(e.RW, -1)
+		matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
 		if len(matches) == 0 {
 			continue
 		}
 
 		for _, m := range matches {
 			d := strings.ToLower(string(m[0]))
+
+			if !h.cache.SubdomainExists(d) {
+				fmt.Printf("subodmain %q doesn't exist\n", d)
+				continue
+			}
 
 			if _, ok := seen[d]; !ok {
 				seen[d] = struct{}{}
@@ -91,8 +114,6 @@ func (h *EventsHandler) Start() error {
 
 		}
 	}
-
-	return nil
 }
 
 func (h *EventsHandler) Emit(e *models.Event) {
