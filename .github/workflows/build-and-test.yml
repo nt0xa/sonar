@@ -37,12 +37,12 @@ jobs:
 
     steps:
       - name: Install Golang
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v4
         with:
           go-version: 1.19.x
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build
         run: make build
@@ -55,7 +55,7 @@ jobs:
           CERTMGR_CA_DIR_URL: 'https://localhost:${{ job.services.pebble.ports[14000] }}/dir'
 
       - name: Code coverage
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.out
+          files: ./coverage.out
