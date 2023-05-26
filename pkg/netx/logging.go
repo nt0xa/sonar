@@ -18,20 +18,7 @@ func (l *LoggingListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 
-	c := &LoggingConn{
-		Conn: conn,
-	}
-
-	// Reader that reads data from conn and write it to c.R and c.RW.
-	r := io.TeeReader(io.TeeReader(conn, &c.R), &c.RW)
-
-	// Writer that writes data to conn, c.W and c.RW.
-	w := io.MultiWriter(conn, &c.W, &c.RW)
-
-	// Create ReaderWriter for convenience.
-	c.rw = bufio.NewReadWriter(bufio.NewReader(r), bufio.NewWriter(w))
-
-	return c, nil
+	return NewLoggingCon(conn), nil
 }
 
 // LoggingConn wraps net.Conn to save conversation log.
@@ -53,6 +40,24 @@ type LoggingConn struct {
 	// onClose is called when connection is closed.
 	// Must be used to get final conversation log.
 	OnClose func()
+}
+
+// NewLoggingCon wraps net.Conn and adds logging.
+func NewLoggingCon(conn net.Conn) *LoggingConn {
+	c := &LoggingConn{
+		Conn: conn,
+	}
+
+	// Reader that reads data from conn and write it to c.R and c.RW.
+	r := io.TeeReader(io.TeeReader(conn, &c.R), &c.RW)
+
+	// Writer that writes data to conn, c.W and c.RW.
+	w := io.MultiWriter(conn, &c.W, &c.RW)
+
+	// Create ReaderWriter for convenience.
+	c.rw = bufio.NewReadWriter(bufio.NewReader(r), bufio.NewWriter(w))
+
+	return c
 }
 
 // Write overwrites net.Conn Write method to be able to save data to log.

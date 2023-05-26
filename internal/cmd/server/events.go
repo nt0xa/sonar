@@ -2,7 +2,6 @@ package server
 
 import (
 	"database/sql"
-	"fmt"
 	"net"
 	"regexp"
 	"strings"
@@ -67,7 +66,6 @@ func (h *EventsHandler) worker(id int) {
 			d := strings.ToLower(string(m[0]))
 
 			if !h.cache.SubdomainExists(d) {
-				fmt.Printf("subodmain %q doesn't exist\n", d)
 				continue
 			}
 
