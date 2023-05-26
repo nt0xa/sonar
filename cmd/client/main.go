@@ -62,7 +62,6 @@ func main() {
 
 	client := apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
 
-
 	//
 	// Command
 	//

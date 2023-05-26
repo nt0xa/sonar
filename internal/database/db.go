@@ -6,9 +6,9 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/russtone/sonar/internal/utils/logger"
 )
@@ -17,6 +17,7 @@ type DB struct {
 	*sqlx.DB
 	log        logger.StdLogger
 	migrations string
+	obserers   []Observer
 }
 
 func New(cfg *Config, log logger.StdLogger) (*DB, error) {
@@ -27,7 +28,12 @@ func New(cfg *Config, log logger.StdLogger) (*DB, error) {
 		return nil, fmt.Errorf("new: fail to connect to database: %w", err)
 	}
 
-	return &DB{db, log, cfg.Migrations}, nil
+	return &DB{
+		DB:         db,
+		log:        log,
+		migrations: cfg.Migrations,
+		obserers:   make([]Observer, 0),
+	}, nil
 }
 
 func (db *DB) Migrate() error {
@@ -48,4 +54,8 @@ func (db *DB) Migrate() error {
 	}
 
 	return nil
+}
+
+func (db *DB) Observe(observer Observer) {
+	db.obserers = append(db.obserers, observer)
 }

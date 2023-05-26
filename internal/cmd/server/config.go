@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/russtone/sonar/internal/database"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/russtone/sonar/internal/database"
 )
 
 type Config struct {

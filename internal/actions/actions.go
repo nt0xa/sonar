@@ -27,8 +27,8 @@ type Result interface {
 }
 
 const (
-  TextResultID = "text"
-  ErrorResultID = "error"
+	TextResultID  = "text"
+	ErrorResultID = "error"
 )
 
 type TextResult struct {
@@ -38,7 +38,6 @@ type TextResult struct {
 func (s TextResult) ResultID() string {
 	return TextResultID
 }
-
 
 type ErrorResult struct {
 	Error errors.Error

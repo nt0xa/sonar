@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/russtone/sonar/internal/actionsdb"
+	"github.com/russtone/sonar/internal/cache"
 	"github.com/russtone/sonar/internal/cmd/server"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
@@ -64,7 +65,7 @@ func main() {
 		Params: models.UserParams{
 			TelegramID: cfg.Modules.Telegram.Admin,
 			APIToken:   cfg.Modules.API.Admin,
-      LarkUserID: cfg.Modules.Lark.Admin,
+			LarkUserID: cfg.Modules.Lark.Admin,
 		},
 	}
 
@@ -84,6 +85,15 @@ func main() {
 	}
 
 	//
+	// Cache
+	//
+
+	cache, err := cache.New(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//
 	// Actions
 	//
 
@@ -93,7 +103,7 @@ func main() {
 	// EventsHandler
 	//
 
-	events := server.NewEventsHandler(db, 100)
+	events := server.NewEventsHandler(db, cache, 10, 100 /* TODO: from config */)
 
 	//
 	// DNS

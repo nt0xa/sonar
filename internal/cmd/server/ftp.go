@@ -4,10 +4,10 @@ import (
 	"net"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/pkg/ftpx"
 	"github.com/russtone/sonar/pkg/netx"
-	"github.com/fatih/structs"
 )
 
 func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {

@@ -14,4 +14,3 @@ type JSON struct {
 func (h *JSON) OnResult(ctx context.Context, res actions.Result) {
 	h.Encoder.Encode(res)
 }
-

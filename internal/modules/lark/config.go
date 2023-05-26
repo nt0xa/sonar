@@ -20,7 +20,7 @@ type Config struct {
 type AuthMode string
 
 const (
-	AuthModeAnyone          AuthMode = "anyone"
+	AuthModeAnyone       AuthMode = "anyone"
 	AuthModeDepartmentID AuthMode = "department_id"
 )
 
