@@ -31,12 +31,24 @@ const (
 	ErrorResultID = "error"
 )
 
+func Text(s string) TextResult {
+	return TextResult{
+		Text: s,
+	}
+}
+
 type TextResult struct {
 	Text string
 }
 
 func (s TextResult) ResultID() string {
 	return TextResultID
+}
+
+func Error(err errors.Error) ErrorResult {
+	return ErrorResult{
+		Error: err,
+	}
 }
 
 type ErrorResult struct {
