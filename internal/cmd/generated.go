@@ -15,18 +15,18 @@ func (c *Command) DNSRecordsCreate() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.DNSRecordsCreate(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -46,18 +46,18 @@ func (c *Command) DNSRecordsDelete() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.DNSRecordsDelete(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -77,18 +77,18 @@ func (c *Command) DNSRecordsList() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.DNSRecordsList(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -108,18 +108,18 @@ func (c *Command) EventsGet() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.EventsGet(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -139,18 +139,18 @@ func (c *Command) EventsList() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.EventsList(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -170,18 +170,18 @@ func (c *Command) HTTPRoutesCreate() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.HTTPRoutesCreate(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -201,18 +201,18 @@ func (c *Command) HTTPRoutesDelete() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.HTTPRoutesDelete(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -232,18 +232,18 @@ func (c *Command) HTTPRoutesList() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.HTTPRoutesList(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -263,18 +263,18 @@ func (c *Command) PayloadsCreate() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.PayloadsCreate(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -294,18 +294,18 @@ func (c *Command) PayloadsDelete() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.PayloadsDelete(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -325,18 +325,18 @@ func (c *Command) PayloadsList() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.PayloadsList(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -356,18 +356,18 @@ func (c *Command) PayloadsUpdate() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.PayloadsUpdate(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -385,14 +385,14 @@ func (c *Command) ProfileGet() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 
 		res, err := c.actions.ProfileGet(cmd.Context())
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -412,18 +412,18 @@ func (c *Command) UsersCreate() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.UsersCreate(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
@@ -443,18 +443,18 @@ func (c *Command) UsersDelete() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 
 		res, err := c.actions.UsersDelete(cmd.Context(), params)
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 

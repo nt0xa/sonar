@@ -22,21 +22,21 @@ func (c *Command) {{ .Name }}() *cobra.Command {
 	cmd.Run = func(cmd *cobra.Command, args []string) {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+				c.handler.OnResult(cmd.Context(), actions.Error(err))
 				return
 			}
 		}
 
 		{{- if ne .Params.TypeName "" }}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{errors.Validation(err)})
+			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
 			return
 		}
 		{{ end }}
 
 		res, err := c.actions.{{ .Name }}(cmd.Context(){{ if ne .Params.TypeName "" }}, params{{ end }})
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.ErrorResult{err})
+			c.handler.OnResult(cmd.Context(), actions.Error(err))
 			return
 		}
 
