@@ -133,10 +133,9 @@ func (c *Command) root(user *actions.User) *cobra.Command {
 }
 
 func (c *Command) Exec(ctx context.Context, args []string) {
-
 	profile, err := c.actions.ProfileGet(ctx)
 	if err != nil {
-		c.handler.OnResult(ctx, actions.ErrorResult{err})
+		c.handler.OnResult(ctx, actions.Error(err))
 		return
 	}
 
@@ -155,17 +154,17 @@ func (c *Command) Exec(ctx context.Context, args []string) {
 	// There is no subcommands which means that user is unauthorized
 	// and no commands available for unauthorized users in current controller.
 	if !root.HasAvailableSubCommands() {
-		c.handler.OnResult(ctx, actions.ErrorResult{errors.Unauthorized()})
+		c.handler.OnResult(ctx, actions.Error(errors.Unauthorized()))
 		return
 	}
 
 	if err := root.ExecuteContext(ctx); err != nil {
-		c.handler.OnResult(ctx, actions.ErrorResult{errors.Internal(err)})
+		c.handler.OnResult(ctx, actions.Error(errors.Internal(err)))
 		return
 	}
 
 	if bb.String() != "" {
-		c.handler.OnResult(ctx, actions.TextResult{bb.String()})
+		c.handler.OnResult(ctx, actions.Text(bb.String()))
 	}
 }
 

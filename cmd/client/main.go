@@ -39,6 +39,10 @@ func main() {
 	}
 	viper.SetConfigFile(configFilePath)
 
+	viper.SetEnvPrefix("sonar")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
 	if err := viper.ReadInConfig(); err != nil {
 		fatalf("Fail to read config: %v", err)
 	}
@@ -109,8 +113,6 @@ func main() {
 	c.Exec(context.Background(), os.Args[1:])
 }
 
-var jsonOutput bool
-
 func preExec(cfg *Config) func(context.Context, *cobra.Command) {
 	return func(ctx context.Context, root *cobra.Command) {
 		addJSONFlag(root)
@@ -130,7 +132,7 @@ func addJSONFlag(root *cobra.Command) {
 			continue
 		}
 
-		cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output")
+		cmd.Flags().Bool("json", false, "JSON output")
 	}
 }
 
