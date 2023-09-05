@@ -1,4 +1,4 @@
-package dnsrec
+package dnsx
 
 import (
 	"fmt"
@@ -6,8 +6,6 @@ import (
 	"sync"
 
 	"github.com/miekg/dns"
-
-	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 // Records represents in memory stored DNS records.
@@ -16,8 +14,8 @@ type Records struct {
 	mu      sync.RWMutex
 }
 
-// New returns new initialized Records instance.
-func New(rrs []dns.RR) *Records {
+// NewRecords returns new initialized Records instance.
+func NewRecords(rrs []dns.RR) *Records {
 	rec := &Records{
 		records: make(map[string][]dns.RR),
 	}
@@ -65,15 +63,14 @@ func (r *Records) Del(name string, qtype uint16) error {
 // Returns nil if no records found.
 // Handles wildcards.
 func (r *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
-
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	for _, n := range dnsutils.MakeWildcards(name) {
+	for _, n := range MakeWildcards(name) {
 		key := makeKey(n, qtype)
 
 		if res, ok := r.records[key]; ok {
-			return dnsutils.ReplaceWildcards(res, name), nil
+			return ReplaceWildcards(res, name), nil
 		}
 	}
 
@@ -82,5 +79,5 @@ func (r *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 
 // makeKey creates string key for DNS record.
 func makeKey(name string, qtype uint16) string {
-	return fmt.Sprintf("%s/%s", strings.ToLower(name), dnsutils.QtypeString(qtype))
+	return fmt.Sprintf("%s/%s", strings.ToLower(name), QtypeString(qtype))
 }

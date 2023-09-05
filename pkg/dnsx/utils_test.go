@@ -1,13 +1,12 @@
-package dnsutils_test
+package dnsx_test
 
 import (
 	"net"
 	"testing"
 
 	"github.com/miekg/dns"
+	"github.com/russtone/sonar/pkg/dnsx"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 func TestRRToString(t *testing.T) {
@@ -18,7 +17,7 @@ func TestRRToString(t *testing.T) {
 		{
 			&dns.A{
 				Hdr: dns.RR_Header{
-					Name:   "sonar.local",
+					Name:   "sonar.test",
 					Rrtype: dns.TypeA,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -30,7 +29,7 @@ func TestRRToString(t *testing.T) {
 		{
 			&dns.AAAA{
 				Hdr: dns.RR_Header{
-					Name:   "sonar.local",
+					Name:   "sonar.test",
 					Rrtype: dns.TypeAAAA,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -42,7 +41,7 @@ func TestRRToString(t *testing.T) {
 		{
 			&dns.MX{
 				Hdr: dns.RR_Header{
-					Name:   "sonar.local",
+					Name:   "sonar.test",
 					Rrtype: dns.TypeMX,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -55,7 +54,7 @@ func TestRRToString(t *testing.T) {
 		{
 			&dns.TXT{
 				Hdr: dns.RR_Header{
-					Name:   "sonar.local",
+					Name:   "sonar.test",
 					Rrtype: dns.TypeTXT,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -67,7 +66,7 @@ func TestRRToString(t *testing.T) {
 		{
 			&dns.CNAME{
 				Hdr: dns.RR_Header{
-					Name:   "sonar.local",
+					Name:   "sonar.test",
 					Rrtype: dns.TypeCNAME,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -82,7 +81,7 @@ func TestRRToString(t *testing.T) {
 		name := dns.Type(tt.rec.Header().Rrtype).String()
 
 		t.Run(name, func(st *testing.T) {
-			assert.Equal(t, tt.res, dnsutils.RRToString(tt.rec))
+			assert.Equal(t, tt.res, dnsx.RRToString(tt.rec))
 		})
 	}
 }
@@ -98,7 +97,7 @@ func TestDNSStringToRR(t *testing.T) {
 			dns.TypeA,
 			&dns.A{
 				Hdr: dns.RR_Header{
-					Name:   "test.sonar.local.",
+					Name:   "test.sonar.test.",
 					Rrtype: dns.TypeA,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -111,7 +110,7 @@ func TestDNSStringToRR(t *testing.T) {
 			dns.TypeAAAA,
 			&dns.AAAA{
 				Hdr: dns.RR_Header{
-					Name:   "test.sonar.local.",
+					Name:   "test.sonar.test.",
 					Rrtype: dns.TypeAAAA,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -124,7 +123,7 @@ func TestDNSStringToRR(t *testing.T) {
 			dns.TypeMX,
 			&dns.MX{
 				Hdr: dns.RR_Header{
-					Name:   "test.sonar.local.",
+					Name:   "test.sonar.test.",
 					Rrtype: dns.TypeMX,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -138,7 +137,7 @@ func TestDNSStringToRR(t *testing.T) {
 			dns.TypeTXT,
 			&dns.TXT{
 				Hdr: dns.RR_Header{
-					Name:   "test.sonar.local.",
+					Name:   "test.sonar.test.",
 					Rrtype: dns.TypeTXT,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -151,7 +150,7 @@ func TestDNSStringToRR(t *testing.T) {
 			dns.TypeCNAME,
 			&dns.CNAME{
 				Hdr: dns.RR_Header{
-					Name:   "test.sonar.local.",
+					Name:   "test.sonar.test.",
 					Rrtype: dns.TypeCNAME,
 					Class:  dns.ClassINET,
 					Ttl:    uint32(60),
@@ -163,7 +162,7 @@ func TestDNSStringToRR(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.value, func(st *testing.T) {
-			assert.Equal(t, tt.res, dnsutils.NewRR("test.sonar.local.", tt.qtype, 60, tt.value))
+			assert.Equal(t, tt.res, dnsx.NewRR("test.sonar.test.", tt.qtype, 60, tt.value))
 		})
 	}
 }

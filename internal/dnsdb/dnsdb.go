@@ -11,7 +11,7 @@ import (
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/utils/pointer"
 	"github.com/russtone/sonar/internal/utils/slice"
-	"github.com/russtone/sonar/pkg/dnsutils"
+	"github.com/russtone/sonar/pkg/dnsx"
 )
 
 // Records searches for DNS records in the database.
@@ -54,9 +54,9 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 
 	var record *models.DNSRecord
 
-	typ := dnsutils.QtypeString(qtype)
+	typ := dnsx.QtypeString(qtype)
 
-	for _, n := range dnsutils.MakeWildcards(subdomain) {
+	for _, n := range dnsx.MakeWildcards(subdomain) {
 
 		// TODO: add db query for multiple names.
 		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(payload.ID, n, typ)
@@ -80,7 +80,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	}
 
 	// Use name here instead of record.Name because record.Name may be wildcard.
-	rrs := dnsutils.NewRRs(name, record.Qtype(), record.TTL, record.Values)
+	rrs := dnsx.NewRRs(name, record.Qtype(), record.TTL, record.Values)
 
 	// Build answer based on record "strategy".
 	switch record.Strategy {
@@ -92,7 +92,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	// "round-robin" — return all records but rotate them cyclically.
 	case models.DNSStrategyRoundRobin:
 		if record.LastAnswer != nil {
-			res = rotate(dnsutils.NewRRs(name, record.Qtype(), record.TTL, record.LastAnswer))
+			res = rotate(dnsx.NewRRs(name, record.Qtype(), record.TTL, record.LastAnswer))
 		} else {
 			res = rrs
 		}
@@ -113,7 +113,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	}
 
 	// Update last answer and last answer time.
-	record.LastAnswer = dnsutils.RRsToStrings(res)
+	record.LastAnswer = dnsx.RRsToStrings(res)
 	record.LastAccessedAt = pointer.Time(time.Now())
 
 	if err := h.DB.DNSRecordsUpdate(record); err != nil {

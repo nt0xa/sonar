@@ -13,8 +13,6 @@ import (
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/dnsdb"
 	"github.com/russtone/sonar/internal/utils/tpl"
-	"github.com/russtone/sonar/pkg/dnsrec"
-	"github.com/russtone/sonar/pkg/dnsutils"
 	"github.com/russtone/sonar/pkg/dnsx"
 )
 
@@ -50,17 +48,20 @@ func (c DNSConfig) Validate() error {
 	return validation.ValidateStruct(&c)
 }
 
-func parseDNSRecords(s, origin string, ip net.IP) *dnsrec.Records {
-	rrs := dnsutils.Must(dnsutils.ParseRecords(s, origin))
-	return dnsrec.New(rrs)
+func parseDNSRecords(s, origin string, ip net.IP) *dnsx.Records {
+	rrs, err := dnsx.ParseRecords(s, origin)
+	if err != nil {
+		panic(err)
+	}
+	return dnsx.NewRecords(rrs)
 }
 
-func DNSDefaultRecords(origin string, ip net.IP) *dnsrec.Records {
+func DNSDefaultRecords(origin string, ip net.IP) *dnsx.Records {
 	s, _ := tpl.RenderToString(dnsTemplate, ip)
 	return parseDNSRecords(s, origin, ip)
 }
 
-func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsrec.Records {
+func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsx.Records {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil
@@ -119,13 +120,13 @@ func DNSEvent(e *dnsx.Event) *models.Event {
 	w := ""
 
 	meta.Question.Name = strings.Trim(e.Msg.Question[0].Name, ".")
-	meta.Question.Type = dnsutils.QtypeString(e.Msg.Question[0].Qtype)
+	meta.Question.Type = dnsx.QtypeString(e.Msg.Question[0].Qtype)
 
 	if len(e.Msg.Answer) > 0 {
 		for _, rr := range e.Msg.Answer {
 			meta.Answer = append(meta.Answer, Answer{
 				Name: strings.Trim(rr.Header().Name, "."),
-				Type: dnsutils.QtypeString(rr.Header().Rrtype),
+				Type: dnsx.QtypeString(rr.Header().Rrtype),
 				TTL:  rr.Header().Ttl,
 			})
 		}

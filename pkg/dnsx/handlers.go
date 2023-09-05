@@ -9,8 +9,6 @@ import (
 	"github.com/go-acme/lego/v3/challenge"
 	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/miekg/dns"
-
-	"github.com/russtone/sonar/pkg/dnsutils"
 )
 
 // RecordGetter is an interface which must be implemented by any
@@ -78,7 +76,7 @@ type Event struct {
 // NotifyHandler calls notify function after processing query.
 func NotifyHandler(notify func(*Event), next dns.Handler) dns.Handler {
 	return dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
-		wr := dnsutils.NewRecorder(w)
+		wr := NewRecorder(w)
 
 		defer func() {
 			notify(&Event{
