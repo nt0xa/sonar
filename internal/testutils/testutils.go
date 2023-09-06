@@ -25,7 +25,6 @@ import (
 	"github.com/russtone/sonar/internal/modules/api"
 	"github.com/russtone/sonar/internal/modules/api/apiclient"
 	"github.com/russtone/sonar/internal/utils/logger"
-	"github.com/russtone/sonar/pkg/dnsutils"
 	"github.com/russtone/sonar/pkg/dnsx"
 	"github.com/russtone/sonar/pkg/ftpx"
 	"github.com/russtone/sonar/pkg/httpx"
@@ -215,7 +214,7 @@ func DNSX(cfg *server.DNSConfig, db **database.DB, notify func(net.Addr, []byte,
 			*h = server.DNSHandler(cfg, *db, TestDomain, TestIP, func(e *dnsx.Event) {
 				notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
 					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
-					"qtype": dnsutils.QtypeString(e.Msg.Question[0].Qtype),
+					"qtype": dnsx.QtypeString(e.Msg.Question[0].Qtype),
 				})
 			})
 			*srv = dnsx.New(":1053", *h, dnsx.NotifyStartedFunc(wg.Done))

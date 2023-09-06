@@ -2,38 +2,105 @@ package ftpx_test
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
+	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/russtone/sonar/internal/testutils"
 	"github.com/russtone/sonar/pkg/ftpx"
+	"github.com/russtone/sonar/pkg/netx"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	srv *ftpx.Server
-
-	tlsConfig *tls.Config
-	srvTLS    *ftpx.Server
-
-	notifier = &testutils.NotifierMock{}
-
-	g = testutils.Globals(
-		testutils.TLSConfig(&tlsConfig),
-		testutils.FTPX(notifier.Notify, &tlsConfig, false, &srv),
-		testutils.FTPX(notifier.Notify, &tlsConfig, true, &srvTLS),
-	)
+	notifier = &NotifierMock{}
 )
 
+type NotifierMock struct {
+	mock.Mock
+}
+
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+	m.Called(remoteAddr, data, meta)
+}
+
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false
+	case <-time.After(timeout):
+		return true
+	}
+}
+
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	options := []ftpx.Option{
+		ftpx.NotifyStartedFunc(wg.Done),
+		ftpx.ListenerWrapper(func(l net.Listener) net.Listener {
+			return &netx.TimeoutListener{
+				Listener: &netx.MaxBytesListener{
+					Listener: l,
+					MaxBytes: 1 << 20,
+				},
+				IdleTimeout: 5 * time.Second,
+			}
+		}),
+		ftpx.OnClose(func(e *ftpx.Event) {
+			notifier.Notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+		}),
+	}
+
+	go func() {
+		srv := ftpx.New("127.0.0.1:10021", options...)
+
+		if err := srv.ListenAndServe(); err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			os.Exit(1)
+		}
+	}()
+
+	go func() {
+		cert, err := tls.LoadX509KeyPair(
+			"../../test/cert.pem",
+			"../../test/key.pem",
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to read cert and key: %s", err))
+			os.Exit(1)
+		}
+
+		options := append(options, ftpx.TLSConfig(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}))
+		srv := ftpx.New("127.0.0.1:10022", options...)
+
+		if err := srv.ListenAndServe(); err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			os.Exit(1)
+		}
+	}()
+
+	if WaitTimeout(&wg, 30*time.Second) {
+		fmt.Fprintf(os.Stderr, "timeout waiting for server to start")
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 func TestFTP(t *testing.T) {
-
 	// Commands recorded from XXE in com.sun.org.apache.xerces parser.
 	javaXerces := []string{
 		"USER username",
@@ -92,11 +159,11 @@ func TestFTP(t *testing.T) {
 			// Connect to server
 			if tt.tls {
 				// TLS connection
-				conn, err = tls.Dial("tcp", "localhost:10022", tlsConfig)
+				conn, err = tls.Dial("tcp", "127.0.0.1:10022", tlsConfig)
 				require.NoError(st, err)
 			} else {
 				// Simple TCP connection
-				conn, err = net.Dial("tcp", "localhost:10021")
+				conn, err = net.Dial("tcp", "127.0.0.1:10021")
 				require.NoError(st, err)
 			}
 			defer conn.Close()
@@ -115,7 +182,9 @@ func TestFTP(t *testing.T) {
 							}
 						}
 						return true
-					}), mock.Anything).
+					}),
+					mock.Anything,
+				).
 				Return().
 				Once()
 
