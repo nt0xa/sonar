@@ -6,49 +6,116 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/testutils"
 	"github.com/russtone/sonar/pkg/httpx"
 )
 
 var (
-	db *database.DB
-
-	srvHTTP httpx.Server
-
-	tlsConfig *tls.Config
-	srvHTTPS  httpx.Server
-
-	notifier = &testutils.NotifierMock{}
-	log      = logrus.New()
-
-	// TODO: don't use testutils
-	g = testutils.Globals(
-		testutils.TLSConfig(&tlsConfig),
-		testutils.DB(&db, log),
-		testutils.HTTPX(&db, notifier.Notify, nil, &srvHTTP),
-		testutils.HTTPX(&db, notifier.Notify, &tlsConfig, &srvHTTPS),
-	)
+	notifier = &NotifierMock{}
 )
 
+type NotifierMock struct {
+	mock.Mock
+}
+
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+	m.Called(remoteAddr, data, meta)
+}
+
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false
+	case <-time.After(timeout):
+		return true
+	}
+}
+
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	h := http.TimeoutHandler(
+		httpx.BodyReaderHandler(
+			httpx.MaxBytesHandler(
+				httpx.NotifyHandler(
+					func(e *httpx.Event) {
+						notifier.Notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]interface{}{
+							"tls": e.Secure,
+						})
+					},
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+						w.WriteHeader(200)
+						w.Write([]byte("<html><body>test</body></html>"))
+					}),
+				),
+				1<<20,
+			),
+			1<<20,
+		),
+		5*time.Second,
+		"timeout",
+	)
+
+	options := []httpx.Option{
+		httpx.NotifyStartedFunc(wg.Done),
+	}
+
+	go func() {
+		srv := httpx.New("127.0.0.1:1080", h, options...)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatal(fmt.Errorf("fail to start server: %w", err))
+		}
+	}()
+
+	go func() {
+		cert, err := tls.LoadX509KeyPair(
+			"../../test/cert.pem",
+			"../../test/key.pem",
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to read cert and key: %s", err))
+			os.Exit(1)
+		}
+
+		options := append(options, httpx.TLSConfig(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}))
+		srv := httpx.New("127.0.0.1:1443", h, options...)
+
+		if err := srv.ListenAndServe(); err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			os.Exit(1)
+		}
+	}()
+
+	if WaitTimeout(&wg, 30*time.Second) {
+		fmt.Fprintf(os.Stderr, "timeout waiting for server to start")
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 type stringField struct {
@@ -179,9 +246,9 @@ func TestHTTPX(t *testing.T) {
 				var uri string
 
 				if isTLS {
-					uri = "https://localhost:1443"
+					uri = "https://127.0.0.1:1443"
 				} else {
-					uri = "http://localhost:1080"
+					uri = "http://127.0.0.1:1080"
 				}
 
 				//
@@ -324,7 +391,7 @@ func TestHTTPX(t *testing.T) {
 		}
 	}
 
-	if testutils.WaitTimeout(&wg, time.Second*5) {
+	if WaitTimeout(&wg, time.Second*5) {
 		t.Errorf("timeout")
 	}
 
@@ -348,19 +415,19 @@ func TestKeepAlive(t *testing.T) {
 		Times(2)
 
 		// 1st request
-	req, err := http.NewRequestWithContext(traceCtx, http.MethodGet, "http://localhost:1080", nil)
+	req, err := http.NewRequestWithContext(traceCtx, http.MethodGet, "http://127.0.0.1:1080", nil)
 	require.NoError(t, err)
 
 	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	_, err = io.Copy(ioutil.Discard, res.Body)
+	_, err = io.Copy(io.Discard, res.Body)
 	require.NoError(t, err)
 
 	res.Body.Close()
 
 	// 2nd request
-	req, err = http.NewRequestWithContext(traceCtx, http.MethodGet, "http://localhost:1080", nil)
+	req, err = http.NewRequestWithContext(traceCtx, http.MethodGet, "http://127.0.0.1:1080", nil)
 	require.NoError(t, err)
 
 	res, err = http.DefaultClient.Do(req)

@@ -14,14 +14,13 @@ import (
 	"github.com/russtone/sonar/internal/cmd/server"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/testutils"
-	"github.com/russtone/sonar/pkg/dnsrec"
 	"github.com/russtone/sonar/pkg/dnsx"
 )
 
 var (
 	db  *database.DB
 	tf  *testfixtures.Context
-	rec *dnsrec.Records
+	rec *dnsx.Records
 	h   dnsx.HandlerProvider
 	srv dnsx.Server
 
