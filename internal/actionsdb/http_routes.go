@@ -65,7 +65,7 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.HTTPRoutesCreateResult{HTTPRoute(*rec, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesCreateResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {
@@ -95,7 +95,7 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.HTTPRoutesDeleteResult{HTTPRoute(*rec, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesDeleteResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesListParams) (actions.HTTPRoutesListResult, errors.Error) {

@@ -80,5 +80,5 @@ func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) 
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.EventsGetResult{Event(*r)}, nil
+	return &actions.EventsGetResult{Event: Event(*r)}, nil
 }
