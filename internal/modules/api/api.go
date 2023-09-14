@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/database"
