@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -18,10 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/actionsdb"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/modules/api"
-	"github.com/russtone/sonar/internal/testutils"
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
@@ -49,23 +50,60 @@ const (
 )
 
 var (
-	db   *database.DB
-	tf   *testfixtures.Context
-	acts actions.Actions
-	srv  *httptest.Server
-
-	log = logrus.New()
-
-	g = testutils.Globals(
-		testutils.DB(&db, log),
-		testutils.Fixtures(&db, &tf),
-		testutils.ActionsDB(&db, log, &acts),
-		testutils.APIServer(&api.Config{Admin: AdminToken}, &db, log, &acts, &srv),
-	)
+	tf  *testfixtures.Context
+	db  *database.DB
+	srv *httptest.Server
 )
 
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	var (
+		dsn string
+		err error
+	)
+
+	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
+		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
+		os.Exit(1)
+	}
+
+	log := logrus.New()
+
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "../../database/migrations",
+	}, log)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := db.Migrate(); err != nil {
+		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
+		os.Exit(1)
+	}
+
+	acts := actionsdb.New(db, log, "sonar.test")
+
+	tf, err = testfixtures.NewFolder(
+		db.DB.DB,
+		&testfixtures.PostgreSQL{},
+		"../../database/fixtures",
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
+		os.Exit(1)
+	}
+
+	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, nil, acts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to create api server: %v", err)
+		os.Exit(1)
+	}
+
+	srv = httptest.NewServer(api.Router())
+
+	os.Exit(m.Run())
 }
 
 func setup(t *testing.T) {
