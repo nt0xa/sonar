@@ -13,5 +13,5 @@ func (act *dbactions) ProfileGet(ctx context.Context) (*actions.ProfileGetResult
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.ProfileGetResult{User(*u)}, nil
+	return &actions.ProfileGetResult{User: User(*u)}, nil
 }

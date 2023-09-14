@@ -24,7 +24,7 @@
   name: test-mx
   type: MX
   ttl: 60
-  values: '{10 mx.sonar.local.}'
+  values: '{10 mx.sonar.test.}'
   strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 

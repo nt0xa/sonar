@@ -1,6 +1,8 @@
 package database_test
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
@@ -8,22 +10,51 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/testutils"
 )
 
 var (
-	db  *database.DB
 	tf  *testfixtures.Context
+	db  *database.DB
 	log = logrus.New()
-
-	g = testutils.Globals(
-		testutils.DB(&db, log),
-		testutils.Fixtures(&db, &tf),
-	)
 )
 
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	var (
+		dsn string
+		err error
+	)
+
+	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
+		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
+		os.Exit(1)
+	}
+
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "migrations",
+	}, log)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := db.Migrate(); err != nil {
+		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
+		os.Exit(1)
+	}
+
+	tf, err = testfixtures.NewFolder(
+		db.DB.DB,
+		&testfixtures.PostgreSQL{},
+		"fixtures",
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 func setup(t *testing.T) {

@@ -45,7 +45,7 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.UsersCreateResult{User(*rec)}, nil
+	return &actions.UsersCreateResult{User: User(*rec)}, nil
 }
 
 func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeleteParams) (*actions.UsersDeleteResult, errors.Error) {
@@ -62,5 +62,5 @@ func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeletePara
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.UsersDeleteResult{User(*rec)}, nil
+	return &actions.UsersDeleteResult{User: User(*rec)}, nil
 }

@@ -56,7 +56,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.DNSRecordsCreateResult{DNSRecord(*rec, payload.Subdomain)}, nil
+	return &actions.DNSRecordsCreateResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (*actions.DNSRecordsDeleteResult, errors.Error) {
@@ -86,7 +86,7 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.DNSRecordsDeleteResult{DNSRecord(*rec, payload.Subdomain)}, nil
+	return &actions.DNSRecordsDeleteResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
