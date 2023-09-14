@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Masterminds/sprig"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/Masterminds/sprig/v3"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/actionsdb"
@@ -48,7 +48,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 
 	}
 
-	api, err := tgbotapi.NewBotAPIWithClient(cfg.Token, client)
+	api, err := tgbotapi.NewBotAPIWithClient(cfg.Token, tgbotapi.APIEndpoint, client)
 	if err != nil {
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
@@ -108,10 +108,7 @@ func (tg *Telegram) Start() error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := tg.api.GetUpdatesChan(u)
-	if err != nil {
-		return err
-	}
+	updates := tg.api.GetUpdatesChan(u)
 
 	for update := range updates {
 		if update.Message == nil {
@@ -176,7 +173,7 @@ func (tg *Telegram) isAddedToGroup(msg *tgbotapi.Message) bool {
 	}
 
 	if msg.NewChatMembers != nil {
-		for _, m := range *msg.NewChatMembers {
+		for _, m := range msg.NewChatMembers {
 			if tg.bot.ID == m.ID {
 				return true
 			}
@@ -241,7 +238,7 @@ func (tg *Telegram) docMessage(chatID int64, name string, caption string, data [
 		Bytes: data,
 	}
 
-	msg := tgbotapi.NewDocumentUpload(chatID, doc)
+	msg := tgbotapi.NewDocument(chatID, doc)
 	msg.Caption = caption
 	msg.ParseMode = tgbotapi.ModeHTML
 	tg.api.Send(msg)

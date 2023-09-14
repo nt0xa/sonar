@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 

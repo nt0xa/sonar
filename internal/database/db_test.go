@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-testfixtures/testfixtures"
+	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	tf  *testfixtures.Context
+	tf  *testfixtures.Loader
 	db  *database.DB
 	log = logrus.New()
 )
@@ -43,12 +43,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"fixtures",
+	tf, err = testfixtures.New(
+		testfixtures.Database(db.DB.DB),
+		testfixtures.Dialect("postgres"),
+		testfixtures.Directory("fixtures"),
 	)
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
 		os.Exit(1)

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-testfixtures/testfixtures"
+	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,7 +48,7 @@ const (
 )
 
 var (
-	tf *testfixtures.Context
+	tf *testfixtures.Loader
 	db *database.DB
 	uc *apiclient.Client
 	ac *apiclient.Client
@@ -83,12 +83,11 @@ func TestMain(m *testing.M) {
 
 	acts := actionsdb.New(db, log, "sonar.test")
 
-	tf, err = testfixtures.NewFolder(
-		db.DB.DB,
-		&testfixtures.PostgreSQL{},
-		"../../../database/fixtures",
+	tf, err = testfixtures.New(
+		testfixtures.Database(db.DB.DB),
+		testfixtures.Dialect("postgres"),
+		testfixtures.Directory("../../../database/fixtures"),
 	)
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
 		os.Exit(1)
