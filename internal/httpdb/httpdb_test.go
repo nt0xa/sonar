@@ -2,64 +2,74 @@ package httpdb_test
 
 import (
 	"bytes"
-	"crypto/tls"
-	"flag"
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"os"
+	"regexp"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-testfixtures/testfixtures"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/testutils"
-	"github.com/russtone/sonar/internal/testutils/httpt"
-	"github.com/russtone/sonar/pkg/httpx"
+	"github.com/russtone/sonar/internal/httpdb"
 )
 
-// Flags
 var (
-	proxy string
-)
-
-var _ = func() bool {
-	testing.Init()
-	return true
-}()
-
-func init() {
-	flag.StringVar(&proxy, "test.proxy", "", "Enables verbose HTTP proxy.")
-	flag.Parse()
-}
-
-func notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {}
-
-var (
-	db      *database.DB
-	tf      *testfixtures.Context
-	srvHTTP httpx.Server
-
-	tlsConfig *tls.Config
-	srvHTTPS  httpx.Server
-	log       = logrus.New()
-
-	g = testutils.Globals(
-		testutils.DB(&db, log),
-		testutils.Fixtures(&db, &tf),
-		testutils.TLSConfig(&tlsConfig),
-		testutils.HTTPX(&db, notify, nil, &srvHTTP),
-		testutils.HTTPX(&db, notify, &tlsConfig, &srvHTTPS),
-	)
+	tf  *testfixtures.Context
+	db  *database.DB
+	mux http.Handler
 )
 
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	var (
+		dsn string
+		err error
+	)
+
+	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
+		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
+		os.Exit(1)
+	}
+
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "../database/migrations",
+	}, logrus.New())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := db.Migrate(); err != nil {
+		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
+		os.Exit(1)
+	}
+
+	routes := &httpdb.Routes{DB: db, Origin: "sonar.test"}
+	mux = httpdb.Handler(routes, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	}))
+
+	tf, err = testfixtures.NewFolder(
+		db.DB.DB,
+		&testfixtures.PostgreSQL{},
+		"../database/fixtures",
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 func setup(t *testing.T) {
@@ -77,12 +87,12 @@ func TestHTTPDB(t *testing.T) {
 		query    map[string]string
 		headers  map[string]string
 		typ      string
-		body     map[string]httpt.FormField
-		matchers []httpt.ResponseMatcher
+		body     map[string]FormField
+		matchers []ResponseMatcher
 	}{
 
 		{
-			"c1da9f3d.sonar.local",
+			"c1da9f3d.sonar.test",
 			"GET",
 			"/get",
 			map[string]string{
@@ -93,14 +103,14 @@ func TestHTTPDB(t *testing.T) {
 			},
 			"",
 			nil,
-			[]httpt.ResponseMatcher{
-				httpt.Header("test", httpt.Equal("test")),
-				httpt.Header("dynamic", httpt.Equal("Header: test-header")),
-				httpt.Body(httpt.Contains("Body: query-param")),
+			[]ResponseMatcher{
+				Header("test", Equal("test")),
+				Header("dynamic", Equal("Header: test-header")),
+				Body(Contains("Body: query-param")),
 			},
 		},
 		{
-			"c1da9f3d.sonar.local",
+			"c1da9f3d.sonar.test",
 			"POST",
 			"/post",
 			map[string]string{
@@ -110,16 +120,16 @@ func TestHTTPDB(t *testing.T) {
 				"Test": "test-header",
 			},
 			"form",
-			map[string]httpt.FormField{
-				"test": httpt.StringField("test-body"),
+			map[string]FormField{
+				"test": StringField("test-body"),
 			},
-			[]httpt.ResponseMatcher{
-				httpt.Code(201),
-				httpt.Body(httpt.Contains("Body: test-body")),
+			[]ResponseMatcher{
+				Code(201),
+				Body(Contains("Body: test-body")),
 			},
 		},
 		{
-			"c1da9f3d.sonar.local",
+			"c1da9f3d.sonar.test",
 			"DELETE",
 			"/delete",
 			map[string]string{
@@ -128,158 +138,229 @@ func TestHTTPDB(t *testing.T) {
 			nil,
 			"",
 			nil,
-			[]httpt.ResponseMatcher{
-				httpt.Code(200),
-				httpt.Body(httpt.Contains("DELETE")),
-				httpt.Body(httpt.Contains("/delete")),
-				httpt.Body(httpt.Contains("test=query-param")),
-				httpt.Body(httpt.Contains("/delete?test=query-param")),
+			[]ResponseMatcher{
+				Code(200),
+				Body(Contains("DELETE")),
+				Body(Contains("/delete")),
+				Body(Contains("test=query-param")),
+				Body(Contains("/delete?test=query-param")),
 			},
 		},
 		{
-			"c1da9f3d.sonar.local",
+			"c1da9f3d.sonar.test",
 			"PUT",
 			"/route/route-param",
 			nil,
 			nil,
 			"",
 			nil,
-			[]httpt.ResponseMatcher{
-				httpt.Code(200),
-				httpt.Body(httpt.Contains("Route: route-param")),
+			[]ResponseMatcher{
+				Code(200),
+				Body(Contains("Route: route-param")),
 			},
 		},
 	}
 
 	for _, tt := range tests {
-		for _, isTLS := range []bool{false, true} {
-			var proto string
 
-			if isTLS {
-				proto = "HTTPS"
-			} else {
-				proto = "HTTP"
+		name := fmt.Sprintf("path=%q,method=%q", tt.method, tt.path)
+
+		t.Run(name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			//
+			// URI
+			//
+
+			var uri string
+
+			//
+			// Body
+			//
+
+			var (
+				body        io.Reader
+				contentType string
+			)
+
+			if tt.method == "POST" {
+
+				switch tt.typ {
+				case "form":
+					buf := new(bytes.Buffer)
+					params := url.Values{}
+					for name, value := range tt.body {
+						params.Set(name, value.String())
+					}
+					buf.WriteString(params.Encode())
+					body = buf
+					contentType = "application/x-www-form-urlencoded"
+
+				case "multipart":
+					buf := new(bytes.Buffer)
+					w := multipart.NewWriter(buf)
+					for name, value := range tt.body {
+						fw, err := value.Writer(w, name)
+						require.NoError(t, err)
+
+						_, err = io.Copy(fw, value.Reader())
+						require.NoError(t, err)
+					}
+					body = buf
+					contentType = w.FormDataContentType()
+
+				default:
+					t.Errorf("invalid body type %q", tt.typ)
+				}
 			}
 
-			name := fmt.Sprintf("%s/%s", proto, tt.method)
+			//
+			// Build request
+			//
 
-			t.Run(name, func(t *testing.T) {
-				setup(t)
-				defer teardown(t)
+			req, err := http.NewRequest(tt.method, uri+tt.path, body)
+			require.NoError(t, err)
 
-				//
-				// URI
-				//
+			// Set headers.
+			for name, value := range tt.headers {
+				req.Header.Add(name, value)
+			}
 
-				var uri string
+			if contentType != "" {
+				req.Header.Add("Content-Type", contentType)
+			}
 
-				if isTLS {
-					uri = "https://localhost:1443"
-				} else {
-					uri = "http://localhost:1080"
-				}
+			// Set host
+			if tt.host != "" {
+				req.Host = tt.host
+			}
 
-				//
-				// Body
-				//
+			// Set query parameters.
+			q := req.URL.Query()
+			for name, value := range tt.query {
+				q.Add(name, value)
+			}
+			req.URL.RawQuery = q.Encode()
 
-				var (
-					body        io.Reader
-					contentType string
-				)
+			//
+			// Send request
+			//
 
-				if tt.method == "POST" {
+			rr := httptest.NewRecorder()
+			mux.ServeHTTP(rr, req)
 
-					switch tt.typ {
-					case "form":
-						buf := new(bytes.Buffer)
-						params := url.Values{}
-						for name, value := range tt.body {
-							params.Set(name, value.String())
-						}
-						buf.WriteString(params.Encode())
-						body = buf
-						contentType = "application/x-www-form-urlencoded"
+			for _, m := range tt.matchers {
+				m(t, rr)
+			}
+		})
+	}
+}
 
-					case "multipart":
-						buf := new(bytes.Buffer)
-						w := multipart.NewWriter(buf)
-						for name, value := range tt.body {
-							fw, err := value.Writer(w, name)
-							require.NoError(t, err)
+//
+// Body fields
+//
 
-							_, err = io.Copy(fw, value.Reader())
-							require.NoError(t, err)
-						}
-						body = buf
-						contentType = w.FormDataContentType()
+type stringFormField struct {
+	s string
+}
 
-					default:
-						t.Errorf("invalid body type %q", tt.typ)
-					}
-				}
+func (f *stringFormField) String() string {
+	return f.s
+}
 
-				//
-				// Build request
-				//
+func (f *stringFormField) Reader() io.Reader {
+	return strings.NewReader(f.s)
+}
 
-				req, err := http.NewRequest(tt.method, uri+tt.path, body)
-				require.NoError(t, err)
+func (f *stringFormField) Writer(w *multipart.Writer, name string) (io.Writer, error) {
+	fw, err := w.CreateFormField(name)
+	if err != nil {
+		return nil, err
+	}
 
-				// Set headers.
-				for name, value := range tt.headers {
-					req.Header.Add(name, value)
-				}
+	return fw, nil
+}
 
-				if contentType != "" {
-					req.Header.Add("Content-Type", contentType)
-				}
+type fileFormField struct {
+	Name  string
+	inner *stringFormField
+}
 
-				// Set host
-				if tt.host != "" {
-					req.Host = tt.host
-				}
+func (f *fileFormField) String() string {
+	return f.inner.String()
+}
 
-				// Set query parameters.
-				q := req.URL.Query()
-				for name, value := range tt.query {
-					q.Add(name, value)
-				}
-				req.URL.RawQuery = q.Encode()
+func (f *fileFormField) Reader() io.Reader {
+	return f.inner.Reader()
+}
 
-				// Client parameters.
-				tr := &http.Transport{
-					DisableKeepAlives: true,
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
-				}
-				defer tr.CloseIdleConnections()
+func (f *fileFormField) Writer(w *multipart.Writer, name string) (io.Writer, error) {
+	fw, err := w.CreateFormFile(name, f.Name)
+	if err != nil {
+		return nil, err
+	}
 
-				if proxy != "" {
-					url, err := url.Parse(proxy)
-					require.NoError(t, err)
-					tr.Proxy = http.ProxyURL(url)
-				}
+	return fw, nil
+}
 
-				client := &http.Client{
-					Timeout:   5 * time.Second,
-					Transport: tr,
-				}
+type FormField interface {
+	String() string
+	Reader() io.Reader
+	Writer(*multipart.Writer, string) (io.Writer, error)
+}
 
-				//
-				// Send request
-				//
+func StringField(s string) FormField {
+	return &stringFormField{s}
+}
 
-				res, err := client.Do(req)
-				require.NoError(t, err)
+func FileField(name string, data string) FormField {
+	return &fileFormField{name, &stringFormField{data}}
+}
 
-				for _, m := range tt.matchers {
-					m(t, res)
-				}
+//
+// Response matchers
+//
 
-				defer res.Body.Close()
-			})
-		}
+type Matcher func(*testing.T, interface{})
+
+func Regex(re *regexp.Regexp) Matcher {
+	return func(t *testing.T, value interface{}) {
+		assert.Regexp(t, re, value)
+	}
+}
+
+func Equal(expected interface{}) Matcher {
+	return func(t *testing.T, value interface{}) {
+		assert.EqualValues(t, expected, value)
+	}
+}
+
+func Contains(s interface{}) Matcher {
+	return func(t *testing.T, value interface{}) {
+		require.NotNil(t, value)
+		assert.Contains(t, value, s)
+	}
+}
+
+type ResponseMatcher func(*testing.T, *httptest.ResponseRecorder)
+
+func Code(c int) ResponseMatcher {
+	return func(t *testing.T, r *httptest.ResponseRecorder) {
+		assert.Equal(t, c, r.Code)
+	}
+}
+
+func Header(key string, match Matcher) ResponseMatcher {
+	return func(t *testing.T, r *httptest.ResponseRecorder) {
+		header := r.Header().Get(key)
+		assert.NotEmpty(t, header)
+		match(t, header)
+	}
+}
+
+func Body(match Matcher) ResponseMatcher {
+	return func(t *testing.T, r *httptest.ResponseRecorder) {
+		match(t, string(r.Body.String()))
 	}
 }

@@ -53,7 +53,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.PayloadsCreateResult{Payload(*rec)}, nil
+	return &actions.PayloadsCreateResult{Payload: Payload(*rec)}, nil
 }
 
 func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpdateParams) (*actions.PayloadsUpdateResult, errors.Error) {
@@ -90,7 +90,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.PayloadsUpdateResult{Payload(*rec)}, nil
+	return &actions.PayloadsUpdateResult{Payload: Payload(*rec)}, nil
 }
 
 func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (*actions.PayloadsDeleteResult, errors.Error) {
@@ -114,7 +114,7 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.PayloadsDeleteResult{Payload(*rec)}, nil
+	return &actions.PayloadsDeleteResult{Payload: Payload(*rec)}, nil
 }
 
 func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListParams) (actions.PayloadsListResult, errors.Error) {

@@ -2,7 +2,7 @@ package dnsdb_test
 
 import (
 	"fmt"
-	"net"
+	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures"
@@ -11,34 +11,55 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/cmd/server"
 	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/testutils"
-	"github.com/russtone/sonar/pkg/dnsx"
+	"github.com/russtone/sonar/internal/dnsdb"
 )
 
 var (
-	db  *database.DB
 	tf  *testfixtures.Context
-	rec *dnsx.Records
-	h   dnsx.HandlerProvider
-	srv dnsx.Server
-
-	notifier = &testutils.NotifierMock{}
-	log      = logrus.New()
-
-	g = testutils.Globals(
-		testutils.DB(&db, log),
-		testutils.Fixtures(&db, &tf),
-		testutils.DNSX(&server.DNSConfig{}, &db, notify, &h, &srv),
-	)
+	db  *database.DB
+	rec *dnsdb.Records
 )
 
-// We don't about notifications here, notifications are tested in dnsx_test.
-func notify(net.Addr, []byte, map[string]interface{}) {}
-
 func TestMain(m *testing.M) {
-	testutils.TestMain(m, g)
+	var (
+		dsn string
+		err error
+	)
+
+	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
+		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
+		os.Exit(1)
+	}
+
+	db, err = database.New(&database.Config{
+		DSN:        dsn,
+		Migrations: "../database/migrations",
+	}, logrus.New())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := db.Migrate(); err != nil {
+		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
+		os.Exit(1)
+	}
+
+	rec = &dnsdb.Records{DB: db, Origin: "sonar.test"}
+
+	tf, err = testfixtures.NewFolder(
+		db.DB.DB,
+		&testfixtures.PostgreSQL{},
+		"../database/fixtures",
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 func setup(t *testing.T) {
@@ -53,54 +74,40 @@ var tests = []struct {
 	qtype   uint16
 	results [][]string
 }{
-	// Static
-	{"test.sonar.local.", dns.TypeMX, [][]string{
-		{"10 mx.sonar.local"},
-	}},
-	{"test.sonar.local.", dns.TypeA, [][]string{
-		{"127.0.0.1"},
-	}},
-	{"test.sonar.local.", dns.TypeAAAA, [][]string{
-		{"127.0.0.1"},
-	}},
-	{"c1da9f3d.sonar.local.", dns.TypeA, [][]string{
-		{"127.0.0.1"},
-	}},
-
 	// Dynamic
-	{"test-a.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test-a.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1"},
 	}},
-	{"test-aaaa.c1da9f3d.sonar.local.", dns.TypeAAAA, [][]string{
+	{"test-aaaa.c1da9f3d.sonar.test.", dns.TypeAAAA, [][]string{
 		{"2001:db8:85a3::8a2e:370:7334"},
 	}},
-	{"test-mx.c1da9f3d.sonar.local.", dns.TypeMX, [][]string{
-		{"10 mx.sonar.local"},
+	{"test-mx.c1da9f3d.sonar.test.", dns.TypeMX, [][]string{
+		{"10 mx.sonar.test"},
 	}},
-	{"test-txt.c1da9f3d.sonar.local.", dns.TypeTXT, [][]string{
+	{"test-txt.c1da9f3d.sonar.test.", dns.TypeTXT, [][]string{
 		{"txt1", "txt2"},
 	}},
-	{"test-cname.c1da9f3d.sonar.local.", dns.TypeCNAME, [][]string{
+	{"test-cname.c1da9f3d.sonar.test.", dns.TypeCNAME, [][]string{
 		{"example.com"},
 	}},
-	{"test.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test.test-wildcard.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1"},
 	}},
-	{"test2.test-wildcard.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test2.test-wildcard.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1"},
 	}},
 
 	// Strategies
-	{"test-all.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test-all.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
 	}},
-	{"test-round-robin.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test-round-robin.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
 		{"192.168.1.2", "192.168.1.3", "192.168.1.1"},
 		{"192.168.1.3", "192.168.1.1", "192.168.1.2"},
 		{"192.168.1.1", "192.168.1.2", "192.168.1.3"},
 	}},
-	{"test-rebind.c1da9f3d.sonar.local.", dns.TypeA, [][]string{
+	{"test-rebind.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1"},
 		{"192.168.1.2"},
 		{"192.168.1.3"},
@@ -108,13 +115,13 @@ var tests = []struct {
 	}},
 
 	// No fallback if any custom DNS records added
-	{"test.6564e0c7.sonar.local.", dns.TypeA, [][]string{
+	{"test.6564e0c7.sonar.test.", dns.TypeA, [][]string{
 		{"1.1.1.1"},
 	}},
-	{"test.6564e0c7.sonar.local.", dns.TypeAAAA, [][]string{
+	{"test.6564e0c7.sonar.test.", dns.TypeAAAA, [][]string{
 		{},
 	}},
-	{"test.6564e0c7.sonar.local.", dns.TypeMX, [][]string{
+	{"test.6564e0c7.sonar.test.", dns.TypeMX, [][]string{
 		{},
 	}},
 }
@@ -127,33 +134,18 @@ func TestDNS(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			msg := new(dns.Msg)
-			msg.Id = dns.Id()
-			msg.RecursionDesired = true
-			msg.Question = make([]dns.Question, 1)
-			msg.Question[0] = dns.Question{
-				Name:   tt.name,
-				Qtype:  tt.qtype,
-				Qclass: dns.ClassINET,
-			}
-
-			c := new(dns.Client)
-
 			for i := 0; i < len(tt.results); i++ {
 
-				in, _, err := c.Exchange(msg, "127.0.0.1:1053")
+				rrs, err := rec.Get(tt.name, tt.qtype)
 				require.NoError(t, err)
-				require.NotNil(t, in)
 
-				require.Len(t, in.Answer, len(tt.results[i]))
+				require.Len(t, rrs, len(tt.results[i]))
 
-				for j, a := range in.Answer {
-					assert.Contains(t, a.String(), tt.results[i][j])
-					assert.Equal(t, tt.name, a.Header().Name)
+				for j, rr := range rrs {
+					assert.Contains(t, rr.String(), tt.results[i][j])
+					assert.Equal(t, tt.name, rr.Header().Name)
 				}
 			}
 		})
 	}
-
-	notifier.AssertExpectations(t)
 }
