@@ -6,43 +6,37 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 {{ range . }}
-func (c *Command) {{ .Name }}() *cobra.Command {
+func (c *Command) {{ .Name }}(onResult func(actions.Result) error) *cobra.Command {
 	{{- if ne .Params.TypeName "" }}
 	var params actions.{{ .Params.TypeName }}
 
-	cmd, prepareFunc := actions.{{ .Name }}Command(&params, c.local)
+	cmd, prepareFunc := actions.{{ .Name }}Command(&params, c.options.allowFileAccess)
 	{{ else }}
-	cmd, prepareFunc := actions.{{ .Name }}Command(c.local)
+	cmd, prepareFunc := actions.{{ .Name }}Command(c.options.allowFileAccess)
 	{{ end }}
 
-	cmd.Run = func(cmd *cobra.Command, args []string) {
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
 			if err := prepareFunc(cmd, args); err != nil {
-				c.handler.OnResult(cmd.Context(), actions.Error(err))
-				return
+				return err
 			}
 		}
 
-		{{- if ne .Params.TypeName "" }}
+		{{ if ne .Params.TypeName "" }}
 		if err := params.Validate(); err != nil {
-			c.handler.OnResult(cmd.Context(), actions.Error(errors.Validation(err)))
-			return
+			return err
 		}
 		{{ end }}
 
 		res, err := c.actions.{{ .Name }}(cmd.Context(){{ if ne .Params.TypeName "" }}, params{{ end }})
 		if err != nil {
-			c.handler.OnResult(cmd.Context(), actions.Error(err))
-			return
+			return err
 		}
 
-		c.handler.OnResult(cmd.Context(), res)
-
-		return
+		return onResult(res)
 	}
 
 
