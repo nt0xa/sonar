@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -21,7 +20,6 @@ import (
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	"github.com/larksuite/oapi-sdk-go/v3/core/httpserverext"
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
-	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
@@ -31,7 +29,7 @@ import (
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/results"
+	"github.com/russtone/sonar/internal/templates"
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
@@ -42,6 +40,7 @@ type Lark struct {
 	actions actions.Actions
 	client  *lark.Client
 	tls     *tls.Config
+	tmpl    *templates.Templates
 
 	domain string
 }
@@ -83,6 +82,11 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 		return nil, fmt.Errorf("lark: invalid app id or app secret")
 	}
 
+	tmpl := templates.New(domain,
+		templates.Markup(
+			templates.Bold("**", "**")),
+	)
+
 	lrk := &Lark{
 		client:  client,
 		db:      db,
@@ -90,66 +94,11 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 		domain:  domain,
 		actions: acts,
 		tls:     tlsConfig,
+		tmpl:    tmpl,
 	}
 
 	lrk.cmd = cmd.New(
 		acts,
-		&results.Text{
-			Templates: results.DefaultTemplates(results.TemplateOptions{
-				Markup: map[string]string{
-					"<bold>":   "**",
-					"</bold>":  "**",
-					"<code>":   "",
-					"</code>":  "",
-					"<pre>":    "",
-					"</pre>":   "",
-					"<error>":  "",
-					"</error>": "",
-				},
-				ExtraFuncs: template.FuncMap{
-					"domain": func() string { return domain },
-				},
-				HTML: false,
-			}),
-			OnText: func(ctx context.Context, id, message string) {
-				msgID, err := GetMessageID(ctx)
-				if err != nil {
-					// TODO: logs
-					return
-				}
-
-				switch id {
-
-				case actions.TextResultID:
-					// Otherwise:
-					// * all "--" will be replaced with "-",
-					// * quotes replaced with "smart quotes"
-					lrk.txtMessage("", msgID, message)
-					break
-
-				case actions.EventsGetResultID:
-					// TODO: refactor after code blocks will be supported
-					lines := strings.SplitN(message, "\n", 2)
-					lrk.cardMessage("", msgID, []*larkcard.MessageCardField{
-						larkcard.NewMessageCardField().
-							Text(larkcard.NewMessageCardLarkMd().
-								Content(lines[0] + "\n").
-								Build()).
-							Build(),
-						larkcard.NewMessageCardField().
-							Text(larkcard.NewMessageCardPlainText().
-								Content(lines[1]).
-								Build()).
-							Build(),
-					})
-
-				default:
-					lrk.mdMessage("", msgID, message)
-
-				}
-
-			},
-		},
 		cmd.PreExec(cmd.DefaultMessengersPreExec),
 	)
 
@@ -225,71 +174,19 @@ func (lrk *Lark) Start() error {
 
 				user, err := lrk.db.UsersGetByParam(models.UserLarkID, *userID)
 
-				switch lrk.cfg.Auth.Mode {
-				case AuthModeAnyone:
-					// Anyone who can see the bot can use it
-
-					if user == nil {
-						// Create user if not exists
-						user = &models.User{
-							Name: fmt.Sprintf("user-%s", *userID),
-							Params: models.UserParams{
-								LarkUserID: *userID,
-							},
-						}
-
-						if err := lrk.db.UsersCreate(user); err != nil {
-							// TODO: logging
-							lrk.mdMessage(*userID, msgID, "internal error")
-							return nil
-						}
+				if user == nil {
+					// Create user if not exists
+					user = &models.User{
+						Name: fmt.Sprintf("user-%s", *userID),
+						Params: models.UserParams{
+							LarkUserID: *userID,
+						},
 					}
-					break
 
-				case AuthModeDepartmentID:
-					// Anyone from specified department can access the bot
-
-					// TODO: save last check date in user and don't request departement every time.
-					resp, err := lrk.client.Contact.User.Get(ctx,
-						larkcontact.NewGetUserReqBuilder().
-							UserId(*userID).
-							UserIdType(larkim.UserIdTypeUserId).
-							Build())
-
-					if err != nil {
+					if err := lrk.db.UsersCreate(user); err != nil {
 						// TODO: logging
-						fmt.Println(err)
 						lrk.mdMessage(*userID, msgID, "internal error")
 						return nil
-					}
-
-					found := false
-					for _, departmentID := range resp.Data.User.DepartmentIds {
-						if departmentID == lrk.cfg.Auth.DepartmentID {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						// TODO: logging & better message
-						lrk.mdMessage(*userID, msgID, "access denied")
-						return nil
-					}
-
-					if user == nil {
-						// Create user
-						user = &models.User{
-							Name: *resp.Data.User.Name,
-							Params: models.UserParams{
-								LarkUserID: *resp.Data.User.UserId,
-							},
-						}
-						if err := lrk.db.UsersCreate(user); err != nil {
-							// TODO: logging
-							fmt.Println(err)
-							return nil
-						}
 					}
 				}
 
@@ -308,7 +205,18 @@ func (lrk *Lark) Start() error {
 				ctx = SetMessageID(ctx, *msgID)
 				ctx = actionsdb.SetUser(ctx, user)
 
-				lrk.cmd.ParseAndExec(ctx, msg.Text)
+				out, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
+					s, err := lrk.tmpl.Execute(res)
+					if err != nil {
+						return err
+					}
+					lrk.mdMessage("", msgID, s)
+					return nil
+				})
+
+				if out != "" {
+					lrk.txtMessage("", msgID, out)
+				}
 
 				return nil
 			},
@@ -461,11 +369,6 @@ func tpl(s string) *template.Template {
 	return template.Must(template.
 		New("").
 		Funcs(sprig.FuncMap()).
-		Funcs(template.FuncMap{
-			// This is nesessary for templates to compile.
-			// It will be replaced later with correct function.
-			"domain": func() string { return "" },
-		}).
 		Parse(s),
 	)
 }

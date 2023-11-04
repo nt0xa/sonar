@@ -16,7 +16,7 @@ import (
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/results"
+	"github.com/russtone/sonar/internal/templates"
 	"github.com/russtone/sonar/internal/utils"
 	"github.com/russtone/sonar/internal/utils/errors"
 )
@@ -28,6 +28,7 @@ type Telegram struct {
 	cmd     *cmd.Command
 	actions actions.Actions
 	bot     tgbotapi.User
+	tmpl    *templates.Templates
 
 	domain string
 }
@@ -58,6 +59,13 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
 
+	tmpl := templates.New(domain,
+		templates.Markup(
+			templates.Bold("<b>", "</b>"),
+			templates.CodeInline("<code>", "</code>"),
+			templates.CodeBlock("<pre>", "</pre>")),
+	)
+
 	tg := &Telegram{
 		api:     api,
 		db:      db,
@@ -65,38 +73,11 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		domain:  domain,
 		bot:     bot,
 		actions: actions,
+		tmpl:    tmpl,
 	}
 
 	tg.cmd = cmd.New(
 		actions,
-		&results.Text{
-			Templates: results.DefaultTemplates(results.TemplateOptions{
-				Markup: map[string]string{
-					"<bold>":   "<b>",
-					"</bold>":  "</b>",
-					"<code>":   "<code>",
-					"</code>":  "</code>",
-					"<error>":  "",
-					"</error>": "",
-					"<pre>":    "<pre>",
-					"</pre>":   "</pre>",
-				},
-				ExtraFuncs: template.FuncMap{
-					"domain": func() string {
-						return domain
-					},
-				},
-				HTML: true,
-			}),
-			OnText: func(ctx context.Context, id, message string) {
-				chatID, err := GetChatID(ctx)
-				if err != nil {
-					// TODO: logging
-					return
-				}
-				tg.htmlMessage(chatID, message)
-			},
-		},
 		cmd.PreExec(cmd.DefaultMessengersPreExec),
 	)
 
@@ -161,7 +142,22 @@ func (tg *Telegram) Start() error {
 			ctx = actionsdb.SetUser(ctx, chatUser)
 		}
 
-		tg.cmd.ParseAndExec(ctx, update.Message.Text)
+		out, err := tg.cmd.ParseAndExec(ctx, update.Message.Text, func(res actions.Result) error {
+			s, err := tg.tmpl.Execute(res)
+			if err != nil {
+				return err
+			}
+			tg.htmlMessage(chat.ID, s)
+			return nil
+		})
+		if err != nil {
+			tg.handleError(chat.ID, err)
+			continue
+		}
+
+		if out != "" {
+			tg.htmlMessage(chat.ID, out)
+		}
 	}
 
 	return nil
@@ -205,7 +201,7 @@ func (tg *Telegram) isDeletedFromGroup(msg *tgbotapi.Message) bool {
 // 	root.AddCommand(cmd)
 // }
 
-func (tg *Telegram) handleError(chatID int64, err errors.Error) {
+func (tg *Telegram) handleError(chatID int64, err error) {
 	tg.txtMessage(chatID, err.Error())
 }
 

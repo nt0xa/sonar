@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/shlex"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/russtone/sonar/internal/actions"
@@ -19,13 +20,22 @@ var (
 	ctx = context.Background()
 )
 
-func prepare() (*cmd.Command, *actions_mock.Actions, *actions_mock.ResultHandler) {
+type ResultMock struct {
+	mock.Mock
+}
+
+func (m *ResultMock) OnResult(res actions.Result) error {
+	m.Called(res)
+	return nil
+}
+
+func prepare() (*cmd.Command, *actions_mock.Actions, *ResultMock) {
 	actions := &actions_mock.Actions{}
-	handler := &actions_mock.ResultHandler{}
+	res := &ResultMock{}
 
-	c := cmd.New(actions, handler)
+	c := cmd.New(actions)
 
-	return c, actions, handler
+	return c, actions, res
 }
 
 func TestCmd(t *testing.T) {
@@ -292,7 +302,7 @@ func TestCmd(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
-			c, acts, hnd := prepare()
+			c, acts, res := prepare()
 
 			if tt.params != nil {
 				acts.
@@ -307,15 +317,15 @@ func TestCmd(t *testing.T) {
 			acts.On("ProfileGet", ctx).
 				Return(&actions.ProfileGetResult{User: actions.User{IsAdmin: true}}, nil)
 
-			hnd.On("OnResult", ctx, tt.result)
+			res.On("OnResult", tt.result)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			c.Exec(ctx, args)
+			c.Exec(ctx, args, res.OnResult)
 
 			acts.AssertExpectations(t)
-			hnd.AssertExpectations(t)
+			res.AssertExpectations(t)
 		})
 	}
 

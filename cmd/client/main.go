@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"html/template"
+	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -17,109 +18,62 @@ import (
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/cmd"
 	"github.com/russtone/sonar/internal/modules/api/apiclient"
-	"github.com/russtone/sonar/internal/results"
-	"github.com/russtone/sonar/internal/utils/slice"
+	"github.com/russtone/sonar/internal/templates"
+)
+
+var (
+	cfg        Config
+	cfgFile    string
+	jsonOutput bool
 )
 
 func init() {
 	validation.ErrorTag = "err"
+	cobra.OnInitialize(initConfig)
 }
 
 func main() {
-
-	//
-	// Config
-	//
-
-	var cfg Config
-
-	configFilePath, err := xdg.ConfigFile("sonar/config.toml")
-	if err != nil {
-		fatalf("Fail to obtain config file path: %v", err)
-	}
-	viper.SetConfigFile(configFilePath)
-
-	viper.SetEnvPrefix("sonar")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err != nil {
-		fatalf("Fail to read config: %v", err)
-	}
-
-	if err := viper.Unmarshal(&cfg); err != nil {
-		fatalf("Fail to unmarshal config: %v", err)
-	}
-
-	if err := cfg.ValidateWithContext(context.Background()); err != nil {
-		fatalf("Config validation failed: %v", err)
-	}
-
-	srv, ok := cfg.Servers[cfg.Context.Server]
-	if !ok {
-		fatalf("Invalid server %q", cfg.Context.Server)
-	}
-
-	//
-	// API client
-	//
-
-	client := apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
-
-	//
-	// Command
-	//
-
-	var handler actions.ResultHandler
-
-	// Args are is not yet parsed so just seach for "--json".
-	if slice.StringsContains(os.Args, "--json") {
-		handler = &results.JSON{Encoder: json.NewEncoder(os.Stdout)}
-	} else {
-		handler = &results.Text{
-			Templates: results.DefaultTemplates(results.TemplateOptions{
-				Markup: map[string]string{
-					"<bold>":   "<bold>",
-					"</bold>":  "</>",
-					"<code>":   "",
-					"</code>":  "",
-					"<pre>":    "",
-					"</pre>":   "",
-					"<error>":  "<fg=red;op=bold>",
-					"</error>": "</>",
-				},
-				ExtraFuncs: template.FuncMap{
-					"domain": func() string {
-						return srv.BaseURL().Hostname()
-					},
-				},
-			}),
-			OnText: func(ctx context.Context, id, message string) {
-				if !strings.HasSuffix(message, "\n") {
-					message += "\n"
-				}
-				color.Print(message)
-			},
-		}
-	}
-
 	c := cmd.New(
-		client,
-		handler,
-		cmd.Local(),
-		cmd.PreExec(preExec(&cfg)),
+		nil,
+		cmd.AllowFileAccess(true),
+		cmd.PreExec(func(root *cobra.Command) {
+			addConfigFlag(root)
+			addJSONFlag(root)
+			addContextCommand(root)
+		}),
+		cmd.InitActions(func() (actions.Actions, error) {
+			srv := cfg.Server()
+			if srv == nil {
+				return nil, errors.New("server must be set")
+			}
+			client := apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
+			return client, nil
+		}),
 	)
 
-	c.Exec(context.Background(), os.Args[1:])
+	out, err := c.Exec(context.Background(), os.Args[1:], func(res actions.Result) error {
+		if jsonOutput {
+			return json.NewEncoder(os.Stdout).Encode(res)
+		}
+		tmpl := templates.New(cfg.Server().BaseURL().Hostname(),
+			templates.HTMLEscape(false),
+			templates.Markup(templates.Bold("<bold>", "</>")))
+		s, err := tmpl.Execute(res)
+		if err != nil {
+			return err
+		}
+		color.Fprint(os.Stdout, s)
+		return nil
+	})
+	cobra.CheckErr(err)
+
+	if out != "" {
+		fmt.Fprint(os.Stdout, out)
+	}
 }
 
-func preExec(cfg *Config) func(context.Context, *cobra.Command) {
-	return func(ctx context.Context, root *cobra.Command) {
-		addJSONFlag(root)
-		addContextCmd(cfg, root)
-		root.SilenceErrors = true
-		root.SilenceUsage = true
-	}
+func addConfigFlag(root *cobra.Command) {
+	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 }
 
 func addJSONFlag(root *cobra.Command) {
@@ -132,29 +86,17 @@ func addJSONFlag(root *cobra.Command) {
 			continue
 		}
 
-		cmd.Flags().Bool("json", false, "JSON output")
+		cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output")
 	}
 }
 
-func addContextCmd(cfg *Config, root *cobra.Command) {
+func addContextCommand(root *cobra.Command) {
 	var server string
 
 	cmd := &cobra.Command{
 		Use:   "ctx",
 		Short: "Change current context parameters",
 		Run: func(cmd *cobra.Command, args []string) {
-
-			if err := viper.Unmarshal(&cfg); err != nil {
-				fatalf("Fail to unmarshal config: %v", err)
-			}
-
-			if err := cfg.ValidateWithContext(context.Background()); err != nil {
-				fatalf("Config validation failed: %v", err)
-			}
-
-			if err := viper.WriteConfig(); err != nil {
-				fatalf("Fail to update config: %v", err)
-			}
 
 			// Print values from current context.
 			fields := reflect.VisibleFields(reflect.TypeOf(cfg.Context))
@@ -172,12 +114,23 @@ func addContextCmd(cfg *Config, root *cobra.Command) {
 	root.AddCommand(cmd)
 }
 
-func fatal(data interface{}) {
-	color.Danger.Println(data)
-	os.Exit(1)
-}
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		configFilePath, err := xdg.ConfigFile("sonar/config.toml")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		viper.SetConfigFile(configFilePath)
+	}
 
-func fatalf(format string, a ...interface{}) {
-	color.Danger.Printf(format+"\n", a...)
-	os.Exit(1)
+	viper.SetEnvPrefix("sonar")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	cobra.CheckErr(viper.ReadInConfig())
+	cobra.CheckErr(viper.Unmarshal(&cfg))
+	cobra.CheckErr(cfg.ValidateWithContext(context.Background()))
 }
