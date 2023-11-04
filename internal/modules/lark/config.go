@@ -13,20 +13,6 @@ type Config struct {
 	TLSEnabled        bool       `json:"tls_enabled" default:"true"`
 	ProxyURL          string     `json:"proxy_url"`
 	ProxyInsecure     bool       `json:"proxy_insecure"`
-	Auth              AuthConfig `json:"auth"`
-}
-
-// TODO: think about better auth config
-type AuthMode string
-
-const (
-	AuthModeAnyone       AuthMode = "anyone"
-	AuthModeDepartmentID AuthMode = "department_id"
-)
-
-type AuthConfig struct {
-	Mode         AuthMode `json:"mode"`
-	DepartmentID string   `json:"department_id"`
 }
 
 func (c Config) Validate() error {

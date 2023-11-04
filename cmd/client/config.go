@@ -34,6 +34,14 @@ func (c Config) ValidateWithContext(ctx context.Context) error {
 	)
 }
 
+func (c *Config) Server() *Server {
+	srv, ok := cfg.Servers[cfg.Context.Server]
+	if !ok {
+		return nil
+	}
+	return &srv
+}
+
 type Context struct {
 	Server string `mapstructure:"server"`
 }
