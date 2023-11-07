@@ -58,7 +58,7 @@ func main() {
 		tmpl := templates.New(cfg.Server().BaseURL().Hostname(),
 			templates.HTMLEscape(false),
 			templates.Markup(templates.Bold("<bold>", "</>")))
-		s, err := tmpl.Execute(res)
+		s, err := tmpl.RenderResult(res)
 		if err != nil {
 			return err
 		}

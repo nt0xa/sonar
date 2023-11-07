@@ -9,7 +9,7 @@ import (
 
 	"github.com/russtone/sonar/internal/actions"
 	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/modules"
 	"github.com/russtone/sonar/internal/modules/api"
 	"github.com/russtone/sonar/internal/modules/lark"
 	"github.com/russtone/sonar/internal/modules/telegram"
@@ -17,10 +17,6 @@ import (
 
 type Controller interface {
 	Start() error
-}
-
-type Notifier interface {
-	Notify(*models.User, *models.Payload, *models.Event) error
 }
 
 type ModulesConfig struct {
@@ -63,10 +59,10 @@ func Modules(
 	tls *tls.Config,
 	actions actions.Actions,
 	domain string,
-) ([]Controller, []Notifier, error) {
+) ([]Controller, []modules.Notifier, error) {
 
 	controllers := make([]Controller, 0)
-	notifiers := make([]Notifier, 0)
+	notifiers := make([]modules.Notifier, 0)
 
 	var (
 		m   interface{}
@@ -97,7 +93,7 @@ func Modules(
 			controllers = append(controllers, c)
 		}
 
-		if n, ok := m.(Notifier); ok {
+		if n, ok := m.(modules.Notifier); ok {
 			notifiers = append(notifiers, n)
 		}
 

@@ -12,11 +12,16 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	"github.com/russtone/sonar/internal/actions"
+	"github.com/russtone/sonar/internal/modules"
 )
 
 type Templates struct {
-	templates map[string]Template
-	options   options
+	options options
+
+	results map[string]Template
+
+	notificationHeader Template
+	notificationBody   Template
 }
 
 func New(domain string, opts ...Option) *Templates {
@@ -29,7 +34,7 @@ func New(domain string, opts ...Option) *Templates {
 
 	return &Templates{
 		options: options,
-		templates: map[string]Template{
+		results: map[string]Template{
 			actions.ProfileGetResultID:       MakeTemplate(profileGet, domain, options.html, options.markup),
 			actions.PayloadsListResultID:     MakeTemplate(payloadsList, domain, options.html, options.markup),
 			actions.PayloadsCreateResultID:   MakeTemplate(payloadsCreate, domain, options.html, options.markup),
@@ -44,19 +49,39 @@ func New(domain string, opts ...Option) *Templates {
 			actions.EventsListResultID:       MakeTemplate(eventsList, domain, options.html, options.markup),
 			actions.EventsGetResultID:        MakeTemplate(eventsGet, domain, options.html, options.markup),
 		},
+		notificationHeader: MakeTemplate(notificationHeader, domain, options.html, options.markup),
+		notificationBody:   MakeTemplate(notificationBody, domain, options.html, options.markup),
 	}
 }
 
-func (t *Templates) Execute(res actions.Result) (string, error) {
-	tpl, ok := t.templates[res.ResultID()]
+func (t *Templates) RenderResult(res actions.Result) (string, error) {
+	tpl, ok := t.results[res.ResultID()]
 	if !ok {
 		return "", fmt.Errorf("no template for %q", res.ResultID())
 	}
 
+	return t.render(tpl, res)
+}
+
+func (t *Templates) RenderNotification(n *modules.Notification) (string, string, error) {
+	header, err := t.render(t.notificationHeader, n)
+	if err != nil {
+		return "", "", err
+	}
+
+	body, err := t.render(t.notificationBody, n)
+	if err != nil {
+		return "", "", err
+	}
+
+	return header, body, nil
+}
+
+func (t *Templates) render(tpl Template, data any) (string, error) {
 	buf := &bytes.Buffer{}
 
-	if err := tpl.Execute(buf, res); err != nil {
-		return "", fmt.Errorf("template error for %q: %v", res.ResultID(), err)
+	if err := tpl.Execute(buf, data); err != nil {
+		return "", fmt.Errorf("template error: %v", err)
 	}
 
 	s := buf.String()

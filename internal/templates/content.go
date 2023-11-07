@@ -84,3 +84,11 @@ var eventsList = fmt.Sprintf(`
 %s
 {{ else }}nothing found{{ end -}}`, event)
 
+//
+// Notification
+//
+
+var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from {{ .Event.RemoteAddr }} {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
+var notificationBody = `<pre>
+{{ printf "%s" .Event.RW }}
+</pre>`

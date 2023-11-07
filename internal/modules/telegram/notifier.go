@@ -1,72 +1,29 @@
 package telegram
 
 import (
-	"bytes"
-	"fmt"
 	"unicode/utf8"
 
 	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/modules"
 )
 
 const maxMessageSize = 4096
 
-var (
-	messageHeaderTemplate = tpl(`
-<b>[{{ .Name }}]</b> {{ .Protocol }} from <code>{{ .RemoteAddr }}</code> at {{ .ReceivedAt }}
-
-{{- if eq .Protocol "smtp" }}
-<b>Rcpt To:</b> {{ index (index .Meta "session") "rcptTo" | join ", " }}
-<b>Mail From:</b> {{ index (index .Meta "session") "mailFrom" | join ", " }}
-{{ end -}}
-`)
-	messageBodyTemplate = tpl(`
-<pre>
-{{ .Data }}
-</pre>
-`)
-)
-
-func (tg *Telegram) Notify(u *models.User, p *models.Payload, e *models.Event) error {
-	var header, body bytes.Buffer
-
-	headerData := struct {
-		Name       string
-		Protocol   string
-		RemoteAddr string
-		ReceivedAt string
-		Meta       map[string]interface{}
-	}{
-		p.Name,
-		e.Protocol.String(),
-		e.RemoteAddr,
-		e.ReceivedAt.Format("15:04:05 01.01.2006"),
-		e.Meta,
+func (tg *Telegram) Notify(n *modules.Notification) error {
+	header, body, err := tg.tmpl.RenderNotification(n)
+	if err != nil {
+		return err
 	}
 
-	if err := messageHeaderTemplate.Execute(&header, headerData); err != nil {
-		fmt.Println(err)
-		return fmt.Errorf("message header render error: %w", err)
-	}
-
-	bodyData := struct {
-		Data string
-	}{
-		string(e.RW),
-	}
-
-	if err := messageBodyTemplate.Execute(&body, bodyData); err != nil {
-		return fmt.Errorf("message body render error: %w", err)
-	}
-
-	if len(header.String()+body.String()) < maxMessageSize && utf8.ValidString(body.String()) {
-		tg.htmlMessage(u.Params.TelegramID, header.String()+body.String())
+	if len(header+body) < maxMessageSize && utf8.ValidString(body) {
+		tg.htmlMessage(n.User.Params.TelegramID, nil, header+"\n"+body)
 	} else {
-		tg.docMessage(u.Params.TelegramID, "log.txt", header.String(), e.RW)
+		tg.docMessage(n.User.Params.TelegramID, "log.txt", header, n.Event.RW)
 	}
 
 	// For SMTP send log.eml for better preview.
-	if e.Protocol.Category() == models.ProtoCategorySMTP {
-		tg.docMessage(u.Params.TelegramID, "log.eml", header.String(), e.RW)
+	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
+		tg.docMessage(n.User.Params.TelegramID, "log.eml", header, n.Event.RW)
 	}
 
 	return nil

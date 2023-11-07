@@ -11,10 +11,8 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
-	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
@@ -206,7 +204,7 @@ func (lrk *Lark) Start() error {
 				ctx = actionsdb.SetUser(ctx, user)
 
 				out, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
-					s, err := lrk.tmpl.Execute(res)
+					s, err := lrk.tmpl.RenderResult(res)
 					if err != nil {
 						return err
 					}
@@ -363,12 +361,4 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 		return
 	}
 
-}
-
-func tpl(s string) *template.Template {
-	return template.Must(template.
-		New("").
-		Funcs(sprig.FuncMap()).
-		Parse(s),
-	)
 }
