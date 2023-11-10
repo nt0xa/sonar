@@ -1,6 +1,28 @@
 package templates
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/russtone/sonar/internal/actions"
+)
+
+var templatesMap = map[string]string{
+	NotificationHeaderID:             notificationHeader,
+	NotificationBodyID:               notificationBody,
+	actions.ProfileGetResultID:       profileGet,
+	actions.PayloadsListResultID:     payloadsList,
+	actions.PayloadsCreateResultID:   payloadsCreate,
+	actions.PayloadsUpdateResultID:   payloadsUpdate,
+	actions.PayloadsDeleteResultID:   payloadsDelete,
+	actions.DNSRecordsListResultID:   dnsRecordsList,
+	actions.DNSRecordsCreateResultID: dnsRecordsCreate,
+	actions.DNSRecordsDeleteResultID: dnsRecordsDelete,
+	actions.HTTPRoutesListResultID:   httpRoutesList,
+	actions.HTTPRoutesCreateResultID: httpRoutesCreate,
+	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
+	actions.EventsListResultID:       eventsList,
+	actions.EventsGetResultID:        eventsGet,
+}
 
 //
 // Profile
@@ -73,7 +95,7 @@ var usersDelete = `user "{{ .Name }}" deleted`
 
 var event = `
 {{- $e := . -}}
-<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} at {{ $e.ReceivedAt }}`
+<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 
 var eventsGet = event + `
 
@@ -87,6 +109,11 @@ var eventsList = fmt.Sprintf(`
 //
 // Notification
 //
+
+const (
+	NotificationHeaderID = "notification/header"
+	NotificationBodyID   = "notification/body"
+)
 
 var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from {{ .Event.RemoteAddr }} {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 var notificationBody = `<pre>

@@ -2,7 +2,6 @@ package lark
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -74,8 +73,7 @@ func (lrk *Lark) Notify(n *modules.Notification) error {
 		content, err := card.String()
 		if err != nil {
 			// TODO: logging
-			log.Println(err)
-			return err
+			return fmt.Errorf("lark: %w", err)
 		}
 
 		lrk.sendMessage(n.User.Params.LarkUserID, nil, content)

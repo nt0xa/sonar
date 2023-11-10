@@ -55,10 +55,13 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 	}
 
 	tmpl := templates.New(domain,
-		templates.Markup(
-			templates.Bold("<b>", "</b>"),
-			templates.CodeInline("<code>", "</code>"),
-			templates.CodeBlock("<pre>", "</pre>")),
+		templates.Default(
+			templates.Markup(
+				templates.Bold("<b>", "</b>"),
+				templates.CodeInline("<code>", "</code>"),
+				templates.CodeBlock("<pre>", "</pre>"),
+			),
+		),
 	)
 
 	tg := &Telegram{
@@ -77,19 +80,6 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 	return tg, nil
 }
 
-var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
-		tgbotapi.NewInlineKeyboardButtonData("2", "2"),
-		tgbotapi.NewInlineKeyboardButtonData("3", "3"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("4", "4"),
-		tgbotapi.NewInlineKeyboardButtonData("5", "5"),
-		tgbotapi.NewInlineKeyboardButtonData("6", "6"),
-	),
-)
-
 func (tg *Telegram) preExec(root *cobra.Command) {
 	cmd.DefaultMessengersPreExec(root)
 
@@ -97,21 +87,12 @@ func (tg *Telegram) preExec(root *cobra.Command) {
 		Use:   "id",
 		Short: "Show current telegram chat id",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chatID, err := getChatID(cmd.Context())
+			mi, err := getMsgInfo(cmd.Context())
 			if err != nil {
 				return errors.Internal(err)
 			}
 
-			msg := tgbotapi.NewMessage(
-				chatID,
-				"<code>test</code>",
-			)
-			msg.ParseMode = tgbotapi.ModeHTML
-			msg.DisableWebPagePreview = true
-			msg.ReplyMarkup = numericKeyboard
-			_, err = tg.api.Send(msg)
-
-			// tg.htmlMessage(chatID, nil, fmt.Sprintf("<code>%d</code>", chatID))
+			tg.htmlMessage(mi.chatID, &mi.msgID, fmt.Sprintf("<code>%d</code>", mi.chatID))
 			return nil
 		},
 	}
@@ -137,7 +118,7 @@ func (tg *Telegram) Start() error {
 			// some commands available for unauthorized users (e.g. "/id")
 			chatUser, _ := tg.db.UsersGetByParam(models.UserTelegramID, chat.ID)
 			ctx := actionsdb.SetUser(context.Background(), chatUser)
-			ctx = setChatID(ctx, chat.ID)
+			ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 
 			out, err := tg.cmd.ParseAndExec(ctx, update.Message.Text,
 				func(res actions.Result) error {

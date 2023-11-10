@@ -56,8 +56,10 @@ func main() {
 			return json.NewEncoder(os.Stdout).Encode(res)
 		}
 		tmpl := templates.New(cfg.Server().BaseURL().Hostname(),
-			templates.HTMLEscape(false),
-			templates.Markup(templates.Bold("<bold>", "</>")))
+			templates.Default(
+				templates.HTMLEscape(false),
+				templates.Markup(templates.Bold("<bold>", "</>"))),
+		)
 		s, err := tmpl.RenderResult(res)
 		if err != nil {
 			return err

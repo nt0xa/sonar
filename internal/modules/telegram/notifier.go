@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"unicode/utf8"
 
 	"github.com/russtone/sonar/internal/database/models"
@@ -12,7 +13,7 @@ const maxMessageSize = 4096
 func (tg *Telegram) Notify(n *modules.Notification) error {
 	header, body, err := tg.tmpl.RenderNotification(n)
 	if err != nil {
-		return err
+		return fmt.Errorf("telegram: %w", err)
 	}
 
 	if len(header+body) < maxMessageSize && utf8.ValidString(body) {
