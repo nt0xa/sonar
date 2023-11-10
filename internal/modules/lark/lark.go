@@ -10,11 +10,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
-	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
@@ -83,8 +82,17 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 	}
 
 	tmpl := templates.New(domain,
-		templates.Markup(
-			templates.Bold("**", "**")),
+		templates.Default(
+			templates.HTMLEscape(false),
+			templates.Markup(
+				templates.Bold("**", "**"),
+			),
+		),
+		// Disable markup for notification header.
+		templates.PerTemplate(templates.NotificationHeaderID,
+			templates.HTMLEscape(false),
+			templates.Markup(),
+		),
 	)
 
 	lrk := &Lark{
@@ -206,11 +214,29 @@ func (lrk *Lark) Start() error {
 				ctx = actionsdb.SetUser(ctx, user)
 
 				out, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
-					s, err := lrk.tmpl.Execute(res)
+					s, err := lrk.tmpl.RenderResult(res)
 					if err != nil {
 						return err
 					}
-					lrk.mdMessage("", msgID, s)
+
+					if res.ResultID() == actions.EventsGetResultID {
+						lines := strings.SplitN(s, "\n", 2)
+						lrk.cardMessage("", msgID, []*larkcard.MessageCardField{
+							larkcard.NewMessageCardField().
+								Text(larkcard.NewMessageCardLarkMd().
+									Content(lines[0] + "\n").
+									Build()).
+								Build(),
+							larkcard.NewMessageCardField().
+								Text(larkcard.NewMessageCardPlainText().
+									Content(lines[1]).
+									Build()).
+								Build(),
+						})
+					} else {
+						lrk.mdMessage("", msgID, s)
+					}
+
 					return nil
 				})
 
@@ -242,50 +268,30 @@ func (lrk *Lark) Start() error {
 	}
 }
 
-// TODO: add common notifier module
-// use something like capabilities to determine if current notifier supports specific features.
-
 func (lrk *Lark) handleError(userID string, msgID *string, err errors.Error) {
 	lrk.txtMessage(userID, msgID, err.Error())
 }
 
 func (lrk *Lark) txtMessage(userID string, msgID *string, txt string) {
-	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{larkcard.NewMessageCardField().
-		Text(larkcard.NewMessageCardPlainText().
-			Content(txt).
-			Build()).
-		Build()})
+	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{
+		larkcard.NewMessageCardField().
+			Text(larkcard.NewMessageCardPlainText().
+				Content(txt).
+				Build(),
+			).
+			Build(),
+	})
 }
 
 func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
-	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{larkcard.NewMessageCardField().
-		Text(larkcard.NewMessageCardLarkMd().
-			Content(md).
-			Build()).
-		Build()})
-}
-
-func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
-	if msgID != nil {
-		resp, err := lrk.client.Im.Message.Reply(context.Background(), larkim.NewReplyMessageReqBuilder().
-			MessageId(*msgID).
-			Body(larkim.NewReplyMessageReqBodyBuilder().
-				MsgType(larkim.MsgTypeInteractive).
-				Content(content).
-				Build()).
-			Build())
-		fmt.Println(resp, err)
-	} else {
-		resp, err := lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
-			ReceiveIdType(larkim.ReceiveIdTypeUserId).
-			Body(larkim.NewCreateMessageReqBodyBuilder().
-				MsgType(larkim.MsgTypeInteractive).
-				ReceiveId(userID).
-				Content(content).
-				Build()).
-			Build())
-		fmt.Println(resp, err)
-	}
+	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{
+		larkcard.NewMessageCardField().
+			Text(larkcard.NewMessageCardLarkMd().
+				Content(md).
+				Build(),
+			).
+			Build(),
+	})
 }
 
 func (lrk *Lark) cardMessage(userID string, msgID *string, fields []*larkcard.MessageCardField) {
@@ -313,6 +319,33 @@ func (lrk *Lark) cardMessage(userID string, msgID *string, fields []*larkcard.Me
 	}
 
 	lrk.sendMessage(userID, msgID, content)
+}
+
+func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
+	var err error
+
+	if msgID != nil {
+		_, err = lrk.client.Im.Message.Reply(context.Background(), larkim.NewReplyMessageReqBuilder().
+			MessageId(*msgID).
+			Body(larkim.NewReplyMessageReqBodyBuilder().
+				MsgType(larkim.MsgTypeInteractive).
+				Content(content).
+				Build()).
+			Build())
+	} else {
+		_, err = lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
+			ReceiveIdType(larkim.ReceiveIdTypeUserId).
+			Body(larkim.NewCreateMessageReqBodyBuilder().
+				MsgType(larkim.MsgTypeInteractive).
+				ReceiveId(userID).
+				Content(content).
+				Build()).
+			Build())
+	}
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (lrk *Lark) docMessage(chatID string, name string, caption string, data []byte) {
@@ -362,13 +395,4 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 		log.Println(resp.Code, resp.Msg, resp.RequestId())
 		return
 	}
-
-}
-
-func tpl(s string) *template.Template {
-	return template.Must(template.
-		New("").
-		Funcs(sprig.FuncMap()).
-		Parse(s),
-	)
 }

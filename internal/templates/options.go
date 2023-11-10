@@ -1,45 +1,90 @@
 package templates
 
-import (
-	htmltemplate "html/template"
-)
+// options represent all template options: default + perTemplate.
+type options struct {
+	defaultOptions templateOptions
+	perTemplate    map[string]templateOptions
+}
 
-var defaultOptions = options{
-	html:    true,
-	newLine: true,
-	markup: map[string]string{
+// get returns template options for the provided template id.
+// If there are no specific options for the id, default options will be returned.
+func (opt *options) get(id string) templateOptions {
+	opts, ok := opt.perTemplate[id]
+	if ok {
+		return opts
+	}
+	return opt.defaultOptions
+}
+
+// templateOptions represent template rendering options.
+type templateOptions struct {
+	markup  map[string]string
+	html    bool
+	newLine bool
+}
+
+// defaultTemplateOptions is the default value for template options.
+func defaultTemplateOptions() templateOptions {
+	return templateOptions{
+		html:    true,
+		newLine: true,
+		markup:  newMarkup(),
+	}
+}
+
+func newMarkup() map[string]string {
+	return map[string]string{
 		"<bold>":  "",
 		"</bold>": "",
 		"<code>":  "",
 		"</code>": "",
 		"<pre>":   "",
 		"</pre>":  "",
-	},
-}
-
-type options struct {
-	markup     map[string]string
-	extraFuncs htmltemplate.FuncMap
-	html       bool
-	newLine    bool
+	}
 }
 
 type Option func(*options)
 
-func NewLine(b bool) Option {
+// Default allows to modify default template options.
+func Default(topts ...TemplateOption) Option {
 	return func(opts *options) {
+		for _, topt := range topts {
+			topt(&opts.defaultOptions)
+		}
+	}
+}
+
+// PerTemplate allows to modify options for single templates by their id.
+func PerTemplate(id string, topts ...TemplateOption) Option {
+	return func(opts *options) {
+		op, ok := opts.perTemplate[id]
+		if !ok {
+			op = defaultTemplateOptions()
+			opts.perTemplate[id] = op
+		}
+
+		for _, topt := range topts {
+			topt(&op)
+		}
+	}
+}
+
+type TemplateOption func(*templateOptions)
+
+func NewLine(b bool) TemplateOption {
+	return func(opts *templateOptions) {
 		opts.newLine = b
 	}
 }
 
-func HTMLEscape(b bool) Option {
-	return func(opts *options) {
+func HTMLEscape(b bool) TemplateOption {
+	return func(opts *templateOptions) {
 		opts.html = b
 	}
 }
 
-func Markup(mopts ...MarkupOption) Option {
-	return func(opts *options) {
+func Markup(mopts ...MarkupOption) TemplateOption {
+	return func(opts *templateOptions) {
 		for _, mopt := range mopts {
 			mopt(opts.markup)
 		}
