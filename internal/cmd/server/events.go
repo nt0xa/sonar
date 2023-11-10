@@ -10,6 +10,7 @@ import (
 	"github.com/russtone/sonar/internal/cache"
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
+	"github.com/russtone/sonar/internal/modules"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
@@ -24,7 +25,7 @@ type EventsHandler struct {
 	workersCount int
 	workersWg    sync.WaitGroup
 	events       chan *models.Event
-	notifiers    map[string]Notifier
+	notifiers    map[string]modules.Notifier
 }
 
 func NewEventsHandler(db *database.DB, cache cache.Cache, workers int, capacity int) *EventsHandler {
@@ -33,11 +34,11 @@ func NewEventsHandler(db *database.DB, cache cache.Cache, workers int, capacity 
 		cache:        cache,
 		workersCount: workers,
 		events:       make(chan *models.Event, capacity),
-		notifiers:    make(map[string]Notifier),
+		notifiers:    make(map[string]modules.Notifier),
 	}
 }
 
-func (h *EventsHandler) AddNotifier(name string, notifier Notifier) {
+func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
 	h.notifiers[name] = notifier
 }
 
@@ -105,7 +106,8 @@ func (h *EventsHandler) worker(id int) {
 			}
 
 			for _, n := range h.notifiers {
-				if err := n.Notify(u, p, e); err != nil {
+
+				if err := n.Notify(&modules.Notification{User: u, Payload: p, Event: e}); err != nil {
 					continue
 				}
 			}

@@ -2,24 +2,24 @@ package telegram
 
 import (
 	"context"
-
-	"github.com/russtone/sonar/internal/utils/errors"
+	"errors"
 )
 
-type contextKey string
+type contextKey struct{}
 
-const (
-	chatIDKey contextKey = "telegram.chatID"
-)
-
-func GetChatID(ctx context.Context) (int64, errors.Error) {
-	u, ok := ctx.Value(chatIDKey).(int64)
-	if !ok {
-		return 0, errors.Internalf("no %q key in context", chatIDKey)
-	}
-	return u, nil
+type messageInfo struct {
+	chatID int64
+	msgID  int
 }
 
-func SetChatID(ctx context.Context, chatID int64) context.Context {
-	return context.WithValue(ctx, chatIDKey, chatID)
+func getMsgInfo(ctx context.Context) (*messageInfo, error) {
+	mi, ok := ctx.Value(contextKey{}).(*messageInfo)
+	if !ok {
+		return nil, errors.New("no key in context")
+	}
+	return mi, nil
+}
+
+func setMsgInfo(ctx context.Context, chatID int64, msgID int) context.Context {
+	return context.WithValue(ctx, contextKey{}, &messageInfo{chatID: chatID, msgID: msgID})
 }

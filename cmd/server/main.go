@@ -125,7 +125,7 @@ func main() {
 
 	go func() {
 		srv := dnsx.New(
-			":53",
+			":5335",
 			dnsHandler,
 			dnsx.NotifyStartedFunc(waitDNS.Done),
 		)
