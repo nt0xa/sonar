@@ -13,6 +13,7 @@ const (
 	DNSTypeMX    = "MX"
 	DNSTypeTXT   = "TXT"
 	DNSTypeCNAME = "CNAME"
+	DNSTypeNS    = "NS"
 )
 
 var DNSTypesAll = []string{
@@ -21,6 +22,7 @@ var DNSTypesAll = []string{
 	DNSTypeMX,
 	DNSTypeTXT,
 	DNSTypeCNAME,
+	DNSTypeNS,
 }
 
 const (
@@ -61,6 +63,8 @@ func (r *DNSRecord) Qtype() uint16 {
 		return dns.TypeTXT
 	case DNSTypeCNAME:
 		return dns.TypeCNAME
+	case DNSTypeNS:
+		return dns.TypeNS
 	}
 	panic("unsupported dns query type")
 }
