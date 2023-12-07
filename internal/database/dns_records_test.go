@@ -134,7 +134,7 @@ func TestDNSRecordsGetCountByPayloadID(t *testing.T) {
 
 	res, err = db.DNSRecordsGetCountByPayloadID(2)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1, res)
+	assert.EqualValues(t, 2, res)
 }
 
 func TestDNSRecordsGetByPayloadIDAndIndex(t *testing.T) {
