@@ -112,6 +112,17 @@ func NewRR(name string, qtype uint16, ttl int, value string) dns.RR {
 			},
 			Target: value,
 		}
+
+	case dns.TypeNS:
+		return &dns.NS{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeNS,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			Ns: value,
+		}
 	}
 
 	return nil
@@ -147,6 +158,8 @@ func RRToString(rr dns.RR) string {
 		return strings.Join(r.Txt, ",")
 	case *dns.CNAME:
 		return r.Target
+	case *dns.NS:
+		return r.Ns
 	}
 
 	panic("unsupported dns record type")
