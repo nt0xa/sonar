@@ -64,6 +64,7 @@ func TestMain(m *testing.M) {
 				dnsx.NewRR("*.sonar.test.", dns.TypeAAAA, 10, "1.1.1.1"),
 				dnsx.NewRR("*.sonar.test.", dns.TypeMX, 10, "10 mx.sonar.test."),
 				dnsx.NewRR("c1da9f3d.sonar.test.", dns.TypeA, 10, "2.2.2.2"),
+				dnsx.NewRR("ns.sonar.test.", dns.TypeNS, 10, "ns1.example.com."),
 			})),
 		),
 	)
@@ -104,6 +105,9 @@ var tests = []struct {
 	}},
 	{"c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"2.2.2.2"},
+	}},
+	{"ns.sonar.test.", dns.TypeNS, [][]string{
+		{"ns1.example.com."},
 	}},
 }
 
