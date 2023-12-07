@@ -97,3 +97,13 @@
   values: '{1.1.1.1}'
   strategy: all
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 11
+  payload_id: 1
+  index: 10
+  name: test-ns
+  type: NS
+  ttl: 60
+  values: '{ns1.example.com.}'
+  strategy: all
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'

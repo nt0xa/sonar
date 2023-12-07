@@ -95,6 +95,12 @@ var tests = []struct {
 	{"test2.test-wildcard.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
 		{"192.168.1.1"},
 	}},
+	{"test2.test-wildcard.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
+		{"192.168.1.1"},
+	}},
+	{"test-ns.c1da9f3d.sonar.test.", dns.TypeNS, [][]string{
+		{"ns1.example.com."},
+	}},
 
 	// Strategies
 	{"test-all.c1da9f3d.sonar.test.", dns.TypeA, [][]string{
