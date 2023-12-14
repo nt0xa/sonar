@@ -144,6 +144,23 @@ func (c *Client) HTTPRoutesList(ctx context.Context, params actions.HTTPRoutesLi
 	return res, nil
 }
 
+func (c *Client) PayloadsClear(ctx context.Context, params actions.PayloadsClearParams) (actions.PayloadsClearResult, errors.Error) {
+	var res actions.PayloadsClearResult
+
+	err := handle(c.client.R().
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Delete("/payloads"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (c *Client) PayloadsCreate(ctx context.Context, params actions.PayloadsCreateParams) (*actions.PayloadsCreateResult, errors.Error) {
 	var res *actions.PayloadsCreateResult
 

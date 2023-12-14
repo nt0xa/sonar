@@ -188,3 +188,29 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, o, o2)
 }
+
+func PayloadsDeleteByNamePart_All_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	removed, err := db.PayloadsDeleteByNamePart(1, "")
+	require.NoError(t, err)
+	require.Len(t, removed, 2)
+
+	left, err := db.PayloadsFindByUserID(1)
+	require.NoError(t, err)
+	require.Len(t, left, 0)
+}
+
+func PayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	removed, err := db.PayloadsDeleteByNamePart(1, "1")
+	require.NoError(t, err)
+	require.Len(t, removed, 1)
+
+	left, err := db.PayloadsFindByUserID(1)
+	require.NoError(t, err)
+	require.Len(t, left, 1)
+}

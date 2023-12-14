@@ -16,6 +16,7 @@ const (
 	PayloadsCreateResultID = "payloads/create"
 	PayloadsUpdateResultID = "payloads/update"
 	PayloadsDeleteResultID = "payloads/delete"
+	PayloadsClearResultID  = "payloads/clear"
 	PayloadsListResultID   = "payloads/list"
 )
 
@@ -23,6 +24,7 @@ type PayloadsActions interface {
 	PayloadsCreate(context.Context, PayloadsCreateParams) (*PayloadsCreateResult, errors.Error)
 	PayloadsUpdate(context.Context, PayloadsUpdateParams) (*PayloadsUpdateResult, errors.Error)
 	PayloadsDelete(context.Context, PayloadsDeleteParams) (*PayloadsDeleteResult, errors.Error)
+	PayloadsClear(context.Context, PayloadsClearParams) (PayloadsClearResult, errors.Error)
 	PayloadsList(context.Context, PayloadsListParams) (PayloadsListResult, errors.Error)
 }
 
@@ -165,6 +167,39 @@ func PayloadsDeleteCommand(p *PayloadsDeleteParams, local bool) (*cobra.Command,
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
+		return nil
+	}
+}
+
+//
+// Clear
+//
+
+type PayloadsClearParams struct {
+	Name string `err:"name" query:"name"`
+}
+
+func (p PayloadsClearParams) Validate() error {
+	return nil
+}
+
+type PayloadsClearResult []Payload
+
+func (r PayloadsClearResult) ResultID() string {
+	return PayloadsClearResultID
+}
+
+func PayloadsClearCommand(p *PayloadsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+	cmd := &cobra.Command{
+		Use:   "clr [SUBSTR]",
+		Short: "Delete multiple payloads",
+		Long:  "Delete payloads that have a SUBSTR in their NAME",
+	}
+
+	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
+		if len(args) > 0 {
+			p.Name = args[0]
+		}
 		return nil
 	}
 }

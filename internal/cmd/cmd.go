@@ -54,6 +54,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	root.AddCommand(c.withAuthCheck(c.PayloadsList(onResult)))
 	root.AddCommand(c.withAuthCheck(c.PayloadsUpdate(onResult)))
 	root.AddCommand(c.withAuthCheck(c.PayloadsDelete(onResult)))
+	root.AddCommand(c.withAuthCheck(c.PayloadsClear(onResult)))
 
 	// DNS
 	dns := &cobra.Command{

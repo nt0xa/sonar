@@ -102,6 +102,25 @@ func TestCmd(t *testing.T) {
 			&actions.PayloadsDeleteResult{},
 		},
 
+		// Clear
+
+		{
+			"clr",
+			"PayloadsClear",
+			actions.PayloadsClearParams{
+				Name: "",
+			},
+			actions.PayloadsClearResult{},
+		},
+		{
+			"clr test",
+			"PayloadsClear",
+			actions.PayloadsClearParams{
+				Name: "test",
+			},
+			actions.PayloadsClearResult{},
+		},
+
 		//
 		// DNS
 		//
