@@ -40,13 +40,9 @@ mock-actions:
 		--output internal/actions/mock \
 		--outpkg actions_mock \
 		--name Actions
-	@mockery \
-		--dir internal/actions \
-		--output internal/actions/mock \
-		--outpkg actions_mock \
-		--name ResultHandler
 
 .PHONY: mock-deps
+mock-deps:
 	@go install github.com/vektra/mockery/v2@latest
 
 #
