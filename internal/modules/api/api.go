@@ -53,6 +53,7 @@ func (api *API) Router() http.Handler {
 	r.Route("/payloads", func(r chi.Router) {
 		r.Get("/", api.PayloadsList)
 		r.Post("/", api.PayloadsCreate)
+		r.Delete("/", api.PayloadsClear)
 		r.Route("/{name}", func(r chi.Router) {
 			r.Delete("/", api.PayloadsDelete)
 			r.Put("/", api.PayloadsUpdate)

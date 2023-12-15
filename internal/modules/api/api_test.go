@@ -346,6 +346,19 @@ func TestAPI(t *testing.T) {
 			status: 404,
 		},
 
+		// Clear
+		{
+			method: "DELETE",
+			path:   "/payloads",
+			token:  User1Token,
+			schema: (actions.PayloadsClearResult)(nil),
+			result: map[string]matcher{
+				"$[0].name": equal("payload1"),
+				"$[1].name": equal("payload4"),
+			},
+			status: 200,
+		},
+
 		//
 		// DNS records
 		//

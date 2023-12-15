@@ -14,6 +14,7 @@ var templatesMap = map[string]string{
 	actions.PayloadsCreateResultID:   payloadsCreate,
 	actions.PayloadsUpdateResultID:   payloadsUpdate,
 	actions.PayloadsDeleteResultID:   payloadsDelete,
+	actions.PayloadsClearResultID:    payloadsClear,
 	actions.DNSRecordsListResultID:   dnsRecordsList,
 	actions.DNSRecordsCreateResultID: dnsRecordsCreate,
 	actions.DNSRecordsDeleteResultID: dnsRecordsDelete,
@@ -49,6 +50,7 @@ var payloadsList = fmt.Sprintf(`{{ range . }}%s
 var payloadsCreate = payload
 var payloadsUpdate = payload
 var payloadsDelete = `payload "{{ .Name }}" deleted`
+var payloadsClear = `{{ len . }} payloads deleted`
 
 //
 // DNS records

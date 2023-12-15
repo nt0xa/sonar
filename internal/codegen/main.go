@@ -71,6 +71,10 @@ func main() {
 			act.HTTPMethod = "DELETE"
 			act.Resource = resourceName(strings.Replace(m.Name, "Delete", "", 1))
 			act.Verb = "delete"
+		} else if strings.Contains(m.Name, "Clear") {
+			act.HTTPMethod = "DELETE"
+			act.Resource = resourceName(strings.Replace(m.Name, "Clear", "", 1))
+			act.Verb = "clear"
 		} else if strings.Contains(m.Name, "Get") {
 			act.HTTPMethod = "GET"
 			act.Resource = resourceName(strings.Replace(m.Name, "Get", "", 1))

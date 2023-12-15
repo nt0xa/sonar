@@ -222,6 +222,33 @@ func (c *Command) HTTPRoutesList(onResult func(actions.Result) error) *cobra.Com
 	return cmd
 }
 
+func (c *Command) PayloadsClear(onResult func(actions.Result) error) *cobra.Command {
+	var params actions.PayloadsClearParams
+
+	cmd, prepareFunc := actions.PayloadsClearCommand(&params, c.options.allowFileAccess)
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		if err := params.Validate(); err != nil {
+			return err
+		}
+
+		res, err := c.actions.PayloadsClear(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		return onResult(res)
+	}
+
+	return cmd
+}
+
 func (c *Command) PayloadsCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsCreateParams
 
