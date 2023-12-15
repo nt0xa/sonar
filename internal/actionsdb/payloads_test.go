@@ -370,3 +370,73 @@ func TestUpdatePayload_Error(t *testing.T) {
 		})
 	}
 }
+
+func TestClearPayload_Success(t *testing.T) {
+	u, err := db.UsersGetByID(1)
+	require.NoError(t, err)
+
+	ctx := actionsdb.SetUser(context.Background(), u)
+
+	tests := []struct {
+		name         string
+		p            actions.PayloadsClearParams
+		deletedCount int
+	}{
+		{
+			"delete all",
+			actions.PayloadsClearParams{
+				Name: "",
+			},
+			2,
+		},
+		{
+			"delete some",
+			actions.PayloadsClearParams{
+				Name: "1",
+			},
+			1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			r, err := acts.PayloadsClear(ctx, tt.p)
+			assert.NoError(t, err)
+			assert.NotNil(t, r)
+
+			assert.Len(t, r, tt.deletedCount)
+		})
+	}
+}
+
+func TestClearPayloads_Error(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+		p    actions.PayloadsClearParams
+		err  errors.Error
+	}{
+		{
+			"no user in ctx",
+			context.Background(),
+			actions.PayloadsClearParams{
+				Name: "test",
+			},
+			&errors.InternalError{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			_, err := acts.PayloadsClear(tt.ctx, tt.p)
+			assert.Error(t, err)
+			assert.IsType(t, tt.err, err)
+		})
+	}
+}
