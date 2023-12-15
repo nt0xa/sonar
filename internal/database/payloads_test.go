@@ -189,7 +189,7 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	assert.Equal(t, o, o2)
 }
 
-func PayloadsDeleteByNamePart_All_Success(t *testing.T) {
+func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
@@ -202,7 +202,7 @@ func PayloadsDeleteByNamePart_All_Success(t *testing.T) {
 	require.Len(t, left, 0)
 }
 
-func PayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
+func TestPayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
