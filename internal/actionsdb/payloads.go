@@ -117,6 +117,30 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 	return &actions.PayloadsDeleteResult{Payload: Payload(*rec)}, nil
 }
 
+func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClearParams) (actions.PayloadsClearResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	recs, err := act.db.PayloadsDeleteByNamePart(u.ID, p.Name)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	res := make([]actions.Payload, 0)
+
+	for _, r := range recs {
+		res = append(res, Payload(*r))
+	}
+
+	return res, nil
+}
+
 func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListParams) (actions.PayloadsListResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {

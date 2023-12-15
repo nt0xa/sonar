@@ -108,6 +108,22 @@ func (db *DB) PayloadsDelete(id int64) error {
 	return nil
 }
 
+func (db *DB) PayloadsDeleteByNamePart(userID int64, name string) ([]*models.Payload, error) {
+	res := make([]*models.Payload, 0)
+
+	if err := db.Select(&res, "DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING *", userID, fmt.Sprintf("%%%s%%", name)); err != nil {
+		return nil, err
+	}
+
+	for _, observer := range db.obserers {
+		for _, o := range res {
+			observer.PayloadDeleted(*o)
+		}
+	}
+
+	return res, nil
+}
+
 func (db *DB) PayloadsGetAllSubdomains() ([]string, error) {
 	res := make([]string, 0)
 	err := db.Select(&res, "SELECT subdomain FROM payloads")

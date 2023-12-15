@@ -155,6 +155,24 @@ func (api *API) HTTPRoutesList(w http.ResponseWriter, r *http.Request) {
 	responseJSON(w, res, http.StatusOK)
 }
 
+func (api *API) PayloadsClear(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.PayloadsClearParams
+
+	if err := fromQuery(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.PayloadsClear(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
 func (api *API) PayloadsCreate(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.PayloadsCreateParams

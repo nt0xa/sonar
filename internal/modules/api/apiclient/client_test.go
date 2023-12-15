@@ -292,6 +292,18 @@ func TestClient(t *testing.T) {
 			nil,
 		},
 
+		// Clear
+
+		{
+			actions.PayloadsClearParams{
+				Name: "1",
+			},
+			map[string]matcher{
+				"0.Name": equal("payload1"),
+			},
+			nil,
+		},
+
 		//
 		// DNS records
 		//
@@ -486,6 +498,8 @@ func TestClient(t *testing.T) {
 				res, err = uc.PayloadsUpdate(context.Background(), p)
 			case actions.PayloadsDeleteParams:
 				res, err = uc.PayloadsDelete(context.Background(), p)
+			case actions.PayloadsClearParams:
+				res, err = uc.PayloadsClear(context.Background(), p)
 
 				// DNS records
 			case actions.DNSRecordsCreateParams:
@@ -516,8 +530,11 @@ func TestClient(t *testing.T) {
 				res, err = uc.HTTPRoutesDelete(context.Background(), p)
 
 			// Profile
-			default:
+			case nil:
 				res, err = uc.ProfileGet(context.Background())
+
+			default:
+				panic("not implemented: add new case to switch")
 			}
 
 			if tt.err != nil {
