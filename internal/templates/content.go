@@ -7,22 +7,28 @@ import (
 )
 
 var templatesMap = map[string]string{
-	NotificationHeaderID:             notificationHeader,
-	NotificationBodyID:               notificationBody,
-	actions.ProfileGetResultID:       profileGet,
-	actions.PayloadsListResultID:     payloadsList,
-	actions.PayloadsCreateResultID:   payloadsCreate,
-	actions.PayloadsUpdateResultID:   payloadsUpdate,
-	actions.PayloadsDeleteResultID:   payloadsDelete,
-	actions.PayloadsClearResultID:    payloadsClear,
+	NotificationHeaderID: notificationHeader,
+	NotificationBodyID:   notificationBody,
+
+	actions.ProfileGetResultID: profileGet,
+
+	actions.PayloadsListResultID:   payloadsList,
+	actions.PayloadsCreateResultID: payloadsCreate,
+	actions.PayloadsUpdateResultID: payloadsUpdate,
+	actions.PayloadsDeleteResultID: payloadsDelete,
+	actions.PayloadsClearResultID:  payloadsClear,
+
 	actions.DNSRecordsListResultID:   dnsRecordsList,
 	actions.DNSRecordsCreateResultID: dnsRecordsCreate,
 	actions.DNSRecordsDeleteResultID: dnsRecordsDelete,
+	actions.DNSRecordsClearResultID: dnsRecordsClear,
+
 	actions.HTTPRoutesListResultID:   httpRoutesList,
 	actions.HTTPRoutesCreateResultID: httpRoutesCreate,
 	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
-	actions.EventsListResultID:       eventsList,
-	actions.EventsGetResultID:        eventsGet,
+
+	actions.EventsListResultID: eventsList,
+	actions.EventsGetResultID:  eventsGet,
 }
 
 //
@@ -68,6 +74,7 @@ var dnsRecordsList = fmt.Sprintf(`
 {{ else }}nothing found{{ end }}`, dnsRecord)
 var dnsRecordsCreate = dnsRecord
 var dnsRecordsDelete = `dns record deleted`
+var dnsRecordsClear = `{{ len . }} dns records deleted`
 
 //
 // HTTP routes

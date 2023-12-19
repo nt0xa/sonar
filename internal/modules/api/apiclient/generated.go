@@ -7,6 +7,24 @@ import (
 	"github.com/russtone/sonar/internal/utils/errors"
 )
 
+func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {
+	var res actions.DNSRecordsClearResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Delete("/dns-records/{payload}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (c *Client) DNSRecordsCreate(ctx context.Context, params actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResult, errors.Error) {
 	var res *actions.DNSRecordsCreateResult
 
@@ -79,8 +97,8 @@ func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams
 	var res actions.EventsListResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetQueryParamsFromValues(toQuery(params)).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

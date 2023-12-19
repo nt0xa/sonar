@@ -88,3 +88,25 @@ func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*m
 func (db *DB) DNSRecordsDelete(id int64) error {
 	return db.Exec("DELETE FROM dns_records WHERE id = $1", id)
 }
+
+func (db *DB) DNSRecordsDeleteAllByPayloadID(payloadID int64) ([]*models.DNSRecord, error) {
+	res := make([]*models.DNSRecord, 0)
+
+	if err := db.Select(&res,
+		"DELETE FROM dns_records WHERE payload_id = $1 RETURNING *", payloadID); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (db *DB) DNSRecordsDeleteAllByPayloadIDAndName(payloadID int64, name string) ([]*models.DNSRecord, error) {
+	res := make([]*models.DNSRecord, 0)
+
+	if err := db.Select(&res,
+		"DELETE FROM dns_records WHERE payload_id = $1 AND name = $2 RETURNING *", payloadID, name); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
