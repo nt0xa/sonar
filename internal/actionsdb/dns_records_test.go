@@ -480,6 +480,14 @@ func TestDNSRecordsClear_Success(t *testing.T) {
 			9,
 		},
 		{
+			"payload1",
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload1",
+				Name:        "test-a",
+			},
+			1,
+		},
+		{
 			"payload4",
 			actions.DNSRecordsClearParams{
 				PayloadName: "payload4",
@@ -520,6 +528,14 @@ func TestDNSRecordsClear_Error(t *testing.T) {
 				Name: "test",
 			},
 			&errors.InternalError{},
+		},
+		{
+			"not existing payload",
+			1,
+			actions.DNSRecordsClearParams{
+				PayloadName: "not-exist",
+			},
+			&errors.NotFoundError{},
 		},
 	}
 
