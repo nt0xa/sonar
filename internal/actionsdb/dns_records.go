@@ -89,6 +89,41 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 	return &actions.DNSRecordsDeleteResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
+func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
+	}
+
+	var recs []*models.DNSRecord
+
+	if p.Name != "" {
+		recs, err = act.db.DNSRecordsDeleteAllByPayloadIDAndName(payload.ID, p.Name)
+	} else {
+		recs, err = act.db.DNSRecordsDeleteAllByPayloadID(payload.ID)
+	}
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	res := make([]actions.DNSRecord, 0)
+
+	for _, r := range recs {
+		res = append(res, DNSRecord(*r, payload.Subdomain))
+	}
+
+	return res, nil
+}
+
 func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsListParams) (actions.DNSRecordsListResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {

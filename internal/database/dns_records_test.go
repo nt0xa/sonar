@@ -149,3 +149,21 @@ func TestDNSRecordsGetByPayloadIDAndIndex(t *testing.T) {
 	_, err = db.DNSRecordsGetByPayloadIDAndIndex(1, 1337)
 	assert.Error(t, err)
 }
+
+func TestDNSRecordsDeleteAllByPayloadID(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	l, err := db.DNSRecordsDeleteAllByPayloadID(1)
+	assert.NoError(t, err)
+	assert.Len(t, l, 9)
+}
+
+func TestDNSRecordsDeleteAllByPayloadIDAndName(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	l, err := db.DNSRecordsDeleteAllByPayloadIDAndName(1, "test-a")
+	assert.NoError(t, err)
+	assert.Len(t, l, 1)
+}

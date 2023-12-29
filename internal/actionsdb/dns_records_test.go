@@ -464,3 +464,97 @@ func TestDNSRecordsList_Error(t *testing.T) {
 		})
 	}
 }
+
+func TestDNSRecordsClear_Success(t *testing.T) {
+
+	tests := []struct {
+		name  string
+		p     actions.DNSRecordsClearParams
+		count int
+	}{
+		{
+			"payload1",
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload1",
+			},
+			9,
+		},
+		{
+			"payload1",
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload1",
+				Name:        "test-a",
+			},
+			1,
+		},
+		{
+			"payload4",
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload4",
+			},
+			0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			u, err := db.UsersGetByID(1)
+			require.NoError(t, err)
+
+			ctx := actionsdb.SetUser(context.Background(), u)
+
+			list, err := acts.DNSRecordsClear(ctx, tt.p)
+			assert.NoError(t, err)
+			assert.Len(t, list, tt.count)
+		})
+	}
+}
+
+func TestDNSRecordsClear_Error(t *testing.T) {
+
+	tests := []struct {
+		name   string
+		userID int
+		p      actions.DNSRecordsClearParams
+		err    error
+	}{
+		{
+			"no user in ctx",
+			0,
+			actions.DNSRecordsClearParams{
+				Name: "test",
+			},
+			&errors.InternalError{},
+		},
+		{
+			"not existing payload",
+			1,
+			actions.DNSRecordsClearParams{
+				PayloadName: "not-exist",
+			},
+			&errors.NotFoundError{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			ctx := context.Background()
+			if tt.userID != 0 {
+				u, err := db.UsersGetByID(1)
+				require.NoError(t, err)
+
+				ctx = actionsdb.SetUser(context.Background(), u)
+			}
+
+			_, err := acts.DNSRecordsClear(ctx, tt.p)
+			assert.Error(t, err)
+			assert.IsType(t, tt.err, err)
+		})
+	}
+}

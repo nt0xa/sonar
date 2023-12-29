@@ -6,6 +6,33 @@ import (
 	"github.com/russtone/sonar/internal/actions"
 )
 
+func (c *Command) DNSRecordsClear(onResult func(actions.Result) error) *cobra.Command {
+	var params actions.DNSRecordsClearParams
+
+	cmd, prepareFunc := actions.DNSRecordsClearCommand(&params, c.options.allowFileAccess)
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		if err := params.Validate(); err != nil {
+			return err
+		}
+
+		res, err := c.actions.DNSRecordsClear(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		return onResult(res)
+	}
+
+	return cmd
+}
+
 func (c *Command) DNSRecordsCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsCreateParams
 

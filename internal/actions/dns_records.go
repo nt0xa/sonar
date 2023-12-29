@@ -17,12 +17,14 @@ import (
 const (
 	DNSRecordsCreateResultID = "dns-records/create"
 	DNSRecordsDeleteResultID = "dns-records/delete"
+	DNSRecordsClearResultID  = "dns-records/clear"
 	DNSRecordsListResultID   = "dns-records/list"
 )
 
 type DNSActions interface {
 	DNSRecordsCreate(context.Context, DNSRecordsCreateParams) (*DNSRecordsCreateResult, errors.Error)
 	DNSRecordsDelete(context.Context, DNSRecordsDeleteParams) (*DNSRecordsDeleteResult, errors.Error)
+	DNSRecordsClear(context.Context, DNSRecordsClearParams) (DNSRecordsClearResult, errors.Error)
 	DNSRecordsList(context.Context, DNSRecordsListParams) (DNSRecordsListResult, errors.Error)
 }
 
@@ -131,6 +133,40 @@ func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Comm
 		p.Index = i
 		return nil
 	}
+}
+
+//
+// Clear
+//
+
+type DNSRecordsClearParams struct {
+	PayloadName string `err:"payload" path:"payload" query:"-"`
+	Name        string `err:"name"    query:"name"`
+}
+
+func (p DNSRecordsClearParams) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.PayloadName, validation.Required),
+	)
+}
+
+type DNSRecordsClearResult []DNSRecord
+
+func (r DNSRecordsClearResult) ResultID() string {
+	return DNSRecordsClearResultID
+}
+
+func DNSRecordsClearCommand(p *DNSRecordsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+	cmd := &cobra.Command{
+		Use:     "clr",
+		Short:   "Delete multiple DNS records",
+		Long:    "Delete multiple DNS records",
+	}
+
+	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&p.Name, "name", "n", "", "Subdomain")
+
+	return cmd, nil
 }
 
 //

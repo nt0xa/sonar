@@ -6,6 +6,29 @@ import (
 	"github.com/russtone/sonar/internal/actions"
 )
 
+func (api *API) DNSRecordsClear(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.DNSRecordsClearParams
+
+	if err := fromPath(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	if err := fromQuery(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.DNSRecordsClear(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
 func (api *API) DNSRecordsCreate(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.DNSRecordsCreateParams
