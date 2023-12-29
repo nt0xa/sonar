@@ -190,6 +190,18 @@ func TestCmd(t *testing.T) {
 			&actions.DNSRecordsDeleteResult{},
 		},
 
+		// Clear
+
+		{
+			"dns clr -p payload1 -n test",
+			"DNSRecordsClear",
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload1",
+				Name: "test",
+			},
+			actions.DNSRecordsClearResult{},
+		},
+
 		//
 		// Users
 		//

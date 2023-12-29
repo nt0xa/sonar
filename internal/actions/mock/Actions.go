@@ -17,6 +17,38 @@ type Actions struct {
 	mock.Mock
 }
 
+// DNSRecordsClear provides a mock function with given fields: _a0, _a1
+func (_m *Actions) DNSRecordsClear(_a0 context.Context, _a1 actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DNSRecordsClear")
+	}
+
+	var r0 actions.DNSRecordsClearResult
+	var r1 errors.Error
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, actions.DNSRecordsClearParams) actions.DNSRecordsClearResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.DNSRecordsClearResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, actions.DNSRecordsClearParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // DNSRecordsCreate provides a mock function with given fields: _a0, _a1
 func (_m *Actions) DNSRecordsCreate(_a0 context.Context, _a1 actions.DNSRecordsCreateParams) (*actions.DNSRecordsCreateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)

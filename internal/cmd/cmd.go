@@ -65,6 +65,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	dns.AddCommand(c.withAuthCheck(c.DNSRecordsCreate(onResult)))
 	dns.AddCommand(c.withAuthCheck(c.DNSRecordsDelete(onResult)))
 	dns.AddCommand(c.withAuthCheck(c.DNSRecordsList(onResult)))
+	dns.AddCommand(c.withAuthCheck(c.DNSRecordsClear(onResult)))
 
 	root.AddCommand(dns)
 

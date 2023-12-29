@@ -355,6 +355,19 @@ func TestClient(t *testing.T) {
 			nil,
 		},
 
+		// Clear
+
+		{
+			actions.DNSRecordsClearParams{
+				PayloadName: "payload1",
+			},
+			map[string]matcher{
+				"0.Name": equal("test-a"),
+				"8.Name": equal("test-rebind"),
+			},
+			nil,
+		},
+
 		//
 		// Users
 		//
@@ -508,6 +521,8 @@ func TestClient(t *testing.T) {
 				res, err = uc.DNSRecordsList(context.Background(), p)
 			case actions.DNSRecordsDeleteParams:
 				res, err = uc.DNSRecordsDelete(context.Background(), p)
+			case actions.DNSRecordsClearParams:
+				res, err = uc.DNSRecordsClear(context.Background(), p)
 
 			// Events
 			case actions.EventsListParams:

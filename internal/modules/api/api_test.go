@@ -474,6 +474,30 @@ func TestAPI(t *testing.T) {
 			status: 404,
 		},
 
+		// Clear
+
+		{
+			method: "DELETE",
+			path:   "/dns-records/payload1/",
+			token:  User1Token,
+			schema: actions.DNSRecordsClearResult{},
+			status: 200,
+			result: map[string]matcher{
+				"$[0].name": equal("test-a"),
+				"$[1].name": equal("test-aaaa"),
+			},
+		},
+		{
+			method: "DELETE",
+			path:   "/dns-records/not-exist/",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
+
 		//
 		// User
 		//
