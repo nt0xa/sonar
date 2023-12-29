@@ -120,7 +120,7 @@ func (tg *Telegram) Start() error {
 			ctx := actionsdb.SetUser(context.Background(), chatUser)
 			ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 
-			out, err := tg.cmd.ParseAndExec(ctx, update.Message.Text,
+			stdout, stderr, err := tg.cmd.ParseAndExec(ctx, update.Message.Text,
 				func(res actions.Result) error {
 					s, err := tg.tmpl.RenderResult(res)
 					if err != nil {
@@ -136,9 +136,14 @@ func (tg *Telegram) Start() error {
 				continue
 			}
 
-			if out != "" {
-				tg.htmlMessage(chat.ID, &msg.MessageID, out)
+			if stdout != "" {
+				tg.htmlMessage(chat.ID, &msg.MessageID, stdout)
 			}
+
+			if stderr != "" {
+				tg.htmlMessage(chat.ID, &msg.MessageID, stderr)
+			}
+
 		} else if update.CallbackQuery != nil {
 			fmt.Println(update.CallbackData())
 		}
