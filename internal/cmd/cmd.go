@@ -109,7 +109,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	return root
 }
 
-func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions.Result) error) (string, error) {
+func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions.Result) error) (string, string, error) {
 	cmd := c.root(onResult)
 
 	if c.options.preExec != nil {
@@ -118,9 +118,10 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 
 	cmd.SetArgs(args)
 
-	bb := &bytes.Buffer{}
-	cmd.SetErr(bb)
-	cmd.SetOut(bb)
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
 
 	// Disable print to error output.
 	// Use result of cmd.ExecuteContext instead.
@@ -151,18 +152,13 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	// Help is printed to stdout.
-	if bb.Len() > 0 {
-		return bb.String(), nil
-	}
-
-	return "", nil
+	return stdout.String(), stderr.String(), nil
 }
 
-func (c *Command) ParseAndExec(ctx context.Context, s string, onResult func(actions.Result) error) (string, error) {
+func (c *Command) ParseAndExec(ctx context.Context, s string, onResult func(actions.Result) error) (string, string, error) {
 	args, _ := shlex.Split(strings.TrimLeft(s, "/"))
 	return c.Exec(ctx, args, onResult)
 }

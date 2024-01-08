@@ -51,7 +51,7 @@ func main() {
 		}),
 	)
 
-	out, err := c.Exec(context.Background(), os.Args[1:], func(res actions.Result) error {
+	stdout, stderr, err := c.Exec(context.Background(), os.Args[1:], func(res actions.Result) error {
 		if jsonOutput {
 			return json.NewEncoder(os.Stdout).Encode(res)
 		}
@@ -69,8 +69,12 @@ func main() {
 	})
 	cobra.CheckErr(err)
 
-	if out != "" {
-		fmt.Fprint(os.Stdout, out)
+	if stdout != "" {
+		fmt.Fprint(os.Stdout, stdout)
+	}
+
+	if stderr != "" {
+		fmt.Fprint(os.Stderr, stderr)
 	}
 }
 
