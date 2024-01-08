@@ -213,7 +213,7 @@ func (lrk *Lark) Start() error {
 				ctx = SetMessageID(ctx, *msgID)
 				ctx = actionsdb.SetUser(ctx, user)
 
-				out, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
+				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
 					s, err := lrk.tmpl.RenderResult(res)
 					if err != nil {
 						return err
@@ -240,8 +240,12 @@ func (lrk *Lark) Start() error {
 					return nil
 				})
 
-				if out != "" {
-					lrk.txtMessage("", msgID, out)
+				if stdout != "" {
+					lrk.txtMessage("", msgID, stdout)
+				}
+
+				if stderr != "" {
+					lrk.txtMessage("", msgID, stderr)
 				}
 
 				return nil
