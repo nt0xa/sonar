@@ -168,6 +168,33 @@ func (c *Command) EventsList(onResult func(actions.Result) error) *cobra.Command
 	return cmd
 }
 
+func (c *Command) HTTPRoutesClear(onResult func(actions.Result) error) *cobra.Command {
+	var params actions.HTTPRoutesClearParams
+
+	cmd, prepareFunc := actions.HTTPRoutesClearCommand(&params, c.options.allowFileAccess)
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		if err := params.Validate(); err != nil {
+			return err
+		}
+
+		res, err := c.actions.HTTPRoutesClear(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		return onResult(res)
+	}
+
+	return cmd
+}
+
 func (c *Command) HTTPRoutesCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.HTTPRoutesCreateParams
 
