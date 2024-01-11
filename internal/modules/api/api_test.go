@@ -762,6 +762,30 @@ func TestAPI(t *testing.T) {
 			},
 			status: 404,
 		},
+
+		// Clear
+
+		{
+			method: "DELETE",
+			path:   "/http-routes/payload1/",
+			token:  User1Token,
+			schema: actions.HTTPRoutesClearResult{},
+			status: 200,
+			result: map[string]matcher{
+				"$[0].path": equal("/get"),
+				"$[1].path": equal("/post"),
+			},
+		},
+		{
+			method: "DELETE",
+			path:   "/http-routes/not-exist/",
+			token:  User1Token,
+			schema: &errors.NotFoundError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
+		},
 	}
 
 	for _, tt := range tests {
