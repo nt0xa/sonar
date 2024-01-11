@@ -488,6 +488,19 @@ func TestClient(t *testing.T) {
 			},
 			nil,
 		},
+
+		// Clear
+
+		{
+			actions.HTTPRoutesClearParams{
+				PayloadName: "payload1",
+			},
+			map[string]matcher{
+				"0.Path": equal("/get"),
+				"4.Path": equal("/route/{test}"),
+			},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -543,6 +556,8 @@ func TestClient(t *testing.T) {
 				res, err = uc.HTTPRoutesList(context.Background(), p)
 			case actions.HTTPRoutesDeleteParams:
 				res, err = uc.HTTPRoutesDelete(context.Background(), p)
+			case actions.HTTPRoutesClearParams:
+				res, err = uc.HTTPRoutesClear(context.Background(), p)
 
 			// Profile
 			case nil:

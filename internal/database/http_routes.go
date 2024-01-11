@@ -81,3 +81,25 @@ func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(payloadID int64, index int64) (*m
 func (db *DB) HTTPRoutesDelete(id int64) error {
 	return db.Exec("DELETE FROM http_routes WHERE id = $1", id)
 }
+
+func (db *DB) HTTPRoutesDeleteAllByPayloadID(payloadID int64) ([]*models.HTTPRoute, error) {
+	res := make([]*models.HTTPRoute, 0)
+
+	if err := db.Select(&res,
+		"DELETE FROM http_routes WHERE payload_id = $1 RETURNING *", payloadID); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (db *DB) HTTPRoutesDeleteAllByPayloadIDAndPath(payloadID int64, path string) ([]*models.HTTPRoute, error) {
+	res := make([]*models.HTTPRoute, 0)
+
+	if err := db.Select(&res,
+		"DELETE FROM http_routes WHERE payload_id = $1 AND path = $2 RETURNING *", payloadID, path); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

@@ -10,12 +10,12 @@ func (api *API) DNSRecordsClear(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.DNSRecordsClearParams
 
-	if err := fromPath(r, &params); err != nil {
+	if err := fromQuery(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
 
-	if err := fromQuery(r, &params); err != nil {
+	if err := fromPath(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
@@ -116,6 +116,29 @@ func (api *API) EventsList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := api.actions.EventsList(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
+func (api *API) HTTPRoutesClear(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.HTTPRoutesClearParams
+
+	if err := fromPath(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	if err := fromQuery(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.HTTPRoutesClear(r.Context(), params)
 	if err != nil {
 		api.handleError(w, r, err)
 		return

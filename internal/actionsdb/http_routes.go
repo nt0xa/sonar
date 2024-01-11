@@ -98,6 +98,41 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 	return &actions.HTTPRoutesDeleteResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
+func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesClearParams) (actions.HTTPRoutesClearResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
+	}
+
+	var recs []*models.HTTPRoute
+
+	if p.Path != "" {
+		recs, err = act.db.HTTPRoutesDeleteAllByPayloadIDAndPath(payload.ID, p.Path)
+	} else {
+		recs, err = act.db.HTTPRoutesDeleteAllByPayloadID(payload.ID)
+	}
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	res := make([]actions.HTTPRoute, 0)
+
+	for _, r := range recs {
+		res = append(res, HTTPRoute(*r, payload.Subdomain))
+	}
+
+	return res, nil
+}
+
 func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesListParams) (actions.HTTPRoutesListResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {
