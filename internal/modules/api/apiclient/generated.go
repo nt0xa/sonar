@@ -11,8 +11,8 @@ func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsC
 	var res actions.DNSRecordsClearResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetQueryParamsFromValues(toQuery(params)).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
@@ -97,12 +97,30 @@ func (c *Client) EventsList(ctx context.Context, params actions.EventsListParams
 	var res actions.EventsListResult
 
 	err := handle(c.client.R().
-		SetQueryParamsFromValues(toQuery(params)).
 		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
 		Get("/events/{payload}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) HTTPRoutesClear(ctx context.Context, params actions.HTTPRoutesClearParams) (actions.HTTPRoutesClearResult, errors.Error) {
+	var res actions.HTTPRoutesClearResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Delete("/http-routes/{payload}"))
 
 	if err != nil {
 		return nil, err

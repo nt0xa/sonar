@@ -21,12 +21,14 @@ import (
 const (
 	HTTPRoutesCreateResultID = "http-routes/create"
 	HTTPRoutesDeleteResultID = "http-routes/delete"
+	HTTPRoutesClearResultID  = "http-routes/clear"
 	HTTPRoutesListResultID   = "http-routes/list"
 )
 
 type HTTPActions interface {
 	HTTPRoutesCreate(context.Context, HTTPRoutesCreateParams) (*HTTPRoutesCreateResult, errors.Error)
 	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteParams) (*HTTPRoutesDeleteResult, errors.Error)
+	HTTPRoutesClear(context.Context, HTTPRoutesClearParams) (HTTPRoutesClearResult, errors.Error)
 	HTTPRoutesList(context.Context, HTTPRoutesListParams) (HTTPRoutesListResult, errors.Error)
 }
 
@@ -180,6 +182,39 @@ func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Comm
 		p.Index = i
 		return nil
 	}
+}
+
+//
+// Clear
+//
+
+type HTTPRoutesClearParams struct {
+	PayloadName string `err:"payload" path:"payload"`
+	Path        string `err:"path"    query:"path"`
+}
+
+func (p HTTPRoutesClearParams) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.PayloadName, validation.Required),
+	)
+}
+
+type HTTPRoutesClearResult []HTTPRoute
+
+func (r HTTPRoutesClearResult) ResultID() string {
+	return HTTPRoutesClearResultID
+}
+
+func HTTPRoutesClearCommand(p *HTTPRoutesClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+	cmd := &cobra.Command{
+		Use:   "clr",
+		Short: "Delete multiple HTTP routes",
+	}
+
+	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&p.Path, "path", "P", "", "Path")
+
+	return cmd, nil
 }
 
 //

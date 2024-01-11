@@ -209,6 +209,38 @@ func (_m *Actions) EventsList(_a0 context.Context, _a1 actions.EventsListParams)
 	return r0, r1
 }
 
+// HTTPRoutesClear provides a mock function with given fields: _a0, _a1
+func (_m *Actions) HTTPRoutesClear(_a0 context.Context, _a1 actions.HTTPRoutesClearParams) (actions.HTTPRoutesClearResult, errors.Error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HTTPRoutesClear")
+	}
+
+	var r0 actions.HTTPRoutesClearResult
+	var r1 errors.Error
+	if rf, ok := ret.Get(0).(func(context.Context, actions.HTTPRoutesClearParams) (actions.HTTPRoutesClearResult, errors.Error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, actions.HTTPRoutesClearParams) actions.HTTPRoutesClearResult); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(actions.HTTPRoutesClearResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, actions.HTTPRoutesClearParams) errors.Error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(errors.Error)
+		}
+	}
+
+	return r0, r1
+}
+
 // HTTPRoutesCreate provides a mock function with given fields: _a0, _a1
 func (_m *Actions) HTTPRoutesCreate(_a0 context.Context, _a1 actions.HTTPRoutesCreateParams) (*actions.HTTPRoutesCreateResult, errors.Error) {
 	ret := _m.Called(_a0, _a1)

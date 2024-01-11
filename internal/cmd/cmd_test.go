@@ -197,7 +197,7 @@ func TestCmd(t *testing.T) {
 			"DNSRecordsClear",
 			actions.DNSRecordsClearParams{
 				PayloadName: "payload1",
-				Name: "test",
+				Name:        "test",
 			},
 			actions.DNSRecordsClearResult{},
 		},
@@ -328,6 +328,18 @@ func TestCmd(t *testing.T) {
 				Index:       1,
 			},
 			&actions.HTTPRoutesDeleteResult{},
+		},
+
+		// Clear
+
+		{
+			"http clr -p payload1 -P /test",
+			"HTTPRoutesClear",
+			actions.HTTPRoutesClearParams{
+				PayloadName: "payload1",
+				Path:        "/test",
+			},
+			actions.HTTPRoutesClearResult{},
 		},
 	}
 

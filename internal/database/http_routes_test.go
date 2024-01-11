@@ -134,3 +134,21 @@ func TestHTTPRoutesGetByPayloadMethodAndPath(t *testing.T) {
 	_, err = db.HTTPRoutesGetByPayloadMethodAndPath(1337, "POST", "/post")
 	assert.Error(t, err)
 }
+
+func TestHTTPRoutesDeleteAllByPayloadID(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	l, err := db.HTTPRoutesDeleteAllByPayloadID(1)
+	assert.NoError(t, err)
+	assert.Len(t, l, 5)
+}
+
+func TestHTTPRoutesDeleteAllByPayloadIDAndName(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	l, err := db.HTTPRoutesDeleteAllByPayloadIDAndPath(1, "/get")
+	assert.NoError(t, err)
+	assert.Len(t, l, 1)
+}
