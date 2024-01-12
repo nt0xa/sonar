@@ -102,7 +102,12 @@ func addContextCommand(root *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "ctx",
 		Short: "Change current context parameters",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			// Save current config
+			if err := viper.WriteConfig(); err != nil {
+				return fmt.Errorf("fail to save config: %w", err)
+			}
 
 			// Print values from current context.
 			fields := reflect.VisibleFields(reflect.TypeOf(cfg.Context))
@@ -111,6 +116,8 @@ func addContextCommand(root *cobra.Command) {
 				color.Bold.Print(field.Tag.Get("mapstructure") + ": ")
 				color.Println(v.FieldByName(field.Name))
 			}
+
+			return nil
 		},
 	}
 
