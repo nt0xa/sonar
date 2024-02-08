@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"database/sql"
+	"sync"
 	"testing"
 	"time"
 
@@ -147,4 +148,37 @@ func TestEventsDeleteOutOfLimit(t *testing.T) {
 
 	err = db.EventsDeleteOutOfLimit(2, 5)
 	assert.ErrorIs(t, err, sql.ErrNoRows)
+}
+
+func TestEventsRace(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	var wg sync.WaitGroup
+	count := 10
+
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			o := &models.Event{
+				PayloadID: 1,
+				Protocol:  models.ProtoDNS,
+				R:         []byte{1, 3, 5},
+				W:         []byte{2, 4},
+				RW:        []byte{1, 2, 3, 4, 5},
+				Meta: models.Meta{
+					"key": "value",
+				},
+				ReceivedAt: time.Now(),
+				RemoteAddr: "127.0.0.1:1337",
+			}
+
+			err := db.EventsCreate(o)
+			assert.NoError(t, err)
+		}()
+	}
+
+	wg.Wait()
 }
