@@ -110,7 +110,9 @@ var event = `
 
 var eventsGet = event + `
 
-<pre>{{ $e.RW | b64dec }}</pre>`
+<pre>
+{{ $e.RW | b64dec }}
+</pre>`
 
 var eventsList = fmt.Sprintf(`
 {{- range . -}}

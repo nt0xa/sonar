@@ -20,7 +20,7 @@ require (
 	github.com/invopop/jsonschema v0.8.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.0.29
+	github.com/larksuite/oapi-sdk-go/v3 v3.1.4
 	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.56
 	github.com/mitchellh/mapstructure v1.5.0

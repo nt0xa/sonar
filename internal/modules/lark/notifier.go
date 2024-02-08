@@ -55,19 +55,14 @@ func (lrk *Lark) Notify(n *modules.Notification) error {
 	if utf8.ValidString(body) {
 
 		// Elements
-		div := larkcard.NewMessageCardDiv().
-			Fields([]*larkcard.MessageCardField{larkcard.NewMessageCardField().
-				Text(larkcard.NewMessageCardPlainText().
-					Content(body).
-					Build()).
-				IsShort(true).
-				Build()}).
+		md := larkcard.NewMessageCardMarkdown().
+			Content(body).
 			Build()
 
 		card := larkcard.NewMessageCard().
 			Config(config).
 			Header(cardHeader).
-			Elements([]larkcard.MessageCardElement{div}).
+			Elements([]larkcard.MessageCardElement{md}).
 			Build()
 
 		content, err := card.String()

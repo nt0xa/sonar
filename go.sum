@@ -330,6 +330,8 @@ github.com/labbsr0x/bindman-dns-webhook v1.0.2/go.mod h1:p6b+VCXIR8NYKpDr8/dg1HK
 github.com/labbsr0x/goh v1.0.1/go.mod h1:8K2UhVoaWXcCU7Lxoa2omWnC8gyW8px7/lmO61c027w=
 github.com/larksuite/oapi-sdk-go/v3 v3.0.29 h1:WLBeOkUh8emL9wYUZ49CbWjGMkjCxQoNavbLRYYMu+A=
 github.com/larksuite/oapi-sdk-go/v3 v3.0.29/go.mod h1:FKi8vBgtkBt/xNRQUwdWvoDmsPh7/wP75Sn5IBIBQLk=
+github.com/larksuite/oapi-sdk-go/v3 v3.1.4 h1:qrCvFILeYufB1SudY2KOs1iqSw+x1EsY4NhC41i0cUE=
+github.com/larksuite/oapi-sdk-go/v3 v3.1.4/go.mod h1:F4MLXkfdc/7WAJPLy4lJ0R6VqCxKgqWYS1uYY84p3SI=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
 github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=

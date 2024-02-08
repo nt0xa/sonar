@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 	"github.com/russtone/sonar/internal/database"
 	"github.com/russtone/sonar/internal/database/models"
 	"github.com/russtone/sonar/internal/templates"
-	"github.com/russtone/sonar/internal/utils/errors"
 )
 
 type Lark struct {
@@ -86,6 +84,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 			templates.HTMLEscape(false),
 			templates.Markup(
 				templates.Bold("**", "**"),
+				templates.CodeBlock("```", "```"),
 			),
 		),
 		// Disable markup for notification header.
@@ -193,7 +192,7 @@ func (lrk *Lark) Start() error {
 
 					if err := lrk.db.UsersCreate(user); err != nil {
 						// TODO: logging
-						lrk.mdMessage(*userID, msgID, "internal error")
+						lrk.message(*userID, msgID, "internal error")
 						return nil
 					}
 				}
@@ -219,33 +218,17 @@ func (lrk *Lark) Start() error {
 						return err
 					}
 
-					if res.ResultID() == actions.EventsGetResultID {
-						lines := strings.SplitN(s, "\n", 2)
-						lrk.cardMessage("", msgID, []*larkcard.MessageCardField{
-							larkcard.NewMessageCardField().
-								Text(larkcard.NewMessageCardLarkMd().
-									Content(lines[0] + "\n").
-									Build()).
-								Build(),
-							larkcard.NewMessageCardField().
-								Text(larkcard.NewMessageCardPlainText().
-									Content(lines[1]).
-									Build()).
-								Build(),
-						})
-					} else {
-						lrk.mdMessage("", msgID, s)
-					}
+					lrk.message("", msgID, s)
 
 					return nil
 				})
 
 				if stdout != "" {
-					lrk.txtMessage("", msgID, stdout)
+					lrk.message("", msgID, stdout)
 				}
 
 				if stderr != "" {
-					lrk.txtMessage("", msgID, stderr)
+					lrk.message("", msgID, stderr)
 				}
 
 				return nil
@@ -272,47 +255,20 @@ func (lrk *Lark) Start() error {
 	}
 }
 
-func (lrk *Lark) handleError(userID string, msgID *string, err errors.Error) {
-	lrk.txtMessage(userID, msgID, err.Error())
-}
-
-func (lrk *Lark) txtMessage(userID string, msgID *string, txt string) {
-	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{
-		larkcard.NewMessageCardField().
-			Text(larkcard.NewMessageCardPlainText().
-				Content(txt).
-				Build(),
-			).
-			Build(),
-	})
-}
-
-func (lrk *Lark) mdMessage(userID string, msgID *string, md string) {
-	lrk.cardMessage(userID, msgID, []*larkcard.MessageCardField{
-		larkcard.NewMessageCardField().
-			Text(larkcard.NewMessageCardLarkMd().
-				Content(md).
-				Build(),
-			).
-			Build(),
-	})
-}
-
-func (lrk *Lark) cardMessage(userID string, msgID *string, fields []*larkcard.MessageCardField) {
+func (lrk *Lark) message(userID string, msgID *string, content string) {
 	config := larkcard.NewMessageCardConfig().
 		WideScreenMode(true).
 		EnableForward(true).
 		UpdateMulti(false).
 		Build()
 
-	// Elements
-	div := larkcard.NewMessageCardDiv().
-		Fields(fields).
+	md := larkcard.NewMessageCardMarkdown().
+		Content(content).
 		Build()
 
 	card := larkcard.NewMessageCard().
 		Config(config).
-		Elements([]larkcard.MessageCardElement{div}).
+		Elements([]larkcard.MessageCardElement{md}).
 		Build()
 
 	content, err := card.String()
