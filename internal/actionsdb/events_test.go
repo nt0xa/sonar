@@ -30,8 +30,8 @@ func TestEventsList_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Count:       10,
 			},
-			9,
-			9, 1,
+			10,
+			10, 1,
 		},
 		{
 			"count",
@@ -40,7 +40,7 @@ func TestEventsList_Success(t *testing.T) {
 				Count:       5,
 			},
 			5,
-			9, 5,
+			10, 6,
 		},
 		{
 			"after",

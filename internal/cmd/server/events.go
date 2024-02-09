@@ -1,7 +1,7 @@
 package server
 
 import (
-	"database/sql"
+	"fmt"
 	"net"
 	"regexp"
 	"strings"
@@ -86,11 +86,7 @@ func (h *EventsHandler) worker(id int) {
 			// Store event in database
 			if p.StoreEvents {
 				if err := h.db.EventsCreate(e); err != nil {
-					continue
-				}
-
-				// Delete out of limit events
-				if err := h.db.EventsDeleteOutOfLimit(p.ID, 1000 /* TODO: from config */); err != nil && err != sql.ErrNoRows {
+					fmt.Println(err)
 					continue
 				}
 			}

@@ -417,7 +417,7 @@ func TestClient(t *testing.T) {
 			},
 			map[string]matcher{
 				"0.Protocol": equal("http"),
-				"8.Protocol": equal("dns"),
+				"9.Protocol": equal("dns"),
 			},
 			nil,
 		},

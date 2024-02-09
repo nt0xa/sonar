@@ -1,6 +1,5 @@
 - id: 1
   payload_id: 1
-  index: 1
   protocol: dns
   r: read
   w: written
@@ -13,7 +12,6 @@
 
 - id: 2
   payload_id: 1
-  index: 2
   protocol: http
   r: read
   w: written
@@ -26,7 +24,6 @@
 
 - id: 3
   payload_id: 1
-  index: 3
   protocol: http
   r: read
   w: written
@@ -39,7 +36,6 @@
 
 - id: 4
   payload_id: 1
-  index: 4
   protocol: http
   r: read
   w: written
@@ -52,7 +48,6 @@
 
 - id: 5
   payload_id: 1
-  index: 5
   protocol: http
   r: read
   w: written
@@ -65,7 +60,6 @@
 
 - id: 6
   payload_id: 1
-  index: 6
   protocol: http
   r: read
   w: written
@@ -78,7 +72,6 @@
 
 - id: 7
   payload_id: 1
-  index: 7
   protocol: http
   r: read
   w: written
@@ -91,7 +84,6 @@
 
 - id: 8
   payload_id: 1
-  index: 8
   protocol: http
   r: read
   w: written
@@ -104,7 +96,30 @@
 
 - id: 9
   payload_id: 1
-  index: 9
+  protocol: http
+  r: read
+  w: written
+  rw: read-and-written
+  meta:
+    key: value
+  remote_addr: 127.0.0.1:1337
+  received_at: RAW=NOW() AT TIME ZONE 'UTC'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 10
+  payload_id: 2
+  protocol: http
+  r: read
+  w: written
+  rw: read-and-written
+  meta:
+    key: value
+  remote_addr: 127.0.0.1:1337
+  received_at: RAW=NOW() AT TIME ZONE 'UTC'
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 11
+  payload_id: 1
   protocol: http
   r: read
   w: written
