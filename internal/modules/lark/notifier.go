@@ -22,8 +22,10 @@ func (lrk *Lark) Notify(n *modules.Notification) error {
 	}
 
 	for _, m := range emailRegexp.FindAllString(body, -1) {
-		body = strings.ReplaceAll(body, m, strings.Replace(m, "@", "(AT)", 1))
+		body = strings.ReplaceAll(body, m, strings.Replace(m, "@", "＠", 1))
 	}
+
+	body = strings.ReplaceAll(body, "<img", "＜img")
 
 	config := larkcard.NewMessageCardConfig().
 		WideScreenMode(true).
