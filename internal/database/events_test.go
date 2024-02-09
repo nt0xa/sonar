@@ -68,8 +68,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	// Default
 	l, err := db.EventsListByPayloadID(1)
 	assert.NoError(t, err)
-	require.Len(t, l, 9)
-	assert.EqualValues(t, l[0].ID, 9)
+	require.Len(t, l, 10)
+	assert.EqualValues(t, l[0].ID, 11)
 	assert.EqualValues(t, l[len(l)-1].ID, 1)
 
 	l, err = db.EventsListByPayloadID(1,
@@ -81,8 +81,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	// Count
 	assert.NoError(t, err)
 	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 9)
-	assert.EqualValues(t, l[len(l)-1].ID, 7)
+	assert.EqualValues(t, l[0].ID, 11)
+	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Before
 	l, err = db.EventsListByPayloadID(1,
@@ -104,8 +104,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 		}),
 	)
 	assert.NoError(t, err)
-	require.Len(t, l, 2)
-	assert.EqualValues(t, l[0].ID, 9)
+	require.Len(t, l, 3)
+	assert.EqualValues(t, l[0].ID, 11)
 	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Reverse
@@ -117,9 +117,9 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 		database.EventsReverse(true),
 	)
 	assert.NoError(t, err)
-	require.Len(t, l, 2)
+	require.Len(t, l, 3)
 	assert.EqualValues(t, l[0].ID, 8)
-	assert.EqualValues(t, l[len(l)-1].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 11)
 }
 
 func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
@@ -132,22 +132,6 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 
 	o, err = db.EventsGetByPayloadAndIndex(1, 1337)
 	assert.Error(t, err)
-}
-
-func TestEventsDeleteOutOfLimit(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-
-	err := db.EventsDeleteOutOfLimit(1, 5)
-	assert.NoError(t, err)
-
-	var list []*models.Event
-	list, err = db.EventsListByPayloadID(1)
-	assert.NoError(t, err)
-	assert.Len(t, list, 5)
-
-	err = db.EventsDeleteOutOfLimit(2, 5)
-	assert.ErrorIs(t, err, sql.ErrNoRows)
 }
 
 func TestEventsRace(t *testing.T) {

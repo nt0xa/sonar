@@ -9,12 +9,11 @@ func (db *DB) EventsCreate(o *models.Event) error {
 	o.CreatedAt = now()
 
 	query := "" +
-		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at, index) " +
-		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at," +
-		" (SELECT COALESCE(MAX(index), 0) FROM events e WHERE e.payload_id = :payload_id) + 1) " +
-		"RETURNING id, index"
+		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
+		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at)" +
+		"RETURNING id"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
+	return db.NamedQueryRowx(query, o).Scan(&o.ID)
 }
 
 func (db *DB) EventsGetByID(id int64) (*models.Event, error) {
@@ -64,7 +63,7 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 
 	params := make(map[string]interface{})
 
-	query := "SELECT * FROM (SELECT * FROM events WHERE payload_id = :payload_id ORDER BY id ASC) subq"
+	query := "SELECT * FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY id ASC) AS index FROM events WHERE payload_id = :payload_id) subq"
 	params["payload_id"] = payloadID
 
 	var order string
@@ -94,7 +93,7 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 }
 
 func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.Event, error) {
-	query := "SELECT * FROM events WHERE payload_id = $1 AND index = $2"
+	query := "SELECT * FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY id ASC) AS index FROM events WHERE payload_id = $1) subq WHERE index = $2"
 
 	var res models.Event
 
@@ -105,11 +104,3 @@ func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.
 	return &res, nil
 }
 
-func (db *DB) EventsDeleteOutOfLimit(payloadID int64, limit int) error {
-	var minID int
-	query := "SELECT COALESCE(MIN(id), 0) FROM (SELECT id FROM events WHERE payload_id = $1 ORDER BY id DESC LIMIT $2) q"
-	if err := db.Get(&minID, query, payloadID, limit); err != nil {
-		return err
-	}
-	return db.Exec("DELETE FROM events WHERE id < $1", minID)
-}
