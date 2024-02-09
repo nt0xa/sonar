@@ -30,17 +30,13 @@ func (db *DB) QueryRowx(query string, args ...interface{}) *row {
 
 func (db *DB) Exec(query string, args ...interface{}) error {
 	db.logQuery(query, args...)
-	res, err := db.DB.Exec(query, args...)
-	if err != nil {
-		return err
-	}
-
-	if n, err := res.RowsAffected(); err != nil {
-		return err
-	} else if n == 0 {
-		return sql.ErrNoRows
-	}
+	_, err := db.DB.Exec(query, args...)
 	return err
+}
+
+func (db *DB) ExecResult(query string, args ...interface{}) (sql.Result, error) {
+	db.logQuery(query, args...)
+	return db.DB.Exec(query, args...)
 }
 
 func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {

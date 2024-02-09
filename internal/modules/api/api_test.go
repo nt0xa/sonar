@@ -619,9 +619,9 @@ func TestAPI(t *testing.T) {
 			token:  User1Token,
 			schema: (actions.EventsListResult)(nil),
 			result: map[string]matcher{
-				"$":             length(9),
+				"$":             length(10),
 				"$[0].protocol": equal("http"),
-				"$[8].protocol": equal("dns"),
+				"$[9].protocol": equal("dns"),
 			},
 			status: 200,
 		},

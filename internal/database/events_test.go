@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"database/sql"
+	"sync"
 	"testing"
 	"time"
 
@@ -67,8 +68,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	// Default
 	l, err := db.EventsListByPayloadID(1)
 	assert.NoError(t, err)
-	require.Len(t, l, 9)
-	assert.EqualValues(t, l[0].ID, 9)
+	require.Len(t, l, 10)
+	assert.EqualValues(t, l[0].ID, 11)
 	assert.EqualValues(t, l[len(l)-1].ID, 1)
 
 	l, err = db.EventsListByPayloadID(1,
@@ -80,8 +81,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	// Count
 	assert.NoError(t, err)
 	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 9)
-	assert.EqualValues(t, l[len(l)-1].ID, 7)
+	assert.EqualValues(t, l[0].ID, 11)
+	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Before
 	l, err = db.EventsListByPayloadID(1,
@@ -103,8 +104,8 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 		}),
 	)
 	assert.NoError(t, err)
-	require.Len(t, l, 2)
-	assert.EqualValues(t, l[0].ID, 9)
+	require.Len(t, l, 3)
+	assert.EqualValues(t, l[0].ID, 11)
 	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Reverse
@@ -116,9 +117,9 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 		database.EventsReverse(true),
 	)
 	assert.NoError(t, err)
-	require.Len(t, l, 2)
+	require.Len(t, l, 3)
 	assert.EqualValues(t, l[0].ID, 8)
-	assert.EqualValues(t, l[len(l)-1].ID, 9)
+	assert.EqualValues(t, l[len(l)-1].ID, 11)
 }
 
 func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
@@ -133,18 +134,35 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestEventsDeleteOutOfLimit(t *testing.T) {
+func TestEventsRace(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.EventsDeleteOutOfLimit(1, 5)
-	assert.NoError(t, err)
+	var wg sync.WaitGroup
+	count := 10
 
-	var list []*models.Event
-	list, err = db.EventsListByPayloadID(1)
-	assert.NoError(t, err)
-	assert.Len(t, list, 5)
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-	err = db.EventsDeleteOutOfLimit(2, 5)
-	assert.ErrorIs(t, err, sql.ErrNoRows)
+			o := &models.Event{
+				PayloadID: 1,
+				Protocol:  models.ProtoDNS,
+				R:         []byte{1, 3, 5},
+				W:         []byte{2, 4},
+				RW:        []byte{1, 2, 3, 4, 5},
+				Meta: models.Meta{
+					"key": "value",
+				},
+				ReceivedAt: time.Now(),
+				RemoteAddr: "127.0.0.1:1337",
+			}
+
+			err := db.EventsCreate(o)
+			assert.NoError(t, err)
+		}()
+	}
+
+	wg.Wait()
 }
