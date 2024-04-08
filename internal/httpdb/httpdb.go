@@ -148,6 +148,14 @@ func (d *Data) Header(key string) string {
 	return d.r.Header.Get(key)
 }
 
+func (d *Data) Cookie(key string) string {
+	c, err := d.r.Cookie(key)
+	if err != nil {
+		return ""
+	}
+	return c.Value
+}
+
 func renderTemplate(t string, data interface{}) (string, error) {
 	tpl, err := template.New("").Parse(t)
 	if err != nil {
