@@ -1,18 +1,50 @@
+LOCAL_BIN := $(CURDIR)/.bin
+
+DB_DSN := postgres://db:db@localhost:5432/db_test?sslmode=disable
+DB_MIGRATIONS_DIR := internal/database/migrations
+
+export PATH := $(LOCAL_BIN):$(PATH)
+
 #
 # Build
 #
 
-.PHONY: build
-build: build-server build-client
+default: build
 
-.PHONY: build-server
-build-server:
+.PHONY: build
+build: build/server build/client
+
+.PHONY: build/server
+build/server:
+	@echo "Building server..."
 	@go build -o server ./cmd/server
 
-.PHONY: build-client
-build-client:
+.PHONY: build/client
+build/client:
+	@echo "Building client..."
 	@go build -o sonar ./cmd/client
 
+
+#
+# Dev
+#
+
+.PHONY: dev
+dev:
+	@$(LOCAL_BIN)/air
+
+#
+# Tools
+#
+
+override GOBIN := $(LOCAL_BIN)
+
+.PHONY: tools
+tools: 
+	@GOBIN=$(GOBIN) go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	@GOBIN=$(GOBIN) go install github.com/cosmtrek/air@latest
+	@GOBIN=$(GOBIN) go install github.com/abice/go-enum@latest
+	@GOBIN=$(GOBIN) go install github.com/vektra/mockery/v2@latest 
 
 #
 # Test
@@ -22,82 +54,94 @@ build-client:
 test:
 	@go test ./... -v -p 1 -coverprofile coverage.out
 
-.PHONY: coverage
-coverage:
-	@go tool cover -func=coverage.out
-
-.PHONY: coverage-html
-coverage-html:
+.PHONY: coverage/html
+coverage/html:
 	@go tool cover -html=coverage.out
 
-.PHONY: mock
-mock: mock-actions
+#
+# Lint & format
+#
 
-.PHONY: mock-actions
-mock-actions:
-	@mockery \
-		--dir internal/actions \
-		--output internal/actions/mock \
-		--outpkg actions_mock \
-		--name Actions
+.PHONY: fmt
+fmt:
+	@echo "Formatting code..."
+	@go fmt ./...
 
-.PHONY: mock-deps
-mock-deps:
-	@go install github.com/vektra/mockery/v2@latest
+.PHONY: lint
+lint:
+	@echo "Linting code..."
+	@golangci-lint run
 
 #
 # Code generation
 #
 
-.PHONY: gen
-gen: gen-api gen-cmd gen-apiclient
+.PHONY: generate
+generate: generate/api generate/cmd generate/client generate/mocks
 
-.PHONY: gen-api
-gen-api:
+.PHONY: generate/api
+generate/api:
+	@echo "Generating API..."
 	@go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
 	@go fmt ./internal/modules/api
 
-.PHONY: gen-cmd
-gen-cmd:
+.PHONY: generate/cmd
+generate/cmd:
+	@echo "Generating CLI..."
 	@go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
 	@go fmt ./internal/cmd
 
-.PHONY: gen-apiclient
-gen-apiclient:
+.PHONY: generate/client
+generate/client:
+	@echo "Generating API client..."
 	@go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
 	@go fmt ./internal/modules/api/apiclient
+
+.PHONY: generate/mocks
+generate/mocks:
+	@echo "Generating mocks..."
+	@$(LOCAL_BIN)/mockery \
+		--dir internal/actions \
+		--output internal/actions/mock \
+		--outpkg actions_mock \
+		--name Actions
 
 #
 # Migrations
 #
 
-migrations = ./internal/database/migrations
-db_url = ${SONAR_DB_DSN}
+override MIGRATE := $(LOCAL_BIN)/migrate -path $(DB_MIGRATIONS_DIR) -database $(DB_DSN)
 
-.PHONY: migrations-create
-migrations-create:
-	@migrate create -ext sql -dir ${migrations} -seq ${name}
+.PHONY: migrations/create
+migrations/create: guard-NAME
+	@$(LOCAL_BIN)/migrate create -ext sql -dir $(DB_MIGRATIONS_DIR) -seq $(NAME)
 
-.PHONY: migrations-list
-migrations-list:
-	@ls ${migrations} | grep '.sql' | cut -d '.' -f 1 | sort | uniq
+.PHONY: migrations/up
+migrations/up:
+	@$(MIGRATE) up $(N)
 
-.PHONY: migrations-up
-migrations-up:
-	@migrate -path ${migrations} -database ${db_url} up ${n}
+.PHONY: migrations/down
+migrations/down:
+	@$(MIGRATE) down $(N)
 
-.PHONY: migrations-down
-migrations-down:
-	@migrate -path ${migrations} -database ${db_url} down ${n}
+.PHONY: migrations/goto
+migrations/goto: guard-V
+	@$(MIGRATE) goto $(V)
 
-.PHONY: migrations-goto
-migrations-goto:
-	@migrate -path ${migrations} -database ${db_url} goto ${v}
+.PHONY: migrations/drop
+migrations/drop:
+	@$(MIGRATE) drop
 
-.PHONY: migrations-drop
-migrations-drop:
-	@migrate -path ${migrations} -database ${db_url} drop
+.PHONY: migrations/force
+migrations/force: guard-V
+	@$(MIGRATE) force $(V)
 
-.PHONY: migrations-force
-migrations-force:
-	@migrate -path ${migrations} -database ${db_url} force ${v}
+#
+# Helpers
+#
+
+guard-%:
+	@if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi

@@ -103,4 +103,3 @@ func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.
 
 	return &res, nil
 }
-

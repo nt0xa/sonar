@@ -11,8 +11,8 @@ func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsC
 	var res actions.DNSRecordsClearResult
 
 	err := handle(c.client.R().
-		SetQueryParamsFromValues(toQuery(params)).
 		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
@@ -252,8 +252,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	var res *actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
-		SetBody(params).
 		SetPathParams(toPath(params)).
+		SetBody(params).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
