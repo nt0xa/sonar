@@ -158,9 +158,9 @@ func (r DNSRecordsClearResult) ResultID() string {
 
 func DNSRecordsClearCommand(p *DNSRecordsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:     "clr",
-		Short:   "Delete multiple DNS records",
-		Long:    "Delete multiple DNS records",
+		Use:   "clr",
+		Short: "Delete multiple DNS records",
+		Long:  "Delete multiple DNS records",
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")

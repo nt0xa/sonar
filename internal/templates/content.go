@@ -21,12 +21,12 @@ var templatesMap = map[string]string{
 	actions.DNSRecordsListResultID:   dnsRecordsList,
 	actions.DNSRecordsCreateResultID: dnsRecordsCreate,
 	actions.DNSRecordsDeleteResultID: dnsRecordsDelete,
-	actions.DNSRecordsClearResultID: dnsRecordsClear,
+	actions.DNSRecordsClearResultID:  dnsRecordsClear,
 
 	actions.HTTPRoutesListResultID:   httpRoutesList,
 	actions.HTTPRoutesCreateResultID: httpRoutesCreate,
 	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
-	actions.HTTPRoutesClearResultID: httpRoutesClear,
+	actions.HTTPRoutesClearResultID:  httpRoutesClear,
 
 	actions.EventsListResultID: eventsList,
 	actions.EventsGetResultID:  eventsGet,
