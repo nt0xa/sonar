@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS user_params (
+CREATE TABLE user_params (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     key TEXT NOT NULL,

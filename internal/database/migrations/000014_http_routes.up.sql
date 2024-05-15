@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS http_routes (
+CREATE TABLE http_routes (
     id SERIAL PRIMARY KEY,
     payload_id INT NOT NULL REFERENCES payloads (id) ON DELETE CASCADE,
     method TEXT NOT NULL,

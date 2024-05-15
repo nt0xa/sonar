@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS events (
+CREATE TABLE events (
     id SERIAL PRIMARY KEY,
     payload_id INT NOT NULL REFERENCES payloads (id) ON DELETE CASCADE,
     protocol TEXT NOT NULL,
