@@ -1,3 +1,2 @@
-DROP TABLE IF EXISTS payloads;
-
-DROP TABLE IF EXISTS users;
+DROP TABLE payloads;
+DROP TABLE users;

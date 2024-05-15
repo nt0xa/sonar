@@ -1,20 +1,8 @@
-DO $$
-  BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'dns_record_type') THEN
-      CREATE TYPE dns_record_type AS ENUM('A', 'AAAA', 'MX', 'TXT', 'CNAME');
-    END IF;
-  END
-$$;
+CREATE TYPE dns_record_type AS ENUM('A', 'AAAA', 'MX', 'TXT', 'CNAME');
 
-DO $$
-  BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'dns_strategy') THEN
-      CREATE TYPE dns_strategy AS ENUM('all', 'round-robin', 'rebind');
-    END IF;
-  END
-$$;
+CREATE TYPE dns_strategy AS ENUM('all', 'round-robin', 'rebind');
 
-CREATE TABLE IF NOT EXISTS dns_records (
+CREATE TABLE dns_records (
     id SERIAL,
     payload_id INT NOT NULL REFERENCES payloads (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
