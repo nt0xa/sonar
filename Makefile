@@ -42,7 +42,7 @@ override GOBIN := $(LOCAL_BIN)
 .PHONY: tools
 tools: 
 	@GOBIN=$(GOBIN) go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	@GOBIN=$(GOBIN) go install github.com/cosmtrek/air@latest
+	@GOBIN=$(GOBIN) go install github.com/air-verse/air@latest
 	@GOBIN=$(GOBIN) go install github.com/abice/go-enum@latest
 	@GOBIN=$(GOBIN) go install github.com/vektra/mockery/v2@latest 
 
