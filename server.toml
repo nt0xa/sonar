@@ -1,6 +1,0 @@
-ip = "127.0.0.1"
-domain = "sonar.test"
-
-[db]
-dsn = "postgres://db:db@localhost:5432/db_test?sslmode=disable"
-migrations = "internal/database/migrations"
