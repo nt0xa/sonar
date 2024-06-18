@@ -105,7 +105,7 @@ type session struct {
 // handleConn creates new SMTP session and handles connection with it.
 func handleConn(ctx context.Context, conn net.Conn, opts options) error {
 
-	newConn := netx.NewLoggingCon(conn)
+	newConn := netx.NewLoggingConn(conn)
 
 	sess := &session{
 		messages:  opts.messages,
@@ -148,7 +148,7 @@ func (s *session) start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 
 		default:
 			if !s.scanner.Scan() {
@@ -310,7 +310,7 @@ func (s *session) handleStartTLS(args string) error {
 		return err
 	}
 
-	newConn := netx.NewLoggingCon(net.Conn(conn))
+	newConn := netx.NewLoggingConn(net.Conn(conn))
 
 	newConn.RW.Write(s.conn.RW.Bytes())
 	newConn.R.Write(s.conn.R.Bytes())

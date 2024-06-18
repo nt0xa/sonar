@@ -2,15 +2,15 @@ package ftpx
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/russtone/sonar/pkg/netx"
 )
 
 var (
@@ -38,8 +38,11 @@ type Event struct {
 	// RemoteAddre is remote IP address.
 	RemoteAddr net.Addr
 
-	// Log is a full session log.
-	Log []byte
+	// RW is a full session log.
+	RW []byte
+
+	R []byte
+	W []byte
 
 	// Data stores args passed to the corresponding FTP commands during a session.
 	Data Data
@@ -66,22 +69,10 @@ type session struct {
 	onClose func(*Event)
 
 	// conn is a current TCP connection.
-	conn net.Conn
-
-	// r is a connection reader.
-	r *bufio.Reader
-
-	// w is a connection writer.
-	w *bufio.Writer
+	conn *netx.LoggingConn
 
 	// scanner is a connection reader scanner.
 	scanner *bufio.Scanner
-
-	// rw is a session log.
-	log *bytes.Buffer
-
-	// state is a current state of session.
-	state int
 
 	// data stores args passed to the corresponding FTP commands during
 	// a session.
@@ -90,41 +81,36 @@ type session struct {
 
 // handleConn creates new FTP session and handles connection with it.
 func handleConn(ctx context.Context, conn net.Conn, opts options) error {
-	var buf bytes.Buffer
-
-	r := bufio.NewReader(io.TeeReader(conn, &buf))
-	w := bufio.NewWriter(io.MultiWriter(conn, &buf))
-	scanner := bufio.NewScanner(r)
+	newConn := netx.NewLoggingConn(conn)
 
 	sess := &session{
 		messages: opts.messages,
 		onClose:  opts.onClose,
-		conn:     conn,
-		r:        r,
-		w:        w,
-		scanner:  scanner,
-		log:      &buf,
+		conn:     newConn,
+		scanner:  bufio.NewScanner(newConn),
+	}
+
+	start := time.Now()
+
+	newConn.OnClose = func() {
+		_, secure := sess.conn.Conn.(*tls.Conn)
+
+		sess.onClose(&Event{
+			RemoteAddr: sess.conn.RemoteAddr(),
+			RW:         sess.conn.RW.Bytes(),
+			R:          sess.conn.R.Bytes(),
+			W:          sess.conn.W.Bytes(),
+			Data:       sess.data,
+			Secure:     secure,
+			ReceivedAt: start,
+		})
 	}
 
 	return sess.start(ctx)
 }
 
 func (s *session) start(ctx context.Context) error {
-	start := time.Now()
-
-	if s.onClose != nil {
-		defer func() {
-			_, secure := s.conn.(*tls.Conn)
-
-			s.onClose(&Event{
-				RemoteAddr: s.conn.RemoteAddr(),
-				Log:        s.log.Bytes(),
-				Data:       s.data,
-				Secure:     secure,
-				ReceivedAt: start,
-			})
-		}()
-	}
+	defer s.conn.Close()
 
 	if err := s.greet(); err != nil {
 		return err
@@ -133,7 +119,7 @@ func (s *session) start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 
 		default:
 			if !s.scanner.Scan() {
@@ -196,10 +182,10 @@ func (s *session) parseCmd(line string) (string, string) {
 }
 
 func (s *session) writeLine(line string) error {
-	if _, err := s.w.WriteString(line + "\r\n"); err != nil {
+	if _, err := s.conn.Write([]byte(line + "\r\n")); err != nil {
 		return err
 	}
-	return s.w.Flush()
+	return nil
 }
 
 func (s *session) greet() error {
