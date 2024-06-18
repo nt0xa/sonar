@@ -5,9 +5,9 @@ package actions_mock
 import (
 	context "context"
 
-	actions "github.com/russtone/sonar/internal/actions"
+	actions "github.com/nt0xa/sonar/internal/actions"
 
-	errors "github.com/russtone/sonar/internal/utils/errors"
+	errors "github.com/nt0xa/sonar/internal/utils/errors"
 
 	mock "github.com/stretchr/testify/mock"
 )

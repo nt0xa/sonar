@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/pkg/netx"
-	"github.com/russtone/sonar/pkg/smtpx"
+	"github.com/nt0xa/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
 var (

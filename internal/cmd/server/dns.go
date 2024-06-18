@@ -9,11 +9,11 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/miekg/dns"
 
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/dnsdb"
-	"github.com/russtone/sonar/internal/utils/tpl"
-	"github.com/russtone/sonar/pkg/dnsx"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/dnsdb"
+	"github.com/nt0xa/sonar/internal/utils/tpl"
+	"github.com/nt0xa/sonar/pkg/dnsx"
 )
 
 var dnsTemplate = tpl.MustParse(`

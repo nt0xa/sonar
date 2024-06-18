@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/actions"
-	actions_mock "github.com/russtone/sonar/internal/actions/mock"
-	"github.com/russtone/sonar/internal/cmd"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils/pointer"
+	"github.com/nt0xa/sonar/internal/actions"
+	actions_mock "github.com/nt0xa/sonar/internal/actions/mock"
+	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils/pointer"
 )
 
 var (

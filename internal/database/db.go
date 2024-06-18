@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/russtone/sonar/internal/utils/logger"
+	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 type DB struct {

@@ -1,9 +1,9 @@
 package actionsdb
 
 import (
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/utils/logger"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 type dbactions struct {

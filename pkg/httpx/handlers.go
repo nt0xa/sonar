@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/russtone/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/netx"
 )
 
 // Response represents simplified version of HTTP response.

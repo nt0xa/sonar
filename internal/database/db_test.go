@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database"
 )
 
 var (

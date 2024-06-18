@@ -9,9 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/database"
 )
 
 var (

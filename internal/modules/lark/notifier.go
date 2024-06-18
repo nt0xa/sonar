@@ -7,8 +7,8 @@ import (
 	"unicode/utf8"
 
 	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/modules"
 )
 
 // https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create#:~:text=The%20maximum%20size%20of%20the,request%20body%20is%20150%20KB.

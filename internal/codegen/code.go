@@ -5,7 +5,7 @@ var cmdCode = `package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 )
 
 {{ range . }}
@@ -50,7 +50,7 @@ var apiCode = `package api
 import (
 	"net/http"
 
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 )
 
 {{ range . }}
@@ -83,8 +83,8 @@ package apiclient
 import (
 	"context"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 {{ range . }}

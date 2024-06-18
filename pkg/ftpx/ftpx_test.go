@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/russtone/sonar/pkg/ftpx"
-	"github.com/russtone/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/ftpx"
+	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

@@ -7,8 +7,8 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 const (

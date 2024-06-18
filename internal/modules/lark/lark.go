@@ -22,12 +22,12 @@ import (
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/cmd"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/templates"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/templates"
 )
 
 type Lark struct {

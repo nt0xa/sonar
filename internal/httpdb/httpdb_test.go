@@ -18,8 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/httpdb"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/httpdb"
 )
 
 var (

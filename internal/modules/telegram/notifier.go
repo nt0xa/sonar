@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/modules"
 )
 
 const maxMessageSize = 4096

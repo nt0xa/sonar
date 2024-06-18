@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/russtone/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 type contextKey string

@@ -6,9 +6,9 @@ import (
 
 	"github.com/fatih/structs"
 
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/pkg/netx"
-	"github.com/russtone/sonar/pkg/smtpx"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
 func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {

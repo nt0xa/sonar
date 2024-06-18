@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/russtone/sonar/internal/cache"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/cache"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/modules"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})

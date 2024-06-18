@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/russtone/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/netx"
 )
 
 var (

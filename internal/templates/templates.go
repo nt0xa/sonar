@@ -11,8 +11,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/modules"
 )
 
 type Templates struct {

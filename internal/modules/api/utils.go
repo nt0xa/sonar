@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/russtone/sonar/internal/utils/errors"
-	"github.com/russtone/sonar/internal/utils/parse"
+	"github.com/nt0xa/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/utils/parse"
 )
 
 var decoder = schema.NewDecoder()

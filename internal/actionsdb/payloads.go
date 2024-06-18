@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils"
-	"github.com/russtone/sonar/internal/utils/errors"
-	"github.com/russtone/sonar/internal/utils/slice"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils"
+	"github.com/nt0xa/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/utils/slice"
 )
 
 func Payload(m models.Payload) actions.Payload {

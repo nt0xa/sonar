@@ -9,7 +9,7 @@ import (
 	"github.com/go-acme/lego/v3/lego"
 	"github.com/go-acme/lego/v3/registration"
 
-	"github.com/russtone/sonar/pkg/certstorage"
+	"github.com/nt0xa/sonar/pkg/certstorage"
 )
 
 func newAccount(email string, keyType certcrypto.KeyType) (*certstorage.Account, error) {

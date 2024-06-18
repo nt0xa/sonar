@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 func (api *API) checkAuth() func(http.Handler) http.Handler {

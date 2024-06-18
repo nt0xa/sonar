@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/russtone/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 func (db *DB) EventsCreate(o *models.Event) error {

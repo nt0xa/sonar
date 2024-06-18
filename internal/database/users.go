@@ -5,8 +5,8 @@ import (
 
 	"github.com/fatih/structs"
 
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils"
 )
 
 var usersInnerQuery = "" +

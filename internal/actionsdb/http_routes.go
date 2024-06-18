@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 func HTTPRoute(m models.HTTPRoute, payloadSubdomain string) actions.HTTPRoute {

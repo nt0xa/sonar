@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 )
 
 func (api *API) DNSRecordsClear(w http.ResponseWriter, r *http.Request) {
