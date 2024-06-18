@@ -1,3 +1,4 @@
+version: 2
 project_name: sonar
 
 before:
@@ -48,9 +49,9 @@ brews:
   - name: sonar
 
     ids:
-    - client
+      - client
 
-    tap:
+    repository:
       owner: nt0xa
       name: homebrew-sonar
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
@@ -65,7 +66,7 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 
 changelog:
-  skip: true
+  disable: true
 
 dockers:
 - image_templates:
