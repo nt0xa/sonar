@@ -18,7 +18,7 @@ func (l *LoggingListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 
-	return NewLoggingCon(conn), nil
+	return NewLoggingConn(conn), nil
 }
 
 // LoggingConn wraps net.Conn to save conversation log.
@@ -42,8 +42,8 @@ type LoggingConn struct {
 	OnClose func()
 }
 
-// NewLoggingCon wraps net.Conn and adds logging.
-func NewLoggingCon(conn net.Conn) *LoggingConn {
+// NewLoggingConn wraps net.Conn and adds logging.
+func NewLoggingConn(conn net.Conn) *LoggingConn {
 	c := &LoggingConn{
 		Conn: conn,
 	}

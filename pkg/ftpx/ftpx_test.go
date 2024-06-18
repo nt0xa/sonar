@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 			}
 		}),
 		ftpx.OnClose(func(e *ftpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.Log, map[string]interface{}{})
+			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
 		}),
 	}
 
