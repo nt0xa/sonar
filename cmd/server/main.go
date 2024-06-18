@@ -10,15 +10,15 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
 
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/cache"
-	"github.com/russtone/sonar/internal/cmd/server"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/pkg/dnsx"
-	"github.com/russtone/sonar/pkg/ftpx"
-	"github.com/russtone/sonar/pkg/httpx"
-	"github.com/russtone/sonar/pkg/smtpx"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/cache"
+	"github.com/nt0xa/sonar/internal/cmd/server"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/pkg/dnsx"
+	"github.com/nt0xa/sonar/pkg/ftpx"
+	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
 func main() {
@@ -125,7 +125,7 @@ func main() {
 
 	go func() {
 		srv := dnsx.New(
-			":53",
+			"127.0.0.1:7753",
 			dnsHandler,
 			dnsx.NotifyStartedFunc(waitDNS.Done),
 		)
@@ -168,7 +168,7 @@ func main() {
 
 	go func() {
 		srv := httpx.New(
-			":80",
+			"127.0.0.1:7780",
 			server.HTTPHandler(
 				db,
 				cfg.Domain,
@@ -190,7 +190,7 @@ func main() {
 
 	go func() {
 		srv := httpx.New(
-			":443",
+			"127.0.0.1:7443",
 			server.HTTPHandler(
 				db,
 				cfg.Domain,
@@ -213,7 +213,7 @@ func main() {
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
-			":25",
+			"127.0.0.1:7725",
 			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
 			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
 			smtpx.OnClose(func(e *smtpx.Event) {
@@ -234,7 +234,7 @@ func main() {
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
-			":21",
+			"127.0.0.1:7721",
 			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
 			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
 			ftpx.OnClose(func(e *ftpx.Event) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/russtone/sonar/internal/modules/api"
+	"github.com/nt0xa/sonar/internal/modules/api"
 )
 
 func TestConfig_Success(t *testing.T) {

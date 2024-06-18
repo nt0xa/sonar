@@ -1,6 +1,6 @@
 package modules
 
-import "github.com/russtone/sonar/internal/database/models"
+import "github.com/nt0xa/sonar/internal/database/models"
 
 type Notification struct {
 	User    *models.User

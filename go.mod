@@ -1,4 +1,4 @@
-module github.com/russtone/sonar
+module github.com/nt0xa/sonar
 
 go 1.21
 

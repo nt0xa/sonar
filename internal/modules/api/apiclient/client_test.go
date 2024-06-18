@@ -18,13 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/modules/api"
-	"github.com/russtone/sonar/internal/modules/api/apiclient"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/modules/api"
+	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 // Flags

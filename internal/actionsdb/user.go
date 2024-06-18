@@ -3,8 +3,8 @@ package actionsdb
 import (
 	"context"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 func (act *dbactions) ProfileGet(ctx context.Context) (*actions.ProfileGetResult, errors.Error) {

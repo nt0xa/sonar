@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	"github.com/russtone/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 func (db *DB) PayloadsCreate(o *models.Payload) error {

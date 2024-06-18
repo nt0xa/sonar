@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/utils/logger"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 type API struct {
@@ -34,7 +34,7 @@ func New(cfg *Config, db *database.DB, log logger.StdLogger,
 
 func (api *API) Start() error {
 	srv := http.Server{
-		Addr:      fmt.Sprintf(":%d", api.cfg.Port),
+		Addr:      fmt.Sprintf("127.0.0.1:%d", api.cfg.Port),
 		Handler:   api.Router(),
 		TLSConfig: api.tls,
 	}

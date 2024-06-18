@@ -9,13 +9,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/actionsdb"
-	"github.com/russtone/sonar/internal/cmd"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/templates"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actionsdb"
+	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/templates"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 type Telegram struct {

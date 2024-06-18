@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/spf13/cobra"
 )
 
