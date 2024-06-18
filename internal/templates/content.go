@@ -129,23 +129,6 @@ const (
 )
 
 var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from {{ .Event.RemoteAddr }} {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
-var notificationBody = `
-{{- if eq .Event.Protocol.String "http" -}}
-<i>Request:</i>
-<pre><code class="language-http">
-{{ printf "%s" .Event.R }}
-</code></pre>
-
-<i>Response:</i>
-<pre><code class="language-http">
-{{ printf "%s" .Event.W }}
-</code></pre>
-{{- else if eq .Event.Protocol.String "dns" -}}
-<pre><code class="language-dns-zone">
+var notificationBody = `<pre>
 {{ printf "%s" .Event.RW }}
-</code></pre>
-{{- else -}}
-<pre><code class="language-log">
-{{ printf "%s" .Event.RW }}
-</code></pre>
-{{- end -}}`
+</pre>`

@@ -125,7 +125,7 @@ func main() {
 
 	go func() {
 		srv := dnsx.New(
-			"127.0.0.1:7753",
+			":53",
 			dnsHandler,
 			dnsx.NotifyStartedFunc(waitDNS.Done),
 		)
@@ -168,7 +168,7 @@ func main() {
 
 	go func() {
 		srv := httpx.New(
-			"127.0.0.1:7780",
+			":80",
 			server.HTTPHandler(
 				db,
 				cfg.Domain,
@@ -190,7 +190,7 @@ func main() {
 
 	go func() {
 		srv := httpx.New(
-			"127.0.0.1:7443",
+			":443",
 			server.HTTPHandler(
 				db,
 				cfg.Domain,
@@ -213,7 +213,7 @@ func main() {
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
-			"127.0.0.1:7725",
+			":25",
 			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
 			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
 			smtpx.OnClose(func(e *smtpx.Event) {
@@ -234,7 +234,7 @@ func main() {
 	go func() {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
-			"127.0.0.1:7721",
+			":21",
 			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
 			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
 			ftpx.OnClose(func(e *ftpx.Event) {

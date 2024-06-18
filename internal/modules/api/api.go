@@ -34,7 +34,7 @@ func New(cfg *Config, db *database.DB, log logger.StdLogger,
 
 func (api *API) Start() error {
 	srv := http.Server{
-		Addr:      fmt.Sprintf("127.0.0.1:%d", api.cfg.Port),
+		Addr:      fmt.Sprintf(":%d", api.cfg.Port),
 		Handler:   api.Router(),
 		TLSConfig: api.tls,
 	}
