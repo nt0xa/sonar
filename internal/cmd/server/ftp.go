@@ -36,7 +36,9 @@ func FTPEvent(e *ftpx.Event) *models.Event {
 
 	return &models.Event{
 		Protocol:   models.ProtoFTP,
-		RW:         e.Log,
+		R:          e.R,
+		W:          e.W,
+		RW:         e.RW,
 		Meta:       structs.Map(meta),
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
