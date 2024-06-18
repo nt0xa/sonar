@@ -3,7 +3,7 @@ package lark
 import (
 	"context"
 
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 type contextKey string

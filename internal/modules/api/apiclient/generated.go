@@ -3,8 +3,8 @@ package apiclient
 import (
 	"context"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {

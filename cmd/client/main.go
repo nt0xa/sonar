@@ -15,10 +15,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/cmd"
-	"github.com/russtone/sonar/internal/modules/api/apiclient"
-	"github.com/russtone/sonar/internal/templates"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
+	"github.com/nt0xa/sonar/internal/templates"
 )
 
 var (

@@ -3,7 +3,7 @@ package apiclient_test
 import (
 	"testing"
 
-	"github.com/russtone/sonar/internal/modules/api/apiclient"
+	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
 	"github.com/stretchr/testify/assert"
 )
 

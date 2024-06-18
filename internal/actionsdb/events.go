@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"encoding/base64"
 
-	"github.com/russtone/sonar/internal/actions"
-	"github.com/russtone/sonar/internal/database"
-	"github.com/russtone/sonar/internal/database/models"
-	"github.com/russtone/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
 func Event(m models.Event) actions.Event {

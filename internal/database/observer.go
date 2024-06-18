@@ -1,6 +1,6 @@
 package database
 
-import "github.com/russtone/sonar/internal/database/models"
+import "github.com/nt0xa/sonar/internal/database/models"
 
 type Observer interface {
 	PayloadCreated(p models.Payload)

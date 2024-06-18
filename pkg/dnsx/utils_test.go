@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/miekg/dns"
-	"github.com/russtone/sonar/pkg/dnsx"
+	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/stretchr/testify/assert"
 )
 

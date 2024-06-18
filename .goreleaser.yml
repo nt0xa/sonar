@@ -51,7 +51,7 @@ brews:
     - client
 
     tap:
-      owner: russtone
+      owner: nt0xa
       name: homebrew-sonar
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
       
@@ -69,10 +69,10 @@ changelog:
 
 dockers:
 - image_templates:
-    - "ghcr.io/russtone/sonar:latest"
-    - "ghcr.io/russtone/sonar:{{.Major}}"
-    - "ghcr.io/russtone/sonar:{{.Major}}.{{.Minor}}"
-    - "ghcr.io/russtone/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
+    - "ghcr.io/nt0xa/sonar:latest"
+    - "ghcr.io/nt0xa/sonar:{{.Major}}"
+    - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}"
+    - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
   build_flag_templates:
     - "--pull"
     - "--label=org.opencontainers.image.created={{.Date}}"

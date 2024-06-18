@@ -10,7 +10,7 @@ import (
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 )
 
 //go:generate go run ./internal/codegen/*.go -type cmd

@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/russtone/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/actions"
 )
 
 func (c *Command) DNSRecordsClear(onResult func(actions.Result) error) *cobra.Command {

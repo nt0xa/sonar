@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/russtone/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/httpx"
 )
 
 var (
