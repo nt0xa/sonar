@@ -77,10 +77,24 @@ func MX(value interface{}) error {
 	return errors.New("invalid mx record")
 }
 
+func CAA(value interface{}) error {
+	v, _ := value.(string)
+
+	var (
+		flag uint8
+		tag  string
+		val  string
+	)
+	_, err := fmt.Sscanf(v, "%d %s %q", &flag, &tag, &val)
+	if err != nil {
+		return fmt.Errorf("invalid caa record: %w", err)
+	}
+
+	return nil
+}
+
 func DNSRecord(typ string) validation.Rule {
-
 	switch typ {
-
 	case "A":
 		return is.IPv4
 
@@ -95,6 +109,9 @@ func DNSRecord(typ string) validation.Rule {
 
 	case "CNAME":
 		return validation.By(FQDN)
+
+	case "CAA":
+		return validation.By(CAA)
 	}
 
 	return validation.Required

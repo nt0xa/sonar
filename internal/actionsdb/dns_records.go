@@ -36,6 +36,8 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
+	} else if err != nil {
+		return nil, errors.Internal(err)
 	}
 
 	if _, err := act.db.DNSRecordsGetByPayloadNameAndType(payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {

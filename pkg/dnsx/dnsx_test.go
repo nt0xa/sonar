@@ -88,30 +88,32 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-var tests = []struct {
-	name    string
-	qtype   uint16
-	results [][]string
-}{
-	// Static
-	{"test.sonar.test.", dns.TypeMX, [][]string{
-		{"10 mx.sonar.test"},
-	}},
-	{"test.sonar.test.", dns.TypeA, [][]string{
-		{"1.1.1.1"},
-	}},
-	{"test.sonar.test.", dns.TypeAAAA, [][]string{
-		{"1.1.1.1"},
-	}},
-	{"c1da9f3d.sonar.test.", dns.TypeA, [][]string{
-		{"2.2.2.2"},
-	}},
-	{"ns.sonar.test.", dns.TypeNS, [][]string{
-		{"ns1.example.com."},
-	}},
-}
-
 func TestDNS(t *testing.T) {
+	t.Parallel()
+
+	var tests = []struct {
+		name    string
+		qtype   uint16
+		results [][]string
+	}{
+		// Static
+		{"test.sonar.test.", dns.TypeMX, [][]string{
+			{"10 mx.sonar.test"},
+		}},
+		{"test.sonar.test.", dns.TypeA, [][]string{
+			{"1.1.1.1"},
+		}},
+		{"test.sonar.test.", dns.TypeAAAA, [][]string{
+			{"1.1.1.1"},
+		}},
+		{"c1da9f3d.sonar.test.", dns.TypeA, [][]string{
+			{"2.2.2.2"},
+		}},
+		{"ns.sonar.test.", dns.TypeNS, [][]string{
+			{"ns1.example.com."},
+		}},
+	}
+
 	for _, tt := range tests {
 		tname := fmt.Sprintf("%s/%s", tt.name, dns.Type(tt.qtype).String())
 
@@ -209,7 +211,12 @@ func TestProvider(t *testing.T) {
 		err = handlerProvider.CleanUp("sonar.test", "", "")
 		require.NoError(t, err)
 
-		notifier.On("Notify", mock.Anything, mock.Anything, mock.Anything).Return()
+		notifier.On(
+			"Notify",
+			mock.Anything,
+			mock.Anything,
+			mock.Anything,
+		).Return()
 
 		in, _, err = c.Exchange(msg, "127.0.0.1:1053")
 		require.NoError(t, err)

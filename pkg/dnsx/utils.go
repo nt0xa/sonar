@@ -123,6 +123,27 @@ func NewRR(name string, qtype uint16, ttl int, value string) dns.RR {
 			},
 			Ns: value,
 		}
+
+	case dns.TypeCAA:
+		var (
+			flag uint8
+			tag  string
+			val  string
+		)
+
+		_, _ = fmt.Sscanf(value, "%d %s %q", &flag, &tag, &val)
+
+		return &dns.CAA{
+			Hdr: dns.RR_Header{
+				Name:   name,
+				Rrtype: dns.TypeCAA,
+				Class:  dns.ClassINET,
+				Ttl:    uint32(ttl),
+			},
+			Flag:  flag,
+			Tag:   tag,
+			Value: val,
+		}
 	}
 
 	return nil
@@ -146,7 +167,6 @@ func QtypeString(qtype uint16) string {
 
 // RRToString returns string representation of dns.RR value.
 func RRToString(rr dns.RR) string {
-
 	switch r := rr.(type) {
 	case *dns.A:
 		return r.A.String()
@@ -160,6 +180,8 @@ func RRToString(rr dns.RR) string {
 		return r.Target
 	case *dns.NS:
 		return r.Ns
+	case *dns.CAA:
+		return fmt.Sprintf("%d %s %q", r.Flag, r.Tag, r.Value)
 	}
 
 	panic("unsupported dns record type")
