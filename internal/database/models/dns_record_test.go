@@ -19,6 +19,8 @@ func TestDNSRecordsQtype(t *testing.T) {
 		{"MX", dns.TypeMX},
 		{"CNAME", dns.TypeCNAME},
 		{"TXT", dns.TypeTXT},
+		{"NS", dns.TypeNS},
+		{"CAA", dns.TypeCAA},
 	}
 
 	for _, tt := range tests {
