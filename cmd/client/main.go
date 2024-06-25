@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/carapace-sh/carapace"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -40,6 +41,8 @@ func main() {
 			addConfigFlag(root)
 			addJSONFlag(root)
 			addContextCommand(root)
+
+			carapace.Gen(root).Standalone()
 		}),
 		cmd.InitActions(func() (actions.Actions, error) {
 			srv := cfg.Server()
