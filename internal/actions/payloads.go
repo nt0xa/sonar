@@ -67,8 +67,8 @@ func (r PayloadsCreateResult) ResultID() string {
 func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new NAME",
-		Short: "Create new payload",
-		Long:  "Create new payload identified by NAME",
+		Short: "Create a new payload",
+		Long:  "Create a new payload identified by NAME",
 		Args:  oneArg("NAME"),
 	}
 

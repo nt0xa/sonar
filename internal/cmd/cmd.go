@@ -49,12 +49,24 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 		Short: "CLI to control sonar server",
 	}
 
+	root.AddGroup(
+		&cobra.Group{
+			ID:    "main",
+			Title: "Main commands",
+		},
+	)
+
 	// Main payloads commands
-	root.AddCommand(c.withAuthCheck(c.PayloadsCreate(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsList(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsUpdate(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsDelete(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsClear(onResult)))
+	for _, cmd := range []*cobra.Command{
+		c.PayloadsCreate(onResult),
+		c.PayloadsList(onResult),
+		c.PayloadsUpdate(onResult),
+		c.PayloadsDelete(onResult),
+		c.PayloadsClear(onResult),
+	} {
+		cmd.GroupID = "main"
+		root.AddCommand(c.withAuthCheck(cmd))
+	}
 
 	// DNS
 	dns := &cobra.Command{
@@ -72,7 +84,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	// Events
 	events := &cobra.Command{
 		Use:   "events",
-		Short: "Payloads events",
+		Short: "Payload events",
 	}
 
 	events.AddCommand(c.withAuthCheck(c.EventsList(onResult)))
