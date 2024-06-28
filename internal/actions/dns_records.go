@@ -72,7 +72,7 @@ func (r DNSRecordsCreateResult) ResultID() string {
 
 func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "new VALUES",
+		Use:   "new VALUES...",
 		Short: "Create new DNS records",
 		Args:  atLeastOneArg("VALUES"),
 	}
@@ -84,6 +84,8 @@ func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Comm
 		fmt.Sprintf("Record type (one of %s)", quoteAndJoin(models.DNSTypesAll)))
 	cmd.Flags().StringVarP(&p.Strategy, "strategy", "s", models.DNSStrategyAll,
 		fmt.Sprintf("Strategy for multiple records (one of %s)", quoteAndJoin(models.DNSStrategiesAll)))
+
+	cmd.MarkFlagRequired("name")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Values = args

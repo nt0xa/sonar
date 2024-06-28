@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/maps"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/cmd"
@@ -34,6 +36,10 @@ func init() {
 }
 
 func main() {
+	f, _ := os.OpenFile("log.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	slog.SetDefault(slog.New(slog.NewTextHandler(f, nil)))
+	defer f.Close()
+
 	c := cmd.New(
 		nil,
 		cmd.AllowFileAccess(true),
@@ -83,6 +89,9 @@ func main() {
 
 func addConfigFlag(root *cobra.Command) {
 	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
+	carapace.Gen(root).FlagCompletion(carapace.ActionMap{
+		"config": carapace.ActionFiles("toml"),
+	})
 }
 
 func addJSONFlag(root *cobra.Command) {
@@ -91,7 +100,9 @@ func addJSONFlag(root *cobra.Command) {
 			addJSONFlag(cmd)
 		}
 
-		if cmd.Name() == "help" || cmd.Name() == "completion" {
+		if cmd.Name() == "help" ||
+			cmd.Name() == "completion" ||
+			strings.HasPrefix(cmd.Name(), "_") {
 			continue
 		}
 
@@ -127,7 +138,35 @@ func addContextCommand(root *cobra.Command) {
 	cmd.Flags().StringVarP(&server, "server", "s", "", "Server name from list of servers")
 	viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
 
+	carapace.Gen(cmd).FlagCompletion(carapace.ActionMap{
+		"server": carapace.ActionCallback(func(c carapace.Context) carapace.Action {
+			if err := parseConfig(os.Args); err != nil {
+				return carapace.ActionMessage(err.Error())
+			}
+			slog.Info(viper.ConfigFileUsed())
+			return carapace.ActionValues(maps.Keys(cfg.Servers)...)
+		}),
+	})
+
 	root.AddCommand(cmd)
+}
+
+func parseConfig(args []string) error {
+	for i := 1; i < len(args); i++ {
+		if args[i-1] == "--config" {
+			viper.SetConfigFile(args[i])
+			if err := viper.ReadInConfig(); err != nil {
+				return err
+			}
+			if err := viper.Unmarshal(&cfg); err != nil {
+				return err
+			}
+			if err := cfg.ValidateWithContext(context.Background()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func initConfig() {

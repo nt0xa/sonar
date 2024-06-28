@@ -40,7 +40,6 @@ func New(a actions.Actions, opts ...Option) *Command {
 		actions: a,
 		options: options,
 	}
-
 }
 
 func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
@@ -84,7 +83,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	// Events
 	events := &cobra.Command{
 		Use:   "events",
-		Short: "Payload events",
+		Short: "View events",
 	}
 
 	events.AddCommand(c.withAuthCheck(c.EventsList(onResult)))
