@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/spf13/cobra"
 )
 
-func DefaultMessengersPreExec(root *cobra.Command) {
+func DefaultMessengersPreExec(acts *actions.Actions, root *cobra.Command) {
 	root.SetHelpTemplate(messengersHelpTemplate)
 	root.SetUsageTemplate(messengersUsageTemplate)
 	root.CompletionOptions = cobra.CompletionOptions{

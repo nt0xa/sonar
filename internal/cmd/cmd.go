@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/Masterminds/sprig/v3"
@@ -30,10 +29,6 @@ func New(a actions.Actions, opts ...Option) *Command {
 
 	for _, opt := range opts {
 		opt(&options)
-	}
-
-	if a == nil && options.initActions == nil {
-		panic("you will need to provide either actions != nil or options.initActions")
 	}
 
 	return &Command{
@@ -125,7 +120,7 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 	cmd := c.root(onResult)
 
 	if c.options.preExec != nil {
-		c.options.preExec(cmd)
+		c.options.preExec(&c.actions, cmd)
 	}
 
 	cmd.SetArgs(args)
@@ -141,27 +136,6 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 
 	// Disable "Run 'sonar --help' for usage." messages.
 	cmd.SilenceUsage = true
-
-	// Late init actions.
-	if c.actions == nil {
-		persistentPreRunE := cmd.PersistentPreRunE
-		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if c.options.initActions == nil {
-				return errors.New("actions are not initialized")
-			}
-			acts, err := c.options.initActions()
-			if err != nil {
-				return err
-			}
-			c.actions = acts
-
-			if persistentPreRunE != nil {
-				return persistentPreRunE(cmd, args)
-			}
-
-			return nil
-		}
-	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
 		return "", "", err

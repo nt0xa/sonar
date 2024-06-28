@@ -66,10 +66,10 @@ func (r PayloadsCreateResult) ResultID() string {
 
 func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:     "new NAME",
-		Short:   "Create a new payload",
-		Long:    "Create a new payload identified by NAME",
-		Args:    oneArg("NAME"),
+		Use:   "new NAME",
+		Short: "Create a new payload",
+		Long:  "Create a new payload identified by NAME",
+		Args:  oneArg("NAME"),
 	}
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",

@@ -8,13 +8,11 @@ import (
 var defaultOptions = options{
 	allowFileAccess: false,
 	preExec:         nil,
-	initActions:     nil,
 }
 
 type options struct {
 	allowFileAccess bool
-	preExec         func(*cobra.Command)
-	initActions     func() (actions.Actions, error)
+	preExec         func(actions *actions.Actions, cmd *cobra.Command)
 }
 
 type Option func(*options)
@@ -30,17 +28,8 @@ func AllowFileAccess(b bool) Option {
 
 // PreExec is called after Root command is created.
 // Should be used to add specific subcommands or flags (e.g. "--json" for CLI).
-func PreExec(f func(*cobra.Command)) Option {
+func PreExec(f func(actions *actions.Actions, cmd *cobra.Command)) Option {
 	return func(opts *options) {
 		opts.preExec = f
-	}
-}
-
-// InitActions is a workaround for CLI.
-// In the CLI we can't pass `action.Actions`, before we parse config and flags,
-// so we need a way to create actions late.
-func InitActions(f func() (actions.Actions, error)) Option {
-	return func(opts *options) {
-		opts.initActions = f
 	}
 }
