@@ -35,7 +35,7 @@ func (c Config) ValidateWithContext(ctx context.Context) error {
 }
 
 func (c *Config) Server() *Server {
-	srv, ok := cfg.Servers[cfg.Context.Server]
+	srv, ok := c.Servers[c.Context.Server]
 	if !ok {
 		return nil
 	}

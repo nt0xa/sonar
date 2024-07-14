@@ -80,8 +80,8 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 	return tg, nil
 }
 
-func (tg *Telegram) preExec(root *cobra.Command) {
-	cmd.DefaultMessengersPreExec(root)
+func (tg *Telegram) preExec(acts *actions.Actions, root *cobra.Command) {
+	cmd.DefaultMessengersPreExec(acts, root)
 
 	c := &cobra.Command{
 		Use:   "id",

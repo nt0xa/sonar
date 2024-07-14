@@ -9,7 +9,7 @@ import (
 func (c *Command) DNSRecordsClear(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsClearParams
 
-	cmd, prepareFunc := actions.DNSRecordsClearCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.DNSRecordsClearCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -36,7 +36,7 @@ func (c *Command) DNSRecordsClear(onResult func(actions.Result) error) *cobra.Co
 func (c *Command) DNSRecordsCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsCreateParams
 
-	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.DNSRecordsCreateCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -63,7 +63,7 @@ func (c *Command) DNSRecordsCreate(onResult func(actions.Result) error) *cobra.C
 func (c *Command) DNSRecordsDelete(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsDeleteParams
 
-	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.DNSRecordsDeleteCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -90,7 +90,7 @@ func (c *Command) DNSRecordsDelete(onResult func(actions.Result) error) *cobra.C
 func (c *Command) DNSRecordsList(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsListParams
 
-	cmd, prepareFunc := actions.DNSRecordsListCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.DNSRecordsListCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -117,7 +117,7 @@ func (c *Command) DNSRecordsList(onResult func(actions.Result) error) *cobra.Com
 func (c *Command) EventsGet(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.EventsGetParams
 
-	cmd, prepareFunc := actions.EventsGetCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.EventsGetCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -144,7 +144,7 @@ func (c *Command) EventsGet(onResult func(actions.Result) error) *cobra.Command 
 func (c *Command) EventsList(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.EventsListParams
 
-	cmd, prepareFunc := actions.EventsListCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.EventsListCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -171,7 +171,7 @@ func (c *Command) EventsList(onResult func(actions.Result) error) *cobra.Command
 func (c *Command) HTTPRoutesClear(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.HTTPRoutesClearParams
 
-	cmd, prepareFunc := actions.HTTPRoutesClearCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.HTTPRoutesClearCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -198,7 +198,7 @@ func (c *Command) HTTPRoutesClear(onResult func(actions.Result) error) *cobra.Co
 func (c *Command) HTTPRoutesCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.HTTPRoutesCreateParams
 
-	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.HTTPRoutesCreateCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -225,7 +225,7 @@ func (c *Command) HTTPRoutesCreate(onResult func(actions.Result) error) *cobra.C
 func (c *Command) HTTPRoutesDelete(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.HTTPRoutesDeleteParams
 
-	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.HTTPRoutesDeleteCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -252,7 +252,7 @@ func (c *Command) HTTPRoutesDelete(onResult func(actions.Result) error) *cobra.C
 func (c *Command) HTTPRoutesList(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.HTTPRoutesListParams
 
-	cmd, prepareFunc := actions.HTTPRoutesListCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.HTTPRoutesListCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -279,7 +279,7 @@ func (c *Command) HTTPRoutesList(onResult func(actions.Result) error) *cobra.Com
 func (c *Command) PayloadsClear(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsClearParams
 
-	cmd, prepareFunc := actions.PayloadsClearCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.PayloadsClearCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -306,7 +306,7 @@ func (c *Command) PayloadsClear(onResult func(actions.Result) error) *cobra.Comm
 func (c *Command) PayloadsCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsCreateParams
 
-	cmd, prepareFunc := actions.PayloadsCreateCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.PayloadsCreateCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -333,7 +333,7 @@ func (c *Command) PayloadsCreate(onResult func(actions.Result) error) *cobra.Com
 func (c *Command) PayloadsDelete(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsDeleteParams
 
-	cmd, prepareFunc := actions.PayloadsDeleteCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.PayloadsDeleteCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -360,7 +360,7 @@ func (c *Command) PayloadsDelete(onResult func(actions.Result) error) *cobra.Com
 func (c *Command) PayloadsList(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsListParams
 
-	cmd, prepareFunc := actions.PayloadsListCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.PayloadsListCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -387,7 +387,7 @@ func (c *Command) PayloadsList(onResult func(actions.Result) error) *cobra.Comma
 func (c *Command) PayloadsUpdate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.PayloadsUpdateParams
 
-	cmd, prepareFunc := actions.PayloadsUpdateCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.PayloadsUpdateCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -412,7 +412,7 @@ func (c *Command) PayloadsUpdate(onResult func(actions.Result) error) *cobra.Com
 }
 
 func (c *Command) ProfileGet(onResult func(actions.Result) error) *cobra.Command {
-	cmd, prepareFunc := actions.ProfileGetCommand(c.options.allowFileAccess)
+	cmd, prepareFunc := actions.ProfileGetCommand(&c.actions, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -435,7 +435,7 @@ func (c *Command) ProfileGet(onResult func(actions.Result) error) *cobra.Command
 func (c *Command) UsersCreate(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.UsersCreateParams
 
-	cmd, prepareFunc := actions.UsersCreateCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.UsersCreateCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {
@@ -462,7 +462,7 @@ func (c *Command) UsersCreate(onResult func(actions.Result) error) *cobra.Comman
 func (c *Command) UsersDelete(onResult func(actions.Result) error) *cobra.Command {
 	var params actions.UsersDeleteParams
 
-	cmd, prepareFunc := actions.UsersDeleteCommand(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.UsersDeleteCommand(&c.actions, &params, c.options.allowFileAccess)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if prepareFunc != nil {

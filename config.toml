@@ -1,9 +1,0 @@
-[context]
-server = 'test'
-
-[servers]
-[servers.test]
-token = '04a752d6c759f59978755f554bffa08c'
-url = 'https://sonar.test:31337'
-insecure = true
-proxy = 'http://localhost:8080'
