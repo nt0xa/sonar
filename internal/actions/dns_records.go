@@ -70,9 +70,9 @@ func (r DNSRecordsCreateResult) ResultID() string {
 	return DNSRecordsCreateResultID
 }
 
-func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsCreateCommand(acts *Actions, p *DNSRecordsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "new VALUES",
+		Use:   "new VALUES...",
 		Short: "Create new DNS records",
 		Args:  atLeastOneArg("VALUES"),
 	}
@@ -84,6 +84,11 @@ func DNSRecordsCreateCommand(p *DNSRecordsCreateParams, local bool) (*cobra.Comm
 		fmt.Sprintf("Record type (one of %s)", quoteAndJoin(models.DNSTypesAll)))
 	cmd.Flags().StringVarP(&p.Strategy, "strategy", "s", models.DNSStrategyAll,
 		fmt.Sprintf("Strategy for multiple records (one of %s)", quoteAndJoin(models.DNSStrategiesAll)))
+
+	_ = cmd.MarkFlagRequired("name")
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
+	_ = cmd.RegisterFlagCompletionFunc("type", completeOne(models.DNSTypesAll))
+	_ = cmd.RegisterFlagCompletionFunc("strategy", completeOne(models.DNSStrategiesAll))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Values = args
@@ -115,7 +120,7 @@ func (r DNSRecordsDeleteResult) ResultID() string {
 	return DNSRecordsDeleteResultID
 }
 
-func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsDeleteCommand(acts *Actions, p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del INDEX",
 		Short: "Delete DNS record",
@@ -124,6 +129,8 @@ func DNSRecordsDeleteCommand(p *DNSRecordsDeleteParams, local bool) (*cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		i, err := strconv.ParseInt(args[0], 10, 64)
@@ -156,7 +163,7 @@ func (r DNSRecordsClearResult) ResultID() string {
 	return DNSRecordsClearResultID
 }
 
-func DNSRecordsClearCommand(p *DNSRecordsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsClearCommand(acts *Actions, p *DNSRecordsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "clr",
 		Short: "Delete multiple DNS records",
@@ -165,6 +172,8 @@ func DNSRecordsClearCommand(p *DNSRecordsClearParams, local bool) (*cobra.Comman
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&p.Name, "name", "n", "", "Subdomain")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, nil
 }
@@ -189,13 +198,15 @@ func (r DNSRecordsListResult) ResultID() string {
 	return DNSRecordsListResultID
 }
 
-func DNSRecordsListCommand(p *DNSRecordsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func DNSRecordsListCommand(acts *Actions, p *DNSRecordsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List DNS records",
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, nil
 }

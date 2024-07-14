@@ -13,9 +13,9 @@ func (c *Command) {{ .Name }}(onResult func(actions.Result) error) *cobra.Comman
 	{{- if ne .Params.TypeName "" }}
 	var params actions.{{ .Params.TypeName }}
 
-	cmd, prepareFunc := actions.{{ .Name }}Command(&params, c.options.allowFileAccess)
+	cmd, prepareFunc := actions.{{ .Name }}Command(&c.actions, &params, c.options.allowFileAccess)
 	{{ else }}
-	cmd, prepareFunc := actions.{{ .Name }}Command(c.options.allowFileAccess)
+	cmd, prepareFunc := actions.{{ .Name }}Command(&c.actions, c.options.allowFileAccess)
 	{{ end }}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {

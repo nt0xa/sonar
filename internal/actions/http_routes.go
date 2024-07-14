@@ -79,7 +79,7 @@ func (r HTTPRoutesCreateResult) ResultID() string {
 	return HTTPRoutesCreateResultID
 }
 
-func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesCreateCommand(acts *Actions, p *HTTPRoutesCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new BODY",
 		Short: "Create new HTTP route",
@@ -91,9 +91,11 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Comm
 		file    bool
 	)
 
+	methods := append([]string{models.HTTPMethodAny}, models.HTTPMethods...)
+
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&p.Method, "method", "m", "GET",
-		fmt.Sprintf("Request method (one of %s)", quoteAndJoin(models.HTTPMethods)))
+		fmt.Sprintf("Request method (one of %s)", quoteAndJoin(methods)))
 	cmd.Flags().StringVarP(&p.Path, "path", "P", "/", "Request path")
 	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
 	cmd.Flags().IntVarP(&p.Code, "code", "c", 200, "Response status code")
@@ -104,6 +106,9 @@ func HTTPRoutesCreateCommand(p *HTTPRoutesCreateParams, local bool) (*cobra.Comm
 	if local {
 		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 	}
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
+	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(methods))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		hh := make(map[string][]string)
@@ -164,7 +169,7 @@ func (r HTTPRoutesDeleteResult) ResultID() string {
 	return HTTPRoutesDeleteResultID
 }
 
-func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesDeleteCommand(acts *Actions, p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del INDEX",
 		Short: "Delete HTTP route",
@@ -173,6 +178,8 @@ func HTTPRoutesDeleteCommand(p *HTTPRoutesDeleteParams, local bool) (*cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		i, err := strconv.ParseInt(args[0], 10, 64)
@@ -205,7 +212,7 @@ func (r HTTPRoutesClearResult) ResultID() string {
 	return HTTPRoutesClearResultID
 }
 
-func HTTPRoutesClearCommand(p *HTTPRoutesClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesClearCommand(acts *Actions, p *HTTPRoutesClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "clr",
 		Short: "Delete multiple HTTP routes",
@@ -213,6 +220,8 @@ func HTTPRoutesClearCommand(p *HTTPRoutesClearParams, local bool) (*cobra.Comman
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&p.Path, "path", "P", "", "Path")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, nil
 }
@@ -237,13 +246,15 @@ func (r HTTPRoutesListResult) ResultID() string {
 	return HTTPRoutesListResultID
 }
 
-func HTTPRoutesListCommand(p *HTTPRoutesListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func HTTPRoutesListCommand(acts *Actions, p *HTTPRoutesListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List HTTP routes",
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, nil
 }

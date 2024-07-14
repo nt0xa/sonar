@@ -14,6 +14,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/maps"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/cmd"
@@ -21,33 +22,37 @@ import (
 	"github.com/nt0xa/sonar/internal/templates"
 )
 
-var (
-	cfg        Config
-	cfgFile    string
-	jsonOutput bool
-)
-
 func init() {
 	validation.ErrorTag = "err"
-	cobra.OnInitialize(initConfig)
 }
 
 func main() {
+	var (
+		cfg        Config
+		cfgFile    string
+		jsonOutput bool
+	)
+
 	c := cmd.New(
 		nil,
 		cmd.AllowFileAccess(true),
-		cmd.PreExec(func(root *cobra.Command) {
-			addConfigFlag(root)
-			addJSONFlag(root)
-			addContextCommand(root)
-		}),
-		cmd.InitActions(func() (actions.Actions, error) {
-			srv := cfg.Server()
-			if srv == nil {
-				return nil, errors.New("server must be set")
+		cmd.PreExec(func(acts *actions.Actions, root *cobra.Command) {
+			root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+				if err := initConfig(cfgFile, &cfg); err != nil {
+					return err
+				}
+
+				if err := initActions(acts, cfg); err != nil {
+					return err
+				}
+
+				return nil
 			}
-			client := apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
-			return client, nil
+
+			// Flags, commands...
+			root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
+			jsonFlag(root, &jsonOutput)
+			contextCmd(root, &cfg)
 		}),
 	)
 
@@ -78,25 +83,23 @@ func main() {
 	}
 }
 
-func addConfigFlag(root *cobra.Command) {
-	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
-}
-
-func addJSONFlag(root *cobra.Command) {
+func jsonFlag(root *cobra.Command, jsonOutput *bool) {
 	for _, cmd := range root.Commands() {
 		if cmd.HasSubCommands() {
-			addJSONFlag(cmd)
+			jsonFlag(cmd, jsonOutput)
 		}
 
-		if cmd.Name() == "help" || cmd.Name() == "completion" {
+		if cmd.Name() == "help" ||
+			cmd.Name() == "completion" ||
+			strings.HasPrefix(cmd.Name(), "_") {
 			continue
 		}
 
-		cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output")
+		cmd.Flags().BoolVar(jsonOutput, "json", false, "JSON output")
 	}
 }
 
-func addContextCommand(root *cobra.Command) {
+func contextCmd(root *cobra.Command, cfg *Config) {
 	var server string
 
 	cmd := &cobra.Command{
@@ -124,10 +127,18 @@ func addContextCommand(root *cobra.Command) {
 	cmd.Flags().StringVarP(&server, "server", "s", "", "Server name from list of servers")
 	viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
 
+	cmd.RegisterFlagCompletionFunc("server", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var cfg Config
+		if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		return maps.Keys(cfg.Servers), cobra.ShellCompDirectiveNoFileComp
+	})
+
 	root.AddCommand(cmd)
 }
 
-func initConfig() {
+func initConfig(cfgFile string, cfg *Config) error {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -143,7 +154,35 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	cobra.CheckErr(viper.ReadInConfig())
-	cobra.CheckErr(viper.Unmarshal(&cfg))
-	cobra.CheckErr(cfg.ValidateWithContext(context.Background()))
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+
+	if err := viper.Unmarshal(cfg); err != nil {
+		return err
+	}
+
+	if err := cfg.ValidateWithContext(context.Background()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initActions(acts *actions.Actions, cfg Config) error {
+	srv := cfg.Server()
+	if srv == nil {
+		return errors.New("server must be set")
+	}
+	*acts = apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
+	return nil
+}
+
+func findFlagValue(f string, args []string) string {
+	for i := 1; i < len(args); i++ {
+		if args[i-1] == "--"+f {
+			return args[i]
+		}
+	}
+	return ""
 }

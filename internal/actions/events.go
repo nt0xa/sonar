@@ -61,7 +61,7 @@ func (r EventsListResult) ResultID() string {
 	return EventsListResultID
 }
 
-func EventsListCommand(p *EventsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func EventsListCommand(acts *Actions, p *EventsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List payload events",
@@ -72,6 +72,8 @@ func EventsListCommand(p *EventsListParams, local bool) (*cobra.Command, Prepare
 	cmd.Flags().Int64VarP(&p.After, "after", "a", 0, "After ID")
 	cmd.Flags().Int64VarP(&p.Before, "before", "b", 0, "Before ID")
 	cmd.Flags().BoolVarP(&p.Reverse, "reverse", "r", false, "List events in reversed order")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, nil
 }
@@ -100,7 +102,7 @@ func (r EventsGetResult) ResultID() string {
 	return EventsGetResultID
 }
 
-func EventsGetCommand(p *EventsGetParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func EventsGetCommand(acts *Actions, p *EventsGetParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "get INDEX",
 		Short: "Get payload event by INDEX",
@@ -108,6 +110,8 @@ func EventsGetCommand(p *EventsGetParams, local bool) (*cobra.Command, PrepareCo
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
+
+	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		i, err := strconv.ParseInt(args[0], 10, 64)

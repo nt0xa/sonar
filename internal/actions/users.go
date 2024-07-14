@@ -51,7 +51,7 @@ func (r UsersCreateResult) ResultID() string {
 	return UsersCreateResultID
 }
 
-func UsersCreateCommand(p *UsersCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func UsersCreateCommand(acts *Actions, p *UsersCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new NAME",
 		Short: "Create new user",
@@ -95,7 +95,7 @@ func (r UsersDeleteResult) ResultID() string {
 	return UsersDeleteResultID
 }
 
-func UsersDeleteCommand(p *UsersDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func UsersDeleteCommand(acts *Actions, p *UsersDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "del NAME",
 		Short: "Delete user",

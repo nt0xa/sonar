@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/Masterminds/sprig/v3"
@@ -32,15 +31,10 @@ func New(a actions.Actions, opts ...Option) *Command {
 		opt(&options)
 	}
 
-	if a == nil && options.initActions == nil {
-		panic("you will need to provide either actions != nil or options.initActions")
-	}
-
 	return &Command{
 		actions: a,
 		options: options,
 	}
-
 }
 
 func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
@@ -49,12 +43,24 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 		Short: "CLI to control sonar server",
 	}
 
+	root.AddGroup(
+		&cobra.Group{
+			ID:    "main",
+			Title: "Main commands",
+		},
+	)
+
 	// Main payloads commands
-	root.AddCommand(c.withAuthCheck(c.PayloadsCreate(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsList(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsUpdate(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsDelete(onResult)))
-	root.AddCommand(c.withAuthCheck(c.PayloadsClear(onResult)))
+	for _, cmd := range []*cobra.Command{
+		c.PayloadsCreate(onResult),
+		c.PayloadsList(onResult),
+		c.PayloadsUpdate(onResult),
+		c.PayloadsDelete(onResult),
+		c.PayloadsClear(onResult),
+	} {
+		cmd.GroupID = "main"
+		root.AddCommand(c.withAuthCheck(cmd))
+	}
 
 	// DNS
 	dns := &cobra.Command{
@@ -72,7 +78,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	// Events
 	events := &cobra.Command{
 		Use:   "events",
-		Short: "Payloads events",
+		Short: "View events",
 	}
 
 	events.AddCommand(c.withAuthCheck(c.EventsList(onResult)))
@@ -114,7 +120,7 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 	cmd := c.root(onResult)
 
 	if c.options.preExec != nil {
-		c.options.preExec(cmd)
+		c.options.preExec(&c.actions, cmd)
 	}
 
 	cmd.SetArgs(args)
@@ -130,27 +136,6 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 
 	// Disable "Run 'sonar --help' for usage." messages.
 	cmd.SilenceUsage = true
-
-	// Late init actions.
-	if c.actions == nil {
-		persistentPreRunE := cmd.PersistentPreRunE
-		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if c.options.initActions == nil {
-				return errors.New("actions are not initialized")
-			}
-			acts, err := c.options.initActions()
-			if err != nil {
-				return err
-			}
-			c.actions = acts
-
-			if persistentPreRunE != nil {
-				return persistentPreRunE(cmd, args)
-			}
-
-			return nil
-		}
-	}
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
 		return "", "", err
