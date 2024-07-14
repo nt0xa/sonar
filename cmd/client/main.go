@@ -38,7 +38,8 @@ func main() {
 		cmd.AllowFileAccess(true),
 		cmd.PreExec(func(acts *actions.Actions, root *cobra.Command) {
 			root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-				if err := initConfig(cfgFile, &cfg); err != nil {
+				// We have to find the flag value ourselves because flags are not parsed on completion.
+				if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
 					return err
 				}
 
@@ -128,10 +129,6 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
 
 	cmd.RegisterFlagCompletionFunc("server", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var cfg Config
-		if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
-			return nil, cobra.ShellCompDirectiveDefault
-		}
 		return maps.Keys(cfg.Servers), cobra.ShellCompDirectiveNoFileComp
 	})
 
