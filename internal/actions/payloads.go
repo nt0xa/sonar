@@ -64,7 +64,7 @@ func (r PayloadsCreateResult) ResultID() string {
 	return PayloadsCreateResultID
 }
 
-func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsCreateCommand(acts *Actions, p *PayloadsCreateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "new NAME",
 		Short: "Create a new payload",
@@ -75,6 +75,8 @@ func PayloadsCreateCommand(p *PayloadsCreateParams, local bool) (*cobra.Command,
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
 		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
 	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
+
+	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(models.ProtoCategoriesAll.Strings()))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -111,12 +113,13 @@ func (r PayloadsUpdateResult) ResultID() string {
 	return PayloadsUpdateResultID
 }
 
-func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsUpdateCommand(acts *Actions, p *PayloadsUpdateParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "mod NAME",
-		Short: "Modify existing payload",
-		Long:  "Modify existing payload identified by NAME",
-		Args:  oneArg("NAME"),
+		Use:               "mod NAME",
+		Short:             "Modify existing payload",
+		Long:              "Modify existing payload identified by NAME",
+		Args:              oneArg("NAME"),
+		ValidArgsFunction: completePayloadName(acts),
 	}
 
 	var storeEvents bool
@@ -124,6 +127,8 @@ func PayloadsUpdateCommand(p *PayloadsUpdateParams, local bool) (*cobra.Command,
 	cmd.Flags().StringVarP(&p.NewName, "name", "n", "", "Payload name")
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p", nil, "Protocols to notify")
 	cmd.Flags().BoolVarP(&storeEvents, "events", "e", false, "Store events in database")
+
+	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(models.ProtoCategoriesAll.Strings()))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -157,12 +162,13 @@ func (r PayloadsDeleteResult) ResultID() string {
 	return PayloadsDeleteResultID
 }
 
-func PayloadsDeleteCommand(p *PayloadsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsDeleteCommand(acts *Actions, p *PayloadsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "del NAME",
-		Short: "Delete payload",
-		Long:  "Delete payload identified by NAME",
-		Args:  oneArg("NAME"),
+		Use:               "del NAME",
+		Short:             "Delete payload",
+		Long:              "Delete payload identified by NAME",
+		Args:              oneArg("NAME"),
+		ValidArgsFunction: completePayloadName(acts),
 	}
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
@@ -189,7 +195,7 @@ func (r PayloadsClearResult) ResultID() string {
 	return PayloadsClearResultID
 }
 
-func PayloadsClearCommand(p *PayloadsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsClearCommand(acts *Actions, p *PayloadsClearParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "clr [SUBSTR]",
 		Short: "Delete multiple payloads",
@@ -222,9 +228,9 @@ func (r PayloadsListResult) ResultID() string {
 	return PayloadsListResultID
 }
 
-func PayloadsListCommand(p *PayloadsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
+func PayloadsListCommand(acts *Actions, p *PayloadsListParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "list SUBSTR",
+		Use:   "list [SUBSTR]",
 		Short: "List payloads",
 		Long:  "List payloads whose NAME contain SUBSTR",
 	}

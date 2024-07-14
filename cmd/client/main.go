@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
-	"github.com/carapace-sh/carapace"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -54,13 +53,6 @@ func main() {
 			root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 			jsonFlag(root, &jsonOutput)
 			contextCmd(root, &cfg)
-
-			// Completion.
-			comp := carapace.Gen(root)
-			comp.Standalone()
-			comp.FlagCompletion(carapace.ActionMap{
-				"config": carapace.ActionFiles("toml"),
-			})
 		}),
 	)
 
@@ -135,14 +127,12 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	cmd.Flags().StringVarP(&server, "server", "s", "", "Server name from list of servers")
 	viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
 
-	carapace.Gen(cmd).FlagCompletion(carapace.ActionMap{
-		"server": carapace.ActionCallback(func(c carapace.Context) carapace.Action {
-			var cfg Config
-			if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
-				return carapace.ActionMessage(err.Error())
-			}
-			return carapace.ActionValues(maps.Keys(cfg.Servers)...)
-		}),
+	cmd.RegisterFlagCompletionFunc("server", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var cfg Config
+		if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		return maps.Keys(cfg.Servers), cobra.ShellCompDirectiveNoFileComp
 	})
 
 	root.AddCommand(cmd)
@@ -194,6 +184,5 @@ func findFlagValue(f string, args []string) string {
 			return args[i]
 		}
 	}
-
 	return ""
 }

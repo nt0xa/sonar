@@ -252,8 +252,8 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 	var res *actions.PayloadsUpdateResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetBody(params).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

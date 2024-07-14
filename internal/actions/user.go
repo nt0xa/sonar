@@ -24,7 +24,7 @@ func (r ProfileGetResult) ResultID() string {
 	return ProfileGetResultID
 }
 
-func ProfileGetCommand(local bool) (*cobra.Command, PrepareCommandFunc) {
+func ProfileGetCommand(acts *Actions, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
 		Use:   "profile",
 		Short: "Get current user info",
