@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/adrg/xdg"
@@ -38,6 +39,11 @@ func main() {
 		cmd.AllowFileAccess(true),
 		cmd.PreExec(func(acts *actions.Actions, root *cobra.Command) {
 			root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+				// Skip config & actions initialization for "help" and "completion" commands.
+				if isHelpOrCompletion(cmd.CommandPath()) {
+					return nil
+				}
+
 				// We have to find the flag value ourselves because flags are not parsed on completion.
 				if err := initConfig(findFlagValue("config", os.Args), &cfg); err != nil {
 					return err
@@ -182,4 +188,9 @@ func findFlagValue(f string, args []string) string {
 		}
 	}
 	return ""
+}
+
+func isHelpOrCompletion(path string) bool {
+	parts := strings.Split(path, " ")
+	return slices.Contains(parts, "completion") || slices.Contains(parts, "help")
 }
