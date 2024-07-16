@@ -4,6 +4,7 @@ project_name: sonar
 before:
   hooks:
     - go mod download
+    - make completions
 
 builds:
   - id: server
@@ -58,6 +59,9 @@ brews:
       
     install: |
       bin.install "sonar"
+      bash_completion.install "completions/sonar.bash" => "sonar"
+      zsh_completion.install "completions/sonar.zsh" => "_sonar"
+      fish_completion.install "completions/sonar.fish" => "sonar.fish"
 
 checksum:
   name_template: 'checksums.txt'
