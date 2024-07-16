@@ -34,6 +34,18 @@ dev:
 	@$(LOCAL_BIN)/air
 
 #
+# Completions
+#
+
+.PHONY: completions
+completions: build/client
+	@rm -rf completions
+	@mkdir completions
+	@./sonar completion zsh > completions/sonar.zsh
+	@./sonar completion bash > completions/sonar.bash
+	@./sonar completion fish > completions/sonar.fish
+
+#
 # Tools
 #
 
