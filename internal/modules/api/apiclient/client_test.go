@@ -67,10 +67,7 @@ func TestMain(m *testing.M) {
 
 	log := logrus.New()
 
-	db, err = database.New(&database.Config{
-		DSN:        dsn,
-		Migrations: "../../../database/migrations",
-	}, log)
+	db, err = database.New(&database.Config{DSN: dsn}, log)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
