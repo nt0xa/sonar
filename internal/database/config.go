@@ -5,13 +5,11 @@ import (
 )
 
 type Config struct {
-	DSN        string `json:"dsn"`
-	Migrations string `json:"migrations" default:"/opt/app/migrations"`
+	DSN string `json:"dsn"`
 }
 
 func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.DSN, validation.Required),
-		validation.Field(&c.Migrations, validation.Required),
 	)
 }

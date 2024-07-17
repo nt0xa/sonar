@@ -1,23 +1,26 @@
 package database
 
 import (
+	"embed"
 	"fmt"
 
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
 type DB struct {
 	*sqlx.DB
-	log        logger.StdLogger
-	migrations string
-	obserers   []Observer
+	log      logger.StdLogger
+	obserers []Observer
 }
 
 func New(cfg *Config, log logger.StdLogger) (*DB, error) {
@@ -29,24 +32,26 @@ func New(cfg *Config, log logger.StdLogger) (*DB, error) {
 	}
 
 	return &DB{
-		DB:         db,
-		log:        log,
-		migrations: cfg.Migrations,
-		obserers:   make([]Observer, 0),
+		DB:       db,
+		log:      log,
+		obserers: make([]Observer, 0),
 	}, nil
 }
 
 func (db *DB) Migrate() error {
+	fs, err := iofs.New(migrationsFS, "migrations")
+	if err != nil {
+		return fmt.Errorf("migrate: fail to create source: %w", err)
+	}
+
 	driver, err := postgres.WithInstance(db.DB.DB, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("migrate: fail to create driver: %w", err)
 	}
 
-	migrations, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", db.migrations),
-		"postgres", driver)
+	migrations, err := migrate.NewWithInstance("iofs", fs, "postgres", driver)
 	if err != nil {
-		return fmt.Errorf("migrate: fail to create source: %w", err)
+		return fmt.Errorf("migrate: fail to init: %w", err)
 	}
 
 	if err := migrations.Up(); err != nil && err != migrate.ErrNoChange {
