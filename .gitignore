@@ -23,5 +23,9 @@ env
 docker-compose.yml
 .idea/
 
+# Test configs
+client.toml
+server.toml
+
 # Completions
 /completions/
