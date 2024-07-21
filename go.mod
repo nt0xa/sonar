@@ -16,7 +16,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gookit/color v1.5.4
-	github.com/gorilla/schema v1.4.0
+	github.com/gorilla/schema v1.4.1
 	github.com/invopop/jsonschema v0.8.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/larksuite/oapi-sdk-go/v3 v3.2.7
