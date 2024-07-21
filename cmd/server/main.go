@@ -2,27 +2,69 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/cmd/server"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/httpx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
-func main() {
+func init() {
+	validation.ErrorTag = "mapstructure"
+}
 
+func main() {
+	var (
+		cfg     server.Config
+		cfgFile string
+	)
+
+	root := &cobra.Command{
+		Use:   "server",
+		Short: "CLI for sonar server",
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+			if err := initConfig(cfgFile, &cfg); err != nil {
+				return fmt.Errorf("fail to init config: %w", err)
+			}
+
+			return nil
+		},
+		SilenceUsage: true,
+	}
+
+	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
+
+	serve := &cobra.Command{
+		Use:   "serve",
+		Short: "start the server",
+		Run: func(cmd *cobra.Command, args []string) {
+			serve(&cfg)
+		},
+	}
+
+	root.AddCommand(serve)
+
+	root.Execute()
+}
+
+func serve(cfg *server.Config) {
 	//
 	// Logger
 	//
@@ -31,24 +73,10 @@ func main() {
 	log.SetFormatter(&logrus.TextFormatter{})
 
 	//
-	// Config
-	//
-
-	var cfg server.Config
-
-	if err := envconfig.Process("sonar", &cfg); err != nil {
-		log.Fatal(err.Error())
-	}
-
-	if err := cfg.Validate(); err != nil {
-		log.Fatal(err)
-	}
-
-	//
 	// DB
 	//
 
-	db, err := database.New(&cfg.DB, log)
+	db, err := database.New(cfg.DB.DSN, log)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -275,4 +303,39 @@ func main() {
 
 	// Wait forever
 	select {}
+}
+
+func initConfig(cfgFile string, cfg *server.Config) error {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.SetConfigName("config")
+		viper.SetConfigType("toml")
+		viper.AddConfigPath(".")
+	}
+
+	viper.SetEnvPrefix("sonar")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	for _, key := range utils.StructKeys(*cfg, "mapstructure") {
+		viper.BindEnv(key)
+	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		if !errors.As(err, new(viper.ConfigFileNotFoundError)) {
+			return err
+		}
+	}
+
+	if err := viper.Unmarshal(cfg); err != nil {
+		return err
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }

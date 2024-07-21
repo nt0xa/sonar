@@ -23,9 +23,9 @@ type DB struct {
 	obserers []Observer
 }
 
-func New(cfg *Config, log logger.StdLogger) (*DB, error) {
+func New(dsn string, log logger.StdLogger) (*DB, error) {
 
-	db, err := sqlx.Connect("postgres", cfg.DSN)
+	db, err := sqlx.Connect("postgres", dsn)
 
 	if err != nil {
 		return nil, fmt.Errorf("new: fail to connect to database: %w", err)

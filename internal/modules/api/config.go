@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Admin string `json:"admin"`
-	Port  int    `json:"port" default:"31337"`
+	Admin string `mapstructure:"admin"`
+	Port  int    `mapstructure:"port"`
 }
 
 func (c Config) Validate() error {
