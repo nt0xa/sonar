@@ -6,59 +6,9 @@ import (
 	"sync"
 
 	"github.com/go-acme/lego/v3/challenge"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/nt0xa/sonar/internal/utils/logger"
-	"github.com/nt0xa/sonar/internal/utils/valid"
 	"github.com/nt0xa/sonar/pkg/certmgr"
 )
-
-type TLSConfig struct {
-	Type        string               `json:"type"`
-	Custom      TLSCustomConfig      `json:"custom"`
-	LetsEncrypt TLSLetsEncryptConfig `json:"letsencrypt"`
-}
-
-type TLSCustomConfig struct {
-	Key  string `json:"key"`
-	Cert string `json:"cert"`
-}
-
-type TLSLetsEncryptConfig struct {
-	Email      string `json:"email"`
-	Directory  string `json:"directory"`
-	CADirURL   string `json:"caDirUrl" default:"https://acme-v02.api.letsencrypt.org/directory"`
-	CAInsecure bool   `json:"caInsecure"`
-}
-
-func (c TLSConfig) Validate() error {
-	rules := make([]*validation.FieldRules, 0)
-
-	rules = append(rules,
-		validation.Field(&c.Type, validation.Required, validation.In("custom", "letsencrypt")))
-
-	switch c.Type {
-	case "custom":
-		rules = append(rules, validation.Field(&c.Custom))
-	case "letsencrypt":
-		rules = append(rules, validation.Field(&c.LetsEncrypt))
-	}
-
-	return validation.ValidateStruct(&c, rules...)
-}
-
-func (c TLSCustomConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Key, validation.Required, validation.By(valid.File)),
-		validation.Field(&c.Cert, validation.Required, validation.By(valid.File)),
-	)
-}
-
-func (c TLSLetsEncryptConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Email, validation.Required),
-		validation.Field(&c.Directory, validation.Required, validation.By(valid.Directory)),
-	)
-}
 
 type TLS struct {
 	cfg *TLSConfig

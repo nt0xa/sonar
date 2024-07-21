@@ -19,7 +19,6 @@ require (
 	github.com/gorilla/schema v1.4.0
 	github.com/invopop/jsonschema v0.8.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/larksuite/oapi-sdk-go/v3 v3.2.7
 	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.61
@@ -28,6 +27,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
+	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
 )
 
 require (
@@ -95,7 +95,6 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
-	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect

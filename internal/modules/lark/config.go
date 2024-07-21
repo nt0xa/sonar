@@ -5,14 +5,14 @@ import (
 )
 
 type Config struct {
-	Admin             string `json:"admin"`
-	AppID             string `json:"app_id"`
-	AppSecret         string `json:"app_secret"`
-	VerificationToken string `json:"verification_token"`
-	EncryptKey        string `json:"encrypt_key"`
-	TLSEnabled        bool   `json:"tls_enabled" default:"true"`
-	ProxyURL          string `json:"proxy_url"`
-	ProxyInsecure     bool   `json:"proxy_insecure"`
+	Admin             string `mapstructure:"admin"`
+	AppID             string `mapstructure:"app_id"`
+	AppSecret         string `mapstructure:"app_secret"`
+	VerificationToken string `mapstructure:"verification_token"`
+	EncryptKey        string `mapstructure:"encrypt_key"`
+	TLSEnabled        bool   `mapstructure:"tls_enabled"`
+	ProxyURL          string `mapstructure:"proxy_url"`
+	ProxyInsecure     bool   `mapstructure:"proxy_insecure"`
 }
 
 func (c Config) Validate() error {
