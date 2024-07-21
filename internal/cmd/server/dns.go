@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/fatih/structs"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/miekg/dns"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -39,14 +38,6 @@ var dnsTemplate = tpl.MustParse(`
 @ SOA ns1 hostmaster 1337 86400 7200 4000000 11200
 * SOA ns1 hostmaster 1337 86400 7200 4000000 11200
 `)
-
-type DNSConfig struct {
-	Zone string `json:"zone"`
-}
-
-func (c DNSConfig) Validate() error {
-	return validation.ValidateStruct(&c)
-}
 
 func parseDNSRecords(s, origin string, ip net.IP) *dnsx.Records {
 	rrs, err := dnsx.ParseRecords(s, origin)

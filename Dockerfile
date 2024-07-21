@@ -14,4 +14,4 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /opt/app
 COPY --from=builder /opt/app/server .
 EXPOSE 53/udp 21 25 80 443
-CMD ["./server"]
+CMD ["./server", "serve"]

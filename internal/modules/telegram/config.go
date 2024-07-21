@@ -5,9 +5,9 @@ import (
 )
 
 type Config struct {
-	Admin int64  `json:"admin"`
-	Token string `json:"token"`
-	Proxy string `json:"proxy"`
+	Admin int64  `mapstructure:"admin"`
+	Token string `mapstructure:"token"`
+	Proxy string `mapstructure:"proxy"`
 }
 
 func (c Config) Validate() error {

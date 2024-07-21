@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(&database.Config{DSN: dsn}, log)
+	db, err = database.New(dsn, log)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
