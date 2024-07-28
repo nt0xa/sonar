@@ -69,7 +69,7 @@ const config: Config = {
           items: [
             {
               label: "Tutorial",
-              to: "/intro",
+              to: "/getting-started",
             },
           ],
         },
@@ -93,10 +93,6 @@ const config: Config = {
         {
           title: "More",
           items: [
-            {
-              label: "Blog",
-              to: "/blog",
-            },
             {
               label: "GitHub",
               href: "https://github.com/facebook/docusaurus",
