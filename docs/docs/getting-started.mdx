@@ -7,9 +7,15 @@ sidebar_position: 1
 Sonar is a security researcher's Swiss army knife for finding and exploiting vulnerabilities that require out-of-band interactions.
 It is similar to [Burp Collaborator](https://portswigger.net/burp/documentation/collaborator) or [interactsh](https://github.com/projectdiscovery/interactsh), but offers some useful additional features.
 
+## Features
 
-- Ability to create named payloads and receive notifications in the messenger of choice about all interactions with these subdomains via DNS, HTTP, FTP and SMTP.
-- Configurable DNS answers with ability to return multiple records for name or setup DNS rebinding for subdomain.
+- Ability to create named payloads and receive notifications in the messenger of choice of all interactions with these payloads via DNS, HTTP, FTP and SMTP protocols.
+- Currently supported messengers:
+  - [Telegram](https://telegram.org/)
+  - [Lark](https://www.larksuite.com/)
+- Ability to manage payloads and configure payloads via the messenger of choice or CLI tool.
+- Configurable DNS responses with the ability to return multiple records for a name or set up DNS rebinding.
 - Configurable HTTP responses: static or dynamic using Go templates.
+- REST API for automation.
 
 
