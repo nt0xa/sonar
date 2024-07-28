@@ -1,9 +1,14 @@
 name: Deploy docs to GitHub Pages
 
+# on:
+#   push:
+#     branches:
+#       - master
+
 on:
-  push:
+  pull_request:
     branches:
-      - '*' # for test
+      - master
 
 defaults:
   run:
