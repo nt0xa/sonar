@@ -1,6 +1,6 @@
 {
-  "label": "Server",
-  "position": 2,
+  "label": "Client",
+  "position": 3,
   "link": {
     "type": "generated-index",
     "description": "Install and configure Sonar server."

@@ -4,7 +4,8 @@ import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
   title: "Sonar",
-  tagline: "Dinosaurs are cool",
+  tagline:
+    "The Swiss army knife for discovering and exploiting out-of-band vulnerabilities.",
   favicon: "img/favicon.ico",
 
   url: "https://nt0xa.github.io",
@@ -68,25 +69,8 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Getting started",
-              to: "/getting-started",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Stack Overflow",
-              href: "https://stackoverflow.com/questions/tagged/docusaurus",
-            },
-            {
-              label: "Discord",
-              href: "https://discordapp.com/invite/docusaurus",
-            },
-            {
-              label: "Twitter",
-              href: "https://twitter.com/docusaurus",
+              label: "Intro",
+              to: "/intro",
             },
           ],
         },
@@ -104,7 +88,8 @@ const config: Config = {
     },
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.vsDark,
+      additionalLanguages: ["yaml"],
     },
   } satisfies Preset.ThemeConfig,
 };
