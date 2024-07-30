@@ -10,12 +10,10 @@ It is similar to [Burp Collaborator](https://portswigger.net/burp/documentation/
 ## Features
 
 - Ability to create named payloads and receive notifications in the messenger of choice of all interactions with these payloads via DNS, HTTP, FTP and SMTP protocols.
-- Currently supported messengers:
-  - [Telegram](https://telegram.org/)
-  - [Lark](https://www.larksuite.com/)
+- Currently supported messengers: Telagram, Lark.
 - Ability to manage payloads and configure payloads via the messenger of choice or CLI tool.
 - Configurable DNS responses with the ability to return multiple records for a name or set up DNS rebinding.
-- Configurable HTTP responses: static or dynamic using Go templates.
+- Configurable HTTP responses: static or dynamic using Go template language.
 - Automatic TLS certificates with Let's Encrypt.
 - REST API.
 

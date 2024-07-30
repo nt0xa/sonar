@@ -4,13 +4,13 @@ sidebar_position: 1
 
 # Server
 
-Sonar is self-hosted only, so to get started you need to install and configure its backend first.
+Sonar is **self-hosted only**, so to get started you must install it to your own server.
 
 ## Prerequisites
 
 To install the Sonar Server, you must have:
 
-- A Linux server with a public IP address (`<PUBLIC_IP>`) and Docker and Docker Compose installed.
+- A Linux server with a public IP address (`<PUBLIC_IP>`) with Docker and Docker Compose installed.
 - A registered domain name (`<DOMAIN>`).
 
 ## DNS configuration
@@ -98,7 +98,7 @@ dsn = "postgres://sonar:<POSTGRES_PASSWORD>@db:5432/sonar?sslmode=disable"
 # and renewed automatically.
 # Use "custom" only if you already have a long-lived wildcard TLS certificate for your domain and
 # you want to use it.
-type = "custom"
+type = "letsencrypt"
 
 # Let's Encrypt TLS configuration.
 [tls.letsencrypt]
