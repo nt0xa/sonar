@@ -13,10 +13,41 @@ To install the Sonar Server, you must have:
 - A Linux server with a public IP address (`<PUBLIC_IP>`) and Docker and Docker Compose installed.
 - A registered domain name (`<DOMAIN>`).
 
-## Docker compose file
+## DNS configuration
+
+In order for Sonar to work, it must be configured to act as a nameserver for `<DOMAIN>`.
+To do this, go to your domain registrar's control panel and add a new nameserver with the domain
+name `ns.<DOMAIN>` and the IP address `<PUBLIC_IP>`, then add an `NS` record for your `<DOMAIN>` pointing to
+the created nameserver, i.e. `ns.<DOMAIN>`.
+
+
+:::info
+
+Let's say you have the domain `example.com` and a server with the public IP address `123.123.123.123`.
+In the registrar's control panel you must add a new nameserver `ns.example.com` with IP address `123.123.123.123`.
+Then, you need to add an `NS` record for `example.com`:
+
+| example.com | record type | value |
+| - | - | - |
+| @ | NS | ns.example.com |
+
+:::
+
+To ensure that everything is configured correctly, you can use the following commands:
+
+```
+$ host -t ns <DOMAIN>
+<DOMAIN> name server ns.<DOMAIN>.
+
+$ host -t a ns.<DOMAIN>
+ns.<DOMAIN> has address <PUBLIC_IP>
+```
+
+
+## Docker compose
 
 The recommended way to install the Sonar backend on your server is to use a Docker Compose file.
-Create a `docker-compose.yml' file on your server with the following content:
+Create a `docker-compose.yml` file on your server with the following content:
 
 ```yml title="docker-compose.yml"
 services:
