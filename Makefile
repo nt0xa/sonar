@@ -30,8 +30,13 @@ build/client:
 #
 
 .PHONY: dev
-dev:
+dev/server:
 	@$(LOCAL_BIN)/air
+
+.PHONY: dev/docs
+dev/docs:
+	cd docs && npm start
+
 
 #
 # Completions
