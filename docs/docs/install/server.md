@@ -8,7 +8,7 @@ Sonar is **self-hosted only**, so to get started you must install it to your own
 
 ## Prerequisites
 
-To install the Sonar Server, you must have:
+To install the Sonar server, you must have:
 
 - A Linux server with a public IP address (`<PUBLIC_IP>`) with Docker and Docker Compose installed.
 - A registered domain name (`<DOMAIN>`).
@@ -35,7 +35,7 @@ Then, you need to add an `NS` record for `example.com`:
 
 To ensure that everything is configured correctly, you can use the following commands:
 
-```
+```shell-session
 $ host -t ns <DOMAIN>
 <DOMAIN> name server ns.<DOMAIN>.
 

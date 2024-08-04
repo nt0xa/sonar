@@ -15,6 +15,7 @@ It is similar to [Burp Collaborator](https://portswigger.net/burp/documentation/
 - Configurable DNS responses with the ability to return multiple records for a name or set up DNS rebinding.
 - Configurable HTTP responses: static or dynamic using Go template language.
 - Automatic TLS certificates with Let's Encrypt.
+- Support for multiple users. Currently there are only two roles: admin and regular user.
 - REST API.
 
 
