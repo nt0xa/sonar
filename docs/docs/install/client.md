@@ -1,6 +1,8 @@
 ---
 sidebar_position: 2
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # CLI
 
@@ -15,15 +17,21 @@ See [Server: Configuration file](/sonar/install/server#configuration-file)
 
 ## Installation
 
-### macOS
 
+<Tabs>
+<TabItem value="macOS" label="macOS" default>
 ```shell-session
 $ brew install nt0xa/sonar/sonar
 ```
-
-### Linux and Windows
-
+</TabItem>
+<TabItem value="linux" label="Linux">
 Download binaries for the latest release from [Github](https://github.com/nt0xa/sonar/releases).
+</TabItem>
+<TabItem value="windows" label="Windows">
+Download binaries for the latest release from [Github](https://github.com/nt0xa/sonar/releases).
+</TabItem>
+</Tabs>
+
 
 ## API token
 
