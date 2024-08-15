@@ -7,7 +7,7 @@ import TabItem from '@theme/TabItem';
 # Quick start
 
 
-Sonar can be managed either by sending messages to the chat with the bot in Messenger or using the [CLI](/sonar/install/CLI).
+Sonar can be managed either by sending messages to the chat with the bot in Messenger or using the [CLI](/sonar/install/cli).
 
 
 <Tabs>

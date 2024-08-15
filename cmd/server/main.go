@@ -153,7 +153,7 @@ func serve(cfg *server.Config) {
 
 	go func() {
 		srv := dnsx.New(
-			":53",
+			":5053",
 			dnsHandler,
 			dnsx.NotifyStartedFunc(waitDNS.Done),
 		)

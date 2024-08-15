@@ -47,6 +47,7 @@ const config: Config = {
       logo: {
         alt: "Sonar Logo",
         src: "img/logo.svg",
+        srcDark: "img/logo-dark.svg",
       },
       items: [
         {
@@ -63,27 +64,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: "dark",
-      links: [
-        {
-          title: "Docs",
-          items: [
-            {
-              label: "Intro",
-              to: "/intro",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "GitHub",
-              href: "https://github.com/nt0xa/sonar",
-            },
-          ],
-        },
-      ],
+      links: [],
       copyright: `Copyright © ${new Date().getFullYear()} Built with Docusaurus.`,
     },
     prism: {
