@@ -19,7 +19,7 @@ Sonar can be managed either by sending messages to the chat with the bot in Mess
    ![Payload creation in Telegram](../assets/create_payload_telegram_dark.png#gh-dark-mode-only)![Payload creation in Telegram](../assets/create_payload_telegram_light.png#gh-light-mode-only)
 </TabItem>
 <TabItem value="cli" label="CLI" default>
-1. Install and configure CLI as described [here](/sonar/install/client).
+1. Install and configure CLI as described [here](/sonar/install/cli).
 2. Create a new payload with the command `sonar new <NAME>`. Select a meaningful name as it will be used in
    in interaction notifications. You will receive your unique domain name in the response.
 
