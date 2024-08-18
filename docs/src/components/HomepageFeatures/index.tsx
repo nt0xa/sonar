@@ -16,8 +16,8 @@ const FeatureList: FeatureItem[] = [
     title: "Custom DNS answers",
     description: (
       <>
-        Configure DNS answers with the ability to return multiple records
-        for a name or set up DNS rebinding
+        Configure DNS answers with the ability to return multiple records for a
+        name or set up DNS rebinding
       </>
     ),
   },
@@ -32,26 +32,16 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: "Different messengers support",
-    description: (
-      <>
-        Receive notifications to you favourite messenger.
-      </>
-    ),
+    description: <>Receive notifications to you favourite messenger.</>,
   },
   {
-    title: "Flexible control",
-    description: (
-      <>
-        Use favourite messenger or CLI to manage your payloads.
-      </>
-    ),
+    title: "Manage via Messenger/CLI",
+    description: <>Use favourite messenger or CLI to manage your payloads.</>,
   },
   {
     title: "REST API",
     description: (
-      <>
-        Automate vulnerability scanning with the included REST API.
-      </>
+      <>Automate vulnerability scanning with via REST API.</>
     ),
   },
 ];

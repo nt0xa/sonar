@@ -6,7 +6,7 @@ const config: Config = {
   title: "Sonar",
   tagline:
     "The Swiss army knife for discovering and exploiting out-of-band vulnerabilities.",
-  favicon: "img/favicon.ico",
+  favicon: "img/logo.svg",
 
   url: "https://nt0xa.github.io",
   baseUrl: "/sonar/",
