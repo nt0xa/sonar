@@ -25,10 +25,16 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+Available Commands:{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+
+{{.Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
+  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+
+Additional Commands:{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+  /{{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
@@ -40,3 +46,5 @@ Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
 Use "{{if .HasParent}}{{.CommandPath | replace "sonar " "/"}} {{else}}/{{end}}[command] --help" for more information about a command.{{end}}`
+
+
