@@ -56,7 +56,7 @@ func (api *API) Router() http.Handler {
 		r.Delete("/", api.PayloadsClear)
 		r.Route("/{name}", func(r chi.Router) {
 			r.Delete("/", api.PayloadsDelete)
-			r.Put("/", api.PayloadsUpdate)
+			r.Patch("/", api.PayloadsUpdate)
 		})
 	})
 
@@ -78,6 +78,7 @@ func (api *API) Router() http.Handler {
 			r.Delete("/", api.HTTPRoutesClear)
 			r.Route("/{index}", func(r chi.Router) {
 				r.Delete("/", api.HTTPRoutesDelete)
+				r.Patch("/", api.HTTPRoutesUpdate)
 			})
 		})
 	})

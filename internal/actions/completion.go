@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -33,6 +34,38 @@ func completePayloadName(acts *Actions) completionFunc {
 		}
 
 		return names, cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
+func completeHTTPRoute(acts *Actions) completionFunc {
+	return func(
+		cmd *cobra.Command,
+		args []string,
+		_ string,
+	) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		payload, err := cmd.Flags().GetString("payload")
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		routes, err := (*acts).HTTPRoutesList(cmd.Context(), HTTPRoutesListParams{
+			PayloadName: payload,
+		})
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		completions := make([]string, len(routes))
+
+		for i, r := range routes {
+			completions[i] = fmt.Sprintf("%d\t%s %s -> %d", r.Index, r.Method, r.Path, r.Code)
+		}
+
+		return completions, cobra.ShellCompDirectiveNoFileComp
 	}
 }
 

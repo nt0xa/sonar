@@ -93,6 +93,7 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	})
 
 	http.AddCommand(c.withAuthCheck(c.HTTPRoutesCreate(onResult)))
+	http.AddCommand(c.withAuthCheck(c.HTTPRoutesUpdate(onResult)))
 	http.AddCommand(c.withAuthCheck(c.HTTPRoutesDelete(onResult)))
 	http.AddCommand(c.withAuthCheck(c.HTTPRoutesList(onResult)))
 	http.AddCommand(c.withAuthCheck(c.HTTPRoutesClear(onResult)))

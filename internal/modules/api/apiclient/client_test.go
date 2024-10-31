@@ -460,6 +460,32 @@ func TestClient(t *testing.T) {
 			nil,
 		},
 
+		// Update
+
+		{
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   1,
+				Method:  ptr("PUT"),
+				Path:    ptr("/123"),
+				Code:    ptr(302),
+				Headers: map[string][]string{
+					"Location": {"http://example.com"},
+				},
+				IsDynamic: ptr(true),
+				Body:      ptr("dGVzdA=="),
+			},
+			map[string]matcher{
+				"Method":    equal("PUT"),
+				"Path":      equal("/123"),
+				"Code":      equal(302),
+				"Headers":   equal(map[string][]string{"Location": {"http://example.com"}}),
+				"IsDynamic": equal(true),
+				"Body":      equal("dGVzdA=="),
+			},
+			nil,
+		},
+
 		// List
 
 		{
@@ -555,6 +581,8 @@ func TestClient(t *testing.T) {
 				res, err = uc.HTTPRoutesDelete(context.Background(), p)
 			case actions.HTTPRoutesClearParams:
 				res, err = uc.HTTPRoutesClear(context.Background(), p)
+			case actions.HTTPRoutesUpdateParams:
+				res, err = uc.HTTPRoutesUpdate(context.Background(), p)
 
 			// Profile
 			case nil:
@@ -578,4 +606,8 @@ func TestClient(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -135,7 +136,15 @@ type OneOfRule struct {
 }
 
 func (r *OneOfRule) Validate(value interface{}) error {
-	val, _ := value.(string)
+	if value == nil {
+		return fmt.Errorf("invalid nil value")
+	}
+
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	val, _ := v.Interface().(string)
 
 	if !r.caseSensetive {
 		val = strings.ToLower(val)

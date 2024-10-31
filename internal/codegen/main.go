@@ -64,7 +64,7 @@ func main() {
 			act.Resource = resourceName(strings.Replace(m.Name, "Create", "", 1))
 			act.Verb = "create"
 		} else if strings.Contains(m.Name, "Update") {
-			act.HTTPMethod = "PUT"
+			act.HTTPMethod = "PATCH"
 			act.Resource = resourceName(strings.Replace(m.Name, "Update", "", 1))
 			act.Verb = "update"
 		} else if strings.Contains(m.Name, "Delete") {

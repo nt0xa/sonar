@@ -25,6 +25,7 @@ var templatesMap = map[string]string{
 
 	actions.HTTPRoutesListResultID:   httpRoutesList,
 	actions.HTTPRoutesCreateResultID: httpRoutesCreate,
+	actions.HTTPRoutesUpdateResultID: httpRoutesUpdate,
 	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
 	actions.HTTPRoutesClearResultID:  httpRoutesClear,
 
@@ -88,6 +89,7 @@ var httpRoutesList = fmt.Sprintf(`
 %s
 {{ else }}nothing found{{ end }}`, httpRoute)
 var httpRoutesCreate = httpRoute
+var httpRoutesUpdate = httpRoute
 var httpRoutesDelete = "http route deleted"
 var httpRoutesClear = `{{ len . }} http routes deleted`
 
