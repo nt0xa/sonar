@@ -502,3 +502,167 @@ func TestHTTPRoutesClear_Error(t *testing.T) {
 		})
 	}
 }
+
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func TestHTTPRoutesUpdate_Success(t *testing.T) {
+	tests := []struct {
+		name string
+		p    actions.HTTPRoutesUpdateParams
+	}{
+		{
+			"GET",
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   1,
+				Method:  ptr("GET"),
+				Path:    ptr("/test"),
+				Code:    ptr(200),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("test"),
+				IsDynamic: ptr(false),
+			},
+		},
+		{
+			"POST",
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   2,
+				Method:  ptr("POST"),
+				Path:    ptr("/test-2"),
+				Code:    ptr(201),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("test"),
+				IsDynamic: ptr(true),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			u, err := db.UsersGetByID(1)
+			require.NoError(t, err)
+
+			ctx := actionsdb.SetUser(context.Background(), u)
+
+			r, err := acts.HTTPRoutesUpdate(ctx, tt.p)
+			require.NoError(t, err)
+			require.NotNil(t, r)
+
+			assert.Equal(t, *tt.p.Method, r.Method)
+			assert.Equal(t, *tt.p.Path, r.Path)
+			assert.Equal(t, *tt.p.Code, r.Code)
+			assert.Equal(t, tt.p.Headers, r.Headers)
+			assert.Equal(t, *tt.p.Body, r.Body)
+			assert.Equal(t, *tt.p.IsDynamic, r.IsDynamic)
+		})
+	}
+}
+
+func TestHTTPRoutesUpdate_Error(t *testing.T) {
+
+	tests := []struct {
+		name   string
+		userID int
+		p      actions.HTTPRoutesUpdateParams
+		err    errors.Error
+	}{
+		{
+			"no user in ctx",
+			0,
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   1,
+				Method:  ptr("GET"),
+				Path:    ptr("/test"),
+				Code:    ptr(200),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("test"),
+				IsDynamic: ptr(false),
+			},
+			&errors.InternalError{},
+		},
+		{
+			"not existing payload name",
+			1,
+			actions.HTTPRoutesUpdateParams{
+				Payload: "not_exists",
+				Index:   1,
+				Method:  ptr("GET"),
+				Path:    ptr("/test"),
+				Code:    ptr(200),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("test"),
+				IsDynamic: ptr(false),
+			},
+			&errors.NotFoundError{},
+		},
+		{
+			"not existing index",
+			1,
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   1337,
+				Method:  ptr("GET"),
+				Path:    ptr("/test"),
+				Code:    ptr(200),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("test"),
+				IsDynamic: ptr(false),
+			},
+			&errors.NotFoundError{},
+		},
+		{
+			"invalid body",
+			1,
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload1",
+				Index:   1,
+				Method:  ptr("GET"),
+				Path:    ptr("/test"),
+				Code:    ptr(200),
+				Headers: models.Headers{
+					"Test": {"test"},
+				},
+				Body:      ptr("xxxxxx"),
+				IsDynamic: ptr(false),
+			},
+			&errors.ValidationError{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t)
+			defer teardown(t)
+
+			ctx := context.Background()
+
+			if tt.userID != 0 {
+				u, err := db.UsersGetByID(1)
+				require.NoError(t, err)
+
+				ctx = actionsdb.SetUser(context.Background(), u)
+			}
+
+			_, err := acts.HTTPRoutesUpdate(ctx, tt.p)
+			assert.Error(t, err)
+			assert.IsType(t, tt.err, err)
+		})
+	}
+}

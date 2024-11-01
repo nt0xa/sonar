@@ -68,6 +68,66 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 	return &actions.HTTPRoutesCreateResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
 }
 
+func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutesUpdateParams) (*actions.HTTPRoutesUpdateResult, errors.Error) {
+	u, err := GetUser(ctx)
+	if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if err := p.Validate(); err != nil {
+		return nil, errors.Validation(err)
+	}
+
+	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Payload)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("payload with name %q not found", p.Payload)
+	}
+
+	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(payload.ID, p.Index)
+	if err == sql.ErrNoRows {
+		return nil, errors.NotFoundf("http route for payload %q with index %d not found",
+			p.Payload, p.Index)
+	} else if err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	if p.Method != nil {
+		rec.Method = *p.Method
+	}
+
+	if p.Path != nil {
+		rec.Path = *p.Path
+	}
+
+	if p.Code != nil {
+		rec.Code = *p.Code
+	}
+
+	if p.Headers != nil {
+		rec.Headers = p.Headers
+	}
+
+	if p.Body != nil {
+		body, err := base64.StdEncoding.DecodeString(*p.Body)
+
+		if err != nil {
+			return nil, errors.Validationf("body: invalid base64 data")
+		}
+
+		rec.Body = body
+	}
+
+	if p.IsDynamic != nil {
+		rec.IsDynamic = *p.IsDynamic
+	}
+
+	if err := act.db.HTTPRoutesUpdate(rec); err != nil {
+		return nil, errors.Internal(err)
+	}
+
+	return &actions.HTTPRoutesUpdateResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
+}
+
 func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {
 	u, err := GetUser(ctx)
 	if err != nil {

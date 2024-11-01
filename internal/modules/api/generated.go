@@ -105,12 +105,12 @@ func (api *API) EventsList(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.EventsListParams
 
-	if err := fromQuery(r, &params); err != nil {
+	if err := fromPath(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
 
-	if err := fromPath(r, &params); err != nil {
+	if err := fromQuery(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
@@ -201,6 +201,29 @@ func (api *API) HTTPRoutesList(w http.ResponseWriter, r *http.Request) {
 	responseJSON(w, res, http.StatusOK)
 }
 
+func (api *API) HTTPRoutesUpdate(w http.ResponseWriter, r *http.Request) {
+
+	var params actions.HTTPRoutesUpdateParams
+
+	if err := fromJSON(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	if err := fromPath(r, &params); err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	res, err := api.actions.HTTPRoutesUpdate(r.Context(), params)
+	if err != nil {
+		api.handleError(w, r, err)
+		return
+	}
+
+	responseJSON(w, res, http.StatusOK)
+}
+
 func (api *API) PayloadsClear(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.PayloadsClearParams
@@ -277,12 +300,12 @@ func (api *API) PayloadsUpdate(w http.ResponseWriter, r *http.Request) {
 
 	var params actions.PayloadsUpdateParams
 
-	if err := fromPath(r, &params); err != nil {
+	if err := fromJSON(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
 
-	if err := fromJSON(r, &params); err != nil {
+	if err := fromPath(r, &params); err != nil {
 		api.handleError(w, r, err)
 		return
 	}
