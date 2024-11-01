@@ -180,6 +180,24 @@ func (c *Client) HTTPRoutesList(ctx context.Context, params actions.HTTPRoutesLi
 	return res, nil
 }
 
+func (c *Client) HTTPRoutesUpdate(ctx context.Context, params actions.HTTPRoutesUpdateParams) (*actions.HTTPRoutesUpdateResult, errors.Error) {
+	var res *actions.HTTPRoutesUpdateResult
+
+	err := handle(c.client.R().
+		SetBody(params).
+		SetPathParams(toPath(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Patch("/http-routes/{payload}/{index}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (c *Client) PayloadsClear(ctx context.Context, params actions.PayloadsClearParams) (actions.PayloadsClearResult, errors.Error) {
 	var res actions.PayloadsClearResult
 
@@ -257,7 +275,7 @@ func (c *Client) PayloadsUpdate(ctx context.Context, params actions.PayloadsUpda
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Put("/payloads/{name}"))
+		Patch("/payloads/{name}"))
 
 	if err != nil {
 		return nil, err

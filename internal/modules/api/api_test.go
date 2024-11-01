@@ -262,7 +262,7 @@ func TestAPI(t *testing.T) {
 		// Update
 
 		{
-			method: "PUT",
+			method: "PATCH",
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": false}`,
@@ -275,7 +275,7 @@ func TestAPI(t *testing.T) {
 			status: 200,
 		},
 		{
-			method: "PUT",
+			method: "PATCH",
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": null}`,
@@ -288,7 +288,7 @@ func TestAPI(t *testing.T) {
 			status: 200,
 		},
 		{
-			method: "PUT",
+			method: "PATCH",
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"invalid": 1}`,
@@ -300,7 +300,7 @@ func TestAPI(t *testing.T) {
 			status: 400,
 		},
 		{
-			method: "PUT",
+			method: "PATCH",
 			path:   "/payloads/payload1",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["invalid"]}`,
@@ -312,7 +312,7 @@ func TestAPI(t *testing.T) {
 			status: 400,
 		},
 		{
-			method: "PUT",
+			method: "PATCH",
 			path:   "/payloads/invalid",
 			token:  User1Token,
 			json:   `{"name":"test", "notifyProtocols": ["smtp"]}`,
@@ -700,6 +700,73 @@ func TestAPI(t *testing.T) {
 				"$.message": contains("conflict"),
 			},
 			status: 409,
+		},
+
+		// Update
+
+		{
+			method: "PATCH",
+			path:   "/http-routes/payload1/1",
+			token:  User1Token,
+			json: `{
+				"method": "POST",
+				"path": "/test2",
+				"code": 301,
+				"headers": {"X":["x"]},
+				"body": "MTIzNAo=",
+				"isDynamic": false
+			}`,
+			schema: actions.HTTPRoutesUpdateResult{},
+			result: map[string]matcher{
+				"$.method":    equal("POST"),
+				"$.path":      equal("/test2"),
+				"$.code":      equal(301),
+				"$.headers":   equal(map[string]interface{}{"X": []interface{}{"x"}}),
+				"$.body":      equal("MTIzNAo="),
+				"$.isDynamic": equal(false),
+			},
+			status: 200,
+		},
+		{
+			method: "PATCH",
+			path:   "/http-routes/payload1/1",
+			token:  User1Token,
+			json:   `{"invalid": 1}`,
+			schema: &errors.BadFormatError{},
+			result: map[string]matcher{
+				"$.message": contains("format"),
+				"$.details": contains("json"),
+			},
+			status: 400,
+		},
+		{
+			method: "PATCH",
+			path:   "/http-routes/payload1/1",
+			token:  User1Token,
+			json:   `{"method": "X"}`,
+			schema: &errors.ValidationError{},
+			result: map[string]matcher{
+				"$.message": contains("validation"),
+			},
+			status: 400,
+		},
+		{
+			method: "PATCH",
+			path:   "/http-routes/payload1/1337",
+			token:  User1Token,
+			json: `{
+				"method": "POST",
+				"path": "/test2",
+				"code": 301,
+				"headers": {"X":["x"]},
+				"body": "MTIzNAo=",
+				"isDynamic": false
+			}`,
+			schema: &errors.ValidationError{},
+			result: map[string]matcher{
+				"$.message": contains("not found"),
+			},
+			status: 404,
 		},
 
 		// List

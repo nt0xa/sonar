@@ -38,6 +38,10 @@ func prepare() (*cmd.Command, *actions_mock.Actions, *ResultMock) {
 	return c, actions, res
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 func TestCmd(t *testing.T) {
 	tests := []struct {
 		cmdline string
@@ -305,6 +309,26 @@ func TestCmd(t *testing.T) {
 				IsDynamic: true,
 			},
 			&actions.HTTPRoutesCreateResult{},
+		},
+
+		// Update
+
+		{
+			"http -p payload mod 1 -m POST -P /test -c 201 -H 'Content-Type: application/json' -d -b test",
+			"HTTPRoutesUpdate",
+			actions.HTTPRoutesUpdateParams{
+				Payload: "payload",
+				Index:   1,
+				Method:  ptr("POST"),
+				Path:    ptr("/test"),
+				Code:    ptr(201),
+				Headers: map[string][]string{
+					"Content-Type": {"application/json"},
+				},
+				Body:      ptr("dGVzdA=="),
+				IsDynamic: ptr(true),
+			},
+			&actions.HTTPRoutesUpdateResult{},
 		},
 
 		// List
