@@ -317,10 +317,11 @@ func (r HTTPRoutesDeleteResult) ResultID() string {
 
 func HTTPRoutesDeleteCommand(acts *Actions, p *HTTPRoutesDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "del INDEX",
-		Short: "Delete HTTP route",
-		Long:  "Delete HTTP route identified by INDEX",
-		Args:  oneArg("INDEX"),
+		Use:               "del INDEX",
+		Short:             "Delete HTTP route",
+		Long:              "Delete HTTP route identified by INDEX",
+		Args:              oneArg("INDEX"),
+		ValidArgsFunction: completeHTTPRoute(acts),
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")

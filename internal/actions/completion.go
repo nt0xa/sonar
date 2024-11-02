@@ -37,6 +37,46 @@ func completePayloadName(acts *Actions) completionFunc {
 	}
 }
 
+func completeDNSRecord(acts *Actions) completionFunc {
+	return func(
+		cmd *cobra.Command,
+		args []string,
+		_ string,
+	) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		payload, err := cmd.Flags().GetString("payload")
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		records, err := (*acts).DNSRecordsList(cmd.Context(), DNSRecordsListParams{
+			PayloadName: payload,
+		})
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		completions := make([]string, len(records))
+
+		for i, r := range records {
+			completions[i] = fmt.Sprintf(
+				"%d\t%s.%s %d IN %s %s",
+				r.Index,
+				r.Name,
+				r.PayloadSubdomain,
+				r.TTL,
+				r.Type,
+				strings.Join(r.Values, " "),
+			)
+		}
+
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+}
+
 func completeHTTPRoute(acts *Actions) completionFunc {
 	return func(
 		cmd *cobra.Command,
