@@ -122,10 +122,11 @@ func (r DNSRecordsDeleteResult) ResultID() string {
 
 func DNSRecordsDeleteCommand(acts *Actions, p *DNSRecordsDeleteParams, local bool) (*cobra.Command, PrepareCommandFunc) {
 	cmd := &cobra.Command{
-		Use:   "del INDEX",
-		Short: "Delete DNS record",
-		Long:  "Delete DNS record identified by INDEX",
-		Args:  oneArg("INDEX"),
+		Use:               "del INDEX",
+		Short:             "Delete DNS record",
+		Long:              "Delete DNS record identified by INDEX",
+		Args:              oneArg("INDEX"),
+		ValidArgsFunction: completeDNSRecord(acts),
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
