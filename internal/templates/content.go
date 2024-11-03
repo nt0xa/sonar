@@ -37,10 +37,12 @@ var templatesMap = map[string]string{
 // Profile
 //
 
-var profileGet = `<bold>Name:</bold> <code>hacker</code>
-{{ if .Params.TelegramID }}<bold>Telegram ID:</bold> <code>12345678</code>
+var profileGet = `<bold>Name:</bold> <code>{{ .Name }}</code>
+{{ if .Params.TelegramID }}<bold>Telegram ID:</bold> <code>{{ .Params.TelegramID }}</code>
 {{ end -}}
-<bold>API token:</bold> <code>00112233445566778899aabbccddeeff</code>
+{{ if .Params.LarkUserID }}<bold>Lark ID:</bold> <code>{{ .Params.LarkUserID }}</code>
+{{ end -}}
+<bold>API token:</bold> <code>{{ .Params.APIToken }}</code>
 <bold>Admin:</bold> <code>{{ .IsAdmin }}</code>`
 
 //
@@ -128,7 +130,7 @@ const (
 	NotificationBodyID   = "notification/body"
 )
 
-var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from 100.100.100.100:12345 {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
+var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from {{ .Event.RemoteAddr }} {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 var notificationBody = `<pre>
 {{ printf "%s" .Event.RW }}
 </pre>`
