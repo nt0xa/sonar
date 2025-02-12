@@ -19,6 +19,7 @@ import (
 	"github.com/larksuite/oapi-sdk-go/v3/core/httpserverext"
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
+	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 
@@ -66,8 +67,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 	var client = lark.NewClient(
 		cfg.AppID,
 		cfg.AppSecret,
-		lark.WithLogReqAtDebug(true),
-		lark.WithLogLevel(larkcore.LogLevelDebug),
+		lark.WithLogLevel(larkcore.LogLevelInfo),
 		lark.WithHttpClient(httpClient))
 
 	// Check that AppID and AppSecret are valid
@@ -113,38 +113,52 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 }
 
 func (lrk *Lark) Start() error {
+	var dispatcher *dispatcher.EventDispatcher
 
+	// Webhooks by default
+	if lrk.cfg.Mode == ModeWebhook || lrk.cfg.Mode == "" {
+		dispatcher = lrk.makeDispatcher(lrk.cfg.VerificationToken, lrk.cfg.EncryptKey, true)
+		return lrk.startWebhook(dispatcher)
+	} else {
+		dispatcher = lrk.makeDispatcher("", "", false)
+		return lrk.startWebsocket(dispatcher)
+	}
+}
+
+func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedupEvents bool) *dispatcher.EventDispatcher {
 	// Sometimes the same event is sent several times, so keep recent event ids
 	// to prevent handling the same event more than once.
 	recentEvents := map[string]time.Time{}
 	recentEventsMutex := sync.Mutex{}
 
-	ticker := time.NewTicker(10 * time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				toRemove := make([]string, 0)
+	if dedupEvents {
+		go func() {
+			ticker := time.NewTicker(10 * time.Second)
+			for {
+				select {
+				case <-ticker.C:
+					toRemove := make([]string, 0)
 
-				for eventID, handledAt := range recentEvents {
+					for eventID, handledAt := range recentEvents {
 
-					// Cleanup events after 10m
-					// TODO: config
-					if time.Since(handledAt) > time.Minute*5 {
-						toRemove = append(toRemove, eventID)
+						// Cleanup events after 10m
+						// TODO: config
+						if time.Since(handledAt) > time.Minute*5 {
+							toRemove = append(toRemove, eventID)
+						}
 					}
-				}
 
-				recentEventsMutex.Lock()
-				for _, eventID := range toRemove {
-					delete(recentEvents, eventID)
+					recentEventsMutex.Lock()
+					for _, eventID := range toRemove {
+						delete(recentEvents, eventID)
+					}
+					recentEventsMutex.Unlock()
 				}
-				recentEventsMutex.Unlock()
 			}
-		}
-	}()
+		}()
+	}
 
-	handler := dispatcher.NewEventDispatcher(lrk.cfg.VerificationToken, lrk.cfg.EncryptKey).
+	return dispatcher.NewEventDispatcher(verificationToken, eventEncryptKey).
 		OnP2MessageReceiveV1(
 			func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
 
@@ -159,17 +173,19 @@ func (lrk *Lark) Start() error {
 					return nil
 				}
 
-				eventID := event.EventV2Base.Header.EventID
+				if dedupEvents {
+					eventID := event.EventV2Base.Header.EventID
 
-				recentEventsMutex.Lock()
-				if _, ok := recentEvents[eventID]; ok {
+					recentEventsMutex.Lock()
+					if _, ok := recentEvents[eventID]; ok {
+						recentEventsMutex.Unlock()
+
+						// Event was already handled
+						return nil
+					}
+					recentEvents[eventID] = time.Now()
 					recentEventsMutex.Unlock()
-
-					// Event was already handled
-					return nil
 				}
-				recentEvents[eventID] = time.Now()
-				recentEventsMutex.Unlock()
 
 				userID := event.Event.Sender.SenderId.UserId
 				msgID := event.Event.Message.MessageId
@@ -234,12 +250,23 @@ func (lrk *Lark) Start() error {
 				return nil
 			},
 		)
+}
 
+func (lrk *Lark) startWebsocket(eventHandler *dispatcher.EventDispatcher) error {
+	cli := larkws.NewClient(lrk.cfg.AppID, lrk.cfg.AppSecret,
+		larkws.WithEventHandler(eventHandler),
+		larkws.WithLogLevel(larkcore.LogLevelInfo),
+	)
+
+	return cli.Start(context.TODO())
+}
+
+func (lrk *Lark) startWebhook(eventHandler *dispatcher.EventDispatcher) error {
 	mux := http.NewServeMux()
 
 	// TODO: take path from config
-	mux.HandleFunc("/webhook/event", httpserverext.NewEventHandlerFunc(handler,
-		larkevent.WithLogLevel(larkcore.LogLevelDebug)))
+	mux.HandleFunc("/webhook/event", httpserverext.NewEventHandlerFunc(eventHandler,
+		larkevent.WithLogLevel(larkcore.LogLevelInfo)))
 
 	// TODO: take port from config
 	srv := http.Server{
