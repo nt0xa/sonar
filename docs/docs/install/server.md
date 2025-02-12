@@ -20,16 +20,15 @@ To do this, go to your domain registrar's control panel and add a new nameserver
 name `ns.<DOMAIN>` and the IP address `<PUBLIC_IP>`, then add an `NS` record for your `<DOMAIN>` pointing to
 the created nameserver, i.e. `ns.<DOMAIN>`.
 
-
 :::info
 
 Let's say you have the domain `example.com` and a server with the public IP address `123.123.123.123`.
 In the registrar's control panel you must add a new nameserver `ns.example.com` with IP address `123.123.123.123`.
 Then, you need to add an `NS` record for `example.com`:
 
-| example.com | record type | value |
-| - | - | - |
-| @ | NS | ns.example.com |
+| example.com | record type | value          |
+| ----------- | ----------- | -------------- |
+| @           | NS          | ns.example.com |
 
 :::
 
@@ -43,7 +42,6 @@ $ host -t a ns.<DOMAIN>
 ns.<DOMAIN> has address <PUBLIC_IP>
 ```
 
-
 ## Docker compose
 
 The recommended way to install the Sonar backend on your server is to use a Docker Compose file.
@@ -55,15 +53,15 @@ services:
     restart: always
     image: ghcr.io/nt0xa/sonar:1
     ports:
-      - 21:21       # FTP
-      - 25:25       # SMTP
-      - 53:53/udp   # DNS
-      - 80:80       # HTTP
-      - 443:443     # HTTPS
+      - 21:21 # FTP
+      - 25:25 # SMTP
+      - 53:53/udp # DNS
+      - 80:80 # HTTP
+      - 443:443 # HTTPS
       - 31337:31337 # REST API
-      - 31338:31338 # Webhooks (currently only used by Lark messenger)
+      - 31338:31338 # Webhooks (currently only used by Lark messenger in "webhook" mode)
     volumes:
-      - ./tls:/opt/app/tls               # TLS certificates persistance
+      - ./tls:/opt/app/tls # TLS certificates persistance
       - ./config.yml:/opt/app/config.yml # Config file: see "Configuration"
 
   db:
@@ -81,7 +79,7 @@ services:
 
 To configure the Sonar backend create a `config.toml` file in the same directory as the `docker-compose.yml` file.
 
-```toml title="config.toml" 
+```toml title="config.toml"
 # Your server public IP address.
 ip = "<PUBLIC_IP>"
 
@@ -132,7 +130,7 @@ admin = "<TOKEN>"
 # Telegram configuration.
 [modules.telegram]
 # Admin user Telegram ID. Use @getmyid_bot to get yours.
-admin = <USER_ID>
+admin = "<USER_ID>"
 # Bot token. Use @BotFather bot to get one.
 token = "<BOT_TOKEN>"
 
@@ -143,7 +141,11 @@ admin = "<ADMIN_ID>"
 app_id = "<APP_ID>"
 # App Secret. You can find it on the "Credentials & Basic Info" page of your app.
 app_secret = "<APP_SECRET>"
-# Verification token.  You can find it on the "Events & callbacks" page of your app
+# Mode. There are two moded supported "webhook" (default) and "websocket".
+# See https://open.larkoffice.com/document/uAjLw4CM/ukTMukTMukTM/server-side-sdk/golang-sdk-guide/handle-events
+# for more information.
+mode = "webhook"
+# Verification token. Required only for "webhook" mode. You can find it on the "Events & callbacks" page of your app
 # under the "Encryption strategy" tab.
 verification_token = "<VERIFICATION_TOKEN>"
 ```
