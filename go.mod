@@ -19,7 +19,7 @@ require (
 	github.com/gorilla/schema v1.4.0
 	github.com/invopop/jsonschema v0.8.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.2.7
+	github.com/larksuite/oapi-sdk-go/v3 v3.4.9
 	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.61
 	github.com/mitchellh/mapstructure v1.5.0
@@ -45,6 +45,7 @@ require (
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
