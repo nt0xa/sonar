@@ -400,8 +400,14 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 		return
 	}
 
+	idType := larkim.ReceiveIdTypeUserId
+
+	if strings.HasPrefix(chatID, "oc_") {
+		idType = larkim.ReceiveIdTypeChatId
+	}
+
 	resp2, err := lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType(larkim.ReceiveIdTypeUserId).
+		ReceiveIdType(idType).
 		Body(larkim.NewCreateMessageReqBodyBuilder().
 			MsgType(larkim.MsgTypeFile).
 			ReceiveId(chatID).
