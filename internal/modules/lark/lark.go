@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -161,7 +162,6 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 	return dispatcher.NewEventDispatcher(verificationToken, eventEncryptKey).
 		OnP2MessageReceiveV1(
 			func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
-
 				ts, err := strconv.ParseInt(*event.Event.Message.CreateTime, 10, 64)
 				if err != nil {
 					return nil
@@ -187,8 +187,23 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					recentEventsMutex.Unlock()
 				}
 
-				userID := event.Event.Sender.SenderId.UserId
 				msgID := event.Event.Message.MessageId
+
+				if event.Event.Message.ChatType == nil {
+					fmt.Println("chat type is nil")
+					return nil
+				}
+
+				var userID *string
+				switch *event.Event.Message.ChatType {
+				case "p2p":
+					userID = event.Event.Sender.SenderId.UserId
+				case "group":
+					userID = event.Event.Message.ChatId
+				default:
+					fmt.Println("unknown chat type")
+					return nil
+				}
 
 				if userID == nil || msgID == nil {
 					// TODO: better error
@@ -228,7 +243,18 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 				ctx = SetMessageID(ctx, *msgID)
 				ctx = actionsdb.SetUser(ctx, user)
 
-				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, msg.Text, func(res actions.Result) error {
+				text := msg.Text
+
+				// remove @mention from the text
+				if event.Event.Message.Mentions != nil {
+					for _, mention := range event.Event.Message.Mentions {
+						text = strings.ReplaceAll(text, *mention.Key, "")
+					}
+				}
+
+				text = strings.TrimSpace(text)
+
+				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, text, func(res actions.Result) error {
 					s, err := lrk.tmpl.RenderResult(res)
 					if err != nil {
 						return err
@@ -238,6 +264,10 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 					return nil
 				})
+				if err != nil {
+					lrk.message("", msgID, err.Error())
+					return nil
+				}
 
 				if stdout != "" {
 					lrk.message("", msgID, stdout)
@@ -320,8 +350,14 @@ func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
 				Build()).
 			Build())
 	} else {
+		idType := larkim.ReceiveIdTypeUserId
+
+		if strings.HasPrefix(userID, "oc_") {
+			idType = larkim.ReceiveIdTypeChatId
+		}
+
 		_, err = lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
-			ReceiveIdType(larkim.ReceiveIdTypeUserId).
+			ReceiveIdType(idType).
 			Body(larkim.NewCreateMessageReqBodyBuilder().
 				MsgType(larkim.MsgTypeInteractive).
 				ReceiveId(userID).
