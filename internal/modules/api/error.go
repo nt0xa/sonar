@@ -36,6 +36,6 @@ func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	if err := json.NewEncoder(w).Encode(err); err != nil {
-		api.log.Printf("Failed to encode JSON: %v", err)
+		api.log.Error("Failed to encode JSON", "err", err)
 	}
 }

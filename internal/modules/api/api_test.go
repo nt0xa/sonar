@@ -3,6 +3,7 @@ package api_test
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,7 +15,6 @@ import (
 	"github.com/gavv/httpexpect/v2"
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/invopop/jsonschema"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	log := logrus.New()
+	log := slog.New(slog.DiscardHandler)
 
 	db, err = database.New(dsn, log)
 	if err != nil {

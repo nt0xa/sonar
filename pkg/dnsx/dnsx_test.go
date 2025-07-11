@@ -75,7 +75,7 @@ func TestMain(m *testing.M) {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()

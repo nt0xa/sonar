@@ -95,7 +95,7 @@ func TestMain(m *testing.M) {
 			"../../test/key.pem",
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to read cert and key: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
 			os.Exit(1)
 		}
 
@@ -105,7 +105,7 @@ func TestMain(m *testing.M) {
 		srv := httpx.New("127.0.0.1:1443", h, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()

@@ -3,9 +3,9 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/sirupsen/logrus"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
@@ -55,7 +55,7 @@ func (c ModulesConfig) Validate() error {
 func Modules(
 	cfg *ModulesConfig,
 	db *database.DB,
-	log *logrus.Logger,
+	log *slog.Logger,
 	tls *tls.Config,
 	actions actions.Actions,
 	domain string,

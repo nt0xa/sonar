@@ -3,10 +3,10 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/go-acme/lego/v3/challenge"
-	"github.com/nt0xa/sonar/internal/utils/logger"
 	"github.com/nt0xa/sonar/pkg/certmgr"
 )
 
@@ -16,7 +16,7 @@ type TLS struct {
 	wg  sync.WaitGroup
 }
 
-func NewTLS(cfg *TLSConfig, log logger.StdLogger, domain string, provider challenge.Provider) (*TLS, error) {
+func NewTLS(cfg *TLSConfig, log *slog.Logger, domain string, provider challenge.Provider) (*TLS, error) {
 	t := &TLS{
 		cfg: cfg,
 	}

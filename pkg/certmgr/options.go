@@ -1,8 +1,7 @@
 package certmgr
 
 import (
-	"log"
-	"os"
+	"log/slog"
 	"time"
 
 	"github.com/go-acme/lego/v3/certcrypto"
@@ -17,7 +16,7 @@ type options struct {
 	renewThreshold  time.Duration
 	notifyReadyFunc func()
 	timeNow         func() time.Time
-	log             StdLogger
+	log             *slog.Logger
 }
 
 var defaultOptions = options{
@@ -27,8 +26,8 @@ var defaultOptions = options{
 	renewInterval:   12 * time.Hour,
 	renewThreshold:  30 * 24 * time.Hour,
 	notifyReadyFunc: func() {},
-	timeNow:         func() time.Time { return time.Now() },
-	log:             log.New(os.Stdout, "", log.LstdFlags),
+	timeNow:         time.Now,
+	log:             slog.New(slog.DiscardHandler),
 }
 
 type Option func(*options)
@@ -69,7 +68,7 @@ func NotifyReadyFunc(f func()) Option {
 	}
 }
 
-func Logger(l StdLogger) Option {
+func Logger(l *slog.Logger) Option {
 	return func(opts *options) {
 		opts.log = l
 	}
