@@ -3,6 +3,7 @@ package database
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/lib/pq"
 
@@ -10,8 +11,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 //go:embed migrations/*.sql
@@ -19,11 +18,11 @@ var migrationsFS embed.FS
 
 type DB struct {
 	*sqlx.DB
-	log      logger.StdLogger
+	log      *slog.Logger
 	obserers []Observer
 }
 
-func New(dsn string, log logger.StdLogger) (*DB, error) {
+func New(dsn string, log *slog.Logger) (*DB, error) {
 
 	db, err := sqlx.Connect("postgres", dsn)
 

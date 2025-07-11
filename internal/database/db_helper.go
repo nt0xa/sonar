@@ -2,12 +2,12 @@ package database
 
 import (
 	"database/sql"
+	"log/slog"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
-func (db *DB) NamedQueryRowx(query string, arg interface{}) *row {
+func (db *DB) NamedQueryRowx(query string, arg any) *row {
 	query, args, err := db.named(query, arg)
 	if err != nil {
 		return &row{err: err}
@@ -15,7 +15,7 @@ func (db *DB) NamedQueryRowx(query string, arg interface{}) *row {
 	return db.QueryRowx(query, args...)
 }
 
-func (db *DB) NamedExec(query string, arg interface{}) error {
+func (db *DB) NamedExec(query string, arg any) error {
 	query, args, err := db.named(query, arg)
 	if err != nil {
 		return err
@@ -23,33 +23,33 @@ func (db *DB) NamedExec(query string, arg interface{}) error {
 	return db.Exec(query, args...)
 }
 
-func (db *DB) QueryRowx(query string, args ...interface{}) *row {
+func (db *DB) QueryRowx(query string, args ...any) *row {
 	db.logQuery(query, args...)
 	return &row{Row: db.DB.QueryRowx(query, args...)}
 }
 
-func (db *DB) Exec(query string, args ...interface{}) error {
+func (db *DB) Exec(query string, args ...any) error {
 	db.logQuery(query, args...)
 	_, err := db.DB.Exec(query, args...)
 	return err
 }
 
-func (db *DB) ExecResult(query string, args ...interface{}) (sql.Result, error) {
+func (db *DB) ExecResult(query string, args ...any) (sql.Result, error) {
 	db.logQuery(query, args...)
 	return db.DB.Exec(query, args...)
 }
 
-func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {
+func (db *DB) Get(dest any, query string, args ...any) error {
 	db.logQuery(query, args...)
 	return db.DB.Get(dest, query, args...)
 }
 
-func (db *DB) Select(dest interface{}, query string, args ...interface{}) error {
+func (db *DB) Select(dest any, query string, args ...any) error {
 	db.logQuery(query, args...)
 	return db.DB.Select(dest, query, args...)
 }
 
-func (db *DB) NamedSelect(dest interface{}, query string, arg interface{}) error {
+func (db *DB) NamedSelect(dest any, query string, arg any) error {
 	query, args, err := db.named(query, arg)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (db *DB) NamedSelect(dest interface{}, query string, arg interface{}) error
 	return db.DB.Select(dest, query, args...)
 }
 
-func (db *DB) named(query string, arg interface{}) (string, []interface{}, error) {
+func (db *DB) named(query string, arg any) (string, []any, error) {
 	query, args, err := sqlx.Named(query, arg)
 	if err != nil {
 		return "", nil, err
@@ -71,7 +71,7 @@ func (db *DB) named(query string, arg interface{}) (string, []interface{}, error
 	return db.Rebind(query), args, err
 }
 
-func (db *DB) logQuery(query string, args ...interface{}) {
+func (db *DB) logQuery(query string, args ...any) {
 	// TODO: enable by flag
 	// db.log.Printf("%s\n%+v", query, args)
 }
@@ -81,7 +81,7 @@ type row struct {
 	*sqlx.Row
 }
 
-func (r *row) Scan(dest ...interface{}) error {
+func (r *row) Scan(dest ...any) error {
 	if r.err != nil {
 		return r.err
 	}
@@ -103,10 +103,10 @@ func (db *DB) Beginx() (*Tx, error) {
 
 type Tx struct {
 	*sqlx.Tx
-	log logger.StdLogger
+	log *slog.Logger
 }
 
-func (tx *Tx) NamedQueryRowx(query string, arg interface{}) *row {
+func (tx *Tx) NamedQueryRowx(query string, arg any) *row {
 	query, args, err := tx.named(query, arg)
 	if err != nil {
 		return &row{err: err}
@@ -114,7 +114,7 @@ func (tx *Tx) NamedQueryRowx(query string, arg interface{}) *row {
 	return tx.QueryRowx(query, args...)
 }
 
-func (tx *Tx) NamedExec(query string, arg interface{}) error {
+func (tx *Tx) NamedExec(query string, arg any) error {
 	query, args, err := tx.named(query, arg)
 	if err != nil {
 		return err
@@ -122,12 +122,12 @@ func (tx *Tx) NamedExec(query string, arg interface{}) error {
 	return tx.Exec(query, args...)
 }
 
-func (tx *Tx) QueryRowx(query string, args ...interface{}) *row {
+func (tx *Tx) QueryRowx(query string, args ...any) *row {
 	tx.logQuery(query, args...)
 	return &row{Row: tx.Tx.QueryRowx(query, args...)}
 }
 
-func (tx *Tx) Exec(query string, args ...interface{}) error {
+func (tx *Tx) Exec(query string, args ...any) error {
 	tx.logQuery(query, args...)
 
 	res, err := tx.Tx.Exec(query, args...)
@@ -144,17 +144,17 @@ func (tx *Tx) Exec(query string, args ...interface{}) error {
 	return nil
 }
 
-func (tx *Tx) Get(dest interface{}, query string, args ...interface{}) error {
+func (tx *Tx) Get(dest any, query string, args ...any) error {
 	tx.logQuery(query, args...)
 	return tx.Tx.Get(dest, query, args...)
 }
 
-func (tx *Tx) Select(dest interface{}, query string, args ...interface{}) error {
+func (tx *Tx) Select(dest any, query string, args ...any) error {
 	tx.logQuery(query, args...)
 	return tx.Tx.Select(dest, query, args...)
 }
 
-func (tx *Tx) NamedSelect(dest interface{}, query string, arg interface{}) error {
+func (tx *Tx) NamedSelect(dest any, query string, arg any) error {
 	query, args, err := tx.named(query, arg)
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func (tx *Tx) NamedSelect(dest interface{}, query string, arg interface{}) error
 	return tx.Tx.Select(dest, query, args...)
 }
 
-func (tx *Tx) named(query string, arg interface{}) (string, []interface{}, error) {
+func (tx *Tx) named(query string, arg any) (string, []any, error) {
 	query, args, err := sqlx.Named(query, arg)
 	if err != nil {
 		return "", nil, err
@@ -176,7 +176,7 @@ func (tx *Tx) named(query string, arg interface{}) (string, []interface{}, error
 	return tx.Rebind(query), args, err
 }
 
-func (tx *Tx) logQuery(query string, args ...interface{}) {
+func (tx *Tx) logQuery(query string, args ...any) {
 	// TODO: enable by flag
 	// tx.log.Printf("%s\n%+v", query, args)
 }

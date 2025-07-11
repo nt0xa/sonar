@@ -2,11 +2,11 @@ package database_test
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -15,7 +15,7 @@ import (
 var (
 	tf  *testfixtures.Loader
 	db  *database.DB
-	log = logrus.New()
+	log = slog.New(slog.DiscardHandler)
 )
 
 func TestMain(m *testing.M) {

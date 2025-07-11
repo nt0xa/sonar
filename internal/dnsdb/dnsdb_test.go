@@ -2,12 +2,12 @@ package dnsdb_test
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, logrus.New())
+	db, err = database.New(dsn, slog.New(slog.DiscardHandler))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)

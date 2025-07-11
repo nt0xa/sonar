@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http/httptest"
 	"os"
 	"reflect"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -65,7 +65,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	log := logrus.New()
+	log := slog.New(slog.DiscardHandler)
 
 	db, err = database.New(dsn, log)
 	if err != nil {

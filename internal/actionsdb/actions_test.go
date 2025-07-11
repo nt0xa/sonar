@@ -2,11 +2,11 @@ package actionsdb_test
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/actions"
@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	log := logrus.New()
+	log := slog.New(slog.DiscardHandler)
 
 	db, err = database.New(dsn, log)
 	if err != nil {

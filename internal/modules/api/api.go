@@ -3,24 +3,24 @@ package api
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 type API struct {
 	cfg     *Config
 	db      *database.DB
-	log     logger.StdLogger
+	log     *slog.Logger
 	tls     *tls.Config
 	actions actions.Actions
 }
 
-func New(cfg *Config, db *database.DB, log logger.StdLogger,
+func New(cfg *Config, db *database.DB, log *slog.Logger,
 	tls *tls.Config, actions actions.Actions) (*API, error) {
 
 	return &API{
