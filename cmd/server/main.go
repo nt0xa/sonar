@@ -78,13 +78,13 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// Telemetry
 	//
 
-	telem, err := telemetry.New(ctx, "sonar", "v0") // TODO: change
+	tel, err := telemetry.New(ctx, "sonar", "v0") // TODO: change
 	if err != nil {
 		return fmt.Errorf("failed to init telemetry: %w", err)
 	}
 
 	defer func() {
-		_ = telem.Shutdown(ctx)
+		_ = tel.Shutdown(ctx)
 	}()
 
 	//
@@ -93,7 +93,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 
 	log := slog.New(logx.MultiHandler(
 		slog.NewTextHandler(os.Stdout, nil),
-		telem.NewLogHandler("sonar"),
+		tel.NewLogHandler("sonar"),
 	))
 
 	//
@@ -168,6 +168,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	dnsHandler := server.DNSHandler(
 		&cfg.DNS,
 		db,
+		tel,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
 		func(e *dnsx.Event) {

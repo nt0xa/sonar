@@ -1,6 +1,8 @@
 package dnsx
 
 import (
+	"context"
+
 	"github.com/miekg/dns"
 )
 
@@ -23,7 +25,7 @@ type server struct {
 }
 
 // New is convenient constructor for server.
-func New(addr string, h dns.Handler, opts ...Option) Server {
+func New(addr string, h Handler, opts ...Option) Server {
 
 	if h == nil {
 		panic("dnsx: handler must not be nil")
@@ -37,9 +39,12 @@ func New(addr string, h dns.Handler, opts ...Option) Server {
 
 	return &server{
 		server: &dns.Server{
-			Addr:              addr,
-			Net:               "udp",
-			Handler:           h,
+			Addr: addr,
+			Net:  "udp",
+			Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
+				ctx := context.Background()
+				h.ServeDNS(ctx, w, r)
+			}),
 			NotifyStartedFunc: options.notifyStartedFunc,
 		},
 	}
