@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/logx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
@@ -76,7 +78,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// Telemetry
 	//
 
-	telem, err := telemetry.New(ctx, "sonar", "v0")
+	telem, err := telemetry.New(ctx, "sonar", "v0") // TODO: change
 	if err != nil {
 		return fmt.Errorf("failed to init telemetry: %w", err)
 	}
@@ -89,7 +91,10 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// Logger
 	//
 
-	log := telem.NewLogger("sonar")
+	log := slog.New(logx.MultiHandler(
+		slog.NewTextHandler(os.Stdout, nil),
+		telem.NewLogHandler("sonar"),
+	))
 
 	//
 	// DB
@@ -331,6 +336,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	}()
 
 	// Wait forever
+	log.Info("Starting server")
 	if err := <-errChan; err != nil {
 		return err
 	}
