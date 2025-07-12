@@ -30,7 +30,7 @@ type telemetry struct {
 
 type Telemetry interface {
 	TraceStart(ctx context.Context, name string) (context.Context, oteltrace.Span)
-	NewLogger(name string) *slog.Logger
+	NewLogHandler(name string) slog.Handler
 	Shutdown(ctx context.Context) error
 }
 
@@ -84,8 +84,8 @@ func (t *telemetry) TraceStart(ctx context.Context, name string) (context.Contex
 	return t.tracer.Start(ctx, name)
 }
 
-func (t *telemetry) NewLogger(name string) *slog.Logger {
-	return otelslog.NewLogger(name, otelslog.WithLoggerProvider(t.lp))
+func (t *telemetry) NewLogHandler(name string) slog.Handler {
+	return otelslog.NewHandler(name, otelslog.WithLoggerProvider(t.lp))
 }
 
 func newResource(name, version string) *resource.Resource {
