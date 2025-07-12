@@ -29,7 +29,11 @@ type telemetry struct {
 }
 
 type Telemetry interface {
-	TraceStart(ctx context.Context, name string) (context.Context, oteltrace.Span)
+	TraceStart(
+		ctx context.Context,
+		name string,
+		opts ...oteltrace.SpanStartOption,
+	) (context.Context, oteltrace.Span)
 	NewLogHandler(name string) slog.Handler
 	Shutdown(ctx context.Context) error
 }
@@ -79,9 +83,13 @@ func (t *telemetry) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (t *telemetry) TraceStart(ctx context.Context, name string) (context.Context, oteltrace.Span) {
+func (t *telemetry) TraceStart(
+	ctx context.Context,
+	name string,
+	opts ...oteltrace.SpanStartOption,
+) (context.Context, oteltrace.Span) {
 	//nolint: spancheck // this is a wrapper around the otel tracer
-	return t.tracer.Start(ctx, name)
+	return t.tracer.Start(ctx, name, opts...)
 }
 
 func (t *telemetry) NewLogHandler(name string) slog.Handler {

@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 	wg.Add(1)
 
 	// Do not handle DNS queries which are not subdomains of the origin.
-	handler := dns.NewServeMux()
+	handler := dnsx.NewServeMux()
 
 	handler.Handle("sonar.test",
 		dnsx.NotifyHandler(
