@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"regexp"
@@ -55,6 +56,7 @@ func (h *EventsHandler) worker(id int) {
 	defer h.workersWg.Done()
 
 	for e := range h.events {
+		ctx := context.Background() // TODO: create context when emit event?
 
 		seen := make(map[string]struct{})
 
@@ -76,7 +78,7 @@ func (h *EventsHandler) worker(id int) {
 				continue
 			}
 
-			p, err := h.db.PayloadsGetBySubdomain(d)
+			p, err := h.db.PayloadsGetBySubdomain(ctx, d)
 			if err != nil {
 				continue
 			}
@@ -85,7 +87,7 @@ func (h *EventsHandler) worker(id int) {
 
 			// Store event in database
 			if p.StoreEvents {
-				if err := h.db.EventsCreate(e); err != nil {
+				if err := h.db.EventsCreate(ctx, e); err != nil {
 					fmt.Println(err)
 					continue
 				}
@@ -96,7 +98,7 @@ func (h *EventsHandler) worker(id int) {
 				continue
 			}
 
-			u, err := h.db.UsersGetByID(p.UserID)
+			u, err := h.db.UsersGetByID(ctx, p.UserID)
 			if err != nil {
 				continue
 			}

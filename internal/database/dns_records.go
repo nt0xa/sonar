@@ -1,10 +1,12 @@
 package database
 
 import (
+	"context"
+
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
+func (db *DB) DNSRecordsCreate(ctx context.Context, o *models.DNSRecord) error {
 
 	o.CreatedAt = now()
 
@@ -14,12 +16,12 @@ func (db *DB) DNSRecordsCreate(o *models.DNSRecord) error {
 		" (SELECT COALESCE(MAX(index), 0) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1) " +
 		"RETURNING id, index"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
+	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index)
 }
 
-func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
+func (db *DB) DNSRecordsUpdate(ctx context.Context, o *models.DNSRecord) error {
 
-	return db.NamedExec(
+	return db.NamedExec(ctx,
 		"UPDATE dns_records SET "+
 			"payload_id = :payload_id, "+
 			"name = :name, "+
@@ -32,10 +34,10 @@ func (db *DB) DNSRecordsUpdate(o *models.DNSRecord) error {
 			"WHERE id = :id", o)
 }
 
-func (db *DB) DNSRecordsGetByID(id int64) (*models.DNSRecord, error) {
+func (db *DB) DNSRecordsGetByID(ctx context.Context, id int64) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
-	err := db.Get(&o, "SELECT * FROM dns_records WHERE id = $1", id)
+	err := db.Get(ctx, &o, "SELECT * FROM dns_records WHERE id = $1", id)
 
 	if err != nil {
 		return nil, err
@@ -44,10 +46,10 @@ func (db *DB) DNSRecordsGetByID(id int64) (*models.DNSRecord, error) {
 	return &o, nil
 }
 
-func (db *DB) DNSRecordsGetByPayloadNameAndType(payloadID int64, name string, typ string) (*models.DNSRecord, error) {
+func (db *DB) DNSRecordsGetByPayloadNameAndType(ctx context.Context, payloadID int64, name string, typ string) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
-	err := db.Get(&o,
+	err := db.Get(ctx, &o,
 		"SELECT * FROM dns_records WHERE payload_id = $1 AND name = $2 AND type = $3",
 		payloadID, name, typ)
 
@@ -58,41 +60,41 @@ func (db *DB) DNSRecordsGetByPayloadNameAndType(payloadID int64, name string, ty
 	return &o, nil
 }
 
-func (db *DB) DNSRecordsGetByPayloadID(payloadID int64) ([]*models.DNSRecord, error) {
+func (db *DB) DNSRecordsGetByPayloadID(ctx context.Context, payloadID int64) ([]*models.DNSRecord, error) {
 	res := make([]*models.DNSRecord, 0)
 
-	err := db.Select(&res, "SELECT * FROM dns_records WHERE payload_id = $1 ORDER BY id ASC", payloadID)
+	err := db.Select(ctx, &res, "SELECT * FROM dns_records WHERE payload_id = $1 ORDER BY id ASC", payloadID)
 
 	return res, err
 }
 
-func (db *DB) DNSRecordsGetCountByPayloadID(payloadID int64) (int, error) {
+func (db *DB) DNSRecordsGetCountByPayloadID(ctx context.Context, payloadID int64) (int, error) {
 	var res int
 
 	query := "SELECT COUNT(*) FROM dns_records WHERE payload_id = $1"
 
-	err := db.Get(&res, query, payloadID)
+	err := db.Get(ctx, &res, query, payloadID)
 
 	return res, err
 }
 
-func (db *DB) DNSRecordsGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.DNSRecord, error) {
+func (db *DB) DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int64) (*models.DNSRecord, error) {
 	var o models.DNSRecord
 
 	query := "SELECT * FROM dns_records WHERE payload_id = $1 AND index = $2 ORDER BY id ASC"
-	err := db.Get(&o, query, payloadID, index)
+	err := db.Get(ctx, &o, query, payloadID, index)
 
 	return &o, err
 }
 
-func (db *DB) DNSRecordsDelete(id int64) error {
-	return db.Exec("DELETE FROM dns_records WHERE id = $1", id)
+func (db *DB) DNSRecordsDelete(ctx context.Context, id int64) error {
+	return db.Exec(ctx, "DELETE FROM dns_records WHERE id = $1", id)
 }
 
-func (db *DB) DNSRecordsDeleteAllByPayloadID(payloadID int64) ([]*models.DNSRecord, error) {
+func (db *DB) DNSRecordsDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*models.DNSRecord, error) {
 	res := make([]*models.DNSRecord, 0)
 
-	if err := db.Select(&res,
+	if err := db.Select(ctx, &res,
 		"DELETE FROM dns_records WHERE payload_id = $1 RETURNING *", payloadID); err != nil {
 		return nil, err
 	}
@@ -100,10 +102,10 @@ func (db *DB) DNSRecordsDeleteAllByPayloadID(payloadID int64) ([]*models.DNSReco
 	return res, nil
 }
 
-func (db *DB) DNSRecordsDeleteAllByPayloadIDAndName(payloadID int64, name string) ([]*models.DNSRecord, error) {
+func (db *DB) DNSRecordsDeleteAllByPayloadIDAndName(ctx context.Context, payloadID int64, name string) ([]*models.DNSRecord, error) {
 	res := make([]*models.DNSRecord, 0)
 
-	if err := db.Select(&res,
+	if err := db.Select(ctx, &res,
 		"DELETE FROM dns_records WHERE payload_id = $1 AND name = $2 RETURNING *", payloadID, name); err != nil {
 		return nil, err
 	}

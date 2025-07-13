@@ -33,14 +33,14 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	if _, err := act.db.DNSRecordsGetByPayloadNameAndType(payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {
+	if _, err := act.db.DNSRecordsGetByPayloadNameAndType(ctx, payload.ID, p.Name, strings.ToUpper(p.Type)); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("dns records for payload %q with name %q and type %q already exist",
 			p.PayloadName, p.Name, p.Type)
 	}
@@ -54,7 +54,7 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		Strategy:  p.Strategy,
 	}
 
-	if err := act.db.DNSRecordsCreate(rec); err != nil {
+	if err := act.db.DNSRecordsCreate(ctx, rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -71,12 +71,12 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	rec, err := act.db.DNSRecordsGetByPayloadIDAndIndex(payload.ID, p.Index)
+	rec, err := act.db.DNSRecordsGetByPayloadIDAndIndex(ctx, payload.ID, p.Index)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("dns record for payload %q with index %d not found",
 			p.PayloadName, p.Index)
@@ -84,7 +84,7 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	if err := act.db.DNSRecordsDelete(rec.ID); err != nil {
+	if err := act.db.DNSRecordsDelete(ctx, rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -101,7 +101,7 @@ func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsC
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
@@ -109,9 +109,9 @@ func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsC
 	var recs []*models.DNSRecord
 
 	if p.Name != "" {
-		recs, err = act.db.DNSRecordsDeleteAllByPayloadIDAndName(payload.ID, p.Name)
+		recs, err = act.db.DNSRecordsDeleteAllByPayloadIDAndName(ctx, payload.ID, p.Name)
 	} else {
-		recs, err = act.db.DNSRecordsDeleteAllByPayloadID(payload.ID)
+		recs, err = act.db.DNSRecordsDeleteAllByPayloadID(ctx, payload.ID)
 	}
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -136,12 +136,12 @@ func (act *dbactions) DNSRecordsList(ctx context.Context, p actions.DNSRecordsLi
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	recs, err := act.db.DNSRecordsGetByPayloadID(payload.ID)
+	recs, err := act.db.DNSRecordsGetByPayloadID(ctx, payload.ID)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}

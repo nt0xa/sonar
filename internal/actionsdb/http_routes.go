@@ -35,12 +35,12 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	if _, err := act.db.HTTPRoutesGetByPayloadMethodAndPath(payload.ID, strings.ToUpper(p.Method), p.Path); err != sql.ErrNoRows {
+	if _, err := act.db.HTTPRoutesGetByPayloadMethodAndPath(ctx, payload.ID, strings.ToUpper(p.Method), p.Path); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("http route for payload %q with method %q and path %q already exist",
 			p.PayloadName, strings.ToUpper(p.Method), p.Path)
 	}
@@ -61,7 +61,7 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		IsDynamic: p.IsDynamic,
 	}
 
-	if err := act.db.HTTPRoutesCreate(rec); err != nil {
+	if err := act.db.HTTPRoutesCreate(ctx, rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -78,12 +78,12 @@ func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.Payload)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Payload)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.Payload)
 	}
 
-	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(payload.ID, p.Index)
+	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, p.Index)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("http route for payload %q with index %d not found",
 			p.Payload, p.Index)
@@ -121,7 +121,7 @@ func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutes
 		rec.IsDynamic = *p.IsDynamic
 	}
 
-	if err := act.db.HTTPRoutesUpdate(rec); err != nil {
+	if err := act.db.HTTPRoutesUpdate(ctx, rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -138,12 +138,12 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(payload.ID, p.Index)
+	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, p.Index)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("http route for payload %q with index %d not found",
 			p.PayloadName, p.Index)
@@ -151,7 +151,7 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	if err := act.db.HTTPRoutesDelete(rec.ID); err != nil {
+	if err := act.db.HTTPRoutesDelete(ctx, rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -168,7 +168,7 @@ func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesC
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
@@ -176,9 +176,9 @@ func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesC
 	var recs []*models.HTTPRoute
 
 	if p.Path != "" {
-		recs, err = act.db.HTTPRoutesDeleteAllByPayloadIDAndPath(payload.ID, p.Path)
+		recs, err = act.db.HTTPRoutesDeleteAllByPayloadIDAndPath(ctx, payload.ID, p.Path)
 	} else {
-		recs, err = act.db.HTTPRoutesDeleteAllByPayloadID(payload.ID)
+		recs, err = act.db.HTTPRoutesDeleteAllByPayloadID(ctx, payload.ID)
 	}
 	if err != nil {
 		return nil, errors.Internal(err)
@@ -203,12 +203,12 @@ func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesLi
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	recs, err := act.db.HTTPRoutesGetByPayloadID(payload.ID)
+	recs, err := act.db.HTTPRoutesGetByPayloadID(ctx, payload.ID)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}

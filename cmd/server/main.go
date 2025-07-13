@@ -100,7 +100,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// DB
 	//
 
-	db, err := database.New(cfg.DB.DSN, log)
+	db, err := database.New(cfg.DB.DSN, log, tel)
 	if err != nil {
 		return fmt.Errorf("failed to init database: %w", err)
 	}
@@ -121,15 +121,15 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		},
 	}
 
-	if u, err := db.UsersGetByName("admin"); errors.Is(err, sql.ErrNoRows) {
+	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
 		// There is no admin yet - create one
-		if err := db.UsersCreate(admin); err != nil {
+		if err := db.UsersCreate(ctx, admin); err != nil {
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
 	} else if err == nil {
 		// Admin user exists - update
 		admin.ID = u.ID
-		if err := db.UsersUpdate(admin); err != nil {
+		if err := db.UsersUpdate(ctx, admin); err != nil {
 			return fmt.Errorf("failed to update admin user: %w", err)
 		}
 	} else {
@@ -140,7 +140,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// Cache
 	//
 
-	cache, err := cache.New(db)
+	cache, err := cache.New(ctx, db)
 	if err != nil {
 		return err
 	}

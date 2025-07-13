@@ -31,7 +31,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Validation(err)
 	}
 
-	if _, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name); err != sql.ErrNoRows {
+	if _, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("payload with name %q already exist", p.Name)
 	}
 
@@ -48,7 +48,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		StoreEvents:     p.StoreEvents,
 	}
 
-	err = act.db.PayloadsCreate(rec)
+	err = act.db.PayloadsCreate(ctx, rec)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -66,7 +66,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Validation(err)
 	}
 
-	rec, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
+	rec, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.Name)
 	} else if err != nil {
@@ -85,7 +85,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		rec.StoreEvents = *p.StoreEvents
 	}
 
-	err = act.db.PayloadsUpdate(rec)
+	err = act.db.PayloadsUpdate(ctx, rec)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -103,14 +103,14 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 		return nil, errors.Validation(err)
 	}
 
-	rec, err := act.db.PayloadsGetByUserAndName(u.ID, p.Name)
+	rec, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
 	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	if err := act.db.PayloadsDelete(rec.ID); err != nil {
+	if err := act.db.PayloadsDelete(ctx, rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -127,7 +127,7 @@ func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClear
 		return nil, errors.Validation(err)
 	}
 
-	recs, err := act.db.PayloadsDeleteByNamePart(u.ID, p.Name)
+	recs, err := act.db.PayloadsDeleteByNamePart(ctx, u.ID, p.Name)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -151,7 +151,7 @@ func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListPa
 		return nil, errors.Validation(err)
 	}
 
-	recs, err := act.db.PayloadsFindByUserAndName(u.ID, p.Name)
+	recs, err := act.db.PayloadsFindByUserAndName(ctx, u.ID, p.Name)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}

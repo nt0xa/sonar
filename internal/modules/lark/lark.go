@@ -210,7 +210,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				user, err := lrk.db.UsersGetByParam(models.UserLarkID, *userID)
+				user, err := lrk.db.UsersGetByParam(ctx, models.UserLarkID, *userID)
 
 				if user == nil {
 					// Create user if not exists
@@ -221,7 +221,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 						},
 					}
 
-					if err := lrk.db.UsersCreate(user); err != nil {
+					if err := lrk.db.UsersCreate(ctx, user); err != nil {
 						// TODO: logging
 						lrk.message(*userID, msgID, "internal error")
 						return nil
