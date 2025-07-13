@@ -1,6 +1,7 @@
 package dnsx
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -62,7 +63,7 @@ func (r *Records) Del(name string, qtype uint16) error {
 // Get returns DNS record from Records.
 // Returns nil if no records found.
 // Handles wildcards.
-func (r *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
+func (r *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

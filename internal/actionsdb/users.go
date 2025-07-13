@@ -28,7 +28,7 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Validation(err)
 	}
 
-	if _, err := act.db.UsersGetByName(p.Name); err != sql.ErrNoRows {
+	if _, err := act.db.UsersGetByName(ctx, p.Name); err != sql.ErrNoRows {
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
 
@@ -41,7 +41,7 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		CreatedBy: &u.ID,
 	}
 
-	if err := act.db.UsersCreate(rec); err != nil {
+	if err := act.db.UsersCreate(ctx, rec); err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -53,12 +53,12 @@ func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeletePara
 		return nil, errors.Validation(err)
 	}
 
-	rec, err := act.db.UsersGetByName(p.Name)
+	rec, err := act.db.UsersGetByName(ctx, p.Name)
 	if err != nil {
 		return nil, errors.NotFoundf("user with name %q not found", p.Name)
 	}
 
-	if err := act.db.UsersDelete(rec.ID); err != nil {
+	if err := act.db.UsersDelete(ctx, rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
 

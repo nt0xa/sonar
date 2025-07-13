@@ -108,6 +108,7 @@ func (tg *Telegram) Start() error {
 	updates := tg.api.GetUpdatesChan(u)
 
 	for update := range updates {
+		ctx := context.Background()
 
 		if update.Message != nil {
 
@@ -116,7 +117,7 @@ func (tg *Telegram) Start() error {
 
 			// Ignore error because user=nil is unauthorized user and there are
 			// some commands available for unauthorized users (e.g. "/id")
-			chatUser, _ := tg.db.UsersGetByParam(models.UserTelegramID, chat.ID)
+			chatUser, _ := tg.db.UsersGetByParam(ctx, models.UserTelegramID, chat.ID)
 			ctx := actionsdb.SetUser(context.Background(), chatUser)
 			ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 

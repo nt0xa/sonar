@@ -105,7 +105,7 @@ func DNSHandler(
 
 func DNSTelemetryHandler(tel telemetry.Telemetry, next dnsx.Handler) dnsx.Handler {
 	return dnsx.HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
-		ctx, span := tel.TraceStart(ctx, "dnsx", trace.WithAttributes(
+		ctx, span := tel.TraceStart(ctx, "dns", trace.WithAttributes(
 			attribute.String("dns.query", r.Question[0].Name),
 			attribute.String("dns.qtype", dnsx.QtypeString(r.Question[0].Qtype)),
 		))

@@ -2,6 +2,7 @@ package httpdb
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"net/http"
 	"strings"
@@ -18,21 +19,21 @@ type Routes struct {
 	Origin string
 }
 
-func (rr *Routes) Router(host string) (chi.Router, error) {
+func (rr *Routes) Router(ctx context.Context, host string) (chi.Router, error) {
 
 	// Get payload domain from "Host" header.
 	parts := strings.Split(strings.Replace(host, "."+rr.Origin, "", 1), ".")
 	domain := parts[len(parts)-1]
 
 	// Find payload by domain.
-	payload, err := rr.DB.PayloadsGetBySubdomain(domain)
+	payload, err := rr.DB.PayloadsGetBySubdomain(ctx, domain)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	routes, err := rr.DB.HTTPRoutesGetByPayloadID(payload.ID)
+	routes, err := rr.DB.HTTPRoutesGetByPayloadID(ctx, payload.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (rr *Routes) Router(host string) (chi.Router, error) {
 
 func Handler(rr *Routes, fallback http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mux, err := rr.Router(r.Host)
+		mux, err := rr.Router(r.Context(), r.Host)
 		if err != nil || mux == nil {
 			fallback.ServeHTTP(w, r)
 			return

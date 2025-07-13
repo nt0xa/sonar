@@ -34,12 +34,12 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	recs, err := act.db.EventsListByPayloadID(payload.ID,
+	recs, err := act.db.EventsListByPayloadID(ctx, payload.ID,
 		database.EventsPagination(database.Page{
 			Count:  p.Count,
 			After:  p.After,
@@ -70,12 +70,12 @@ func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) 
 		return nil, errors.Validation(err)
 	}
 
-	payload, err := act.db.PayloadsGetByUserAndName(u.ID, p.PayloadName)
+	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	r, err := act.db.EventsGetByPayloadAndIndex(payload.ID, p.Index)
+	r, err := act.db.EventsGetByPayloadAndIndex(ctx, payload.ID, p.Index)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}

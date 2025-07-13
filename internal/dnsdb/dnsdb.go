@@ -1,6 +1,7 @@
 package dnsdb
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ type Records struct {
 }
 
 // Get allows handler to implement dnsx.RecordSet interface.
-func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
+func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR, error) {
 	// Trim origin because domains are stored without it.
 	// test1.test2.00b18489.sonar.local -> [test1, test2, 00b18489]
 	parts := strings.Split(strings.TrimSuffix(strings.ToLower(name), "."+h.Origin+"."), ".")
@@ -34,14 +35,14 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	// Get payload subdomain from name, i.e. rightmost part.
 	domain := parts[len(parts)-1]
 
-	payload, err := h.DB.PayloadsGetBySubdomain(domain)
+	payload, err := h.DB.PayloadsGetBySubdomain(ctx, domain)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	count, err := h.DB.DNSRecordsGetCountByPayloadID(payload.ID)
+	count, err := h.DB.DNSRecordsGetCountByPayloadID(ctx, payload.ID)
 	if err != nil {
 		return nil, err
 	} else if count == 0 {
@@ -59,7 +60,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	for _, n := range dnsx.MakeWildcards(subdomain) {
 
 		// TODO: add db query for multiple names.
-		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(payload.ID, n, typ)
+		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(ctx, payload.ID, n, typ)
 		if err == sql.ErrNoRows {
 			continue
 		} else if err != nil {
@@ -116,7 +117,7 @@ func (h *Records) Get(name string, qtype uint16) ([]dns.RR, error) {
 	record.LastAnswer = dnsx.RRsToStrings(res)
 	record.LastAccessedAt = pointer.Time(time.Now())
 
-	if err := h.DB.DNSRecordsUpdate(record); err != nil {
+	if err := h.DB.DNSRecordsUpdate(ctx, record); err != nil {
 		return nil, err
 	}
 

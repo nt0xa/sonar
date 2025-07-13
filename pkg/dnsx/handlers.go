@@ -25,7 +25,7 @@ func (f HandlerFunc) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 // RecordGetter is an interface which must be implemented by any
 // records providers like database records, in-memory records, etc.
 type RecordGetter interface {
-	Get(name string, qtype uint16) ([]dns.RR, error)
+	Get(ctx context.Context, name string, qtype uint16) ([]dns.RR, error)
 }
 
 // RecordSetHandler wraps RecordGetter interface and implements
@@ -42,7 +42,7 @@ type recordSetHandler struct {
 func (h *recordSetHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 	q := r.Question[0]
 
-	rrs, err := h.set.Get(q.Name, q.Qtype)
+	rrs, err := h.set.Get(ctx, q.Name, q.Qtype)
 	if err != nil || len(rrs) == 0 {
 		handleFailed(dns.RcodeServerFailure, w, r)
 		return
@@ -57,7 +57,7 @@ func ChainHandler(set RecordGetter, next Handler) Handler {
 	return HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		q := r.Question[0]
 
-		rrs, err := set.Get(q.Name, q.Qtype)
+		rrs, err := set.Get(ctx, q.Name, q.Qtype)
 		if err != nil {
 			handleFailed(dns.RcodeServerFailure, w, r)
 			return

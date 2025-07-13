@@ -1,10 +1,12 @@
 package database
 
 import (
+	"context"
+
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) EventsCreate(o *models.Event) error {
+func (db *DB) EventsCreate(ctx context.Context, o *models.Event) error {
 
 	o.CreatedAt = now()
 
@@ -13,13 +15,13 @@ func (db *DB) EventsCreate(o *models.Event) error {
 		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at)" +
 		"RETURNING id"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID)
+	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID)
 }
 
-func (db *DB) EventsGetByID(id int64) (*models.Event, error) {
+func (db *DB) EventsGetByID(ctx context.Context, id int64) (*models.Event, error) {
 	var o models.Event
 
-	err := db.Get(&o, "SELECT * FROM events WHERE id = $1", id)
+	err := db.Get(ctx, &o, "SELECT * FROM events WHERE id = $1", id)
 
 	if err != nil {
 		return nil, err
@@ -54,7 +56,7 @@ func EventsReverse(b bool) EventsListOption {
 	}
 }
 
-func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) ([]*models.Event, error) {
+func (db *DB) EventsListByPayloadID(ctx context.Context, payloadID int64, opts ...EventsListOption) ([]*models.Event, error) {
 	options := defaultEventsListOptions
 
 	for _, opt := range opts {
@@ -85,19 +87,19 @@ func (db *DB) EventsListByPayloadID(payloadID int64, opts ...EventsListOption) (
 
 	res := make([]*models.Event, 0)
 
-	if err := db.NamedSelect(&res, query, params); err != nil {
+	if err := db.NamedSelect(ctx, &res, query, params); err != nil {
 		return nil, err
 	}
 
 	return res, nil
 }
 
-func (db *DB) EventsGetByPayloadAndIndex(payloadID int64, index int64) (*models.Event, error) {
+func (db *DB) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*models.Event, error) {
 	query := "SELECT * FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY id ASC) AS index FROM events WHERE payload_id = $1) subq WHERE index = $2"
 
 	var res models.Event
 
-	if err := db.Get(&res, query, payloadID, index); err != nil {
+	if err := db.Get(ctx, &res, query, payloadID, index); err != nil {
 		return nil, err
 	}
 
