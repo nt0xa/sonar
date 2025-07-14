@@ -13,6 +13,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/lark"
 	"github.com/nt0xa/sonar/internal/modules/telegram"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Controller interface {
@@ -56,6 +57,7 @@ func Modules(
 	cfg *ModulesConfig,
 	db *database.DB,
 	log *slog.Logger,
+	tel telemetry.Telemetry,
 	tls *tls.Config,
 	actions actions.Actions,
 	domain string,
