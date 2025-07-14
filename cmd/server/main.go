@@ -15,6 +15,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
@@ -87,6 +88,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		_ = tel.Shutdown(ctx)
 	}()
 
+	ctx, span := tel.TraceStart(
+		ctx,
+		"server.start",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+
 	//
 	// Logger
 	//
@@ -105,8 +112,17 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		return fmt.Errorf("failed to init database: %w", err)
 	}
 
-	if err := db.Migrate(); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
+	{
+		_, span := tel.TraceStart(
+			ctx,
+			"db.migrate",
+			trace.WithSpanKind(trace.SpanKindInternal),
+			trace.WithAttributes(),
+		)
+		if err := db.Migrate(); err != nil {
+			return fmt.Errorf("failed to migrate database: %w", err)
+		}
+		span.End()
 	}
 
 	// Create admin user
@@ -177,10 +193,19 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	)
 
 	go func() {
+		_, span := tel.TraceStart(
+			ctx,
+			"dns.start",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+
 		srv := dnsx.New(
 			":53",
 			dnsHandler,
-			dnsx.NotifyStartedFunc(waitDNS.Done),
+			dnsx.NotifyStartedFunc(func() {
+				span.End()
+				waitDNS.Done()
+			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -220,6 +245,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	//
 
 	go func() {
+		_, span := tel.TraceStart(
+			ctx,
+			"http.start",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+
 		srv := httpx.New(
 			":80",
 			server.HTTPHandler(
@@ -229,6 +260,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 					events.Emit(server.HTTPEvent(e))
 				},
 			),
+			httpx.NotifyStartedFunc(func() {
+				span.End()
+			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -241,6 +275,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	//
 
 	go func() {
+		_, span := tel.TraceStart(
+			ctx,
+			"https.start",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+
 		srv := httpx.New(
 			":443",
 			server.HTTPHandler(
@@ -251,6 +291,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 				},
 			),
 			httpx.TLSConfig(tlsConfig),
+			httpx.NotifyStartedFunc(func() {
+				span.End()
+			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -263,6 +306,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	//
 
 	go func() {
+		_, span := tel.TraceStart(
+			ctx,
+			"smtp.start",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
 			":25",
@@ -272,6 +321,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 				events.Emit(server.SMTPEvent(e))
 			}),
 			smtpx.TLSConfig(tlsConfig, false),
+			smtpx.NotifyStartedFunc(func() {
+				span.End()
+			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -284,6 +336,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	//
 
 	go func() {
+		_, span := tel.TraceStart(
+			ctx,
+			"ftp.start",
+			trace.WithSpanKind(trace.SpanKindInternal),
+		)
+
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
 			":21",
@@ -291,6 +349,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
 			ftpx.OnClose(func(e *ftpx.Event) {
 				events.Emit(server.FTPEvent(e))
+			}),
+			ftpx.NotifyStartedFunc(func() {
+				span.End()
 			}),
 		)
 
@@ -338,6 +399,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 
 	// Wait forever
 	log.Info("Starting server")
+	span.End()
+
 	if err := <-errChan; err != nil {
 		return err
 	}
