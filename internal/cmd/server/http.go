@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/httpdb"
 	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 // TODO: as parameters
@@ -29,28 +32,48 @@ func HTTPDefault(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("<html><body>%s</body></html>", rnd)))
 }
 
-func HTTPHandler(db *database.DB, origin string, notify func(*httpx.Event)) http.Handler {
-	return http.TimeoutHandler(
-		httpx.BodyReaderHandler(
-			httpx.MaxBytesHandler(
-				httpx.NotifyHandler(
-					notify,
-					httpdb.Handler(
-						&httpdb.Routes{DB: db, Origin: origin},
-						http.HandlerFunc(HTTPDefault),
+func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := tel.TraceStart(r.Context(), "http", trace.WithAttributes(
+			attribute.String("http.method", r.Method),
+			attribute.String("http.host", r.Host),
+			attribute.String("http.path", r.URL.Path),
+		))
+		defer span.End()
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func HTTPHandler(
+	db *database.DB,
+	tel telemetry.Telemetry,
+	origin string,
+	notify func(*httpx.Event),
+) http.Handler {
+	return HTTPTelemetry(
+		http.TimeoutHandler(
+			httpx.BodyReaderHandler(
+				httpx.MaxBytesHandler(
+					httpx.NotifyHandler(
+						notify,
+						httpdb.Handler(
+							&httpdb.Routes{DB: db, Origin: origin},
+							http.HandlerFunc(HTTPDefault),
+						),
 					),
+					httpMaxBodyBytes,
 				),
 				httpMaxBodyBytes,
 			),
-			httpMaxBodyBytes,
+			httpHandlerTimeout,
+			"timeout",
 		),
-		httpHandlerTimeout,
-		"timeout",
+		tel,
 	)
 }
 
 func HTTPEvent(e *httpx.Event) *models.Event {
-
 	type Request struct {
 		Method  string      `structs:"method"`
 		Proto   string      `structs:"proto"`

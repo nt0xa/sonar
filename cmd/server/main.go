@@ -255,6 +255,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 			":80",
 			server.HTTPHandler(
 				db,
+				tel,
 				cfg.Domain,
 				func(e *httpx.Event) {
 					events.Emit(server.HTTPEvent(e))
@@ -285,6 +286,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 			":443",
 			server.HTTPHandler(
 				db,
+				tel,
 				cfg.Domain,
 				func(e *httpx.Event) {
 					events.Emit(server.HTTPEvent(e))
