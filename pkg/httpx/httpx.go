@@ -32,7 +32,6 @@ type server struct {
 }
 
 func New(addr string, h http.Handler, opts ...Option) Server {
-
 	if h == nil {
 		panic("httpx: handler must not be nil")
 	}
