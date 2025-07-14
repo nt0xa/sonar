@@ -28,50 +28,62 @@ func (db *DB) NamedExec(ctx context.Context, query string, arg any) error {
 }
 
 func (db *DB) QueryRowx(ctx context.Context, query string, args ...any) *row {
-	ctx, span := db.tel.TraceStart(ctx, "sql.QueryRowx", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.QueryRowx",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return &row{Row: db.DB.QueryRowxContext(ctx, query, args...)}
 }
 
 func (db *DB) Exec(ctx context.Context, query string, args ...any) error {
-	ctx, span := db.tel.TraceStart(ctx, "sql.Exec", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.Exec",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	_, err := db.DB.ExecContext(ctx, query, args...)
 	return err
 }
 
 func (db *DB) ExecResult(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	ctx, span := db.tel.TraceStart(ctx, "sql.ExecResult", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.ExecResult",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return db.DB.ExecContext(ctx, query, args...)
 }
 
 func (db *DB) Get(ctx context.Context, dest any, query string, args ...any) error {
-	ctx, span := db.tel.TraceStart(ctx, "sql.Get", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.Get",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return db.DB.GetContext(ctx, dest, query, args...)
 }
 
 func (db *DB) Select(ctx context.Context, dest any, query string, args ...any) error {
-	ctx, span := db.tel.TraceStart(ctx, "sql.Select", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.Select",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return db.DB.SelectContext(ctx, dest, query, args...)
 }
 
 func (db *DB) NamedSelect(ctx context.Context, dest any, query string, arg any) error {
-	ctx, span := db.tel.TraceStart(ctx, "sql.NamedSelect", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := db.tel.TraceStart(ctx, "sql.NamedSelect",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 
 	query, args, err := db.named(query, arg)
@@ -143,17 +155,21 @@ func (tx *Tx) NamedExec(ctx context.Context, query string, arg any) error {
 }
 
 func (tx *Tx) QueryRowx(ctx context.Context, query string, args ...any) *row {
-	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.QueryRowx", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.QueryRowx",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return &row{Row: tx.Tx.QueryRowxContext(ctx, query, args...)}
 }
 
 func (tx *Tx) Exec(ctx context.Context, query string, args ...any) error {
-	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Exec", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Exec",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 
 	res, err := tx.Tx.ExecContext(ctx, query, args...)
@@ -171,25 +187,31 @@ func (tx *Tx) Exec(ctx context.Context, query string, args ...any) error {
 }
 
 func (tx *Tx) Get(ctx context.Context, dest any, query string, args ...any) error {
-	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Get", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Get",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return tx.Tx.GetContext(ctx, dest, query, args...)
 }
 
 func (tx *Tx) Select(ctx context.Context, dest any, query string, args ...any) error {
-	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Select", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.Select",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 	return tx.Tx.SelectContext(ctx, dest, query, args...)
 }
 
 func (tx *Tx) NamedSelect(ctx context.Context, dest any, query string, arg any) error {
-	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.NamedSelect", trace.WithAttributes(
-		attribute.String("sql.query", query),
-	))
+	ctx, span := tx.tel.TraceStart(ctx, "sql.Tx.NamedSelect",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("sql.query", query),
+		))
 	defer span.End()
 
 	query, args, err := tx.named(query, arg)
