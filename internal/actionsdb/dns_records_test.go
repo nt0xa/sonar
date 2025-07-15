@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 
@@ -82,10 +81,10 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			r, err := acts.DNSRecordsCreate(ctx, tt.p)
 			require.NoError(t, err)
@@ -241,13 +240,13 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.DNSRecordsCreate(ctx, tt.p)
@@ -287,18 +286,18 @@ func TestDNSRecordsDelete_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			_, err = acts.DNSRecordsDelete(ctx, tt.p)
 			assert.NoError(t, err)
 
-			p, err := db.PayloadsGetByUserAndName(u.ID, tt.p.PayloadName)
+			p, err := db.PayloadsGetByUserAndName(t.Context(), u.ID, tt.p.PayloadName)
 			assert.NoError(t, err)
 
-			_, err = db.DNSRecordsGetByPayloadNameAndType(p.ID, tt.name, tt.typ)
+			_, err = db.DNSRecordsGetByPayloadNameAndType(t.Context(), p.ID, tt.name, tt.typ)
 			assert.Error(t, err, sql.ErrNoRows)
 		})
 	}
@@ -354,13 +353,13 @@ func TestDNSRecordsDelete_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.DNSRecordsDelete(ctx, tt.p)
@@ -398,10 +397,10 @@ func TestDNSRecordsList_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			list, err := acts.DNSRecordsList(ctx, tt.p)
 			assert.NoError(t, err)
@@ -449,13 +448,13 @@ func TestDNSRecordsList_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.DNSRecordsList(ctx, tt.p)
@@ -501,10 +500,10 @@ func TestDNSRecordsClear_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			list, err := acts.DNSRecordsClear(ctx, tt.p)
 			assert.NoError(t, err)
@@ -544,12 +543,12 @@ func TestDNSRecordsClear_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.DNSRecordsClear(ctx, tt.p)

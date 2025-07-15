@@ -24,7 +24,7 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 		Strategy:  models.DNSStrategyAll,
 	}
 
-	err := db.DNSRecordsCreate(o)
+	err := db.DNSRecordsCreate(t.Context(), o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -43,7 +43,7 @@ func TestDNSRecordsCreate_Duplicate(t *testing.T) {
 		Values:    []string{"127.0.0.1"},
 	}
 
-	err := db.DNSRecordsCreate(o)
+	err := db.DNSRecordsCreate(t.Context(), o)
 	assert.Error(t, err)
 }
 
@@ -51,7 +51,7 @@ func TestDNSRecordsGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(1)
+	o, err := db.DNSRecordsGetByID(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "test-a", o.Name)
 }
@@ -60,7 +60,7 @@ func TestDNSRecordsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(1337)
+	o, err := db.DNSRecordsGetByID(t.Context(), 1337)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.Error(t, err, sql.ErrNoRows.Error())
@@ -70,7 +70,7 @@ func TestDNSRecordsGetByPayloadNameAndType_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameAndType(1, "test-a", models.DNSTypeA)
+	o, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), 1, "test-a", models.DNSTypeA)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.Equal(t, int64(1), o.ID)
@@ -80,7 +80,7 @@ func TestDNSRecordsGetByPayloadNameAndType_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameAndType(1337, "dns1", models.DNSTypeA)
+	o, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), 1337, "dns1", models.DNSTypeA)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.Error(t, err, sql.ErrNoRows.Error())
@@ -90,7 +90,7 @@ func TestDNSRecordsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.DNSRecordsDelete(1)
+	err := db.DNSRecordsDelete(t.Context(), 1)
 	assert.NoError(t, err)
 }
 
@@ -98,17 +98,17 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(1)
+	o, err := db.DNSRecordsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
 	o.Name = "dns1-updated"
 	o.Values = []string{"127.0.0.1", "127.0.0.2"}
 
-	err = db.DNSRecordsUpdate(o)
+	err = db.DNSRecordsUpdate(t.Context(), o)
 	require.NoError(t, err)
 
-	o2, err := db.DNSRecordsGetByID(1)
+	o2, err := db.DNSRecordsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, o, o2)
 }
@@ -117,7 +117,7 @@ func TestDNSRecordsGetByPayloadID(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	l, err := db.DNSRecordsGetByPayloadID(1)
+	l, err := db.DNSRecordsGetByPayloadID(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.Len(t, l, 9)
 	assert.EqualValues(t, 1, l[0].Index)
@@ -128,11 +128,11 @@ func TestDNSRecordsGetCountByPayloadID(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	res, err := db.DNSRecordsGetCountByPayloadID(1)
+	res, err := db.DNSRecordsGetCountByPayloadID(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 9, res)
 
-	res, err = db.DNSRecordsGetCountByPayloadID(2)
+	res, err = db.DNSRecordsGetCountByPayloadID(t.Context(), 2)
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, res)
 }
@@ -141,12 +141,12 @@ func TestDNSRecordsGetByPayloadIDAndIndex(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadIDAndIndex(1, 2)
+	o, err := db.DNSRecordsGetByPayloadIDAndIndex(t.Context(), 1, 2)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "test-aaaa", o.Name)
 
 	// Not exist
-	_, err = db.DNSRecordsGetByPayloadIDAndIndex(1, 1337)
+	_, err = db.DNSRecordsGetByPayloadIDAndIndex(t.Context(), 1, 1337)
 	assert.Error(t, err)
 }
 
@@ -154,7 +154,7 @@ func TestDNSRecordsDeleteAllByPayloadID(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	l, err := db.DNSRecordsDeleteAllByPayloadID(1)
+	l, err := db.DNSRecordsDeleteAllByPayloadID(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.Len(t, l, 9)
 }
@@ -163,7 +163,7 @@ func TestDNSRecordsDeleteAllByPayloadIDAndName(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	l, err := db.DNSRecordsDeleteAllByPayloadIDAndName(1, "test-a")
+	l, err := db.DNSRecordsDeleteAllByPayloadIDAndName(t.Context(), 1, "test-a")
 	assert.NoError(t, err)
 	assert.Len(t, l, 1)
 }

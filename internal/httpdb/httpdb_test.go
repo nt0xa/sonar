@@ -20,6 +20,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/httpdb"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
@@ -39,7 +40,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, slog.New(slog.DiscardHandler))
+	db, err = database.New(dsn, slog.New(slog.DiscardHandler), telemetry.NewNoop())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)

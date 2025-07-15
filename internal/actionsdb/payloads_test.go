@@ -15,10 +15,10 @@ import (
 )
 
 func TestCreatePayload_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -65,10 +65,10 @@ func TestCreatePayload_Success(t *testing.T) {
 }
 
 func TestCreatePayload_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -78,7 +78,7 @@ func TestCreatePayload_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.PayloadsCreateParams{
 				Name: "test",
 			},
@@ -115,10 +115,10 @@ func TestCreatePayload_Error(t *testing.T) {
 }
 
 func TestDeletePayload_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -146,10 +146,10 @@ func TestDeletePayload_Success(t *testing.T) {
 }
 
 func TestDeletePayload_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -159,7 +159,7 @@ func TestDeletePayload_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.PayloadsDeleteParams{
 				Name: "test",
 			},
@@ -196,10 +196,10 @@ func TestDeletePayload_Error(t *testing.T) {
 }
 
 func TestListPayloads_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name  string
@@ -244,7 +244,7 @@ func TestListPayloads_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.PayloadsListParams{
 				Name: "test",
 			},
@@ -265,10 +265,10 @@ func TestListPayloads_Error(t *testing.T) {
 }
 
 func TestUpdatePayload_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -322,10 +322,10 @@ func TestUpdatePayload_Success(t *testing.T) {
 }
 
 func TestUpdatePayload_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -335,7 +335,7 @@ func TestUpdatePayload_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.PayloadsUpdateParams{
 				Name: "test",
 			},
@@ -372,10 +372,10 @@ func TestUpdatePayload_Error(t *testing.T) {
 }
 
 func TestClearPayload_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name         string
@@ -421,7 +421,7 @@ func TestClearPayloads_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.PayloadsClearParams{
 				Name: "test",
 			},

@@ -14,10 +14,10 @@ import (
 )
 
 func TestUsersCreate_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -64,10 +64,10 @@ func TestUsersCreate_Success(t *testing.T) {
 }
 
 func TestUsersCreate_Error(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -77,7 +77,7 @@ func TestUsersCreate_Error(t *testing.T) {
 	}{
 		{
 			"no user in ctx",
-			context.Background(),
+			t.Context(),
 			actions.UsersCreateParams{
 				Name: "test",
 			},
@@ -114,10 +114,10 @@ func TestUsersCreate_Error(t *testing.T) {
 }
 
 func TestDeleteUser_Success(t *testing.T) {
-	u, err := db.UsersGetByID(3)
+	u, err := db.UsersGetByID(t.Context(), 3)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string
@@ -148,10 +148,10 @@ func TestDeleteUser_Error(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name string

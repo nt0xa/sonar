@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,10 +11,10 @@ import (
 )
 
 func TestUserCurrent_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	usr, err := acts.ProfileGet(ctx)
 	assert.NoError(t, err)
@@ -23,7 +22,7 @@ func TestUserCurrent_Success(t *testing.T) {
 }
 
 func TestUserCurrent_Error(t *testing.T) {
-	_, err := acts.ProfileGet(context.Background())
+	_, err := acts.ProfileGet(t.Context())
 	assert.Error(t, err)
 	assert.IsType(t, &errors.InternalError{}, err)
 }
