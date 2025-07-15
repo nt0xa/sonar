@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,10 +12,10 @@ import (
 )
 
 func TestEventsList_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name        string
@@ -128,13 +127,13 @@ func TestEventsList_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.EventsList(ctx, tt.p)
@@ -145,10 +144,10 @@ func TestEventsList_Error(t *testing.T) {
 }
 
 func TestEventsGet_Success(t *testing.T) {
-	u, err := db.UsersGetByID(1)
+	u, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 
-	ctx := actionsdb.SetUser(context.Background(), u)
+	ctx := actionsdb.SetUser(t.Context(), u)
 
 	tests := []struct {
 		name     string
@@ -225,13 +224,13 @@ func TestEventsGet_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.EventsGet(ctx, tt.p)

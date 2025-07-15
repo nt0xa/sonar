@@ -10,12 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
 	tf  *testfixtures.Loader
 	db  *database.DB
 	log = slog.New(slog.DiscardHandler)
+	tel = telemetry.NewNoop()
 )
 
 func TestMain(m *testing.M) {
@@ -29,7 +31,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, log)
+	db, err = database.New(dsn, log, tel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)

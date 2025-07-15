@@ -25,6 +25,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
 	"github.com/nt0xa/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 // Flags
@@ -67,7 +68,7 @@ func TestMain(m *testing.M) {
 
 	log := slog.New(slog.DiscardHandler)
 
-	db, err = database.New(dsn, log)
+	db, err = database.New(dsn, log, telemetry.NewNoop())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
