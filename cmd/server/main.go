@@ -268,8 +268,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
 			":25",
-			smtpx.SessionHandler(
-				smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain},
+			server.SMTPHandler(
+				cfg.Domain,
+				tel,
 				tlsConfig,
 				func(e *smtpx.Event) {
 					events.Emit(server.SMTPEvent(e))
@@ -291,8 +292,9 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
 			":21",
-			ftpx.SessionHandler(
-				ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)},
+			server.FTPHandler(
+				cfg.Domain,
+				tel,
 				func(e *ftpx.Event) {
 					events.Emit(server.FTPEvent(e))
 				},

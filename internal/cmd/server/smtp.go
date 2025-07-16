@@ -1,14 +1,18 @@
 package server
 
 import (
+	"context"
+	"crypto/tls"
 	"net"
 	"time"
 
 	"github.com/fatih/structs"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
@@ -23,8 +27,35 @@ func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Lis
 	}
 }
 
-func SMTPEvent(e *smtpx.Event) *models.Event {
+func SMTPHandler(
+	domain string,
+	tel telemetry.Telemetry,
+	tlsConfig *tls.Config,
+	notify func(*smtpx.Event),
+) netx.Handler {
+	return SMTPTelemetry(
+		smtpx.SessionHandler(
+			smtpx.Msg{Greet: domain, Ehlo: domain},
+			tlsConfig,
+			notify,
+		),
+		tel,
+	)
+}
 
+func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
+	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		ctx, span := tel.TraceStart(ctx, "smtp",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(),
+		)
+		defer span.End()
+
+		next.Handle(ctx, conn)
+	})
+}
+
+func SMTPEvent(e *smtpx.Event) *models.Event {
 	type Session struct {
 		Helo     string   `structs:"helo"`
 		Ehlo     string   `structs:"ehlo"`

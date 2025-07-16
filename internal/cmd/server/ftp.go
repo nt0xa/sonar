@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -8,6 +10,8 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/telemetry"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
@@ -22,8 +26,33 @@ func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.List
 	}
 }
 
-func FTPEvent(e *ftpx.Event) *models.Event {
+func FTPHandler(
+	domain string,
+	tel telemetry.Telemetry,
+	notify func(*ftpx.Event),
+) netx.Handler {
+	return FTPTelemetry(
+		ftpx.SessionHandler(
+			ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
+			notify,
+		),
+		tel,
+	)
+}
 
+func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
+	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		ctx, span := tel.TraceStart(ctx, "ftp",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(),
+		)
+		defer span.End()
+
+		next.Handle(ctx, conn)
+	})
+}
+
+func FTPEvent(e *ftpx.Event) *models.Event {
 	type Meta struct {
 		Session ftpx.Data `structs:"session"`
 		Secure  bool      `structs:"secure"`

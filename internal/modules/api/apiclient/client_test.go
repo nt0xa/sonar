@@ -67,8 +67,9 @@ func TestMain(m *testing.M) {
 	}
 
 	log := slog.New(slog.DiscardHandler)
+	tel := telemetry.NewNoop()
 
-	db, err = database.New(dsn, log, telemetry.NewNoop())
+	db, err = database.New(dsn, log, tel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
@@ -91,7 +92,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, nil, acts)
+	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, tel, nil, acts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to create api server: %v", err)
 		os.Exit(1)
