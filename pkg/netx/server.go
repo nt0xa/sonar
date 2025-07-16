@@ -1,6 +1,7 @@
 package netx
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 )
@@ -9,8 +10,18 @@ type Server struct {
 	Addr              string
 	TLSConfig         *tls.Config
 	NotifyStartedFunc func()
-	ListenerWrapper   func(net.Listener) net.Listener
-	ConnectionHandler func(net.Conn) error
+	ListenerWrapper   func(net.Listener) net.Listener // TODO: replace with handler
+	Handler
+}
+
+type Handler interface {
+	Handle(ctx context.Context, conn net.Conn)
+}
+
+type HandlerFunc func(context.Context, net.Conn)
+
+func (f HandlerFunc) Handle(ctx context.Context, conn net.Conn) {
+	f(ctx, conn)
 }
 
 func (s *Server) ListenAndServe() error {
@@ -49,9 +60,8 @@ func (s *Server) ListenAndServe() error {
 
 		go func() {
 			// TODO: logging
-			defer conn.Close()
-			_ = s.ConnectionHandler(conn)
+			s.Handle(context.Background(), conn)
+			conn.Close()
 		}()
 	}
-
 }

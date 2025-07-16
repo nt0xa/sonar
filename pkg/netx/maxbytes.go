@@ -29,6 +29,6 @@ type MaxBytesConn struct {
 	r io.Reader
 }
 
-func (c *MaxBytesConn) Read(b []byte) (n int, err error) {
+func (c *MaxBytesConn) Read(b []byte) (int, error) {
 	return c.r.Read(b)
 }

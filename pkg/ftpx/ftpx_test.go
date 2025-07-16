@@ -57,13 +57,17 @@ func TestMain(m *testing.M) {
 				IdleTimeout: 5 * time.Second,
 			}
 		}),
-		ftpx.OnClose(func(e *ftpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
-		}),
 	}
 
+	handler := ftpx.SessionHandler(
+		ftpx.Msg{},
+		func(e *ftpx.Event) {
+			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
+		},
+	)
+
 	go func() {
-		srv := ftpx.New("127.0.0.1:10021", options...)
+		srv := ftpx.New("127.0.0.1:10021", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
 			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
@@ -84,7 +88,7 @@ func TestMain(m *testing.M) {
 		options := append(options, ftpx.TLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}))
-		srv := ftpx.New("127.0.0.1:10022", options...)
+		srv := ftpx.New("127.0.0.1:10022", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
 			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
