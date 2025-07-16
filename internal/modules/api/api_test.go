@@ -92,7 +92,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, nil, acts)
+	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, tel, nil, acts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to create api server: %v", err)
 		os.Exit(1)
