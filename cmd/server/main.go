@@ -268,12 +268,14 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
 			":25",
-			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
-			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
-			smtpx.OnClose(func(e *smtpx.Event) {
-				events.Emit(server.SMTPEvent(e))
-			}),
-			smtpx.TLSConfig(tlsConfig, false),
+			smtpx.SessionHandler(
+				smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain},
+				tlsConfig,
+				func(e *smtpx.Event) {
+					events.Emit(server.SMTPEvent(e))
+				},
+			),
+			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)), // TODO: change to handler
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -289,11 +291,13 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
 			":21",
+			ftpx.SessionHandler(
+				ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)},
+				func(e *ftpx.Event) {
+					events.Emit(server.FTPEvent(e))
+				},
+			),
 			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
-			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
-			ftpx.OnClose(func(e *ftpx.Event) {
-				events.Emit(server.FTPEvent(e))
-			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
