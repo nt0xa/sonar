@@ -30,10 +30,12 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Lark struct {
 	db      *database.DB
+	tel     telemetry.Telemetry
 	cfg     *Config
 	cmd     *cmd.Command
 	actions actions.Actions
@@ -44,7 +46,14 @@ type Lark struct {
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actions, domain string) (*Lark, error) {
+func New(
+	cfg *Config,
+	db *database.DB,
+	tel telemetry.Telemetry,
+	tlsConfig *tls.Config,
+	acts actions.Actions,
+	domain string,
+) (*Lark, error) {
 
 	httpClient := http.DefaultClient
 
@@ -98,6 +107,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 	lrk := &Lark{
 		client:  client,
 		db:      db,
+		tel: tel,
 		cfg:     cfg,
 		domain:  domain,
 		actions: acts,

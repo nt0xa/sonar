@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -45,5 +46,13 @@ func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (api *API) telemetry(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := api.tel.TraceStart(r.Context(), fmt.Sprintf("%s %s", r.Method, r.URL.Path))
+		next.ServeHTTP(w, r.WithContext(ctx))
+		span.End()
 	})
 }

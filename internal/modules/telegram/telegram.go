@@ -16,11 +16,13 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Telegram struct {
 	api     *tgbotapi.BotAPI
 	db      *database.DB
+	tel     telemetry.Telemetry
 	cmd     *cmd.Command
 	actions actions.Actions
 	tmpl    *templates.Templates
@@ -28,7 +30,13 @@ type Telegram struct {
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (*Telegram, error) {
+func New(
+	cfg *Config,
+	db *database.DB,
+	tel telemetry.Telemetry,
+	actions actions.Actions,
+	domain string,
+) (*Telegram, error) {
 	client := http.DefaultClient
 
 	// Proxy
@@ -49,10 +57,6 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
 
-	_, err = api.GetMe()
-	if err != nil {
-		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
-	}
 
 	tmpl := templates.New(domain,
 		templates.Default(
@@ -67,6 +71,7 @@ func New(cfg *Config, db *database.DB, actions actions.Actions, domain string) (
 	tg := &Telegram{
 		api:     api,
 		db:      db,
+		tel:     tel,
 		domain:  domain,
 		actions: actions,
 		tmpl:    tmpl,
