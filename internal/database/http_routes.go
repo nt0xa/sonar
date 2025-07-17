@@ -7,6 +7,8 @@ import (
 )
 
 func (db *DB) HTTPRoutesCreate(ctx context.Context, o *models.HTTPRoute) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -20,6 +22,8 @@ func (db *DB) HTTPRoutesCreate(ctx context.Context, o *models.HTTPRoute) error {
 }
 
 func (db *DB) HTTPRoutesUpdate(ctx context.Context, o *models.HTTPRoute) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesUpdate")
+	defer span.End()
 
 	query := "" +
 		"UPDATE http_routes SET " +
@@ -36,6 +40,9 @@ func (db *DB) HTTPRoutesUpdate(ctx context.Context, o *models.HTTPRoute) error {
 }
 
 func (db *DB) HTTPRoutesGetByID(ctx context.Context, id int64) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByID")
+	defer span.End()
+
 	var o models.HTTPRoute
 
 	err := db.Get(ctx, &o, "SELECT * FROM http_routes WHERE id = $1", id)
@@ -48,6 +55,9 @@ func (db *DB) HTTPRoutesGetByID(ctx context.Context, id int64) (*models.HTTPRout
 }
 
 func (db *DB) HTTPRoutesGetByPayloadID(ctx context.Context, payloadID int64) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadID")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
 	query := "SELECT * FROM http_routes WHERE payload_id = $1"
@@ -58,6 +68,9 @@ func (db *DB) HTTPRoutesGetByPayloadID(ctx context.Context, payloadID int64) ([]
 }
 
 func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(ctx context.Context, payloadID int64, method string, path string) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadMethodAndPath")
+	defer span.End()
+
 	var o models.HTTPRoute
 
 	err := db.Get(ctx, &o,
@@ -72,6 +85,9 @@ func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(ctx context.Context, payloadID
 }
 
 func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int64) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadIDAndIndex")
+	defer span.End()
+
 	var o models.HTTPRoute
 
 	query := "SELECT * FROM http_routes WHERE payload_id = $1 AND index = $2"
@@ -81,10 +97,16 @@ func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID in
 }
 
 func (db *DB) HTTPRoutesDelete(ctx context.Context, id int64) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDelete")
+	defer span.End()
+
 	return db.Exec(ctx, "DELETE FROM http_routes WHERE id = $1", id)
 }
 
 func (db *DB) HTTPRoutesDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDeleteAllByPayloadID")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
 	if err := db.Select(ctx, &res,
@@ -96,6 +118,9 @@ func (db *DB) HTTPRoutesDeleteAllByPayloadID(ctx context.Context, payloadID int6
 }
 
 func (db *DB) HTTPRoutesDeleteAllByPayloadIDAndPath(ctx context.Context, payloadID int64, path string) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDeleteAllByPayloadIDAndPath")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
 	if err := db.Select(ctx, &res,

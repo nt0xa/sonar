@@ -8,6 +8,8 @@ import (
 )
 
 func (db *DB) PayloadsCreate(ctx context.Context, o *models.Payload) error {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -27,6 +29,8 @@ func (db *DB) PayloadsCreate(ctx context.Context, o *models.Payload) error {
 }
 
 func (db *DB) PayloadsUpdate(ctx context.Context, o *models.Payload) error {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsUpdate")
+	defer span.End()
 
 	return db.NamedExec(ctx,
 		"UPDATE payloads SET "+
@@ -40,6 +44,9 @@ func (db *DB) PayloadsUpdate(ctx context.Context, o *models.Payload) error {
 }
 
 func (db *DB) PayloadGetByID(ctx context.Context, id int64) (*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadGetByID")
+	defer span.End()
+
 	var o models.Payload
 
 	err := db.Get(ctx, &o, "SELECT * FROM payloads WHERE id = $1", id)
@@ -52,6 +59,9 @@ func (db *DB) PayloadGetByID(ctx context.Context, id int64) (*models.Payload, er
 }
 
 func (db *DB) PayloadsGetBySubdomain(ctx context.Context, subdomain string) (*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsGetBySubdomain")
+	defer span.End()
+
 	var o models.Payload
 
 	err := db.Get(ctx, &o, "SELECT * FROM payloads WHERE subdomain = $1", subdomain)
@@ -64,6 +74,9 @@ func (db *DB) PayloadsGetBySubdomain(ctx context.Context, subdomain string) (*mo
 }
 
 func (db *DB) PayloadsGetByUserAndName(ctx context.Context, userID int64, name string) (*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsGetByUserAndName")
+	defer span.End()
+
 	var o models.Payload
 
 	err := db.Get(ctx, &o, "SELECT * FROM payloads WHERE user_id = $1 and name = $2", userID, name)
@@ -76,6 +89,9 @@ func (db *DB) PayloadsGetByUserAndName(ctx context.Context, userID int64, name s
 }
 
 func (db *DB) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsFindByUserID")
+	defer span.End()
+
 	res := make([]*models.Payload, 0)
 
 	err := db.Select(ctx, &res, "SELECT * FROM payloads WHERE user_id = $1 ORDER BY created_at DESC", userID)
@@ -84,6 +100,9 @@ func (db *DB) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*models
 }
 
 func (db *DB) PayloadsFindByUserAndName(ctx context.Context, userID int64, name string) ([]*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsFindByUserAndName")
+	defer span.End()
+
 	res := make([]*models.Payload, 0)
 
 	err := db.Select(ctx, &res,
@@ -96,6 +115,9 @@ func (db *DB) PayloadsFindByUserAndName(ctx context.Context, userID int64, name 
 }
 
 func (db *DB) PayloadsDelete(ctx context.Context, id int64) error {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsDelete")
+	defer span.End()
+
 	var o models.Payload
 
 	if err := db.Get(ctx, &o, "DELETE FROM payloads WHERE id = $1 RETURNING *", id); err != nil {
@@ -110,6 +132,9 @@ func (db *DB) PayloadsDelete(ctx context.Context, id int64) error {
 }
 
 func (db *DB) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name string) ([]*models.Payload, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsDeleteByNamePart")
+	defer span.End()
+
 	res := make([]*models.Payload, 0)
 
 	if err := db.Select(ctx, &res, "DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING *", userID, fmt.Sprintf("%%%s%%", name)); err != nil {
@@ -126,6 +151,9 @@ func (db *DB) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name s
 }
 
 func (db *DB) PayloadsGetAllSubdomains(ctx context.Context) ([]string, error) {
+	ctx, span := db.tel.TraceStart(ctx, "PayloadsGetAllSubdomains")
+	defer span.End()
+
 	res := make([]string, 0)
 	err := db.Select(ctx, &res, "SELECT subdomain FROM payloads")
 	return res, err

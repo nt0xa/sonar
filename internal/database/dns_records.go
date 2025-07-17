@@ -7,6 +7,8 @@ import (
 )
 
 func (db *DB) DNSRecordsCreate(ctx context.Context, o *models.DNSRecord) error {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -20,6 +22,8 @@ func (db *DB) DNSRecordsCreate(ctx context.Context, o *models.DNSRecord) error {
 }
 
 func (db *DB) DNSRecordsUpdate(ctx context.Context, o *models.DNSRecord) error {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsUpdate")
+	defer span.End()
 
 	return db.NamedExec(ctx,
 		"UPDATE dns_records SET "+
@@ -35,6 +39,9 @@ func (db *DB) DNSRecordsUpdate(ctx context.Context, o *models.DNSRecord) error {
 }
 
 func (db *DB) DNSRecordsGetByID(ctx context.Context, id int64) (*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsGetByID")
+	defer span.End()
+
 	var o models.DNSRecord
 
 	err := db.Get(ctx, &o, "SELECT * FROM dns_records WHERE id = $1", id)
@@ -47,6 +54,9 @@ func (db *DB) DNSRecordsGetByID(ctx context.Context, id int64) (*models.DNSRecor
 }
 
 func (db *DB) DNSRecordsGetByPayloadNameAndType(ctx context.Context, payloadID int64, name string, typ string) (*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsGetByPayloadNameAndType")
+	defer span.End()
+
 	var o models.DNSRecord
 
 	err := db.Get(ctx, &o,
@@ -61,6 +71,9 @@ func (db *DB) DNSRecordsGetByPayloadNameAndType(ctx context.Context, payloadID i
 }
 
 func (db *DB) DNSRecordsGetByPayloadID(ctx context.Context, payloadID int64) ([]*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsGetByPayloadID")
+	defer span.End()
+
 	res := make([]*models.DNSRecord, 0)
 
 	err := db.Select(ctx, &res, "SELECT * FROM dns_records WHERE payload_id = $1 ORDER BY id ASC", payloadID)
@@ -69,6 +82,9 @@ func (db *DB) DNSRecordsGetByPayloadID(ctx context.Context, payloadID int64) ([]
 }
 
 func (db *DB) DNSRecordsGetCountByPayloadID(ctx context.Context, payloadID int64) (int, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsGetCountByPayloadID")
+	defer span.End()
+
 	var res int
 
 	query := "SELECT COUNT(*) FROM dns_records WHERE payload_id = $1"
@@ -79,6 +95,9 @@ func (db *DB) DNSRecordsGetCountByPayloadID(ctx context.Context, payloadID int64
 }
 
 func (db *DB) DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int64) (*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsGetByPayloadIDAndIndex")
+	defer span.End()
+
 	var o models.DNSRecord
 
 	query := "SELECT * FROM dns_records WHERE payload_id = $1 AND index = $2 ORDER BY id ASC"
@@ -88,10 +107,16 @@ func (db *DB) DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID in
 }
 
 func (db *DB) DNSRecordsDelete(ctx context.Context, id int64) error {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsDelete")
+	defer span.End()
+
 	return db.Exec(ctx, "DELETE FROM dns_records WHERE id = $1", id)
 }
 
 func (db *DB) DNSRecordsDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsDeleteAllByPayloadID")
+	defer span.End()
+
 	res := make([]*models.DNSRecord, 0)
 
 	if err := db.Select(ctx, &res,
@@ -103,6 +128,9 @@ func (db *DB) DNSRecordsDeleteAllByPayloadID(ctx context.Context, payloadID int6
 }
 
 func (db *DB) DNSRecordsDeleteAllByPayloadIDAndName(ctx context.Context, payloadID int64, name string) ([]*models.DNSRecord, error) {
+	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsDeleteAllByPayloadIDAndName")
+	defer span.End()
+
 	res := make([]*models.DNSRecord, 0)
 
 	if err := db.Select(ctx, &res,

@@ -15,6 +15,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
@@ -87,6 +88,12 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		_ = tel.Shutdown(ctx)
 	}()
 
+	ctx, span := tel.TraceStart(
+		ctx,
+		"server.start",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+
 	//
 	// Logger
 	//
@@ -110,30 +117,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	}
 
 	// Create admin user
-	admin := &models.User{
-		Name:      "admin",
-		IsAdmin:   true,
-		CreatedBy: nil,
-		Params: models.UserParams{
-			TelegramID: cfg.Modules.Telegram.Admin,
-			APIToken:   cfg.Modules.API.Admin,
-			LarkUserID: cfg.Modules.Lark.Admin,
-		},
-	}
-
-	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
-		// There is no admin yet - create one
-		if err := db.UsersCreate(ctx, admin); err != nil {
-			return fmt.Errorf("failed to create admin user: %w", err)
-		}
-	} else if err == nil {
-		// Admin user exists - update
-		admin.ID = u.ID
-		if err := db.UsersUpdate(ctx, admin); err != nil {
-			return fmt.Errorf("failed to update admin user: %w", err)
-		}
-	} else {
-		return fmt.Errorf("failed to get admin user: %w", err)
+	if err := createOrUpdateAdminUser(ctx, cfg, db, tel); err != nil {
+		return fmt.Errorf("failed to create admin user: %w", err)
 	}
 
 	//
@@ -345,9 +330,48 @@ func serve(ctx context.Context, cfg *server.Config) error {
 
 	// Wait forever
 	log.Info("Starting server")
+	span.End()
 
 	if err := <-errChan; err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func createOrUpdateAdminUser(
+	ctx context.Context,
+	cfg *server.Config,
+	db *database.DB,
+	tel telemetry.Telemetry,
+) error {
+	ctx, span := tel.TraceStart(ctx, "db.init.admin")
+	defer span.End()
+
+	admin := &models.User{
+		Name:      "admin",
+		IsAdmin:   true,
+		CreatedBy: nil,
+		Params: models.UserParams{
+			TelegramID: cfg.Modules.Telegram.Admin,
+			APIToken:   cfg.Modules.API.Admin,
+			LarkUserID: cfg.Modules.Lark.Admin,
+		},
+	}
+
+	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
+		// There is no admin yet - create one
+		if err := db.UsersCreate(ctx, admin); err != nil {
+			return fmt.Errorf("failed to create admin user: %w", err)
+		}
+	} else if err == nil {
+		// Admin user exists - update
+		admin.ID = u.ID
+		if err := db.UsersUpdate(ctx, admin); err != nil {
+			return fmt.Errorf("failed to update admin user: %w", err)
+		}
+	} else {
+		return fmt.Errorf("failed to get admin user: %w", err)
 	}
 
 	return nil
