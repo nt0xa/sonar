@@ -36,6 +36,28 @@ type Telemetry interface {
 	) (context.Context, oteltrace.Span)
 	NewLogHandler(name string) slog.Handler
 	Shutdown(ctx context.Context) error
+
+	NewInt64Histogram(
+		name string,
+		unit string,
+		description string,
+		opts ...otelmetric.HistogramOption,
+	) (Int64Histogram, error)
+
+	NewInt64UpDownCounter(
+		name string,
+		unit string,
+		description string,
+		opts ...otelmetric.HistogramOption,
+	) (Int64UpDownCounter, error)
+}
+
+type Int64UpDownCounter interface {
+	Add(ctx context.Context, incr int64, options ...otelmetric.AddOption)
+}
+
+type Int64Histogram interface {
+	Record(ctx context.Context, incr int64, options ...otelmetric.RecordOption)
 }
 
 func New(ctx context.Context, name, version string) (Telemetry, error) {
@@ -151,4 +173,44 @@ func newTracerProvider(ctx context.Context, res *resource.Resource) (*trace.Trac
 	otel.SetTracerProvider(tp)
 
 	return tp, nil
+}
+
+// NewInt64Histogram implements Telemetry.
+func (t *telemetry) NewInt64Histogram(
+	name string,
+	unit string,
+	description string,
+	opts ...otelmetric.HistogramOption,
+) (Int64Histogram, error) {
+	histogram, err := t.meter.Int64Histogram(
+		name,
+		otelmetric.WithDescription(description),
+		otelmetric.WithUnit(unit),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create histogram: %w", err)
+	}
+
+	return histogram, nil
+}
+
+// NewInt64UpDownCounter implements Telemetry.
+func (t *telemetry) NewInt64UpDownCounter(
+	name string,
+	unit string,
+	description string,
+	opts ...otelmetric.HistogramOption,
+) (Int64UpDownCounter, error) {
+	counter, err := t.meter.Int64UpDownCounter(
+		name,
+		otelmetric.WithDescription(description),
+		otelmetric.WithUnit(unit),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create counter: %w", err)
+	}
+
+	return counter, nil
 }
