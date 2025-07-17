@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/semconv/v1.13.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -33,15 +34,37 @@ func HTTPDefault(w http.ResponseWriter, r *http.Request) {
 }
 
 func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
+	requestDuration, err := tel.NewInt64Histogram(
+		"http.request.duration",
+		"ms",
+		"HTTP request duration",
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := tel.TraceStart(r.Context(), "http", trace.WithAttributes(
-			attribute.String("http.method", r.Method),
-			attribute.String("http.host", r.Host),
-			attribute.String("http.path", r.URL.Path),
-		))
+		start := time.Now()
+
+		ctx, span := tel.TraceStart(r.Context(), "http",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(
+				httpconv.ServerRequest("http", r)...,
+			),
+		)
 		defer span.End()
 
-		next.ServeHTTP(w, r.WithContext(ctx))
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+
+		requestDuration.Record(
+			ctx,
+			time.Since(start).Milliseconds(),
+			metric.WithAttributes(
+				httpconv.ServerRequest("http", r)...,
+			),
+		)
 	})
 }
 
