@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/semconv/v1.13.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 
@@ -43,8 +42,18 @@ func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
 		panic(err)
 	}
 
+	counter, err := tel.NewInt64UpDownCounter(
+		"http.requests.inflight",
+		"{count}",
+		"Number of requests currently being processed by the server",
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+
 
 		ctx, span := tel.TraceStart(r.Context(), "http",
 			trace.WithSpanKind(trace.SpanKindServer),
@@ -56,15 +65,12 @@ func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
 
 		r = r.WithContext(ctx)
 
+		counter.Add(ctx, 1)
+
 		next.ServeHTTP(w, r)
 
-		requestDuration.Record(
-			ctx,
-			time.Since(start).Milliseconds(),
-			metric.WithAttributes(
-				httpconv.ServerRequest("http", r)...,
-			),
-		)
+		counter.Add(ctx, -1)
+		requestDuration.Record(ctx, time.Since(start).Milliseconds())
 	})
 }
 
