@@ -7,6 +7,8 @@ import (
 )
 
 func (db *DB) EventsCreate(ctx context.Context, o *models.Event) error {
+	ctx, span := db.tel.TraceStart(ctx, "EventsCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -19,6 +21,9 @@ func (db *DB) EventsCreate(ctx context.Context, o *models.Event) error {
 }
 
 func (db *DB) EventsGetByID(ctx context.Context, id int64) (*models.Event, error) {
+	ctx, span := db.tel.TraceStart(ctx, "EventsGetByID")
+	defer span.End()
+
 	var o models.Event
 
 	err := db.Get(ctx, &o, "SELECT * FROM events WHERE id = $1", id)
@@ -57,6 +62,9 @@ func EventsReverse(b bool) EventsListOption {
 }
 
 func (db *DB) EventsListByPayloadID(ctx context.Context, payloadID int64, opts ...EventsListOption) ([]*models.Event, error) {
+	ctx, span := db.tel.TraceStart(ctx, "EventsListByPayloadID")
+	defer span.End()
+
 	options := defaultEventsListOptions
 
 	for _, opt := range opts {
@@ -95,6 +103,9 @@ func (db *DB) EventsListByPayloadID(ctx context.Context, payloadID int64, opts .
 }
 
 func (db *DB) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*models.Event, error) {
+	ctx, span := db.tel.TraceStart(ctx, "EventsGetByPayloadAndIndex")
+	defer span.End()
+
 	query := "SELECT * FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY id ASC) AS index FROM events WHERE payload_id = $1) subq WHERE index = $2"
 
 	var res models.Event
