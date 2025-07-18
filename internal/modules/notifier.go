@@ -1,6 +1,10 @@
 package modules
 
-import "github.com/nt0xa/sonar/internal/database/models"
+import (
+	"context"
+
+	"github.com/nt0xa/sonar/internal/database/models"
+)
 
 type Notification struct {
 	User    *models.User
@@ -11,7 +15,8 @@ type Notification struct {
 // Notifier must be implemented by all modules, which are going to notify
 // users about payload events.
 type Notifier interface {
+	Name() string
 
 	// Notify is called every time payload event happens.
-	Notify(*Notification) error
+	Notify(context.Context, *Notification) error
 }

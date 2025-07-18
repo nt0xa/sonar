@@ -80,10 +80,10 @@ func Modules(
 			m, err = telegram.New(&cfg.Telegram, db, tel, actions, domain)
 
 		case "api":
-			m, err = api.New(&cfg.API, db, log, tel, tls, actions)
+			m, err = api.New(&cfg.API, db, log.With("package", "api"), tel, tls, actions)
 
 		case "lark":
-			m, err = lark.New(&cfg.Lark, db, tel, tls, actions, domain)
+			m, err = lark.New(&cfg.Lark, db, log.With("package", "lark"), tel, tls, actions, domain)
 
 		}
 
@@ -98,7 +98,6 @@ func Modules(
 		if n, ok := m.(modules.Notifier); ok {
 			notifiers = append(notifiers, n)
 		}
-
 	}
 
 	return controllers, notifiers, nil
