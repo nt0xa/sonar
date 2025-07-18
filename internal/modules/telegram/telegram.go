@@ -8,6 +8,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
@@ -57,7 +58,6 @@ func New(
 		return nil, fmt.Errorf("telegram tgbotapi error: %w", err)
 	}
 
-
 	tmpl := templates.New(domain,
 		templates.Default(
 			templates.Markup(
@@ -97,7 +97,7 @@ func (tg *Telegram) preExec(acts *actions.Actions, root *cobra.Command) {
 				return errors.Internal(err)
 			}
 
-			tg.htmlMessage(mi.chatID, &mi.msgID, fmt.Sprintf("<code>%d</code>", mi.chatID))
+			tg.htmlMessage(cmd.Context(), mi.chatID, &mi.msgID, fmt.Sprintf("<code>%d</code>", mi.chatID))
 			return nil
 		},
 	}
@@ -132,22 +132,22 @@ func (tg *Telegram) Start() error {
 					if err != nil {
 						return err
 					}
-					tg.htmlMessage(chat.ID, &msg.MessageID, s)
+					tg.htmlMessage(ctx, chat.ID, &msg.MessageID, s)
 					return nil
 				},
 			)
 
 			if err != nil {
-				tg.handleError(chat.ID, &msg.MessageID, err)
+				tg.handleError(ctx, chat.ID, &msg.MessageID, err)
 				continue
 			}
 
 			if stdout != "" {
-				tg.htmlMessage(chat.ID, &msg.MessageID, stdout)
+				tg.htmlMessage(ctx, chat.ID, &msg.MessageID, stdout)
 			}
 
 			if stderr != "" {
-				tg.htmlMessage(chat.ID, &msg.MessageID, stderr)
+				tg.htmlMessage(ctx, chat.ID, &msg.MessageID, stderr)
 			}
 
 		} else if update.CallbackQuery != nil {
@@ -158,11 +158,16 @@ func (tg *Telegram) Start() error {
 	return nil
 }
 
-func (tg *Telegram) handleError(chatID int64, msgID *int, err error) {
-	tg.htmlMessage(chatID, msgID, err.Error())
+func (tg *Telegram) handleError(ctx context.Context, chatID int64, msgID *int, err error) {
+	tg.htmlMessage(ctx, chatID, msgID, err.Error())
 }
 
-func (tg *Telegram) htmlMessage(chatID int64, msgID *int, html string) {
+func (tg *Telegram) htmlMessage(ctx context.Context, chatID int64, msgID *int, html string) {
+	ctx, span := tg.tel.TraceStart(ctx, "telegram.htmlMessage",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+
+	defer span.End()
 	msg := tgbotapi.NewMessage(
 		chatID,
 		html,
@@ -178,7 +183,12 @@ func (tg *Telegram) htmlMessage(chatID int64, msgID *int, html string) {
 	}
 }
 
-func (tg *Telegram) docMessage(chatID int64, name string, caption string, data []byte) {
+func (tg *Telegram) docMessage(ctx context.Context, chatID int64, name string, caption string, data []byte) {
+	ctx, span := tg.tel.TraceStart(ctx, "telegram.docMessage",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	doc := tgbotapi.FileBytes{
 		Name:  name,
 		Bytes: data,

@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"net"
 	"regexp"
 	"strings"
@@ -12,6 +12,9 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/pkg/telemetry"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
@@ -22,6 +25,8 @@ var (
 
 type EventsHandler struct {
 	db           *database.DB
+	log          *slog.Logger
+	tel          telemetry.Telemetry
 	cache        cache.Cache
 	workersCount int
 	workersWg    sync.WaitGroup
@@ -29,9 +34,18 @@ type EventsHandler struct {
 	notifiers    map[string]modules.Notifier
 }
 
-func NewEventsHandler(db *database.DB, cache cache.Cache, workers int, capacity int) *EventsHandler {
+func NewEventsHandler(
+	db *database.DB,
+	log *slog.Logger,
+	tel telemetry.Telemetry,
+	cache cache.Cache,
+	workers int,
+	capacity int,
+) *EventsHandler {
 	return &EventsHandler{
 		db:           db,
+		log:          log,
+		tel:          tel,
 		cache:        cache,
 		workersCount: workers,
 		events:       make(chan *models.Event, capacity),
@@ -55,61 +69,88 @@ func (h *EventsHandler) Start() error {
 func (h *EventsHandler) worker(id int) {
 	defer h.workersWg.Done()
 
-	for e := range h.events {
-		ctx := context.Background() // TODO: create context when emit event?
+	for ev := range h.events {
+		h.handleEvent(ev, id)
+	}
+}
 
-		seen := make(map[string]struct{})
+func (h *EventsHandler) handleEvent(e *models.Event, workerID int) {
+	ctx := context.Background() // TODO: create context when emit event?
 
-		matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
-		if len(matches) == 0 {
+	ctx, span := h.tel.TraceStart(ctx, "event",
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithAttributes(
+			attribute.Int("event.worker.id", workerID),
+		),
+	)
+	defer span.End()
+
+	seen := make(map[string]struct{})
+
+	matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
+	if len(matches) == 0 {
+		return
+	}
+
+	for _, m := range matches {
+		d := strings.ToLower(string(m[0]))
+
+		if !h.cache.SubdomainExists(d) {
 			continue
 		}
 
-		for _, m := range matches {
-			d := strings.ToLower(string(m[0]))
+		if _, ok := seen[d]; !ok {
+			seen[d] = struct{}{}
+		} else {
+			continue
+		}
 
-			if !h.cache.SubdomainExists(d) {
+		p, err := h.db.PayloadsGetBySubdomain(ctx, d)
+		if err != nil {
+			continue
+		}
+
+		e.PayloadID = p.ID
+
+		// Store event in database
+		if p.StoreEvents {
+			if err := h.db.EventsCreate(ctx, e); err != nil {
+				h.log.Error("Failed to save event",
+					"err", err,
+					"event", e,
+				)
 				continue
 			}
+		}
 
-			if _, ok := seen[d]; !ok {
-				seen[d] = struct{}{}
-			} else {
-				continue
-			}
+		// Skip if current event protocol is muted for payload.
+		if !p.NotifyProtocols.Contains(e.Protocol.Category()) {
+			continue
+		}
 
-			p, err := h.db.PayloadsGetBySubdomain(ctx, d)
-			if err != nil {
-				continue
-			}
+		u, err := h.db.UsersGetByID(ctx, p.UserID)
+		if err != nil {
+			continue
+		}
 
-			e.PayloadID = p.ID
+		for _, n := range h.notifiers {
+			go func() {
+				ctx, span := h.tel.TraceStart(ctx, "notifier.Notify",
+					trace.WithSpanKind(trace.SpanKindInternal),
+					trace.WithAttributes(
+						attribute.String("notifier.name", n.Name()),
+					),
+				)
+				defer span.End()
 
-			// Store event in database
-			if p.StoreEvents {
-				if err := h.db.EventsCreate(ctx, e); err != nil {
-					fmt.Println(err)
-					continue
+				if err := n.Notify(ctx, &modules.Notification{User: u, Payload: p, Event: e}); err != nil {
+					h.log.Error("Notifier failed",
+						"error", err,
+						"payload_id", p.ID,
+						"user_id", u.ID,
+					)
 				}
-			}
-
-			// Skip if current event protocol is muted for payload.
-			if !p.NotifyProtocols.Contains(e.Protocol.Category()) {
-				continue
-			}
-
-			u, err := h.db.UsersGetByID(ctx, p.UserID)
-			if err != nil {
-				continue
-			}
-
-			for _, n := range h.notifiers {
-
-				if err := n.Notify(&modules.Notification{User: u, Payload: p, Event: e}); err != nil {
-					continue
-				}
-			}
-
+			}()
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package lark
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -15,7 +16,11 @@ import (
 
 var emailRegexp = regexp.MustCompile("(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,24})")
 
-func (lrk *Lark) Notify(n *modules.Notification) error {
+func (lrk *Lark) Name() string {
+	return "lark"
+}
+
+func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	header, body, err := lrk.tmpl.RenderNotification(n)
 	if err != nil {
 		return err
@@ -73,9 +78,9 @@ func (lrk *Lark) Notify(n *modules.Notification) error {
 			return fmt.Errorf("lark: %w", err)
 		}
 
-		lrk.sendMessage(n.User.Params.LarkUserID, nil, content)
+		lrk.sendMessage(ctx, n.User.Params.LarkUserID, nil, content)
 	} else {
-		lrk.docMessage(n.User.Params.LarkUserID,
+		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("log-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 			header, n.Event.RW)
 	}
@@ -90,7 +95,7 @@ func (lrk *Lark) Notify(n *modules.Notification) error {
 		if !ok {
 			return nil
 		}
-		lrk.docMessage(n.User.Params.LarkUserID,
+		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 			header, []byte(data))
 	}
