@@ -107,7 +107,7 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// DB
 	//
 
-	db, err := database.New(cfg.DB.DSN, log, tel)
+	db, err := database.New(cfg.DB.DSN, log.With("package", "database"), tel)
 	if err != nil {
 		return fmt.Errorf("failed to init database: %w", err)
 	}
@@ -134,13 +134,24 @@ func serve(ctx context.Context, cfg *server.Config) error {
 	// Actions
 	//
 
-	actions := actionsdb.New(db, log, cfg.Domain)
+	actions := actionsdb.New(
+		db,
+		log.With("package", "actions"),
+		cfg.Domain,
+	)
 
 	//
 	// EventsHandler
 	//
 
-	events := server.NewEventsHandler(db, cache, 10, 100 /* TODO: from config */)
+	events := server.NewEventsHandler(
+		db,
+		log.With("package", "events"),
+		tel,
+		cache,
+		10,
+		100,
+	)
 
 	//
 	// DNS
