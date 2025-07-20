@@ -36,4 +36,3 @@ func ListenerWrapper(f func(net.Listener) net.Listener) Option {
 		opts.listenerWrapper = f
 	}
 }
-

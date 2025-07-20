@@ -29,7 +29,7 @@ func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.List
 func FTPHandler(
 	domain string,
 	tel telemetry.Telemetry,
-	notify func(*ftpx.Event),
+	notify func(context.Context, *ftpx.Event),
 ) netx.Handler {
 	return FTPTelemetry(
 		ftpx.SessionHandler(

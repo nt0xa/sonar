@@ -31,7 +31,7 @@ func SMTPHandler(
 	domain string,
 	tel telemetry.Telemetry,
 	tlsConfig *tls.Config,
-	notify func(*smtpx.Event),
+	notify func(context.Context, *smtpx.Event),
 ) netx.Handler {
 	return SMTPTelemetry(
 		smtpx.SessionHandler(

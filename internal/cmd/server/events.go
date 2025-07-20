@@ -31,8 +31,13 @@ type EventsHandler struct {
 	cache        cache.Cache
 	workersCount int
 	workersWg    sync.WaitGroup
-	events       chan *models.Event
+	events       chan eventWithContext
 	notifiers    map[string]modules.Notifier
+}
+
+type eventWithContext struct {
+	ctx   context.Context
+	event *models.Event
 }
 
 func NewEventsHandler(
@@ -49,7 +54,7 @@ func NewEventsHandler(
 		tel:          tel,
 		cache:        cache,
 		workersCount: workers,
-		events:       make(chan *models.Event, capacity),
+		events:       make(chan eventWithContext, capacity),
 		notifiers:    make(map[string]modules.Notifier),
 	}
 }
@@ -70,15 +75,18 @@ func (h *EventsHandler) Start() error {
 func (h *EventsHandler) worker(id int) {
 	defer h.workersWg.Done()
 
-	for event := range h.events {
-		ctx, span := h.tel.TraceStart(context.Background(), "event",
+	for e := range h.events {
+		ctx := context.Background()
+
+		ctx, span := h.tel.TraceStart(ctx, "event",
 			trace.WithSpanKind(trace.SpanKindConsumer),
 			trace.WithAttributes(
 				attribute.Int("event.worker.id", id),
-				attribute.String("event.protocol", event.Protocol.Name),
+				attribute.String("event.protocol", e.event.Protocol.Name),
 			),
+			trace.WithLinks(trace.LinkFromContext(e.ctx)),
 		)
-		h.handleEvent(ctx, event)
+		h.handleEvent(ctx, e.event)
 		span.End()
 	}
 }
@@ -154,6 +162,6 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 	}
 }
 
-func (h *EventsHandler) Emit(e *models.Event) {
-	h.events <- e
+func (h *EventsHandler) Emit(ctx context.Context, e *models.Event) {
+	h.events <- eventWithContext{ctx: ctx, event: e}
 }

@@ -70,7 +70,7 @@ func DNSHandler(
 	tel telemetry.Telemetry,
 	origin string,
 	ip net.IP,
-	notify func(*dnsx.Event),
+	notify func(context.Context, *dnsx.Event),
 ) dnsx.HandlerProvider {
 	// Do not handle DNS queries which are not subdomains of the origin.
 	h := dnsx.NewServeMux()

@@ -13,8 +13,8 @@ func (db *DB) EventsCreate(ctx context.Context, o *models.Event) error {
 	o.CreatedAt = now()
 
 	query := "" +
-		"INSERT INTO events (payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
-		"VALUES(:payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at)" +
+		"INSERT INTO events (uuid, payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
+		"VALUES(:uuid, :payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at)" +
 		"RETURNING id"
 
 	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID)

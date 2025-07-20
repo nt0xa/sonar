@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +20,7 @@ func TestEventsCreate_Success(t *testing.T) {
 
 	o := &models.Event{
 		PayloadID: 1,
+		UUID:      uuid.New(),
 		Protocol:  models.ProtoDNS,
 		R:         []byte{1, 3, 5},
 		W:         []byte{2, 4},
@@ -49,6 +51,7 @@ func TestEventsGetByID_Success(t *testing.T) {
 	assert.Equal(t, []byte("read-and-written"), o.RW)
 	assert.Equal(t, models.Meta{"key": "value"}, o.Meta)
 	assert.Equal(t, "127.0.0.1:1337", o.RemoteAddr)
+	assert.Equal(t, "c0b49dee-3ce9-4bd9-b111-7abd7a2f16f0", o.UUID.String())
 }
 
 func TestEventsGetByID_NotExist(t *testing.T) {
@@ -148,6 +151,7 @@ func TestEventsRace(t *testing.T) {
 
 			o := &models.Event{
 				PayloadID: 1,
+				UUID:      uuid.New(),
 				Protocol:  models.ProtoDNS,
 				R:         []byte{1, 3, 5},
 				W:         []byte{2, 4},

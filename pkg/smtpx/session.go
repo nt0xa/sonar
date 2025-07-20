@@ -86,7 +86,7 @@ type session struct {
 	tlsConfig *tls.Config
 
 	// onClose is a function that will be called when session is ended.
-	onClose func(*Event)
+	onClose func(context.Context, *Event)
 
 	// conn is a current TCP connection.
 	conn *netx.LoggingConn
@@ -105,7 +105,7 @@ type session struct {
 func SessionHandler(
 	msgs Msg,
 	tlsConfig *tls.Config,
-	onClose func(*Event),
+	onClose func(context.Context, *Event),
 ) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		newConn := netx.NewLoggingConn(conn)
@@ -127,7 +127,7 @@ func SessionHandler(
 		newConn.OnClose = func() {
 			_, secure := sess.conn.Conn.(*tls.Conn)
 
-			sess.onClose(&Event{
+			sess.onClose(ctx, &Event{
 				RemoteAddr: sess.conn.RemoteAddr(),
 				RW:         sess.conn.RW.Bytes(),
 				R:          sess.conn.R.Bytes(),

@@ -167,8 +167,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 		tel,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
-		func(e *dnsx.Event) {
-			events.Emit(server.DNSEvent(e))
+		func(ctx context.Context, e *dnsx.Event) {
+			events.Emit(ctx, server.DNSEvent(e))
 		},
 	)
 
@@ -222,8 +222,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 				db,
 				tel,
 				cfg.Domain,
-				func(e *httpx.Event) {
-					events.Emit(server.HTTPEvent(e))
+				func(ctx context.Context, e *httpx.Event) {
+					events.Emit(ctx, server.HTTPEvent(e))
 				},
 			),
 		)
@@ -244,8 +244,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 				db,
 				tel,
 				cfg.Domain,
-				func(e *httpx.Event) {
-					events.Emit(server.HTTPEvent(e))
+				func(ctx context.Context, e *httpx.Event) {
+					events.Emit(ctx, server.HTTPEvent(e))
 				},
 			),
 			httpx.TLSConfig(tlsConfig),
@@ -268,8 +268,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 				cfg.Domain,
 				tel,
 				tlsConfig,
-				func(e *smtpx.Event) {
-					events.Emit(server.SMTPEvent(e))
+				func(ctx context.Context, e *smtpx.Event) {
+					events.Emit(ctx, server.SMTPEvent(e))
 				},
 			),
 			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)), // TODO: change to handler
@@ -291,8 +291,8 @@ func serve(ctx context.Context, cfg *server.Config) error {
 			server.FTPHandler(
 				cfg.Domain,
 				tel,
-				func(e *ftpx.Event) {
-					events.Emit(server.FTPEvent(e))
+				func(ctx context.Context, e *ftpx.Event) {
+					events.Emit(ctx, server.FTPEvent(e))
 				},
 			),
 			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),

@@ -85,12 +85,12 @@ type Event struct {
 }
 
 // NotifyHandler calls notify function after processing query.
-func NotifyHandler(notify func(*Event), next Handler) Handler {
+func NotifyHandler(notify func(context.Context, *Event), next Handler) Handler {
 	return HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		wr := NewRecorder(w)
 
 		defer func() {
-			notify(&Event{
+			notify(ctx, &Event{
 				RemoteAddr: w.RemoteAddr(),
 				Msg:        wr.Msg,
 				ReceivedAt: wr.Start,

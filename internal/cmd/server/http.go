@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -54,7 +55,6 @@ func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-
 		ctx, span := tel.TraceStart(r.Context(), "http",
 			trace.WithSpanKind(trace.SpanKindServer),
 			trace.WithAttributes(
@@ -78,7 +78,7 @@ func HTTPHandler(
 	db *database.DB,
 	tel telemetry.Telemetry,
 	origin string,
-	notify func(*httpx.Event),
+	notify func(context.Context, *httpx.Event),
 ) http.Handler {
 	return HTTPTelemetry(
 		http.TimeoutHandler(
