@@ -8,13 +8,14 @@ import (
 	"strings"
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/pkg/telemetry"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]interface{})
@@ -69,22 +70,20 @@ func (h *EventsHandler) Start() error {
 func (h *EventsHandler) worker(id int) {
 	defer h.workersWg.Done()
 
-	for ev := range h.events {
-		h.handleEvent(ev, id)
+	for event := range h.events {
+		ctx, span := h.tel.TraceStart(context.Background(), "event",
+			trace.WithSpanKind(trace.SpanKindConsumer),
+			trace.WithAttributes(
+				attribute.Int("event.worker.id", id),
+				attribute.String("event.protocol", event.Protocol.Name),
+			),
+		)
+		h.handleEvent(ctx, event)
+		span.End()
 	}
 }
 
-func (h *EventsHandler) handleEvent(e *models.Event, workerID int) {
-	ctx := context.Background() // TODO: create context when emit event?
-
-	ctx, span := h.tel.TraceStart(ctx, "event",
-		trace.WithSpanKind(trace.SpanKindConsumer),
-		trace.WithAttributes(
-			attribute.Int("event.worker.id", workerID),
-		),
-	)
-	defer span.End()
-
+func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 	seen := make(map[string]struct{})
 
 	matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
