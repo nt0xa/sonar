@@ -42,7 +42,26 @@ func FTPHandler(
 }
 
 func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
+	sessionDuration, err := tel.NewInt64Histogram(
+		"ftp.session.duration",
+		"ms",
+		"FTP session duration",
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	counter, err := tel.NewInt64UpDownCounter(
+		"ftp.sessions.inflight",
+		"{count}",
+		"Number of sessions currently being processed by the server",
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		start := time.Now()
 		ctx, id := withEventID(ctx)
 
 		ctx, span := tel.TraceStart(ctx, "ftp",
@@ -53,7 +72,10 @@ func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 		)
 		defer span.End()
 
+		counter.Add(ctx, 1)
 		next.Handle(ctx, conn)
+		counter.Add(ctx, -1)
+		sessionDuration.Record(ctx, time.Since(start).Milliseconds())
 	})
 }
 

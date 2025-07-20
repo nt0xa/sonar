@@ -45,7 +45,26 @@ func SMTPHandler(
 }
 
 func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
+	sessionDuration, err := tel.NewInt64Histogram(
+		"smtp.session.duration",
+		"ms",
+		"SMTP session duration",
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	counter, err := tel.NewInt64UpDownCounter(
+		"smtp.sessions.inflight",
+		"{count}",
+		"Number of sessions currently being processed by the server",
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		start := time.Now()
 		ctx, id := withEventID(ctx)
 
 		ctx, span := tel.TraceStart(ctx, "smtp",
@@ -56,11 +75,16 @@ func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 		)
 		defer span.End()
 
+		counter.Add(ctx, 1)
+
 		next.Handle(ctx, conn)
+
+		counter.Add(ctx, -1)
+		sessionDuration.Record(ctx, time.Since(start).Milliseconds())
 	})
 }
 
-func SMTPEvent( e *smtpx.Event) *models.Event {
+func SMTPEvent(e *smtpx.Event) *models.Event {
 	type Session struct {
 		Helo     string   `structs:"helo"`
 		Ehlo     string   `structs:"ehlo"`
