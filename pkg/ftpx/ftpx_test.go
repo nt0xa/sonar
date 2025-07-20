@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 
 	handler := ftpx.SessionHandler(
 		ftpx.Msg{},
-		func(e *ftpx.Event) {
+		func(ctx context.Context, e *ftpx.Event) {
 			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
 		},
 	)

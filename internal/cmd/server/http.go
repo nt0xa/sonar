@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/semconv/v1.13.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 
@@ -53,21 +54,23 @@ func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		start := time.Now()
 
-		ctx, span := tel.TraceStart(r.Context(), "http",
+		ctx, id := withEventID(ctx)
+		attrs := append(httpconv.ServerRequest("http", r), attribute.String("event.id", id.String()))
+
+		ctx, span := tel.TraceStart(ctx, "http",
 			trace.WithSpanKind(trace.SpanKindServer),
 			trace.WithAttributes(
-				httpconv.ServerRequest("http", r)...,
+				attrs...,
 			),
 		)
 		defer span.End()
 
-		r = r.WithContext(ctx)
-
 		counter.Add(ctx, 1)
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 		counter.Add(ctx, -1)
 		requestDuration.Record(ctx, time.Since(start).Milliseconds())
@@ -102,7 +105,7 @@ func HTTPHandler(
 	)
 }
 
-func HTTPEvent(e *httpx.Event) *models.Event {
+func HTTPEvent( e *httpx.Event) *models.Event {
 	type Request struct {
 		Method  string      `structs:"method"`
 		Proto   string      `structs:"proto"`

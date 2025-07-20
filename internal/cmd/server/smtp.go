@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database/models"
@@ -45,9 +46,13 @@ func SMTPHandler(
 
 func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		ctx, id := withEventID(ctx)
+
 		ctx, span := tel.TraceStart(ctx, "smtp",
 			trace.WithSpanKind(trace.SpanKindServer),
-			trace.WithAttributes(),
+			trace.WithAttributes(
+				attribute.String("event.id", id.String()),
+			),
 		)
 		defer span.End()
 
@@ -55,7 +60,7 @@ func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 	})
 }
 
-func SMTPEvent(e *smtpx.Event) *models.Event {
+func SMTPEvent( e *smtpx.Event) *models.Event {
 	type Session struct {
 		Helo     string   `structs:"helo"`
 		Ehlo     string   `structs:"ehlo"`

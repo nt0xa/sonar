@@ -11,6 +11,7 @@ import (
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -42,9 +43,13 @@ func FTPHandler(
 
 func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		ctx, id := withEventID(ctx)
+
 		ctx, span := tel.TraceStart(ctx, "ftp",
 			trace.WithSpanKind(trace.SpanKindServer),
-			trace.WithAttributes(),
+			trace.WithAttributes(
+				attribute.String("event.id", id.String()),
+			),
 		)
 		defer span.End()
 

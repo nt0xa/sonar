@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
@@ -78,9 +79,17 @@ func (h *EventsHandler) worker(id int) {
 	for e := range h.events {
 		ctx := context.Background()
 
+		if id := getEventID(e.ctx); id != nil {
+			e.event.UUID = *id
+		} else {
+			e.event.UUID = uuid.New()
+			h.log.Warn("Event ID not found in context, generating new one")
+		}
+
 		ctx, span := h.tel.TraceStart(ctx, "event",
 			trace.WithSpanKind(trace.SpanKindConsumer),
 			trace.WithAttributes(
+				attribute.String("event.id", e.event.UUID.String()),
 				attribute.Int("event.worker.id", id),
 				attribute.String("event.protocol", e.event.Protocol.Name),
 			),
@@ -164,4 +173,19 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 
 func (h *EventsHandler) Emit(ctx context.Context, e *models.Event) {
 	h.events <- eventWithContext{ctx: ctx, event: e}
+}
+
+type eventIDKey struct{}
+
+func withEventID(ctx context.Context) (context.Context, uuid.UUID) {
+	id := uuid.New()
+	return context.WithValue(ctx, eventIDKey{}, id), id
+}
+
+func getEventID(ctx context.Context) *uuid.UUID {
+	id, ok := ctx.Value(eventIDKey{}).(uuid.UUID)
+	if !ok {
+		return nil
+	}
+	return &id
 }

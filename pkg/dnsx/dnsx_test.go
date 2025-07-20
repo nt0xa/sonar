@@ -1,6 +1,7 @@
 package dnsx_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -53,7 +54,7 @@ func TestMain(m *testing.M) {
 
 	handler.Handle("sonar.test",
 		dnsx.NotifyHandler(
-			func(e *dnsx.Event) {
+			func(ctx context.Context, e *dnsx.Event) {
 				notifier.Notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
 					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
 					"qtype": dnsx.QtypeString(e.Msg.Question[0].Qtype),

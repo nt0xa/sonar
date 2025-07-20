@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 		httpx.BodyReaderHandler(
 			httpx.MaxBytesHandler(
 				httpx.NotifyHandler(
-					func(e *httpx.Event) {
+					func(ctx context.Context, e *httpx.Event) {
 						notifier.Notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]interface{}{
 							"tls": e.Secure,
 						})

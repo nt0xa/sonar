@@ -1,6 +1,7 @@
 package smtpx_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -65,7 +66,7 @@ func TestMain(m *testing.M) {
 	handler := smtpx.SessionHandler(
 		smtpx.Msg{},
 		nil,
-		func(e *smtpx.Event) {
+		func(ctx context.Context, e *smtpx.Event) {
 			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
 		},
 	)
