@@ -1,6 +1,7 @@
 package ftpx_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
