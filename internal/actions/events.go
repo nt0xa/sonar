@@ -28,7 +28,7 @@ type EventsHandler interface {
 
 type Event struct {
 	Index      int64                  `json:"index"`
-	UUID			 string                 `json:"uuid"`
+	UUID       string                 `json:"uuid"`
 	Protocol   string                 `json:"protocol"`
 	R          string                 `json:"r,omitempty"`
 	W          string                 `json:"w,omitempty"`

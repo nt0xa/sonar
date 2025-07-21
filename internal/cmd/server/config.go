@@ -44,10 +44,13 @@ func (c Config) Validate() error {
 //
 
 type TelemetryConfig struct {
+	Enabled bool `mapstructure:"enabled"`
 }
 
 func (c TelemetryConfig) Validate() error {
-	return nil
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Enabled),
+	)
 }
 
 //

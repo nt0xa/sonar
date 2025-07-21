@@ -105,7 +105,7 @@ func HTTPHandler(
 	)
 }
 
-func HTTPEvent( e *httpx.Event) *models.Event {
+func HTTPEvent(e *httpx.Event) *models.Event {
 	type Request struct {
 		Method  string      `structs:"method"`
 		Proto   string      `structs:"proto"`

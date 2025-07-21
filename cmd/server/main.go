@@ -73,15 +73,23 @@ func main() {
 }
 
 func serve(ctx context.Context, cfg *server.Config) error {
+	var err error
+
 	errChan := make(chan error, 2)
 
 	//
 	// Telemetry
 	//
 
-	tel, err := telemetry.New(ctx, "sonar", "v0") // TODO: change
-	if err != nil {
-		return fmt.Errorf("failed to init telemetry: %w", err)
+	var tel telemetry.Telemetry
+
+	if cfg.Telemetry.Enabled {
+		tel, err = telemetry.New(ctx, "sonar", "v0") // TODO: change
+		if err != nil {
+			return fmt.Errorf("failed to init telemetry: %w", err)
+		}
+	} else {
+		tel = telemetry.NewNoop()
 	}
 
 	defer func() {
