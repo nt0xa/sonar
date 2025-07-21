@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"io"
 	"io/ioutil"
@@ -58,7 +59,7 @@ type Event struct {
 	ReceivedAt time.Time
 }
 
-func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
+func NotifyHandler(notify func(context.Context, *Event), next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		wr := httptest.NewRecorder()
 		start := time.Now()
@@ -75,7 +76,7 @@ func NotifyHandler(notify func(*Event), next http.Handler) http.Handler {
 		conn.OnClose = func() {
 			_, secure := conn.Conn.(*tls.Conn)
 
-			notify(&Event{
+			notify(r.Context(), &Event{
 				RemoteAddr:  conn.RemoteAddr(),
 				Request:     r,
 				RawRequest:  conn.R.Bytes(),

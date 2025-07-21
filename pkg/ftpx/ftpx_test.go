@@ -1,6 +1,7 @@
 package ftpx_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -57,16 +58,20 @@ func TestMain(m *testing.M) {
 				IdleTimeout: 5 * time.Second,
 			}
 		}),
-		ftpx.OnClose(func(e *ftpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
-		}),
 	}
 
+	handler := ftpx.SessionHandler(
+		ftpx.Msg{},
+		func(ctx context.Context, e *ftpx.Event) {
+			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
+		},
+	)
+
 	go func() {
-		srv := ftpx.New("127.0.0.1:10021", options...)
+		srv := ftpx.New("127.0.0.1:10021", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()
@@ -77,17 +82,17 @@ func TestMain(m *testing.M) {
 			"../../test/key.pem",
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to read cert and key: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
 			os.Exit(1)
 		}
 
 		options := append(options, ftpx.TLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}))
-		srv := ftpx.New("127.0.0.1:10022", options...)
+		srv := ftpx.New("127.0.0.1:10022", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()

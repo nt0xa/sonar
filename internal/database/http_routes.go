@@ -1,10 +1,14 @@
 package database
 
 import (
+	"context"
+
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
+func (db *DB) HTTPRoutesCreate(ctx context.Context, o *models.HTTPRoute) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -14,10 +18,12 @@ func (db *DB) HTTPRoutesCreate(o *models.HTTPRoute) error {
 		"(SELECT COALESCE(MAX(index), 0) FROM http_routes hr WHERE hr.payload_id = :payload_id) + 1) " +
 		"RETURNING id, index"
 
-	return db.NamedQueryRowx(query, o).Scan(&o.ID, &o.Index)
+	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index)
 }
 
-func (db *DB) HTTPRoutesUpdate(o *models.HTTPRoute) error {
+func (db *DB) HTTPRoutesUpdate(ctx context.Context, o *models.HTTPRoute) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesUpdate")
+	defer span.End()
 
 	query := "" +
 		"UPDATE http_routes SET " +
@@ -30,13 +36,16 @@ func (db *DB) HTTPRoutesUpdate(o *models.HTTPRoute) error {
 		"is_dynamic = :is_dynamic " +
 		"WHERE id = :id"
 
-	return db.NamedExec(query, o)
+	return db.NamedExec(ctx, query, o)
 }
 
-func (db *DB) HTTPRoutesGetByID(id int64) (*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesGetByID(ctx context.Context, id int64) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByID")
+	defer span.End()
+
 	var o models.HTTPRoute
 
-	err := db.Get(&o, "SELECT * FROM http_routes WHERE id = $1", id)
+	err := db.Get(ctx, &o, "SELECT * FROM http_routes WHERE id = $1", id)
 
 	if err != nil {
 		return nil, err
@@ -45,20 +54,26 @@ func (db *DB) HTTPRoutesGetByID(id int64) (*models.HTTPRoute, error) {
 	return &o, nil
 }
 
-func (db *DB) HTTPRoutesGetByPayloadID(payloadID int64) ([]*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesGetByPayloadID(ctx context.Context, payloadID int64) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadID")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
 	query := "SELECT * FROM http_routes WHERE payload_id = $1"
 
-	err := db.Select(&res, query, payloadID)
+	err := db.Select(ctx, &res, query, payloadID)
 
 	return res, err
 }
 
-func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(payloadID int64, method string, path string) (*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(ctx context.Context, payloadID int64, method string, path string) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadMethodAndPath")
+	defer span.End()
+
 	var o models.HTTPRoute
 
-	err := db.Get(&o,
+	err := db.Get(ctx, &o,
 		"SELECT * FROM http_routes WHERE payload_id = $1 AND method = $2 AND path = $3",
 		payloadID, method, path)
 
@@ -69,23 +84,32 @@ func (db *DB) HTTPRoutesGetByPayloadMethodAndPath(payloadID int64, method string
 	return &o, nil
 }
 
-func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(payloadID int64, index int64) (*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int64) (*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesGetByPayloadIDAndIndex")
+	defer span.End()
+
 	var o models.HTTPRoute
 
 	query := "SELECT * FROM http_routes WHERE payload_id = $1 AND index = $2"
-	err := db.Get(&o, query, payloadID, index)
+	err := db.Get(ctx, &o, query, payloadID, index)
 
 	return &o, err
 }
 
-func (db *DB) HTTPRoutesDelete(id int64) error {
-	return db.Exec("DELETE FROM http_routes WHERE id = $1", id)
+func (db *DB) HTTPRoutesDelete(ctx context.Context, id int64) error {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDelete")
+	defer span.End()
+
+	return db.Exec(ctx, "DELETE FROM http_routes WHERE id = $1", id)
 }
 
-func (db *DB) HTTPRoutesDeleteAllByPayloadID(payloadID int64) ([]*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDeleteAllByPayloadID")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
-	if err := db.Select(&res,
+	if err := db.Select(ctx, &res,
 		"DELETE FROM http_routes WHERE payload_id = $1 RETURNING *", payloadID); err != nil {
 		return nil, err
 	}
@@ -93,10 +117,13 @@ func (db *DB) HTTPRoutesDeleteAllByPayloadID(payloadID int64) ([]*models.HTTPRou
 	return res, nil
 }
 
-func (db *DB) HTTPRoutesDeleteAllByPayloadIDAndPath(payloadID int64, path string) ([]*models.HTTPRoute, error) {
+func (db *DB) HTTPRoutesDeleteAllByPayloadIDAndPath(ctx context.Context, payloadID int64, path string) ([]*models.HTTPRoute, error) {
+	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesDeleteAllByPayloadIDAndPath")
+	defer span.End()
+
 	res := make([]*models.HTTPRoute, 0)
 
-	if err := db.Select(&res,
+	if err := db.Select(ctx, &res,
 		"DELETE FROM http_routes WHERE payload_id = $1 AND path = $2 RETURNING *", payloadID, path); err != nil {
 		return nil, err
 	}

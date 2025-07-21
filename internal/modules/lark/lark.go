@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -21,6 +21,7 @@ import (
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 
@@ -30,10 +31,13 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Lark struct {
 	db      *database.DB
+	log     *slog.Logger
+	tel     telemetry.Telemetry
 	cfg     *Config
 	cmd     *cmd.Command
 	actions actions.Actions
@@ -44,7 +48,15 @@ type Lark struct {
 	domain string
 }
 
-func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actions, domain string) (*Lark, error) {
+func New(
+	cfg *Config,
+	db *database.DB,
+	log *slog.Logger,
+	tel telemetry.Telemetry,
+	tlsConfig *tls.Config,
+	acts actions.Actions,
+	domain string,
+) (*Lark, error) {
 
 	httpClient := http.DefaultClient
 
@@ -68,6 +80,7 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 	var client = lark.NewClient(
 		cfg.AppID,
 		cfg.AppSecret,
+		lark.WithLogger(newSlogAdapter(log)),
 		lark.WithLogLevel(larkcore.LogLevelInfo),
 		lark.WithHttpClient(httpClient))
 
@@ -98,6 +111,8 @@ func New(cfg *Config, db *database.DB, tlsConfig *tls.Config, acts actions.Actio
 	lrk := &Lark{
 		client:  client,
 		db:      db,
+		log:     log,
+		tel:     tel,
 		cfg:     cfg,
 		domain:  domain,
 		actions: acts,
@@ -210,7 +225,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				user, err := lrk.db.UsersGetByParam(models.UserLarkID, *userID)
+				user, err := lrk.db.UsersGetByParam(ctx, models.UserLarkID, *userID)
 
 				if user == nil {
 					// Create user if not exists
@@ -221,9 +236,9 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 						},
 					}
 
-					if err := lrk.db.UsersCreate(user); err != nil {
+					if err := lrk.db.UsersCreate(ctx, user); err != nil {
 						// TODO: logging
-						lrk.message(*userID, msgID, "internal error")
+						lrk.message(ctx, *userID, msgID, "internal error")
 						return nil
 					}
 				}
@@ -260,21 +275,21 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 						return err
 					}
 
-					lrk.message("", msgID, s)
+					lrk.message(ctx, "", msgID, s)
 
 					return nil
 				})
 				if err != nil {
-					lrk.message("", msgID, err.Error())
+					lrk.message(ctx, "", msgID, err.Error())
 					return nil
 				}
 
 				if stdout != "" {
-					lrk.message("", msgID, stdout)
+					lrk.message(ctx, "", msgID, stdout)
 				}
 
 				if stderr != "" {
-					lrk.message("", msgID, stderr)
+					lrk.message(ctx, "", msgID, stderr)
 				}
 
 				return nil
@@ -286,6 +301,7 @@ func (lrk *Lark) startWebsocket(eventHandler *dispatcher.EventDispatcher) error 
 	cli := larkws.NewClient(lrk.cfg.AppID, lrk.cfg.AppSecret,
 		larkws.WithEventHandler(eventHandler),
 		larkws.WithLogLevel(larkcore.LogLevelInfo),
+		larkws.WithLogger(newSlogAdapter(lrk.log)),
 	)
 
 	return cli.Start(context.TODO())
@@ -312,7 +328,12 @@ func (lrk *Lark) startWebhook(eventHandler *dispatcher.EventDispatcher) error {
 	}
 }
 
-func (lrk *Lark) message(userID string, msgID *string, content string) {
+func (lrk *Lark) message(ctx context.Context, userID string, msgID *string, content string) {
+	ctx, span := lrk.tel.TraceStart(context.Background(), "lark.message",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	config := larkcard.NewMessageCardConfig().
 		WideScreenMode(true).
 		EnableForward(true).
@@ -331,18 +352,22 @@ func (lrk *Lark) message(userID string, msgID *string, content string) {
 	content, err := card.String()
 	if err != nil {
 		// TODO: logging
-		log.Println(err)
 		return
 	}
 
-	lrk.sendMessage(userID, msgID, content)
+	lrk.sendMessage(ctx, userID, msgID, content)
 }
 
-func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
+func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, content string) {
+	ctx, span := lrk.tel.TraceStart(ctx, "lark.sendMessage",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	var err error
 
 	if msgID != nil {
-		_, err = lrk.client.Im.Message.Reply(context.Background(), larkim.NewReplyMessageReqBuilder().
+		_, err = lrk.client.Im.Message.Reply(ctx, larkim.NewReplyMessageReqBuilder().
 			MessageId(*msgID).
 			Body(larkim.NewReplyMessageReqBodyBuilder().
 				MsgType(larkim.MsgTypeInteractive).
@@ -356,7 +381,7 @@ func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
 			idType = larkim.ReceiveIdTypeChatId
 		}
 
-		_, err = lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
+		_, err = lrk.client.Im.Message.Create(ctx, larkim.NewCreateMessageReqBuilder().
 			ReceiveIdType(idType).
 			Body(larkim.NewCreateMessageReqBodyBuilder().
 				MsgType(larkim.MsgTypeInteractive).
@@ -371,10 +396,15 @@ func (lrk *Lark) sendMessage(userID string, msgID *string, content string) {
 	}
 }
 
-func (lrk *Lark) docMessage(chatID string, name string, caption string, data []byte) {
+func (lrk *Lark) docMessage(ctx context.Context, chatID string, name string, caption string, data []byte) {
+	ctx, span := lrk.tel.TraceStart(ctx, "lark.sendMessage",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
+	defer span.End()
+
 	file := bytes.NewReader(data)
 
-	resp, err := lrk.client.Im.File.Create(context.Background(),
+	resp, err := lrk.client.Im.File.Create(ctx,
 		larkim.NewCreateFileReqBuilder().
 			Body(larkim.NewCreateFileReqBodyBuilder().
 				FileType(larkim.FileTypePdf).
@@ -384,19 +414,16 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 			Build())
 
 	if err != nil {
-		log.Println(err)
 		return
 	}
 
 	if !resp.Success() {
-		log.Println(resp.Code, resp.Msg, resp.RequestId())
 		return
 	}
 
 	msg := larkim.MessageFile{FileKey: *resp.Data.FileKey}
 	content, err := msg.String()
 	if err != nil {
-		log.Println(err)
 		return
 	}
 
@@ -406,7 +433,7 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 		idType = larkim.ReceiveIdTypeChatId
 	}
 
-	resp2, err := lrk.client.Im.Message.Create(context.Background(), larkim.NewCreateMessageReqBuilder().
+	resp2, err := lrk.client.Im.Message.Create(ctx, larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType(idType).
 		Body(larkim.NewCreateMessageReqBodyBuilder().
 			MsgType(larkim.MsgTypeFile).
@@ -416,12 +443,10 @@ func (lrk *Lark) docMessage(chatID string, name string, caption string, data []b
 		Build())
 
 	if err != nil {
-		log.Println(err)
 		return
 	}
 
 	if !resp2.Success() {
-		log.Println(resp.Code, resp.Msg, resp.RequestId())
 		return
 	}
 }

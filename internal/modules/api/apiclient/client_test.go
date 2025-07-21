@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http/httptest"
 	"os"
 	"reflect"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,6 +25,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
 	"github.com/nt0xa/sonar/internal/utils/errors"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 // Flags
@@ -65,9 +66,10 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	log := logrus.New()
+	log := slog.New(slog.DiscardHandler)
+	tel := telemetry.NewNoop()
 
-	db, err = database.New(dsn, log)
+	db, err = database.New(dsn, log, tel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
@@ -90,7 +92,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, nil, acts)
+	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, tel, nil, acts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to create api server: %v", err)
 		os.Exit(1)

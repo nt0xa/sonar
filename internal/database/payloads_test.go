@@ -23,7 +23,7 @@ func TestPayloadsCreate_Success(t *testing.T) {
 		StoreEvents:     true,
 	}
 
-	err := db.PayloadsCreate(o)
+	err := db.PayloadsCreate(t.Context(), o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -41,7 +41,7 @@ func TestPayloadsCreate_Duplicate(t *testing.T) {
 		Name:      "payload1",
 	}
 
-	err := db.PayloadsCreate(o)
+	err := db.PayloadsCreate(t.Context(), o)
 	assert.Error(t, err)
 }
 
@@ -49,7 +49,7 @@ func TestPayloadGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(1)
+	o, err := db.PayloadGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.Equal(t, "payload1", o.Name)
@@ -59,7 +59,7 @@ func TestPayloadGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(1337)
+	o, err := db.PayloadGetByID(t.Context(), 1337)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.Error(t, err, sql.ErrNoRows.Error())
@@ -69,7 +69,7 @@ func TestPayloadsGetBySubdomain_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadsGetBySubdomain("c1da9f3d")
+	o, err := db.PayloadsGetBySubdomain(t.Context(), "c1da9f3d")
 	assert.NoError(t, err)
 	assert.Equal(t, "payload1", o.Name)
 }
@@ -78,7 +78,7 @@ func TestPayloadsGetBySubdomain_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	_, err := db.PayloadsGetBySubdomain("not_exist")
+	_, err := db.PayloadsGetBySubdomain(t.Context(), "not_exist")
 	assert.Error(t, err)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
 }
@@ -87,7 +87,7 @@ func TestPayloadsGetByUserAndName_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadsGetByUserAndName(1, "payload1")
+	o, err := db.PayloadsGetByUserAndName(t.Context(), 1, "payload1")
 	assert.NoError(t, err)
 	assert.Equal(t, "c1da9f3d", o.Subdomain)
 }
@@ -96,7 +96,7 @@ func TestPayloadsGetByUserAndName_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	_, err := db.PayloadsGetByUserAndName(1, "not_exist")
+	_, err := db.PayloadsGetByUserAndName(t.Context(), 1, "not_exist")
 	assert.Error(t, err)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
 }
@@ -105,7 +105,7 @@ func TestPayloadsFindByUserID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserID(2)
+	pp, err := db.PayloadsFindByUserID(t.Context(), 2)
 	assert.NoError(t, err)
 	assert.Len(t, pp, 2)
 
@@ -122,7 +122,7 @@ func TestPayloadsFindByUserID_Empty(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserID(3)
+	pp, err := db.PayloadsFindByUserID(t.Context(), 3)
 	assert.NoError(t, err)
 	assert.Len(t, pp, 0)
 }
@@ -131,7 +131,7 @@ func TestPayloadsFindByUserAndName_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(1, "payload1")
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "payload1")
 	assert.NoError(t, err)
 	assert.Len(t, pp, 1)
 
@@ -147,7 +147,7 @@ func TestPayloadsFindByUserAndName_Empty(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(3, "payload1")
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), 3, "payload1")
 	assert.NoError(t, err)
 	assert.Len(t, pp, 0)
 }
@@ -156,7 +156,7 @@ func TestPayloadsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.PayloadsDelete(1)
+	err := db.PayloadsDelete(t.Context(), 1)
 	assert.NoError(t, err)
 }
 
@@ -164,7 +164,7 @@ func TestPayloadsDelete_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.PayloadsDelete(1337)
+	err := db.PayloadsDelete(t.Context(), 1337)
 	assert.Error(t, err)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
 }
@@ -173,7 +173,7 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(1)
+	o, err := db.PayloadGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -181,10 +181,10 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	o.NotifyProtocols = models.ProtoCategories("dns")
 	o.StoreEvents = false
 
-	err = db.PayloadsUpdate(o)
+	err = db.PayloadsUpdate(t.Context(), o)
 	require.NoError(t, err)
 
-	o2, err := db.PayloadGetByID(1)
+	o2, err := db.PayloadGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, o, o2)
 }
@@ -193,11 +193,11 @@ func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	removed, err := db.PayloadsDeleteByNamePart(1, "")
+	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "")
 	require.NoError(t, err)
 	require.Len(t, removed, 2)
 
-	left, err := db.PayloadsFindByUserID(1)
+	left, err := db.PayloadsFindByUserID(t.Context(), 1)
 	require.NoError(t, err)
 	require.Len(t, left, 0)
 }
@@ -206,11 +206,11 @@ func TestPayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	removed, err := db.PayloadsDeleteByNamePart(1, "1")
+	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "1")
 	require.NoError(t, err)
 	require.Len(t, removed, 1)
 
-	left, err := db.PayloadsFindByUserID(1)
+	left, err := db.PayloadsFindByUserID(t.Context(), 1)
 	require.NoError(t, err)
 	require.Len(t, left, 1)
 }

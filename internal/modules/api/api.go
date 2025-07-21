@@ -3,29 +3,38 @@ package api
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/utils/logger"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type API struct {
 	cfg     *Config
 	db      *database.DB
-	log     logger.StdLogger
+	tel     telemetry.Telemetry
+	log     *slog.Logger
 	tls     *tls.Config
 	actions actions.Actions
 }
 
-func New(cfg *Config, db *database.DB, log logger.StdLogger,
-	tls *tls.Config, actions actions.Actions) (*API, error) {
+func New(
+	cfg *Config,
+	db *database.DB,
+	log *slog.Logger,
+	tel telemetry.Telemetry,
+	tls *tls.Config,
+	actions actions.Actions,
+) (*API, error) {
 
 	return &API{
 		cfg:     cfg,
 		db:      db,
+		tel:     tel,
 		log:     log,
 		tls:     tls,
 		actions: actions,
@@ -46,6 +55,7 @@ func (api *API) Router() http.Handler {
 
 	r := chi.NewRouter()
 
+	r.Use(api.telemetry)
 	r.Use(api.checkAuth())
 
 	r.Get("/profile", api.ProfileGet)

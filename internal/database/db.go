@@ -3,15 +3,15 @@ package database
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/lib/pq"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/nt0xa/sonar/internal/utils/logger"
 )
 
 //go:embed migrations/*.sql
@@ -19,12 +19,16 @@ var migrationsFS embed.FS
 
 type DB struct {
 	*sqlx.DB
-	log      logger.StdLogger
+	log      *slog.Logger
+	tel      telemetry.Telemetry
 	obserers []Observer
 }
 
-func New(dsn string, log logger.StdLogger) (*DB, error) {
-
+func New(
+	dsn string,
+	log *slog.Logger,
+	tel telemetry.Telemetry,
+) (*DB, error) {
 	db, err := sqlx.Connect("postgres", dsn)
 
 	if err != nil {
@@ -34,6 +38,7 @@ func New(dsn string, log logger.StdLogger) (*DB, error) {
 	return &DB{
 		DB:       db,
 		log:      log,
+		tel:      tel,
 		obserers: make([]Observer, 0),
 	}, nil
 }

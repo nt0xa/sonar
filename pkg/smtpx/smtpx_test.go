@@ -1,6 +1,7 @@
 package smtpx_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -60,13 +61,18 @@ func TestMain(m *testing.M) {
 				IdleTimeout: 5 * time.Second,
 			}
 		}),
-		smtpx.OnClose(func(e *smtpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
-		}),
 	}
 
+	handler := smtpx.SessionHandler(
+		smtpx.Msg{},
+		nil,
+		func(ctx context.Context, e *smtpx.Event) {
+			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
+		},
+	)
+
 	go func() {
-		srv := smtpx.New("127.0.0.1:1025", options...)
+		srv := smtpx.New("127.0.0.1:1025", handler, options...)
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(fmt.Errorf("fail to start server: %w", err))
 		}
@@ -78,17 +84,17 @@ func TestMain(m *testing.M) {
 			"../../test/key.pem",
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to read cert and key: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
 			os.Exit(1)
 		}
 
 		options := append(options, smtpx.TLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
-		}, true))
-		srv := smtpx.New("127.0.0.1:1465", options...)
+		}))
+		srv := smtpx.New("127.0.0.1:1465", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()
@@ -208,7 +214,7 @@ func TestSMTP(t *testing.T) {
 			wc, err := c.Data()
 			require.NoError(st, err)
 
-			_, err = fmt.Fprintf(wc, tt.body)
+			_, err = fmt.Fprintf(wc, "%s", tt.body)
 			require.NoError(st, err)
 
 			err = wc.Close()

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/fatih/structs"
@@ -19,7 +20,9 @@ var usersInnerQuery = "" +
 
 var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
 
-func (db *DB) UsersCreate(o *models.User) error {
+func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
+	ctx, span := db.tel.TraceStart(ctx, "UsersCreate")
+	defer span.End()
 
 	o.CreatedAt = now()
 
@@ -31,7 +34,7 @@ func (db *DB) UsersCreate(o *models.User) error {
 		o.Params.APIToken = token
 	}
 
-	tx, err := db.Beginx()
+	tx, err := db.Beginx(ctx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +43,7 @@ func (db *DB) UsersCreate(o *models.User) error {
 		"INSERT INTO users (name, is_admin, created_by, created_at) " +
 		"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id"
 
-	if err := tx.NamedQueryRowx(query, o).Scan(&o.ID); err != nil {
+	if err := tx.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -49,7 +52,7 @@ func (db *DB) UsersCreate(o *models.User) error {
 		// Filter zero values here, because if for example "telegram" module is disabled we will have
 		// conflict error for all users with telegram id 0.
 		if !f.IsZero() {
-			if err := tx.Exec(
+			if err := tx.Exec(ctx,
 				"INSERT INTO user_params (user_id, key, value) "+
 					"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
 				tx.Rollback()
@@ -61,10 +64,13 @@ func (db *DB) UsersCreate(o *models.User) error {
 	return tx.Commit()
 }
 
-func (db *DB) UsersGetByID(id int64) (*models.User, error) {
+func (db *DB) UsersGetByID(ctx context.Context, id int64) (*models.User, error) {
+	ctx, span := db.tel.TraceStart(ctx, "UsersGetByID")
+	defer span.End()
+
 	var o models.User
 
-	err := db.Get(&o, fmt.Sprintf(usersQuery, "WHERE users.id = $1"), id)
+	err := db.Get(ctx, &o, fmt.Sprintf(usersQuery, "WHERE users.id = $1"), id)
 
 	if err != nil {
 		return nil, err
@@ -73,10 +79,13 @@ func (db *DB) UsersGetByID(id int64) (*models.User, error) {
 	return &o, nil
 }
 
-func (db *DB) UsersGetByName(name string) (*models.User, error) {
+func (db *DB) UsersGetByName(ctx context.Context, name string) (*models.User, error) {
+	ctx, span := db.tel.TraceStart(ctx, "UsersGetByName")
+	defer span.End()
+
 	var o models.User
 
-	err := db.Get(&o, fmt.Sprintf(usersQuery, "WHERE users.name = $1"), name)
+	err := db.Get(ctx, &o, fmt.Sprintf(usersQuery, "WHERE users.name = $1"), name)
 
 	if err != nil {
 		return nil, err
@@ -85,10 +94,13 @@ func (db *DB) UsersGetByName(name string) (*models.User, error) {
 	return &o, nil
 }
 
-func (db *DB) UsersGetByParam(key models.UserParamsKey, value interface{}) (*models.User, error) {
+func (db *DB) UsersGetByParam(ctx context.Context, key models.UserParamsKey, value interface{}) (*models.User, error) {
+	ctx, span := db.tel.TraceStart(ctx, "UsersGetByParam")
+	defer span.End()
+
 	var o models.User
 
-	err := db.Get(&o,
+	err := db.Get(ctx, &o,
 		fmt.Sprintf(usersQuery, "WHERE users.params->>$1 = $2::TEXT"), key, value)
 
 	if err != nil {
@@ -98,17 +110,23 @@ func (db *DB) UsersGetByParam(key models.UserParamsKey, value interface{}) (*mod
 	return &o, nil
 }
 
-func (db *DB) UsersDelete(id int64) error {
-	return db.Exec("DELETE FROM users WHERE id = $1", id)
+func (db *DB) UsersDelete(ctx context.Context, id int64) error {
+	ctx, span := db.tel.TraceStart(ctx, "UsersDelete")
+	defer span.End()
+
+	return db.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
 }
 
-func (db *DB) UsersUpdate(o *models.User) error {
-	tx, err := db.Beginx()
+func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
+	ctx, span := db.tel.TraceStart(ctx, "UsersUpdate")
+	defer span.End()
+
+	tx, err := db.Beginx(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = tx.NamedExec(
+	err = tx.NamedExec(ctx,
 		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
@@ -120,7 +138,7 @@ func (db *DB) UsersUpdate(o *models.User) error {
 		// Filter zero values here, because if for example "telegram" module is disabled we will have
 		// conflict error for all users with telegram id 0.
 		if !f.IsZero() {
-			if err := tx.Exec(
+			if err := tx.Exec(ctx,
 				"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
 				f.Value(), o.ID, f.Tag("json")); err != nil {
 				tx.Rollback()

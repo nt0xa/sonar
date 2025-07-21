@@ -1,5 +1,6 @@
 - id: 1
   payload_id: 1
+  uuid: c0b49dee-3ce9-4bd9-b111-7abd7a2f16f0
   protocol: dns
   r: read
   w: written
@@ -12,6 +13,7 @@
 
 - id: 2
   payload_id: 1
+  uuid: caceb173-ad07-4ba2-8f3b-ffda8010ec2f
   protocol: http
   r: read
   w: written
@@ -24,6 +26,7 @@
 
 - id: 3
   payload_id: 1
+  uuid: e353c648-d15a-4b92-89e4-728c68be521f
   protocol: http
   r: read
   w: written
@@ -36,6 +39,7 @@
 
 - id: 4
   payload_id: 1
+  uuid: 09f0430e-cb03-4c09-9f36-995b4d452a2a
   protocol: http
   r: read
   w: written
@@ -48,6 +52,7 @@
 
 - id: 5
   payload_id: 1
+  uuid: 0cc50ec8-c652-40c0-bbc6-5b49ae8f61a0
   protocol: http
   r: read
   w: written
@@ -60,6 +65,7 @@
 
 - id: 6
   payload_id: 1
+  uuid: 2be22999-1364-4660-802c-d065ba24048f
   protocol: http
   r: read
   w: written
@@ -72,6 +78,7 @@
 
 - id: 7
   payload_id: 1
+  uuid: 8bf45a9d-f5e1-4165-8f9b-79597ee5ea7b
   protocol: http
   r: read
   w: written
@@ -84,6 +91,7 @@
 
 - id: 8
   payload_id: 1
+  uuid: 23035669-af5a-43bd-9cde-87cca01bba96
   protocol: http
   r: read
   w: written
@@ -96,6 +104,7 @@
 
 - id: 9
   payload_id: 1
+  uuid: e3044706-abaa-4935-9dac-739530efa1e6
   protocol: http
   r: read
   w: written
@@ -108,6 +117,7 @@
 
 - id: 10
   payload_id: 2
+  uuid: c4fef3cb-8ad3-4c50-906f-8ccd0f85e252
   protocol: http
   r: read
   w: written
@@ -120,6 +130,7 @@
 
 - id: 11
   payload_id: 1
+  uuid: 4d0d17f9-2650-4948-95b2-ada8d13e5a1e
   protocol: http
   r: read
   w: written

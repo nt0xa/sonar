@@ -22,11 +22,11 @@ func TestUsersCreate_Success(t *testing.T) {
 		},
 	}
 
-	err := db.UsersCreate(o)
+	err := db.UsersCreate(t.Context(), o)
 	require.NoError(t, err)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 
-	o2, err := db.UsersGetByID(o.ID)
+	o2, err := db.UsersGetByID(t.Context(), o.ID)
 	require.NoError(t, err)
 	assert.Equal(t, o.Params, o2.Params)
 }
@@ -39,7 +39,7 @@ func TestUsersCreate_DuplicateName(t *testing.T) {
 		Name: "user1",
 	}
 
-	err := db.UsersCreate(o)
+	err := db.UsersCreate(t.Context(), o)
 	assert.Error(t, err)
 }
 
@@ -54,7 +54,7 @@ func TestUsersCreate_DuplicateParam(t *testing.T) {
 		},
 	}
 
-	err := db.UsersCreate(o)
+	err := db.UsersCreate(t.Context(), o)
 	assert.Error(t, err)
 }
 
@@ -62,7 +62,7 @@ func TestUsersGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByID(1)
+	o, err := db.UsersGetByID(t.Context(), 1)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
@@ -72,7 +72,7 @@ func TestUsersGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByID(1337)
+	o, err := db.UsersGetByID(t.Context(), 1337)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
@@ -82,7 +82,7 @@ func TestUsersGetByName_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByName("user1")
+	o, err := db.UsersGetByName(t.Context(), "user1")
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
@@ -92,7 +92,7 @@ func TestUsersGetByName_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	_, err := db.UsersGetByName("not-exist")
+	_, err := db.UsersGetByName(t.Context(), "not-exist")
 	assert.Error(t, err)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())
 }
@@ -101,7 +101,7 @@ func TestUsersDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.UsersDelete(1)
+	err := db.UsersDelete(t.Context(), 1)
 	assert.NoError(t, err)
 }
 
@@ -109,17 +109,17 @@ func TestUsersUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByID(1)
+	o, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
 	o.Name = "user1_updated"
 	o.Params.TelegramID = 1234
 
-	err = db.UsersUpdate(o)
+	err = db.UsersUpdate(t.Context(), o)
 	require.NoError(t, err)
 
-	o2, err := db.UsersGetByID(1)
+	o2, err := db.UsersGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, "user1_updated", o2.Name)
 	assert.Equal(t, o.Params, o2.Params)
@@ -129,7 +129,7 @@ func TestUsersGetByParams_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByParam(models.UserTelegramID, 31337)
+	o, err := db.UsersGetByParam(t.Context(), models.UserTelegramID, 31337)
 	assert.NoError(t, err)
 	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
@@ -139,7 +139,7 @@ func TestUsersGetByParams_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByParam(models.UserTelegramID, 1)
+	o, err := db.UsersGetByParam(t.Context(), models.UserTelegramID, 1)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.EqualError(t, err, sql.ErrNoRows.Error())

@@ -86,7 +86,7 @@ type session struct {
 	tlsConfig *tls.Config
 
 	// onClose is a function that will be called when session is ended.
-	onClose func(*Event)
+	onClose func(context.Context, *Event)
 
 	// conn is a current TCP connection.
 	conn *netx.LoggingConn
@@ -102,40 +102,44 @@ type session struct {
 	data *Data
 }
 
-// handleConn creates new SMTP session and handles connection with it.
-func handleConn(ctx context.Context, conn net.Conn, opts options) error {
+func SessionHandler(
+	msgs Msg,
+	tlsConfig *tls.Config,
+	onClose func(context.Context, *Event),
+) netx.Handler {
+	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		newConn := netx.NewLoggingConn(conn)
 
-	newConn := netx.NewLoggingConn(conn)
+		sess := &session{
+			messages:  msgs,
+			tlsConfig: tlsConfig,
+			onClose:   onClose,
+			conn:      newConn,
+			scanner:   bufio.NewScanner(newConn),
+			state:     stateHelo,
+			data: &Data{
+				RcptTo: make([]string, 0),
+			},
+		}
 
-	sess := &session{
-		messages:  opts.messages,
-		tlsConfig: opts.tlsConfig,
-		onClose:   opts.onClose,
-		conn:      newConn,
-		scanner:   bufio.NewScanner(newConn),
-		state:     stateHelo,
-		data: &Data{
-			RcptTo: make([]string, 0),
-		},
-	}
+		start := time.Now()
 
-	start := time.Now()
+		newConn.OnClose = func() {
+			_, secure := sess.conn.Conn.(*tls.Conn)
 
-	newConn.OnClose = func() {
-		_, secure := sess.conn.Conn.(*tls.Conn)
+			sess.onClose(ctx, &Event{
+				RemoteAddr: sess.conn.RemoteAddr(),
+				RW:         sess.conn.RW.Bytes(),
+				R:          sess.conn.R.Bytes(),
+				W:          sess.conn.W.Bytes(),
+				Data:       sess.data,
+				Secure:     secure,
+				ReceivedAt: start,
+			})
+		}
 
-		sess.onClose(&Event{
-			RemoteAddr: sess.conn.RemoteAddr(),
-			RW:         sess.conn.RW.Bytes(),
-			R:          sess.conn.R.Bytes(),
-			W:          sess.conn.W.Bytes(),
-			Data:       sess.data,
-			Secure:     secure,
-			ReceivedAt: start,
-		})
-	}
-
-	return sess.start(ctx)
+		sess.start(ctx)
+	})
 }
 
 func (s *session) start(ctx context.Context) error {
