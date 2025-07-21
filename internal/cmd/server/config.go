@@ -19,12 +19,13 @@ func init() {
 }
 
 type Config struct {
-	Domain  string        `mapstructure:"domain"`
-	IP      string        `mapstructure:"ip"`
-	DB      DBConfig      `mapstructure:"db"`
-	DNS     DNSConfig     `mapstructure:"dns"`
-	TLS     TLSConfig     `mapstructure:"tls"`
-	Modules ModulesConfig `mapstructure:"modules"`
+	Domain    string          `mapstructure:"domain"`
+	IP        string          `mapstructure:"ip"`
+	DB        DBConfig        `mapstructure:"db"`
+	DNS       DNSConfig       `mapstructure:"dns"`
+	TLS       TLSConfig       `mapstructure:"tls"`
+	Telemetry TelemetryConfig `mapstructure:"telemetry"`
+	Modules   ModulesConfig   `mapstructure:"modules"`
 }
 
 func (c Config) Validate() error {
@@ -35,6 +36,20 @@ func (c Config) Validate() error {
 		validation.Field(&c.DNS),
 		validation.Field(&c.TLS),
 		validation.Field(&c.Modules),
+	)
+}
+
+//
+// Telemetry
+//
+
+type TelemetryConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+}
+
+func (c TelemetryConfig) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Enabled),
 	)
 }
 

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -30,7 +31,7 @@ type CertMgr struct {
 	mu   sync.RWMutex
 	once sync.Once
 
-	log StdLogger
+	log *slog.Logger
 }
 
 func New(root string, email string, domains []string, provider challenge.Provider,
@@ -57,7 +58,7 @@ func New(root string, email string, domains []string, provider challenge.Provide
 	}
 
 	// Set lego logger
-	log.Logger = options.log
+	log.Logger = slog.NewLogLogger(options.log.Handler(), slog.LevelInfo)
 
 	return cm, nil
 }

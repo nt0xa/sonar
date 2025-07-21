@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +20,7 @@ func TestEventsCreate_Success(t *testing.T) {
 
 	o := &models.Event{
 		PayloadID: 1,
+		UUID:      uuid.New(),
 		Protocol:  models.ProtoDNS,
 		R:         []byte{1, 3, 5},
 		W:         []byte{2, 4},
@@ -30,7 +32,7 @@ func TestEventsCreate_Success(t *testing.T) {
 		RemoteAddr: "127.0.0.1:1337",
 	}
 
-	err := db.EventsCreate(o)
+	err := db.EventsCreate(t.Context(), o)
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -40,7 +42,7 @@ func TestEventsGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.EventsGetByID(1)
+	o, err := db.EventsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.EqualValues(t, 1, o.PayloadID)
@@ -49,13 +51,14 @@ func TestEventsGetByID_Success(t *testing.T) {
 	assert.Equal(t, []byte("read-and-written"), o.RW)
 	assert.Equal(t, models.Meta{"key": "value"}, o.Meta)
 	assert.Equal(t, "127.0.0.1:1337", o.RemoteAddr)
+	assert.Equal(t, "c0b49dee-3ce9-4bd9-b111-7abd7a2f16f0", o.UUID.String())
 }
 
 func TestEventsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.EventsGetByID(1337)
+	o, err := db.EventsGetByID(t.Context(), 1337)
 	assert.Error(t, err)
 	assert.Nil(t, o)
 	assert.Error(t, err, sql.ErrNoRows.Error())
@@ -66,13 +69,13 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	defer teardown(t)
 
 	// Default
-	l, err := db.EventsListByPayloadID(1)
+	l, err := db.EventsListByPayloadID(t.Context(), 1)
 	assert.NoError(t, err)
 	require.Len(t, l, 10)
 	assert.EqualValues(t, l[0].ID, 11)
 	assert.EqualValues(t, l[len(l)-1].ID, 1)
 
-	l, err = db.EventsListByPayloadID(1,
+	l, err = db.EventsListByPayloadID(t.Context(), 1,
 		database.EventsPagination(database.Page{
 			Count: 3,
 		}),
@@ -85,7 +88,7 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Before
-	l, err = db.EventsListByPayloadID(1,
+	l, err = db.EventsListByPayloadID(t.Context(), 1,
 		database.EventsPagination(database.Page{
 			Count:  5,
 			Before: 7,
@@ -97,7 +100,7 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	assert.EqualValues(t, l[len(l)-1].ID, 2)
 
 	// After
-	l, err = db.EventsListByPayloadID(1,
+	l, err = db.EventsListByPayloadID(t.Context(), 1,
 		database.EventsPagination(database.Page{
 			Count: 5,
 			After: 7,
@@ -109,7 +112,7 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	assert.EqualValues(t, l[len(l)-1].ID, 8)
 
 	// Reverse
-	l, err = db.EventsListByPayloadID(1,
+	l, err = db.EventsListByPayloadID(t.Context(), 1,
 		database.EventsPagination(database.Page{
 			Count: 5,
 			After: 7,
@@ -126,11 +129,11 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.EventsGetByPayloadAndIndex(1, 1)
+	o, err := db.EventsGetByPayloadAndIndex(t.Context(), 1, 1)
 	assert.NoError(t, err)
 	assert.EqualValues(t, o.ID, 1)
 
-	o, err = db.EventsGetByPayloadAndIndex(1, 1337)
+	o, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 1337)
 	assert.Error(t, err)
 }
 
@@ -148,6 +151,7 @@ func TestEventsRace(t *testing.T) {
 
 			o := &models.Event{
 				PayloadID: 1,
+				UUID:      uuid.New(),
 				Protocol:  models.ProtoDNS,
 				R:         []byte{1, 3, 5},
 				W:         []byte{2, 4},
@@ -159,7 +163,7 @@ func TestEventsRace(t *testing.T) {
 				RemoteAddr: "127.0.0.1:1337",
 			}
 
-			err := db.EventsCreate(o)
+			err := db.EventsCreate(t.Context(), o)
 			assert.NoError(t, err)
 		}()
 	}

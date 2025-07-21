@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Event struct {
 	Index      int64     `db:"index"`
 	ID         int64     `db:"id"`
+	UUID       uuid.UUID `db:"uuid"`
 	PayloadID  int64     `db:"payload_id"`
 	Protocol   Proto     `db:"protocol"`
 	R          []byte    `db:"r"`

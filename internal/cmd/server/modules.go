@@ -3,9 +3,9 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/sirupsen/logrus"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
@@ -13,6 +13,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/lark"
 	"github.com/nt0xa/sonar/internal/modules/telegram"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Controller interface {
@@ -55,7 +56,8 @@ func (c ModulesConfig) Validate() error {
 func Modules(
 	cfg *ModulesConfig,
 	db *database.DB,
-	log *logrus.Logger,
+	log *slog.Logger,
+	tel telemetry.Telemetry,
 	tls *tls.Config,
 	actions actions.Actions,
 	domain string,
@@ -75,13 +77,13 @@ func Modules(
 		switch name {
 
 		case "telegram":
-			m, err = telegram.New(&cfg.Telegram, db, actions, domain)
+			m, err = telegram.New(&cfg.Telegram, db, tel, actions, domain)
 
 		case "api":
-			m, err = api.New(&cfg.API, db, log, tls, actions)
+			m, err = api.New(&cfg.API, db, log.With("package", "api"), tel, tls, actions)
 
 		case "lark":
-			m, err = lark.New(&cfg.Lark, db, tls, actions, domain)
+			m, err = lark.New(&cfg.Lark, db, log.With("package", "lark"), tel, tls, actions, domain)
 
 		}
 
@@ -96,7 +98,6 @@ func Modules(
 		if n, ok := m.(modules.Notifier); ok {
 			notifiers = append(notifiers, n)
 		}
-
 	}
 
 	return controllers, notifiers, nil

@@ -2,23 +2,26 @@ package dnsdb_test
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/dnsdb"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
 	tf  *testfixtures.Loader
 	db  *database.DB
 	rec *dnsdb.Records
+	log = slog.New(slog.DiscardHandler)
+	tel = telemetry.NewNoop()
 )
 
 func TestMain(m *testing.M) {
@@ -32,7 +35,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, logrus.New())
+	db, err = database.New(dsn, log, tel)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
@@ -138,7 +141,7 @@ func TestDNS(t *testing.T) {
 
 			for i := 0; i < len(tt.results); i++ {
 
-				rrs, err := rec.Get(tt.name, tt.qtype)
+				rrs, err := rec.Get(t.Context(), tt.name, tt.qtype)
 				require.NoError(t, err)
 
 				require.Len(t, rrs, len(tt.results[i]))

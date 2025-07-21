@@ -7,6 +7,8 @@ import (
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func (api *API) checkAuth() func(http.Handler) http.Handler {
@@ -20,7 +22,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			u, err := api.db.UsersGetByParam(models.UserAPIToken, token)
+			u, err := api.db.UsersGetByParam(r.Context(), models.UserAPIToken, token)
 
 			if err != nil {
 				api.handleError(w, r, errors.Unauthorizedf("invalid token"))
@@ -45,5 +47,19 @@ func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (api *API) telemetry(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, span := api.tel.TraceStart(r.Context(), "api",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(
+				attribute.String("http.method", r.Method),
+				attribute.String("http.path", r.URL.Path),
+			),
+		)
+		next.ServeHTTP(w, r.WithContext(ctx))
+		span.End()
 	})
 }

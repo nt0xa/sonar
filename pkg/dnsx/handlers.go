@@ -1,6 +1,7 @@
 package dnsx
 
 import (
+	"context"
 	"net"
 	"strings"
 	"sync"
@@ -11,15 +12,25 @@ import (
 	"github.com/miekg/dns"
 )
 
+type HandlerFunc func(context.Context, dns.ResponseWriter, *dns.Msg)
+
+type Handler interface {
+	ServeDNS(context.Context, dns.ResponseWriter, *dns.Msg)
+}
+
+func (f HandlerFunc) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
+	f(ctx, w, r)
+}
+
 // RecordGetter is an interface which must be implemented by any
 // records providers like database records, in-memory records, etc.
 type RecordGetter interface {
-	Get(name string, qtype uint16) ([]dns.RR, error)
+	Get(ctx context.Context, name string, qtype uint16) ([]dns.RR, error)
 }
 
 // RecordSetHandler wraps RecordGetter interface and implements
-// dns.Handler interface using it.
-func RecordSetHandler(set RecordGetter) dns.Handler {
+// Handlerinterface using it.
+func RecordSetHandler(set RecordGetter) Handler {
 	return &recordSetHandler{set}
 }
 
@@ -27,13 +38,13 @@ type recordSetHandler struct {
 	set RecordGetter
 }
 
-// ServeDNS allows recordSetHandler to implement dns.Handler interface.
-func (h *recordSetHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+// ServeDNS allows recordSetHandler to implement Handlerinterface.
+func (h *recordSetHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 	q := r.Question[0]
 
-	rrs, err := h.set.Get(q.Name, q.Qtype)
+	rrs, err := h.set.Get(ctx, q.Name, q.Qtype)
 	if err != nil || len(rrs) == 0 {
-		handleFailed(w, r)
+		handleFailed(dns.RcodeServerFailure, w, r)
 		return
 	}
 
@@ -42,13 +53,13 @@ func (h *recordSetHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 // ChainHandler tries to handle query using provided DNS records set,
 // if there is no answer for the query in set it calls next dns.Handler.
-func ChainHandler(set RecordGetter, next dns.Handler) dns.Handler {
-	return dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
+func ChainHandler(set RecordGetter, next Handler) Handler {
+	return HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		q := r.Question[0]
 
-		rrs, err := set.Get(q.Name, q.Qtype)
+		rrs, err := set.Get(ctx, q.Name, q.Qtype)
 		if err != nil {
-			handleFailed(w, r)
+			handleFailed(dns.RcodeServerFailure, w, r)
 			return
 		}
 
@@ -57,7 +68,7 @@ func ChainHandler(set RecordGetter, next dns.Handler) dns.Handler {
 			return
 		}
 
-		next.ServeDNS(w, r)
+		next.ServeDNS(ctx, w, r)
 	})
 }
 
@@ -74,23 +85,23 @@ type Event struct {
 }
 
 // NotifyHandler calls notify function after processing query.
-func NotifyHandler(notify func(*Event), next dns.Handler) dns.Handler {
-	return dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
+func NotifyHandler(notify func(context.Context, *Event), next Handler) Handler {
+	return HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		wr := NewRecorder(w)
 
 		defer func() {
-			notify(&Event{
+			notify(ctx, &Event{
 				RemoteAddr: w.RemoteAddr(),
 				Msg:        wr.Msg,
 				ReceivedAt: wr.Start,
 			})
 		}()
 
-		next.ServeDNS(wr, r)
+		next.ServeDNS(ctx, wr, r)
 	})
 }
 
-func ChallengeHandler(next dns.Handler) HandlerProvider {
+func ChallengeHandler(next Handler) HandlerProvider {
 	return &challengeHandler{
 		values: make([]string, 0),
 		next:   next,
@@ -98,14 +109,14 @@ func ChallengeHandler(next dns.Handler) HandlerProvider {
 }
 
 type HandlerProvider interface {
-	dns.Handler
+	Handler
 	challenge.Provider
 }
 
 type challengeHandler struct {
 	name   string
 	values []string
-	next   dns.Handler
+	next   Handler
 	mu     sync.Mutex
 }
 
@@ -133,8 +144,8 @@ func (h *challengeHandler) CleanUp(domain, token, keyAuth string) error {
 	return nil
 }
 
-// ServeDNS allows challengeHandler to satisfy dns.Handler interface.
-func (h *challengeHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+// ServeDNS allows challengeHandler to satisfy Handlerinterface.
+func (h *challengeHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 	name := strings.ToLower(r.Question[0].Name)
 
 	if name == h.name {
@@ -154,7 +165,7 @@ func (h *challengeHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		return
 	}
 
-	h.next.ServeDNS(w, r)
+	h.next.ServeDNS(ctx, w, r)
 }
 
 func handleSucceed(w dns.ResponseWriter, r *dns.Msg, answer []dns.RR) {
@@ -165,8 +176,8 @@ func handleSucceed(w dns.ResponseWriter, r *dns.Msg, answer []dns.RR) {
 	_ = w.WriteMsg(m)
 }
 
-func handleFailed(w dns.ResponseWriter, r *dns.Msg) {
+func handleFailed(rcode int, w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
-	m.SetRcode(r, dns.RcodeServerFailure)
+	m.SetRcode(r, rcode)
 	_ = w.WriteMsg(m)
 }

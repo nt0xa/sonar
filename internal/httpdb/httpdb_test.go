@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -14,12 +15,12 @@ import (
 	"testing"
 
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/httpdb"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
@@ -39,7 +40,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, logrus.New())
+	db, err = database.New(dsn, slog.New(slog.DiscardHandler), telemetry.NewNoop())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)

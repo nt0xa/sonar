@@ -46,7 +46,7 @@ func handle(resp *resty.Response, err error) errors.Error {
 
 	if resp.IsError() &&
 		!strings.Contains(resp.Header().Get("Content-Type"), "application/json") {
-		return errors.Internalf(resp.String())
+		return errors.Internalf("%s", resp.String())
 	}
 
 	if resp.Error() != nil {

@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 
@@ -55,10 +54,10 @@ func TestHTTPRoutesCreate_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			r, err := acts.HTTPRoutesCreate(ctx, tt.p)
 			require.NoError(t, err)
@@ -185,13 +184,13 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.HTTPRoutesCreate(ctx, tt.p)
@@ -231,18 +230,18 @@ func TestHTTPRoutesDelete_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			_, err = acts.HTTPRoutesDelete(ctx, tt.p)
 			assert.NoError(t, err)
 
-			p, err := db.PayloadsGetByUserAndName(u.ID, tt.p.PayloadName)
+			p, err := db.PayloadsGetByUserAndName(t.Context(), u.ID, tt.p.PayloadName)
 			assert.NoError(t, err)
 
-			_, err = db.HTTPRoutesGetByPayloadMethodAndPath(p.ID, tt.method, tt.path)
+			_, err = db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), p.ID, tt.method, tt.path)
 			assert.Error(t, err, sql.ErrNoRows)
 		})
 	}
@@ -298,13 +297,13 @@ func TestHTTPRoutesDelete_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.HTTPRoutesDelete(ctx, tt.p)
@@ -342,10 +341,10 @@ func TestHTTPRoutesList_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			list, err := acts.HTTPRoutesList(ctx, tt.p)
 			assert.NoError(t, err)
@@ -393,13 +392,13 @@ func TestHTTPRoutesList_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.HTTPRoutesList(ctx, tt.p)
@@ -445,10 +444,10 @@ func TestHTTPRoutesClear_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			list, err := acts.HTTPRoutesClear(ctx, tt.p)
 			assert.NoError(t, err)
@@ -488,12 +487,12 @@ func TestHTTPRoutesClear_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.HTTPRoutesClear(ctx, tt.p)
@@ -549,10 +548,10 @@ func TestHTTPRoutesUpdate_Success(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			u, err := db.UsersGetByID(1)
+			u, err := db.UsersGetByID(t.Context(), 1)
 			require.NoError(t, err)
 
-			ctx := actionsdb.SetUser(context.Background(), u)
+			ctx := actionsdb.SetUser(t.Context(), u)
 
 			r, err := acts.HTTPRoutesUpdate(ctx, tt.p)
 			require.NoError(t, err)
@@ -651,13 +650,13 @@ func TestHTTPRoutesUpdate_Error(t *testing.T) {
 			setup(t)
 			defer teardown(t)
 
-			ctx := context.Background()
+			ctx := t.Context()
 
 			if tt.userID != 0 {
-				u, err := db.UsersGetByID(1)
+				u, err := db.UsersGetByID(t.Context(), 1)
 				require.NoError(t, err)
 
-				ctx = actionsdb.SetUser(context.Background(), u)
+				ctx = actionsdb.SetUser(t.Context(), u)
 			}
 
 			_, err := acts.HTTPRoutesUpdate(ctx, tt.p)

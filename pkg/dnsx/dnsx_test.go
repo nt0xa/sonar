@@ -1,6 +1,7 @@
 package dnsx_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -49,11 +50,11 @@ func TestMain(m *testing.M) {
 	wg.Add(1)
 
 	// Do not handle DNS queries which are not subdomains of the origin.
-	handler := dns.NewServeMux()
+	handler := dnsx.NewServeMux()
 
 	handler.Handle("sonar.test",
 		dnsx.NotifyHandler(
-			func(e *dnsx.Event) {
+			func(ctx context.Context, e *dnsx.Event) {
 				notifier.Notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
 					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
 					"qtype": dnsx.QtypeString(e.Msg.Question[0].Qtype),
@@ -75,7 +76,7 @@ func TestMain(m *testing.M) {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, fmt.Sprintf("fail to start server: %s", err))
+			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
 		}
 	}()

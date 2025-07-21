@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
@@ -23,7 +26,9 @@ import (
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/logx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 func init() {
@@ -54,84 +59,107 @@ func main() {
 	serve := &cobra.Command{
 		Use:   "serve",
 		Short: "start the server",
-		Run: func(cmd *cobra.Command, args []string) {
-			serve(&cfg)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return serve(cmd.Context(), &cfg)
 		},
 	}
 
 	root.AddCommand(serve)
 
-	root.Execute()
+	if err := root.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
-func serve(cfg *server.Config) {
+func serve(ctx context.Context, cfg *server.Config) error {
+	var err error
+
+	errChan := make(chan error, 2)
+
+	//
+	// Telemetry
+	//
+
+	var tel telemetry.Telemetry
+
+	if cfg.Telemetry.Enabled {
+		tel, err = telemetry.New(ctx, "sonar", "v0") // TODO: change
+		if err != nil {
+			return fmt.Errorf("failed to init telemetry: %w", err)
+		}
+	} else {
+		tel = telemetry.NewNoop()
+	}
+
+	defer func() {
+		_ = tel.Shutdown(ctx)
+	}()
+
+	ctx, span := tel.TraceStart(
+		ctx,
+		"server.start",
+		trace.WithSpanKind(trace.SpanKindInternal),
+	)
+
 	//
 	// Logger
 	//
 
-	log := logrus.New()
-	log.SetFormatter(&logrus.TextFormatter{})
+	log := slog.New(logx.MultiHandler(
+		slog.NewTextHandler(os.Stdout, nil),
+		tel.NewLogHandler("sonar"),
+	))
 
 	//
 	// DB
 	//
 
-	db, err := database.New(cfg.DB.DSN, log)
+	db, err := database.New(cfg.DB.DSN, log.With("package", "database"), tel)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to init database: %w", err)
 	}
 
 	if err := db.Migrate(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
 	// Create admin user
-	admin := &models.User{
-		Name:      "admin",
-		IsAdmin:   true,
-		CreatedBy: nil,
-		Params: models.UserParams{
-			TelegramID: cfg.Modules.Telegram.Admin,
-			APIToken:   cfg.Modules.API.Admin,
-			LarkUserID: cfg.Modules.Lark.Admin,
-		},
-	}
-
-	if u, err := db.UsersGetByName("admin"); err == sql.ErrNoRows {
-		// There is no admin yet - create one
-		if err := db.UsersCreate(admin); err != nil {
-			log.Fatal(err)
-		}
-	} else if err == nil {
-		// Admin user exists - update
-		admin.ID = u.ID
-		if err := db.UsersUpdate(admin); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		log.Fatal(err)
+	if err := createOrUpdateAdminUser(ctx, cfg, db, tel); err != nil {
+		return fmt.Errorf("failed to create admin user: %w", err)
 	}
 
 	//
 	// Cache
 	//
 
-	cache, err := cache.New(db)
+	cache, err := cache.New(ctx, db)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	//
 	// Actions
 	//
 
-	actions := actionsdb.New(db, log, cfg.Domain)
+	actions := actionsdb.New(
+		db,
+		log.With("package", "actions"),
+		cfg.Domain,
+	)
 
 	//
 	// EventsHandler
 	//
 
-	events := server.NewEventsHandler(db, cache, 10, 100 /* TODO: from config */)
+	events := server.NewEventsHandler(
+		db,
+		log.With("package", "events"),
+		tel,
+		cache,
+		10,
+		100,
+	)
 
 	//
 	// DNS
@@ -144,10 +172,11 @@ func serve(cfg *server.Config) {
 	dnsHandler := server.DNSHandler(
 		&cfg.DNS,
 		db,
+		tel,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
-		func(e *dnsx.Event) {
-			events.Emit(server.DNSEvent(e))
+		func(ctx context.Context, e *dnsx.Event) {
+			events.Emit(ctx, server.DNSEvent(e))
 		},
 	)
 
@@ -159,7 +188,7 @@ func serve(cfg *server.Config) {
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed to start DNS handler: %v", err.Error())
+			errChan <- fmt.Errorf("failed to start DNS handler: %w", err)
 		}
 	}()
 
@@ -173,13 +202,13 @@ func serve(cfg *server.Config) {
 
 	tls, err := server.NewTLS(&cfg.TLS, log, cfg.Domain, dnsHandler)
 	if err != nil {
-		log.Fatalf("Failed to init TLS: %v", err)
+		return fmt.Errorf("failed to init TLS: %w", err)
 	}
 
 	go func() {
 		err := tls.Start()
 		if err != nil {
-			log.Fatalf("Failed to start TLS: %v", err)
+			errChan <- fmt.Errorf("failed to start TLS: %w", err)
 		}
 	}()
 
@@ -187,7 +216,7 @@ func serve(cfg *server.Config) {
 
 	tlsConfig, err := tls.GetConfig()
 	if err != nil {
-		log.Fatalf("Failed to get TLS config: %v", err)
+		return fmt.Errorf("failed to get TLS config: %w", err)
 	}
 
 	//
@@ -199,17 +228,17 @@ func serve(cfg *server.Config) {
 			":80",
 			server.HTTPHandler(
 				db,
+				tel,
 				cfg.Domain,
-				func(e *httpx.Event) {
-					events.Emit(server.HTTPEvent(e))
+				func(ctx context.Context, e *httpx.Event) {
+					events.Emit(ctx, server.HTTPEvent(e))
 				},
 			),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start HTTP handler: %s", err.Error())
+			errChan <- fmt.Errorf("failed to start HTTP handler: %w", err)
 		}
-
 	}()
 
 	//
@@ -221,16 +250,17 @@ func serve(cfg *server.Config) {
 			":443",
 			server.HTTPHandler(
 				db,
+				tel,
 				cfg.Domain,
-				func(e *httpx.Event) {
-					events.Emit(server.HTTPEvent(e))
+				func(ctx context.Context, e *httpx.Event) {
+					events.Emit(ctx, server.HTTPEvent(e))
 				},
 			),
 			httpx.TLSConfig(tlsConfig),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start HTTPS handler: %s", err.Error())
+			errChan <- fmt.Errorf("failed to start HTTPS handler: %w", err)
 		}
 	}()
 
@@ -242,16 +272,19 @@ func serve(cfg *server.Config) {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := smtpx.New(
 			":25",
-			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
-			smtpx.Messages(smtpx.Msg{Greet: cfg.Domain, Ehlo: cfg.Domain}),
-			smtpx.OnClose(func(e *smtpx.Event) {
-				events.Emit(server.SMTPEvent(e))
-			}),
-			smtpx.TLSConfig(tlsConfig, false),
+			server.SMTPHandler(
+				cfg.Domain,
+				tel,
+				tlsConfig,
+				func(ctx context.Context, e *smtpx.Event) {
+					events.Emit(ctx, server.SMTPEvent(e))
+				},
+			),
+			smtpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)), // TODO: change to handler
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start SMTP handler: %s", err.Error())
+			errChan <- fmt.Errorf("failed to start SMTP handler: %w", err)
 		}
 	}()
 
@@ -263,15 +296,18 @@ func serve(cfg *server.Config) {
 		// Pass TLS config to be able to handle "STARTTLS" command.
 		srv := ftpx.New(
 			":21",
+			server.FTPHandler(
+				cfg.Domain,
+				tel,
+				func(ctx context.Context, e *ftpx.Event) {
+					events.Emit(ctx, server.FTPEvent(e))
+				},
+			),
 			ftpx.ListenerWrapper(server.SMTPListenerWrapper(1<<20, time.Second*5)),
-			ftpx.Messages(ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", cfg.Domain)}),
-			ftpx.OnClose(func(e *ftpx.Event) {
-				events.Emit(server.FTPEvent(e))
-			}),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("Failed start SMTP handler: %s", err.Error())
+			errChan <- fmt.Errorf("failed to start FTP handler: %w", err)
 		}
 	}()
 
@@ -279,30 +315,85 @@ func serve(cfg *server.Config) {
 	// Modules
 	//
 
-	controllers, notifiers, err := server.Modules(&cfg.Modules, db, log, tlsConfig, actions, cfg.Domain)
+	controllers, notifiers, err := server.Modules(
+		&cfg.Modules,
+		db,
+		log,
+		tel,
+		tlsConfig,
+		actions,
+		cfg.Domain,
+	)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Start controllers
 	for _, c := range controllers {
 		go func(c server.Controller) {
 			if err := c.Start(); err != nil {
-				log.Fatal(err)
+				errChan <- fmt.Errorf("failed to start controller %v: %w", c, err)
 			}
 		}(c)
 	}
 
 	// Add notifiers
 	for i, n := range notifiers {
-		events.AddNotifier(fmt.Sprintf("%d", i), n)
+		events.AddNotifier(fmt.Sprintf("Notifier %d", i), n)
 	}
 
 	// Process events
-	go events.Start()
+	if err := events.Start(); err != nil {
+		return fmt.Errorf("failed to start events handler: %w", err)
+	}
 
 	// Wait forever
-	select {}
+	log.Info("Starting server")
+	span.End()
+
+	if err := <-errChan; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOrUpdateAdminUser(
+	ctx context.Context,
+	cfg *server.Config,
+	db *database.DB,
+	tel telemetry.Telemetry,
+) error {
+	ctx, span := tel.TraceStart(ctx, "db.init.admin")
+	defer span.End()
+
+	admin := &models.User{
+		Name:      "admin",
+		IsAdmin:   true,
+		CreatedBy: nil,
+		Params: models.UserParams{
+			TelegramID: cfg.Modules.Telegram.Admin,
+			APIToken:   cfg.Modules.API.Admin,
+			LarkUserID: cfg.Modules.Lark.Admin,
+		},
+	}
+
+	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
+		// There is no admin yet - create one
+		if err := db.UsersCreate(ctx, admin); err != nil {
+			return fmt.Errorf("failed to create admin user: %w", err)
+		}
+	} else if err == nil {
+		// Admin user exists - update
+		admin.ID = u.ID
+		if err := db.UsersUpdate(ctx, admin); err != nil {
+			return fmt.Errorf("failed to update admin user: %w", err)
+		}
+	} else {
+		return fmt.Errorf("failed to get admin user: %w", err)
+	}
+
+	return nil
 }
 
 func initConfig(cfgFile string, cfg *server.Config) error {

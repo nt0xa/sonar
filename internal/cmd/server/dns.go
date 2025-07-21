@@ -1,18 +1,23 @@
 package server
 
 import (
+	"context"
 	"io/ioutil"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/fatih/structs"
 	"github.com/miekg/dns"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/dnsdb"
 	"github.com/nt0xa/sonar/internal/utils/tpl"
 	"github.com/nt0xa/sonar/pkg/dnsx"
+	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var dnsTemplate = tpl.MustParse(`
@@ -60,11 +65,18 @@ func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsx.Records {
 	return parseDNSRecords(string(data), origin, ip)
 }
 
-func DNSHandler(cfg *DNSConfig, db *database.DB, origin string, ip net.IP, notify func(*dnsx.Event)) dnsx.HandlerProvider {
+func DNSHandler(
+	cfg *DNSConfig,
+	db *database.DB,
+	tel telemetry.Telemetry,
+	origin string,
+	ip net.IP,
+	notify func(context.Context, *dnsx.Event),
+) dnsx.HandlerProvider {
 	// Do not handle DNS queries which are not subdomains of the origin.
-	h := dns.NewServeMux()
+	h := dnsx.NewServeMux()
 
-	var fallback dns.Handler
+	var fallback dnsx.Handler
 
 	defaultRecords := DNSDefaultRecords(origin, ip)
 
@@ -75,13 +87,16 @@ func DNSHandler(cfg *DNSConfig, db *database.DB, origin string, ip net.IP, notif
 	}
 
 	h.Handle(origin,
-		dnsx.NotifyHandler(
-			notify,
-			dnsx.ChainHandler(
-				// Database records.
-				&dnsdb.Records{DB: db, Origin: origin},
-				// Fallback records.
-				fallback,
+		DNSTelemetryHandler(
+			tel,
+			dnsx.NotifyHandler(
+				notify,
+				dnsx.ChainHandler(
+					// Database records.
+					&dnsdb.Records{DB: db, Origin: origin},
+					// Fallback records.
+					fallback,
+				),
 			),
 		),
 	)
@@ -89,8 +104,46 @@ func DNSHandler(cfg *DNSConfig, db *database.DB, origin string, ip net.IP, notif
 	return dnsx.ChallengeHandler(h)
 }
 
-func DNSEvent(e *dnsx.Event) *models.Event {
+func DNSTelemetryHandler(tel telemetry.Telemetry, next dnsx.Handler) dnsx.Handler {
+	queryDuration, err := tel.NewInt64Histogram(
+		"dns.query.duration",
+		"ms",
+		"DNS query duration",
+	)
+	if err != nil {
+		panic(err)
+	}
 
+	counter, err := tel.NewInt64UpDownCounter(
+		"dns.queries.inflight",
+		"{count}",
+		"Number of queries currently being processed by the server",
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	return dnsx.HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
+		start := time.Now()
+		ctx, id := withEventID(ctx)
+
+		ctx, span := tel.TraceStart(ctx, "dns", trace.WithAttributes(
+			attribute.String("event.id", id.String()),
+			attribute.String("dns.query.name", r.Question[0].Name),
+			attribute.String("dns.query.type", dnsx.QtypeString(r.Question[0].Qtype)),
+		))
+		defer span.End()
+
+		counter.Add(ctx, 1)
+
+		next.ServeDNS(ctx, w, r)
+
+		counter.Add(ctx, -1)
+		queryDuration.Record(ctx, time.Since(start).Milliseconds())
+	})
+}
+
+func DNSEvent(e *dnsx.Event) *models.Event {
 	type Question struct {
 		Name string `structs:"name"`
 		Type string `structs:"type"`
