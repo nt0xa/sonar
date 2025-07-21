@@ -280,7 +280,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				})
 				if err != nil {
-					lrk.message("", msgID, err.Error())
+					lrk.message(ctx, "", msgID, err.Error())
 					return nil
 				}
 
