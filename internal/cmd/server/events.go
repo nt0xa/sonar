@@ -150,24 +150,38 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 		}
 
 		for _, n := range h.notifiers {
-			go func() {
-				ctx, span := h.tel.TraceStart(ctx, "notifier.Notify",
-					trace.WithSpanKind(trace.SpanKindInternal),
-					trace.WithAttributes(
-						attribute.String("notifier.name", n.Name()),
-					),
-				)
-				defer span.End()
-
-				if err := n.Notify(ctx, &modules.Notification{User: u, Payload: p, Event: e}); err != nil {
-					h.log.Error("Notifier failed",
-						"error", err,
-						"payload_id", p.ID,
-						"user_id", u.ID,
-					)
-				}
-			}()
+			// TODO: add deadline to context
+			go h.notify(context.Background(), ctx, &modules.Notification{
+				User:    u,
+				Payload: p,
+				Event:   e,
+			}, n)
 		}
+	}
+}
+
+func (h *EventsHandler) notify(
+	ctx context.Context,
+	parentCtx context.Context,
+	notification *modules.Notification,
+	notifier modules.Notifier,
+) {
+	ctx, span := h.tel.TraceStart(ctx, "notify",
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			attribute.String("event.id", notification.Event.UUID.String()),
+			attribute.String("notifier.name", notifier.Name()),
+		),
+		trace.WithLinks(trace.LinkFromContext(parentCtx)),
+	)
+	defer span.End()
+
+	if err := notifier.Notify(parentCtx, notification); err != nil {
+		h.log.Error("Notifier failed",
+			"error", err,
+			"notifier", notifier.Name(),
+			"event_uuid", notification.Event.UUID.String(),
+		)
 	}
 }
 
