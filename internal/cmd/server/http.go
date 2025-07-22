@@ -10,7 +10,6 @@ import (
 
 	"github.com/fatih/structs"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/semconv/v1.13.0/httpconv"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -58,7 +57,20 @@ func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
 		start := time.Now()
 
 		ctx, id := withEventID(ctx)
-		attrs := append(httpconv.ServerRequest("http", r), attribute.String("event.id", id.String()))
+
+		attrs := []attribute.KeyValue{
+			attribute.String("event.id", id.String()),
+		}
+
+		if r.Method != "" {
+			attrs = append(attrs, attribute.String("http.method", r.Method))
+		} else {
+			attrs = append(attrs, attribute.String("http.method", http.MethodGet))
+		}
+
+		if r.ContentLength >= 0 {
+			attrs = append(attrs, attribute.Int64("http.request.content_length", r.ContentLength))
+		}
 
 		ctx, span := tel.TraceStart(ctx, "http",
 			trace.WithSpanKind(trace.SpanKindServer),
