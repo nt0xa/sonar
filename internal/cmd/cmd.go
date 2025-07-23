@@ -37,7 +37,7 @@ func New(a actions.Actions, opts ...Option) *Command {
 	}
 }
 
-func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
+func (c *Command) root(onResult func(context.Context, actions.Result) error) *cobra.Command {
 	var root = &cobra.Command{
 		Use:   "sonar",
 		Short: "CLI to control sonar server",
@@ -117,7 +117,11 @@ func (c *Command) root(onResult func(actions.Result) error) *cobra.Command {
 	return root
 }
 
-func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions.Result) error) (string, string, error) {
+func (c *Command) Exec(
+	ctx context.Context,
+	args []string,
+	onResult func(context.Context, actions.Result) error,
+) (string, string, error) {
 	cmd := c.root(onResult)
 
 	if c.options.preExec != nil {
@@ -145,7 +149,11 @@ func (c *Command) Exec(ctx context.Context, args []string, onResult func(actions
 	return stdout.String(), stderr.String(), nil
 }
 
-func (c *Command) ParseAndExec(ctx context.Context, s string, onResult func(actions.Result) error) (string, string, error) {
+func (c *Command) ParseAndExec(
+	ctx context.Context,
+	s string,
+	onResult func(context.Context, actions.Result) error,
+) (string, string, error) {
 	args, _ := shlex.Split(strings.TrimLeft(s, "/"))
 	return c.Exec(ctx, args, onResult)
 }

@@ -24,7 +24,7 @@ type ResultMock struct {
 	mock.Mock
 }
 
-func (m *ResultMock) OnResult(res actions.Result) error {
+func (m *ResultMock) OnResult(ctx context.Context, res actions.Result) error {
 	m.Called(res)
 	return nil
 }

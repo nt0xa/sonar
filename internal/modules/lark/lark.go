@@ -21,6 +21,7 @@ import (
 	larkevent "github.com/larksuite/oapi-sdk-go/v3/event"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
@@ -177,6 +178,21 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 	return dispatcher.NewEventDispatcher(verificationToken, eventEncryptKey).
 		OnP2MessageReceiveV1(
 			func(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
+				if event.EventV2Base == nil || event.Event == nil ||
+					event.Event.Message == nil || event.Event.Message.ChatType == nil {
+					lrk.log.Warn("Received invalid P2MessageReceiveV1 event", "event", event)
+					return nil
+				}
+
+				ctx, span := lrk.tel.TraceStart(ctx, "lark.update",
+					trace.WithSpanKind(trace.SpanKindServer),
+					trace.WithAttributes(
+						attribute.String("lark.update.id", event.EventV2Base.Header.EventID),
+						attribute.String("lark.update.chat_type", *event.Event.Message.ChatType),
+					),
+				)
+				defer span.End()
+
 				ts, err := strconv.ParseInt(*event.Event.Message.CreateTime, 10, 64)
 				if err != nil {
 					return nil
@@ -204,11 +220,6 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 				msgID := event.Event.Message.MessageId
 
-				if event.Event.Message.ChatType == nil {
-					fmt.Println("chat type is nil")
-					return nil
-				}
-
 				var userID *string
 				switch *event.Event.Message.ChatType {
 				case "p2p":
@@ -216,7 +227,9 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 				case "group":
 					userID = event.Event.Message.ChatId
 				default:
-					fmt.Println("unknown chat type")
+					lrk.log.Warn("Unsupported chat type",
+						"chat_type", *event.Event.Message.ChatType,
+					)
 					return nil
 				}
 
@@ -237,7 +250,9 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					}
 
 					if err := lrk.db.UsersCreate(ctx, user); err != nil {
-						// TODO: logging
+						lrk.log.Error("Failed to create user",
+							"err", err,
+						)
 						lrk.message(ctx, *userID, msgID, "internal error")
 						return nil
 					}
@@ -269,16 +284,18 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 				text = strings.TrimSpace(text)
 
-				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, text, func(res actions.Result) error {
-					s, err := lrk.tmpl.RenderResult(res)
-					if err != nil {
-						return err
-					}
+				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, text,
+					func(ctx context.Context, res actions.Result) error {
+						s, err := lrk.tmpl.RenderResult(res)
+						if err != nil {
+							return err
+						}
 
-					lrk.message(ctx, "", msgID, s)
+						lrk.message(ctx, "", msgID, s)
 
-					return nil
-				})
+						return nil
+					},
+				)
 				if err != nil {
 					lrk.message(ctx, "", msgID, err.Error())
 					return nil
