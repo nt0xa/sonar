@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -156,6 +158,10 @@ func newMetricProvider(ctx context.Context, res *resource.Resource) (*metric.Met
 		metric.WithResource(res),
 	)
 	otel.SetMeterProvider(mp)
+
+	if err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(time.Second * 10)); err != nil {
+		return nil, fmt.Errorf("failed to start runtime metrics: %w", err)
+	}
 
 	return mp, nil
 }
