@@ -3,13 +3,15 @@ package main
 var cmdCode = `package cmd
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nt0xa/sonar/internal/actions"
 )
 
 {{ range . }}
-func (c *Command) {{ .Name }}(onResult func(actions.Result) error) *cobra.Command {
+func (c *Command) {{ .Name }}(onResult func(context.Context, actions.Result) error) *cobra.Command {
 	{{- if ne .Params.TypeName "" }}
 	var params actions.{{ .Params.TypeName }}
 
@@ -36,7 +38,7 @@ func (c *Command) {{ .Name }}(onResult func(actions.Result) error) *cobra.Comman
 			return err
 		}
 
-		return onResult(res)
+		return onResult(cmd.Context(), res)
 	}
 
 
