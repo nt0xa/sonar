@@ -5,9 +5,9 @@ import (
 )
 
 type Config struct {
-	Admin int64  `mapstructure:"admin"`
-	Token string `mapstructure:"token"`
-	Proxy string `mapstructure:"proxy"`
+	Admin int64  
+	Token string 
+	Proxy string 
 }
 
 func (c Config) Validate() error {

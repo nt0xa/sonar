@@ -5,15 +5,15 @@ import (
 )
 
 type Config struct {
-	Admin             string `mapstructure:"admin"`
-	AppID             string `mapstructure:"app_id"`
-	AppSecret         string `mapstructure:"app_secret"`
-	VerificationToken string `mapstructure:"verification_token"`
-	Mode              string `mapstructure:"mode"`
-	EncryptKey        string `mapstructure:"encrypt_key"`
-	TLSEnabled        bool   `mapstructure:"tls_enabled"`
-	ProxyURL          string `mapstructure:"proxy_url"`
-	ProxyInsecure     bool   `mapstructure:"proxy_insecure"`
+	Admin             string
+	AppID             string `koanf:"app_id"`
+	AppSecret         string `koanf:"app_secret"`
+	VerificationToken string `koanf:"verification_token"`
+	Mode              string
+	EncryptKey        string `koanf:"encrypt_key"`
+	TLSEnabled        bool   `koanf:"tls_enabled"`
+	ProxyURL          string `koanf:"proxy_url"`
+ProxyInsecure     bool `koanf:"proxy_insecure"`
 }
 
 const (

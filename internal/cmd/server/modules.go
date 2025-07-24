@@ -21,13 +21,13 @@ type Controller interface {
 }
 
 type ModulesConfig struct {
-	Enabled []string `mapstructure:"enabled"`
+	Enabled []string 
 
 	// TODO: dynamic modules config (something like json.RawMessage) to be able to not include
 	// unnecessary modules in binary.
-	Telegram telegram.Config `mapstructure:"telegram"`
-	API      api.Config      `mapstructure:"api"`
-	Lark     lark.Config     `mapstructure:"lark"`
+	Telegram telegram.Config 
+	API      api.Config      
+	Lark     lark.Config     
 }
 
 func (c ModulesConfig) Validate() error {

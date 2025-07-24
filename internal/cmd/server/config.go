@@ -1,31 +1,73 @@
 package server
 
 import (
+	"fmt"
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env/v2"
+	"github.com/knadh/koanf/providers/rawbytes"
+	"github.com/knadh/koanf/v2"
 	"github.com/nt0xa/sonar/internal/utils/valid"
-	"github.com/spf13/viper"
 )
 
-func init() {
-	viper.SetDefault("tls.letsencrypt.directory", "./tls")
-	viper.SetDefault("tls.letsencrypt.ca_dir_url", "https://acme-v02.api.letsencrypt.org/directory")
-	viper.SetDefault("tls.letsencrypt.ca_insecure", false)
+func GetConfig(
+	defaults map[string]any,
+	configData []byte,
+	environFunc func() []string,
+) (*Config, error) {
+	k := koanf.New(".")
 
-	viper.SetDefault("modules.enabled", "api")
-	viper.SetDefault("modules.api.port", 31337)
+	// Load default values.
+	if err := k.Load(confmap.Provider(defaults, "."), nil); err != nil {
+		return nil, fmt.Errorf("load config from confmap: %w", err)
+	}
 
-	viper.SetDefault("modules.lark.tls_enabled", true)
+	// Load config from TOML file.
+	if err := k.Load(rawbytes.Provider(configData), toml.Parser()); err != nil {
+		return nil, fmt.Errorf("load config from rawbytes: %w", err)
+	}
+
+	// Load config from environment variables.
+	if err := k.Load(env.Provider(".", env.Opt{
+		Prefix: "SONAR_",
+		TransformFunc: func(k, v string) (string, any) {
+			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "SONAR_")), "_", ".")
+			if strings.Contains(v, ",") {
+				return k, strings.Split(v, ",")
+			}
+			return k, v
+		},
+		EnvironFunc: environFunc,
+	}), nil); err != nil {
+		return nil, fmt.Errorf("load config from env: %w", err)
+	}
+
+	var cfg Config
+
+	if err := k.Unmarshal("", &cfg); err != nil {
+		return nil, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	return &cfg, nil
+}
+
+var ConfigDefaults = map[string]any{
+	"tls.letsencrypt.directory":  "./tls",
+	"tls.letsencrypt.ca_dir_url": "https://acme-v02.api.letsencrypt.org/directory",
 }
 
 type Config struct {
-	Domain    string          `mapstructure:"domain"`
-	IP        string          `mapstructure:"ip"`
-	DB        DBConfig        `mapstructure:"db"`
-	DNS       DNSConfig       `mapstructure:"dns"`
-	TLS       TLSConfig       `mapstructure:"tls"`
-	Telemetry TelemetryConfig `mapstructure:"telemetry"`
-	Modules   ModulesConfig   `mapstructure:"modules"`
+	Domain    string
+	IP        string
+	DB        DBConfig
+	DNS       DNSConfig
+	TLS       TLSConfig
+	Telemetry TelemetryConfig
+	Modules   ModulesConfig
 }
 
 func (c Config) Validate() error {
@@ -44,7 +86,7 @@ func (c Config) Validate() error {
 //
 
 type TelemetryConfig struct {
-	Enabled bool `mapstructure:"enabled"`
+	Enabled bool
 }
 
 func (c TelemetryConfig) Validate() error {
@@ -58,7 +100,7 @@ func (c TelemetryConfig) Validate() error {
 //
 
 type DBConfig struct {
-	DSN string `mapstructure:"dsn"`
+	DSN string
 }
 
 func (c DBConfig) Validate() error {
@@ -71,7 +113,7 @@ func (c DBConfig) Validate() error {
 //
 
 type DNSConfig struct {
-	Zone string `mapstructure:"zone"`
+	Zone string
 }
 
 func (c DNSConfig) Validate() error {
@@ -83,9 +125,9 @@ func (c DNSConfig) Validate() error {
 //
 
 type TLSConfig struct {
-	Type        string               `mapstructure:"type"`
-	Custom      TLSCustomConfig      `mapstructure:"custom"`
-	LetsEncrypt TLSLetsEncryptConfig `mapstructure:"letsencrypt"`
+	Type        string
+	Custom      TLSCustomConfig
+	LetsEncrypt TLSLetsEncryptConfig
 }
 
 func (c TLSConfig) Validate() error {
@@ -107,8 +149,8 @@ func (c TLSConfig) Validate() error {
 // Custom
 
 type TLSCustomConfig struct {
-	Key  string `mapstructure:"key"`
-	Cert string `mapstructure:"cert"`
+	Key  string
+	Cert string
 }
 
 func (c TLSCustomConfig) Validate() error {
@@ -121,10 +163,10 @@ func (c TLSCustomConfig) Validate() error {
 // LetsEncrypt
 
 type TLSLetsEncryptConfig struct {
-	Email      string `mapstructure:"email"`
-	Directory  string `mapstructure:"directory"`
-	CADirURL   string `mapstructure:"ca_dir_url"`
-	CAInsecure bool   `mapstructure:"ca_insecure"`
+	Email      string
+	Directory  string
+	CADirURL   string `koanf:"ca_dir_url"`
+	CAInsecure bool   `koanf:"ca_insecure"`
 }
 
 func (c TLSLetsEncryptConfig) Validate() error {
