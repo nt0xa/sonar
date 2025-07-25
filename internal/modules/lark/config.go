@@ -13,7 +13,7 @@ type Config struct {
 	EncryptKey        string `koanf:"encrypt_key"`
 	TLSEnabled        bool   `koanf:"tls_enabled"`
 	ProxyURL          string `koanf:"proxy_url"`
-ProxyInsecure     bool `koanf:"proxy_insecure"`
+	ProxyInsecure     bool   `koanf:"proxy_insecure"`
 }
 
 const (

@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Admin string 
-	Port  int   
+	Admin string
+	Port  int
 }
 
 func (c Config) Validate() error {

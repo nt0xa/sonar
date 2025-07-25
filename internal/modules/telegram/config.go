@@ -5,9 +5,9 @@ import (
 )
 
 type Config struct {
-	Admin int64  
-	Token string 
-	Proxy string 
+	Admin int64
+	Token string
+	Proxy string
 }
 
 func (c Config) Validate() error {

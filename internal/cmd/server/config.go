@@ -11,6 +11,7 @@ import (
 	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/rawbytes"
 	"github.com/knadh/koanf/v2"
+	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/internal/utils/valid"
 )
 
@@ -30,23 +31,31 @@ func GetConfig(
 	if err := k.Load(rawbytes.Provider(configData), toml.Parser()); err != nil {
 		return nil, fmt.Errorf("load config from rawbytes: %w", err)
 	}
+	var cfg Config
+
+	cfgKeys := make(map[string]string)
+	for _, key := range utils.StructKeys(cfg, "koanf") {
+		envKey := "SONAR_" + strings.ReplaceAll(strings.ToUpper(key), ".", "_")
+		cfgKeys[envKey] = key
+	}
 
 	// Load config from environment variables.
 	if err := k.Load(env.Provider(".", env.Opt{
 		Prefix: "SONAR_",
 		TransformFunc: func(k, v string) (string, any) {
-			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "SONAR_")), "_", ".")
-			if strings.Contains(v, ",") {
-				return k, strings.Split(v, ",")
+			key, ok := cfgKeys[k]
+			if !ok {
+				return "", ""
 			}
-			return k, v
+			if strings.Contains(v, ",") {
+				return key, strings.Split(v, ",")
+			}
+			return key, v
 		},
 		EnvironFunc: environFunc,
 	}), nil); err != nil {
 		return nil, fmt.Errorf("load config from env: %w", err)
 	}
-
-	var cfg Config
 
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
@@ -56,8 +65,11 @@ func GetConfig(
 }
 
 var ConfigDefaults = map[string]any{
+	"tls.type":                   "letsencrypt",
 	"tls.letsencrypt.directory":  "./tls",
 	"tls.letsencrypt.ca_dir_url": "https://acme-v02.api.letsencrypt.org/directory",
+	"modules.enabled":            "api",
+	"modules.api.port":           31337,
 }
 
 type Config struct {
