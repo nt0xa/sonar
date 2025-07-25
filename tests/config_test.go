@@ -19,11 +19,17 @@ domain = "<DOMAIN>"
 [db]
 dsn = "<DB_DSN>"
 
+[dns]
+zone = "<ZONE_FILE>"
+
 [tls]
-type = "<TLS_TYPE>"
+type = "letsencrypt"
 
 [tls.letsencrypt]
 email = "<EMAIL>"
+directory = "<DIR>"
+ca_dir_url = "<CA_DIR_URL>"
+ca_insecure = true
 
 [telemetry]
 enabled = true
@@ -56,8 +62,15 @@ verification_token = "<VERIFICATION_TOKEN>"
 	// DB
 	assert.Equal(t, "<DB_DSN>", cfg.DB.DSN)
 
+	// DNS
+	assert.Equal(t, "<ZONE_FILE>", cfg.DNS.Zone)
+
 	// TLS
-	assert.Equal(t, "<TLS_TYPE>", cfg.TLS.Type)
+	assert.Equal(t, "letsencrypt", cfg.TLS.Type)
+	assert.Equal(t, "<EMAIL>", cfg.TLS.LetsEncrypt.Email)
+	assert.Equal(t, "<DIR>", cfg.TLS.LetsEncrypt.Directory)
+	assert.Equal(t, "<CA_DIR_URL>", cfg.TLS.LetsEncrypt.CADirURL)
+	assert.Equal(t, true, cfg.TLS.LetsEncrypt.CAInsecure)
 
 	// Telemetry
 	assert.Equal(t, true, cfg.Telemetry.Enabled)
