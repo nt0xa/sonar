@@ -43,7 +43,7 @@ func Run(
 		environFunc,
 	)
 	if err != nil {
-		return fmt.Errorf("get config: %w", err)
+		return fmt.Errorf("new config: %w", err)
 	}
 
 	errChan := make(chan error, 2)
