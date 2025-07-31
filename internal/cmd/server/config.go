@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io/fs"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -9,28 +10,40 @@ import (
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env/v2"
-	"github.com/knadh/koanf/providers/rawbytes"
+	fsprov "github.com/knadh/koanf/providers/fs"
 	"github.com/knadh/koanf/v2"
 	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/internal/utils/valid"
 )
 
-func GetConfig(
-	defaults map[string]any,
-	configData []byte,
+var ConfigDefaults = map[string]any{
+	"tls.type":                   "letsencrypt",
+	"tls.letsencrypt.directory":  "./tls",
+	"tls.letsencrypt.ca_dir_url": "https://acme-v02.api.letsencrypt.org/directory",
+	"modules.enabled":            "api",
+	"modules.api.port":           31337,
+}
+
+const ConfigFileName = "config.toml"
+
+func NewConfig(
+	dir fs.FS,
 	environFunc func() []string,
 ) (*Config, error) {
 	k := koanf.New(".")
 
 	// Load default values.
-	if err := k.Load(confmap.Provider(defaults, "."), nil); err != nil {
+	if err := k.Load(confmap.Provider(ConfigDefaults, "."), nil); err != nil {
 		return nil, fmt.Errorf("load config from confmap: %w", err)
 	}
 
 	// Load config from TOML file.
-	if err := k.Load(rawbytes.Provider(configData), toml.Parser()); err != nil {
-		return nil, fmt.Errorf("load config from rawbytes: %w", err)
+	if dir != nil {
+		if err := k.Load(fsprov.Provider(dir, ConfigFileName), toml.Parser()); err != nil {
+			return nil, fmt.Errorf("load config from rawbytes: %w", err)
+		}
 	}
+
 	var cfg Config
 
 	cfgKeys := make(map[string]string)
@@ -62,14 +75,6 @@ func GetConfig(
 	}
 
 	return &cfg, nil
-}
-
-var ConfigDefaults = map[string]any{
-	"tls.type":                   "letsencrypt",
-	"tls.letsencrypt.directory":  "./tls",
-	"tls.letsencrypt.ca_dir_url": "https://acme-v02.api.letsencrypt.org/directory",
-	"modules.enabled":            "api",
-	"modules.api.port":           31337,
 }
 
 type Config struct {

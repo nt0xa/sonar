@@ -15,8 +15,7 @@ func main() {
 		ctx,
 		os.Stdout,
 		os.Stderr,
-		server.ConfigDefaults,
-		[]byte{},
+		os.DirFS("."),
 		os.Environ,
 	)
 

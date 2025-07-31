@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net"
 	"os"
@@ -31,16 +32,14 @@ func Run(
 	ctx context.Context,
 	stdout io.Writer,
 	stderr io.Writer,
-	configDefaults map[string]any,
-	configContents []byte,
+	dir fs.FS,
 	environFunc func() []string,
 ) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cfg, err := GetConfig(
-		configDefaults,
-		configContents,
+	cfg, err := NewConfig(
+		dir,
 		environFunc,
 	)
 	if err != nil {
@@ -79,7 +78,7 @@ func Run(
 	//
 
 	log := slog.New(logx.MultiHandler(
-		slog.NewTextHandler(os.Stdout, nil),
+		slog.NewTextHandler(stdout, nil),
 		tel.NewLogHandler("sonar"),
 	))
 
