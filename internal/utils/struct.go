@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 func StructKeys(s any, tagName string) []string {
@@ -16,6 +17,9 @@ func StructKeys(s any, tagName string) []string {
 	for i := 0; i < ct.NumField(); i++ {
 		field := ct.Field(i)
 		tag := field.Tag.Get(tagName)
+		if tag == "" {
+			tag = strings.ToLower(field.Name)
+		}
 
 		if field.Type.Kind() == reflect.Struct {
 			res := StructKeys(reflect.New(field.Type).Elem().Interface(), tagName)

@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Admin string `mapstructure:"admin"`
-	Port  int    `mapstructure:"port"`
+	Admin string
+	Port  int
 }
 
 func (c Config) Validate() error {
