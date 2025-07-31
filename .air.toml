@@ -3,7 +3,7 @@ testdata_dir = "testdata"
 tmp_dir = ".tmp"
 
 [build]
-  args_bin = ["serve", "--config", "server.toml"]
+  args_bin = []
   bin = "./.tmp/server"
   cmd = "go build -o ./.tmp/server ./cmd/server/"
   delay = 1000

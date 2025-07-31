@@ -25,7 +25,7 @@ docker-compose.yml
 
 # Test configs
 client.toml
-server.toml
+config.toml
 
 # Completions
 /completions/
