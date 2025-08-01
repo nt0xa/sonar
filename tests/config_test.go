@@ -104,7 +104,7 @@ verification_token = "<VERIFICATION_TOKEN>"
 
 func TestConfig_Env(t *testing.T) {
 	cfg, err := server.NewConfig(
-		nil,
+		fstest.MapFS{},
 		func() []string {
 			return []string{
 				"SONAR_IP=<IP>",

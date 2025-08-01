@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -39,8 +40,10 @@ func NewConfig(
 
 	// Load config from TOML file.
 	if dir != nil {
-		if err := k.Load(fsprov.Provider(dir, ConfigFileName), toml.Parser()); err != nil {
-			return nil, fmt.Errorf("load config from rawbytes: %w", err)
+		if _, err := dir.Open(ConfigFileName); err == nil || !os.IsNotExist(err) {
+			if err := k.Load(fsprov.Provider(dir, ConfigFileName), toml.Parser()); err != nil {
+				return nil, fmt.Errorf("load config from FS: %w", err)
+			}
 		}
 	}
 
