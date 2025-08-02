@@ -90,6 +90,8 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.3 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.0.0-beta.7 // indirect
 	github.com/paulmach/orb v0.9.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
