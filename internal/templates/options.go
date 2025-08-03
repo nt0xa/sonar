@@ -1,5 +1,9 @@
 package templates
 
+import (
+	texttemplate "text/template"
+)
+
 // options represent all template options: default + perTemplate.
 type options struct {
 	defaultOptions templateOptions
@@ -18,17 +22,19 @@ func (opt *options) get(id string) templateOptions {
 
 // templateOptions represent template rendering options.
 type templateOptions struct {
-	markup  map[string]string
-	html    bool
-	newLine bool
+	markup     map[string]string
+	html       bool
+	newLine    bool
+	extraFuncs texttemplate.FuncMap
 }
 
 // defaultTemplateOptions is the default value for template options.
 func defaultTemplateOptions() templateOptions {
 	return templateOptions{
-		html:    true,
-		newLine: true,
-		markup:  newMarkup(),
+		html:       true,
+		newLine:    true,
+		markup:     newMarkup(),
+		extraFuncs: make(texttemplate.FuncMap),
 	}
 }
 
@@ -88,6 +94,12 @@ func Markup(mopts ...MarkupOption) TemplateOption {
 		for _, mopt := range mopts {
 			mopt(opts.markup)
 		}
+	}
+}
+
+func ExtraFunc(name string, fn any) TemplateOption {
+	return func(opts *templateOptions) {
+		opts.extraFuncs[name] = fn
 	}
 }
 

@@ -27,7 +27,7 @@ var ConfigDefaults = map[string]any{
 
 const ConfigFileName = "config.toml"
 
-func NewConfig(
+func LoadConfig(
 	dir fs.FS,
 	environFunc func() []string,
 ) (*Config, error) {
@@ -35,14 +35,14 @@ func NewConfig(
 
 	// Load default values.
 	if err := k.Load(confmap.Provider(ConfigDefaults, "."), nil); err != nil {
-		return nil, fmt.Errorf("load config from confmap: %w", err)
+		return nil, fmt.Errorf("confmap failed: %w", err)
 	}
 
 	// Load config from TOML file.
 	if dir != nil {
 		if _, err := dir.Open(ConfigFileName); err == nil || !os.IsNotExist(err) {
 			if err := k.Load(fsprov.Provider(dir, ConfigFileName), toml.Parser()); err != nil {
-				return nil, fmt.Errorf("load config from FS: %w", err)
+				return nil, fmt.Errorf("load from FS failed: %w", err)
 			}
 		}
 	}
@@ -70,11 +70,15 @@ func NewConfig(
 		},
 		EnvironFunc: environFunc,
 	}), nil); err != nil {
-		return nil, fmt.Errorf("load config from env: %w", err)
+		return nil, fmt.Errorf("load from env failed: %w", err)
 	}
 
 	if err := k.Unmarshal("", &cfg); err != nil {
-		return nil, fmt.Errorf("unmarshal config: %w", err)
+		return nil, fmt.Errorf("unmarshal failed: %w", err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
 	return &cfg, nil
@@ -83,6 +87,7 @@ func NewConfig(
 type Config struct {
 	Domain    string
 	IP        string
+	GeoIP     GeoIPConfig
 	DB        DBConfig
 	DNS       DNSConfig
 	TLS       TLSConfig
@@ -95,6 +100,7 @@ func (c Config) Validate() error {
 		validation.Field(&c.Domain, validation.Required, is.Domain),
 		validation.Field(&c.IP, validation.Required, is.IP),
 		validation.Field(&c.DB, validation.Required),
+		validation.Field(&c.GeoIP),
 		validation.Field(&c.DNS),
 		validation.Field(&c.TLS),
 		validation.Field(&c.Modules),
@@ -193,5 +199,23 @@ func (c TLSLetsEncryptConfig) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.Email, validation.Required),
 		validation.Field(&c.Directory, validation.Required, validation.By(valid.Directory)),
+	)
+}
+
+//
+// GeoIP
+//
+
+type GeoIPConfig struct {
+	Enabled bool
+	City    string
+	ASN     string
+}
+
+func (c GeoIPConfig) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Enabled),
+		validation.Field(&c.City, validation.When(c.Enabled, validation.Required, validation.By(valid.File))),
+		validation.Field(&c.ASN, validation.When(c.Enabled, validation.Required, validation.By(valid.File))),
 	)
 }
