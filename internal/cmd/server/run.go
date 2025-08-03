@@ -22,6 +22,7 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
+	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/httpx"
 	"github.com/nt0xa/sonar/pkg/logx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
@@ -38,12 +39,12 @@ func Run(
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	cfg, err := NewConfig(
+	cfg, err := LoadConfig(
 		dir,
 		environFunc,
 	)
 	if err != nil {
-		return fmt.Errorf("new config: %w", err)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	errChan := make(chan error, 2)
@@ -120,11 +121,25 @@ func Run(
 	)
 
 	//
+	// GeoIP
+	//
+
+	var gdb *geoipx.DB
+
+	if cfg.GeoIP.Enabled {
+		gdb, err = geoipx.New(cfg.GeoIP.City, cfg.GeoIP.ASN)
+		if err != nil {
+			return fmt.Errorf("failed to init GeoIP database: %w", err)
+		}
+	}
+
+	//
 	// EventsHandler
 	//
 
 	events := NewEventsHandler(
 		db,
+		gdb,
 		log.With("package", "events"),
 		tel,
 		cache,

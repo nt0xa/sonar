@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"net/netip"
 	"regexp"
 	"strings"
 	"sync"
@@ -16,6 +17,8 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/utils"
+	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
@@ -27,6 +30,7 @@ var (
 
 type EventsHandler struct {
 	db           *database.DB
+	gdb          *geoipx.DB
 	log          *slog.Logger
 	tel          telemetry.Telemetry
 	cache        cache.Cache
@@ -43,6 +47,7 @@ type eventWithContext struct {
 
 func NewEventsHandler(
 	db *database.DB,
+	gdb *geoipx.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
 	cache cache.Cache,
@@ -51,6 +56,7 @@ func NewEventsHandler(
 ) *EventsHandler {
 	return &EventsHandler{
 		db:           db,
+		gdb:          gdb,
 		log:          log,
 		tel:          tel,
 		cache:        cache,
@@ -128,6 +134,8 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 
 		e.PayloadID = p.ID
 
+		h.addGeoIPMetadata(e)
+
 		// Store event in database
 		if p.StoreEvents {
 			if err := h.db.EventsCreate(ctx, e); err != nil {
@@ -135,7 +143,6 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 					"err", err,
 					"event", e,
 				)
-				continue
 			}
 		}
 
@@ -156,6 +163,41 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 				Payload: p,
 				Event:   e,
 			}, n)
+		}
+	}
+}
+
+func (h *EventsHandler) addGeoIPMetadata(e *models.Event) {
+	if h.gdb != nil {
+		host, _, err := net.SplitHostPort(e.RemoteAddr)
+		if err != nil {
+			h.log.Error("Failed to split remote address",
+				"err", err,
+				"remote_addr", e.RemoteAddr,
+			)
+			return
+		}
+
+		ip, err := netip.ParseAddr(host)
+		if err != nil {
+			h.log.Error("Failed to parse remote IP",
+				"err", err,
+				"ip", host,
+			)
+			return
+		}
+
+		info, err := h.gdb.Lookup(ip)
+		if err != nil {
+			h.log.Error("Failed to lookup IP in GeoIP database",
+				"err", err,
+				"ip", ip.String(),
+			)
+			return
+		}
+
+		if m := utils.StructToMap(info); len(m) > 0 {
+			e.Meta["geoip"] = m
 		}
 	}
 }

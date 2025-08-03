@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"strings"
 
 	htmltemplate "html/template"
@@ -88,6 +89,8 @@ func makeTemplate(s string, domain string, opts templateOptions) *template {
 			return domain
 		},
 	}
+
+	maps.Copy(extraFuncs, opts.extraFuncs)
 
 	t := &template{options: opts}
 
