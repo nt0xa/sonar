@@ -28,7 +28,7 @@ type = "letsencrypt"
 
 [tls.letsencrypt]
 email = "<EMAIL>"
-directory = "../tls"
+directory = "."
 ca_dir_url = "<CA_DIR_URL>"
 ca_insecure = true
 
@@ -74,7 +74,7 @@ verification_token = "<VERIFICATION_TOKEN>"
 	// TLS
 	assert.Equal(t, "letsencrypt", cfg.TLS.Type)
 	assert.Equal(t, "<EMAIL>", cfg.TLS.LetsEncrypt.Email)
-	assert.Equal(t, "../tls", cfg.TLS.LetsEncrypt.Directory)
+	assert.Equal(t, ".", cfg.TLS.LetsEncrypt.Directory)
 	assert.Equal(t, "<CA_DIR_URL>", cfg.TLS.LetsEncrypt.CADirURL)
 	assert.Equal(t, true, cfg.TLS.LetsEncrypt.CAInsecure)
 
@@ -115,7 +115,7 @@ func TestConfig_Env(t *testing.T) {
 				"SONAR_DNS_ZONE=<ZONE_FILE>",
 				"SONAR_TLS_TYPE=letsencrypt",
 				"SONAR_TLS_LETSENCRYPT_EMAIL=<EMAIL>",
-				"SONAR_TLS_LETSENCRYPT_DIRECTORY=../tls",
+				"SONAR_TLS_LETSENCRYPT_DIRECTORY=.",
 				"SONAR_TLS_LETSENCRYPT_CA_DIR_URL=<CA_DIR_URL>",
 				"SONAR_TLS_LETSENCRYPT_CA_INSECURE=true",
 				"SONAR_MODULES_ENABLED=api,telegram,lark",
@@ -147,7 +147,7 @@ func TestConfig_Env(t *testing.T) {
 	// TLS
 	assert.Equal(t, "letsencrypt", cfg.TLS.Type)
 	assert.Equal(t, "<EMAIL>", cfg.TLS.LetsEncrypt.Email)
-	assert.Equal(t, "../tls", cfg.TLS.LetsEncrypt.Directory)
+	assert.Equal(t, ".", cfg.TLS.LetsEncrypt.Directory)
 	assert.Equal(t, "<CA_DIR_URL>", cfg.TLS.LetsEncrypt.CADirURL)
 	assert.Equal(t, true, cfg.TLS.LetsEncrypt.CAInsecure)
 
