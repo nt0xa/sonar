@@ -62,7 +62,8 @@ services:
       - 31338:31338 # Webhooks (currently only used by Lark messenger in "webhook" mode)
     volumes:
       - ./tls:/opt/app/tls # TLS certificates persistance
-      - ./config.yml:/opt/app/config.yml # Config file: see "Configuration"
+      - ./config.yml:/opt/app/config.yml # Config file, see "Configuration"
+      - ./geoip:/opt/app/geoip:ro # Directory with GeoLite2 databases, see "Configuration->geoip"
 
   db:
     image: postgres:16
@@ -107,6 +108,20 @@ email = "<EMAIL>"
 # [tls.custom]
 # cert = "/path/to/cert.pem"
 # key = "/path/to/key.pem"
+
+[telemetry]
+# OTEL telemetry is disabled by default.
+# If enabled, the OTEL_EXPORTER_OTLP_ENDPOINT must be set.
+enabled = false
+
+[geoip]
+# GeoIP lookup for IP addresses. Disabled by default.
+# Requires GeoLite2 databases: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/
+enabled = true
+# Path to file with City database.
+city = "geoip/GeoLite2-City.mmdb"
+# Path to file with ASN database.
+asn = "geoip/GeoLite2-ASN.mmdb"
 
 [modules]
 # List of enabled modules. Currently three modules are supported: "api", "telegram" and "lark".
