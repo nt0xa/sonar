@@ -3,7 +3,7 @@ name: Test docs deployment
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 defaults:
   run:
