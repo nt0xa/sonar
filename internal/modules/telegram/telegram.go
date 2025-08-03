@@ -37,6 +37,7 @@ type Telegram struct {
 func New(
 	cfg *Config,
 	db *database.DB,
+	log *slog.Logger,
 	tel telemetry.Telemetry,
 	actions actions.Actions,
 	domain string,
@@ -66,14 +67,30 @@ func New(
 			templates.Markup(
 				templates.Bold("<b>", "</b>"),
 				templates.CodeInline("<code>", "</code>"),
-				templates.CodeBlock("<pre>", "</pre>"),
+				templates.CodeBlock(
+					`<blockquote expandable><pre><code class="language-{{ codeLanguage .Event.Protocol }}">`,
+					"</code></pre></blockquote>",
+				),
 			),
+			templates.ExtraFunc("codeLanguage", func(proto models.Proto) string {
+				// https://github.com/TelegramMessenger/libprisma#supported-languages
+				switch proto {
+				case models.ProtoHTTP:
+					return "http"
+				case models.ProtoDNS:
+					return "dns-zone"
+				case models.ProtoSMTP, models.ProtoFTP:
+					return "log"
+				}
+				return ""
+			}),
 		),
 	)
 
 	tg := &Telegram{
 		api:     api,
 		db:      db,
+		log:     log,
 		tel:     tel,
 		domain:  domain,
 		actions: actions,

@@ -77,7 +77,7 @@ func Modules(
 		switch name {
 
 		case "telegram":
-			m, err = telegram.New(&cfg.Telegram, db, tel, actions, domain)
+			m, err = telegram.New(&cfg.Telegram, db, log.With("package", "telegram"), tel, actions, domain)
 
 		case "api":
 			m, err = api.New(&cfg.API, db, log.With("package", "api"), tel, tls, actions)

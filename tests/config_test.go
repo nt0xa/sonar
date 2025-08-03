@@ -14,8 +14,8 @@ func TestConfig_TOML(t *testing.T) {
 
 	testFS := fstest.MapFS{
 		"config.toml": {Data: []byte(`
-ip = "<IP>"
-domain = "<DOMAIN>"
+ip = "127.0.0.1"
+domain = "example.com"
 
 [db]
 dsn = "<DB_DSN>"
@@ -28,7 +28,7 @@ type = "letsencrypt"
 
 [tls.letsencrypt]
 email = "<EMAIL>"
-directory = "<DIR>"
+directory = "../tls"
 ca_dir_url = "<CA_DIR_URL>"
 ca_insecure = true
 
@@ -49,20 +49,21 @@ token = "<BOT_TOKEN>"
 admin = "<ADMIN_ID>"
 app_id = "<APP_ID>"
 app_secret = "<APP_SECRET>"
+encrypt_key = "<KEY>"
 mode = "webhook"
 verification_token = "<VERIFICATION_TOKEN>"
 `)},
 	}
 
-	cfg, err := server.NewConfig(
+	cfg, err := server.LoadConfig(
 		testFS,
 		func() []string { return nil },
 	)
 	require.NoError(t, err)
 
 	// Basic
-	assert.Equal(t, "<IP>", cfg.IP)
-	assert.Equal(t, "<DOMAIN>", cfg.Domain)
+	assert.Equal(t, "127.0.0.1", cfg.IP)
+	assert.Equal(t, "example.com", cfg.Domain)
 
 	// DB
 	assert.Equal(t, "<DB_DSN>", cfg.DB.DSN)
@@ -73,7 +74,7 @@ verification_token = "<VERIFICATION_TOKEN>"
 	// TLS
 	assert.Equal(t, "letsencrypt", cfg.TLS.Type)
 	assert.Equal(t, "<EMAIL>", cfg.TLS.LetsEncrypt.Email)
-	assert.Equal(t, "<DIR>", cfg.TLS.LetsEncrypt.Directory)
+	assert.Equal(t, "../tls", cfg.TLS.LetsEncrypt.Directory)
 	assert.Equal(t, "<CA_DIR_URL>", cfg.TLS.LetsEncrypt.CADirURL)
 	assert.Equal(t, true, cfg.TLS.LetsEncrypt.CAInsecure)
 
@@ -98,22 +99,23 @@ verification_token = "<VERIFICATION_TOKEN>"
 	assert.Equal(t, "<ADMIN_ID>", cfg.Modules.Lark.Admin)
 	assert.Equal(t, "<APP_ID>", cfg.Modules.Lark.AppID)
 	assert.Equal(t, "<APP_SECRET>", cfg.Modules.Lark.AppSecret)
+	assert.Equal(t, "<KEY>", cfg.Modules.Lark.EncryptKey)
 	assert.Equal(t, "webhook", cfg.Modules.Lark.Mode)
 	assert.Equal(t, "<VERIFICATION_TOKEN>", cfg.Modules.Lark.VerificationToken)
 }
 
 func TestConfig_Env(t *testing.T) {
-	cfg, err := server.NewConfig(
+	cfg, err := server.LoadConfig(
 		fstest.MapFS{},
 		func() []string {
 			return []string{
-				"SONAR_IP=<IP>",
-				"SONAR_DOMAIN=<DOMAIN>",
+				"SONAR_IP=127.0.0.1",
+				"SONAR_DOMAIN=example.com",
 				"SONAR_DB_DSN=<DB_DSN>",
 				"SONAR_DNS_ZONE=<ZONE_FILE>",
 				"SONAR_TLS_TYPE=letsencrypt",
 				"SONAR_TLS_LETSENCRYPT_EMAIL=<EMAIL>",
-				"SONAR_TLS_LETSENCRYPT_DIRECTORY=<DIR>",
+				"SONAR_TLS_LETSENCRYPT_DIRECTORY=../tls",
 				"SONAR_TLS_LETSENCRYPT_CA_DIR_URL=<CA_DIR_URL>",
 				"SONAR_TLS_LETSENCRYPT_CA_INSECURE=true",
 				"SONAR_MODULES_ENABLED=api,telegram,lark",
@@ -124,6 +126,7 @@ func TestConfig_Env(t *testing.T) {
 				"SONAR_MODULES_LARK_MODE=webhook",
 				"SONAR_MODULES_LARK_APP_ID=<APP_ID>",
 				"SONAR_MODULES_LARK_APP_SECRET=<APP_SECRET>",
+				"SONAR_MODULES_LARK_ENCRYPT_KEY=<KEY>",
 				"SONAR_MODULES_LARK_VERIFICATION_TOKEN=<VERIFICATION_TOKEN>",
 				"SONAR_TELEMETRY_ENABLED=true",
 			}
@@ -132,8 +135,8 @@ func TestConfig_Env(t *testing.T) {
 	require.NoError(t, err)
 
 	// Basic
-	assert.Equal(t, "<IP>", cfg.IP)
-	assert.Equal(t, "<DOMAIN>", cfg.Domain)
+	assert.Equal(t, "127.0.0.1", cfg.IP)
+	assert.Equal(t, "example.com", cfg.Domain)
 
 	// DB
 	assert.Equal(t, "<DB_DSN>", cfg.DB.DSN)
@@ -144,7 +147,7 @@ func TestConfig_Env(t *testing.T) {
 	// TLS
 	assert.Equal(t, "letsencrypt", cfg.TLS.Type)
 	assert.Equal(t, "<EMAIL>", cfg.TLS.LetsEncrypt.Email)
-	assert.Equal(t, "<DIR>", cfg.TLS.LetsEncrypt.Directory)
+	assert.Equal(t, "../tls", cfg.TLS.LetsEncrypt.Directory)
 	assert.Equal(t, "<CA_DIR_URL>", cfg.TLS.LetsEncrypt.CADirURL)
 	assert.Equal(t, true, cfg.TLS.LetsEncrypt.CAInsecure)
 
@@ -169,6 +172,7 @@ func TestConfig_Env(t *testing.T) {
 	assert.Equal(t, "<ADMIN_ID>", cfg.Modules.Lark.Admin)
 	assert.Equal(t, "<APP_ID>", cfg.Modules.Lark.AppID)
 	assert.Equal(t, "<APP_SECRET>", cfg.Modules.Lark.AppSecret)
+	assert.Equal(t, "<KEY>", cfg.Modules.Lark.EncryptKey)
 	assert.Equal(t, "webhook", cfg.Modules.Lark.Mode)
 	assert.Equal(t, "<VERIFICATION_TOKEN>", cfg.Modules.Lark.VerificationToken)
 }

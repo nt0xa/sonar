@@ -130,7 +130,28 @@ const (
 	NotificationBodyID   = "notification/body"
 )
 
-var notificationHeader = `<bold>[{{ .Payload.Name }}]</bold> {{ .Event.Protocol.String | upper }} from {{ .Event.RemoteAddr }} {{ .Event.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
-var notificationBody = `<pre>
+var notificationHeader = `#{{ .Payload.Name }} {{ if eq (upper .Event.Protocol.String) "FTP" -}}
+📂
+{{- else if eq (upper .Event.Protocol.String) "SMTP" -}}
+📧
+{{- else if eq (upper .Event.Protocol.String) "DNS" -}}
+🔎
+{{- else if eq (upper .Event.Protocol.String) "HTTP" -}}
+🌐
+{{- else -}}
+❓
+{{- end }} <bold>{{ .Event.Protocol.String | upper }}</bold>`
+
+var notificationBody = `📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
+📆 <bold>Time:</bold> {{ .Event.ReceivedAt.Format "02 Jan 2006 15:04:05 MST" }}
+{{- $geoip := .Event.Meta.geoip }}
+{{- if $geoip }}
+📍 <bold>Location:</bold> {{ $geoip.country.flagEmoji }} {{ $geoip.country.name }}, {{ $geoip.city }}
+{{- if $geoip.asn }}
+🏢 <bold>Org:</bold> {{ $geoip.asn.org }} (AS{{ $geoip.asn.number }})
+{{- end }}
+{{- end }}
+
+<pre>
 {{ printf "%s" .Event.RW }}
 </pre>`

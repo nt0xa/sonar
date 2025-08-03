@@ -1,4 +1,4 @@
-package geox
+package geoipx
 
 import (
 	"fmt"
@@ -8,67 +8,67 @@ import (
 	"github.com/oschwald/geoip2-golang/v2"
 )
 
-type GeoDB struct {
+type DB struct {
 	city *geoip2.Reader
 	asn  *geoip2.Reader
 }
 
-func New(city, asn string) (*GeoDB, error) {
+func New(city, asn string) (*DB, error) {
 	var (
 		err error
-		gdb GeoDB
+		db  DB
 	)
 
-	gdb.city, err = geoip2.Open(city)
+	db.city, err = geoip2.Open(city)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open city database: %w", err)
 	}
-	if meta := gdb.city.Metadata(); meta.DatabaseType != "GeoLite2-City" {
+	if meta := db.city.Metadata(); meta.DatabaseType != "GeoLite2-City" {
 		return nil, fmt.Errorf(
 			"expected GeoLite2-City database, got %s",
 			city,
 		)
 	}
 
-	gdb.asn, err = geoip2.Open(asn)
+	db.asn, err = geoip2.Open(asn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open ASN database: %w", err)
 	}
-	if meta := gdb.asn.Metadata(); meta.DatabaseType != "GeoLite2-ASN" {
+	if meta := db.asn.Metadata(); meta.DatabaseType != "GeoLite2-ASN" {
 		return nil, fmt.Errorf(
 			"expected GeoLite2-ASN database, got %s",
 			asn,
 		)
 	}
 
-	return &gdb, nil
+	return &db, nil
 }
 
 type Info struct {
-	City         string
-	Country      Country
-	Subdivisions []string
-	ASN          ASN
+	City         string      `json:"city"`
+	Country      CountryInfo `json:"country"`
+	Subdivisions []string    `json:"subdivisions"`
+	ASN          ASNInfo     `json:"asn"`
 }
 
-type Country struct {
-	Name    string
-	ISOCode string
-	Flag    string
+type CountryInfo struct {
+	Name      string `json:"name"`
+	ISOCode   string `json:"isoCode"`
+	FlagEmoji string `json:"flagEmoji"`
 }
 
-type ASN struct {
-	Number uint
-	Org    string
+type ASNInfo struct {
+	Number uint   `json:"number"`
+	Org    string `json:"org"`
 }
 
-func (gdb *GeoDB) Lookup(ip netip.Addr) (*Info, error) {
-	city, err := gdb.city.City(ip)
+func (db *DB) Lookup(ip netip.Addr) (*Info, error) {
+	city, err := db.city.City(ip)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup city: %w", err)
 	}
 
-	asn, err := gdb.asn.ASN(ip)
+	asn, err := db.asn.ASN(ip)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup ASN: %w", err)
 	}
@@ -81,12 +81,12 @@ func (gdb *GeoDB) Lookup(ip netip.Addr) (*Info, error) {
 	return &Info{
 		City:         city.City.Names.English,
 		Subdivisions: subdivisions,
-		Country: Country{
-			Name:    city.Country.Names.English,
-			ISOCode: city.Country.ISOCode,
-			Flag:    flagEmoji(city.Country.ISOCode),
+		Country: CountryInfo{
+			Name:      city.Country.Names.English,
+			ISOCode:   city.Country.ISOCode,
+			FlagEmoji: flagEmoji(city.Country.ISOCode),
 		},
-		ASN: ASN{
+		ASN: ASNInfo{
 			Number: asn.AutonomousSystemNumber,
 			Org:    asn.AutonomousSystemOrganization,
 		},
