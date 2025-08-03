@@ -47,23 +47,23 @@ Sonar can be managed either by sending messages to the chat with the bot in Mess
 
  - `project_test` — payload's name (the same as was used in the `/new' command when the payload was created)
  - `HTTP` — protocol of the iteraction
- - `100.100.100.100:12345` — IP address and port from which the interaction occurred
- - `04 Aug 2024 at 19:58:50 BST` — date and time of the interaction
+ - `[::1]` — IP address from which the interaction occurred
+ - `03 Aug 2025 20:38:02 BST` — date and time of the interaction
  - The interaction details:
 
    ```
    GET / HTTP/1.1
    Host: d14a68e4.sonar.test
-   User-Agent: curl/8.6.0
+   User-Agent: curl/8.7.1
    Accept: */*
 
    HTTP/1.1 200 OK
    Content-Type: text/html; charset=utf-8
-   Date: Sun, 04 Aug 2024 18:58:50 GMT
+   Date: Sun, 03 Aug 2025 19:38:02 GMT
    Content-Length: 42
    Connection: close
 
-   <html><body>b991ee98230c58c0</body></html>
+   <html><body>2518fba824140189</body></html>
    ```
    In the case of HTTP/HTTPS, this is the interaction *request* and *response*.
 
