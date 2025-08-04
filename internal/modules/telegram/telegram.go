@@ -74,12 +74,12 @@ func New(
 			),
 			templates.ExtraFunc("codeLanguage", func(proto models.Proto) string {
 				// https://github.com/TelegramMessenger/libprisma#supported-languages
-				switch proto {
-				case models.ProtoHTTP:
+				switch proto.Category() {
+				case models.ProtoCategoryHTTP:
 					return "http"
-				case models.ProtoDNS:
+				case models.ProtoCategoryDNS:
 					return "dns-zone"
-				case models.ProtoSMTP, models.ProtoFTP:
+				case models.ProtoCategorySMTP, models.ProtoCategoryFTP:
 					return "log"
 				}
 				return ""
