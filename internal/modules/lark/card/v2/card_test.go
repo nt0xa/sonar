@@ -193,7 +193,7 @@ func TestCard(t *testing.T) {
 			RemoteAddr: "10.13.37.1:1337",
 			ReceivedAt: receivedAt,
 		},
-	})
+	}, []byte("test"))
 
 	require.NoError(t, err)
 

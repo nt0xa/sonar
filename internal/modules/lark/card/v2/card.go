@@ -95,7 +95,7 @@ type HeaderText struct {
 	Content string `json:"content"`
 }
 
-func Build(n *modules.Notification) ([]byte, error) {
+func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 	host, _, err := net.SplitHostPort(n.Event.RemoteAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to split host port: %w", err)
@@ -262,7 +262,7 @@ func Build(n *modules.Notification) ([]byte, error) {
 
 	body = append(body, Element{
 		Tag:       "markdown",
-		Content:   fmt.Sprintf("```\n%s\n```", n.Event.RW),
+		Content:   fmt.Sprintf("```\n%s\n```", rw),
 		TextAlign: "left",
 		TextSize:  "custom",
 		Margin:    "0px 0px 0px 0px",

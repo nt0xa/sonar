@@ -21,19 +21,16 @@ func (lrk *Lark) Name() string {
 }
 
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
-	header, body, err := lrk.tmpl.RenderNotification(n)
-	if err != nil {
-		return err
-	}
+	body := string(n.Event.RW)
 
+	// Bypass: msg:The messages do NOT pass the audit, ext=contain sensitive data: EMAIL_ADDRESS,code:230028
 	for _, m := range emailRegexp.FindAllString(body, -1) {
 		body = strings.ReplaceAll(body, m, strings.Replace(m, "@", "＠", 1))
 	}
 
-	body = strings.ReplaceAll(body, "<img", "＜img")
-
+	// TODO: size limit
 	if utf8.ValidString(body) {
-		card, err := cardv2.Build(n)
+		card, err := cardv2.Build(n, []byte(body))
 		if err != nil {
 			return fmt.Errorf("failed to build card: %w", err)
 		}
@@ -42,7 +39,7 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	} else {
 		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("log-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-			header, n.Event.RW)
+			"", []byte(body))
 	}
 
 	// For SMTP send mail.eml for better preview.
@@ -57,7 +54,7 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 		}
 		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-			header, []byte(data))
+			"", []byte(data))
 	}
 
 	return nil

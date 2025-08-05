@@ -381,16 +381,25 @@ func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, 
 	)
 	defer span.End()
 
-	var err error
-
 	if msgID != nil {
-		_, err = lrk.client.Im.Message.Reply(ctx, larkim.NewReplyMessageReqBuilder().
+		resp, err := lrk.client.Im.Message.Reply(ctx, larkim.NewReplyMessageReqBuilder().
 			MessageId(*msgID).
 			Body(larkim.NewReplyMessageReqBodyBuilder().
 				MsgType(larkim.MsgTypeInteractive).
 				Content(content).
 				Build()).
 			Build())
+		if err != nil {
+			lrk.log.Error("Failed to send message",
+				"err", err,
+			)
+		}
+		if !resp.Success() {
+			lrk.log.Error("Failed to create file",
+				"status", resp.StatusCode,
+				"err", resp.Error(),
+			)
+		}
 	} else {
 		idType := larkim.ReceiveIdTypeUserId
 
@@ -398,7 +407,7 @@ func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, 
 			idType = larkim.ReceiveIdTypeChatId
 		}
 
-		_, err = lrk.client.Im.Message.Create(ctx, larkim.NewCreateMessageReqBuilder().
+		resp, err := lrk.client.Im.Message.Create(ctx, larkim.NewCreateMessageReqBuilder().
 			ReceiveIdType(idType).
 			Body(larkim.NewCreateMessageReqBodyBuilder().
 				MsgType(larkim.MsgTypeInteractive).
@@ -406,10 +415,19 @@ func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, 
 				Content(content).
 				Build()).
 			Build())
-	}
 
-	if err != nil {
-		fmt.Println(err)
+		if err != nil {
+			lrk.log.Error("Failed to send message",
+				"err", err,
+			)
+		}
+
+		if !resp.Success() {
+			lrk.log.Error("Failed to create file",
+				"status", resp.StatusCode,
+				"err", resp.Error(),
+			)
+		}
 	}
 }
 
@@ -431,16 +449,26 @@ func (lrk *Lark) docMessage(ctx context.Context, chatID string, name string, cap
 			Build())
 
 	if err != nil {
+		lrk.log.Error("Failed to create file",
+			"err", err,
+		)
 		return
 	}
 
 	if !resp.Success() {
+		lrk.log.Error("Failed to create file",
+			"status", resp.StatusCode,
+			"err", resp.Error(),
+		)
 		return
 	}
 
 	msg := larkim.MessageFile{FileKey: *resp.Data.FileKey}
 	content, err := msg.String()
 	if err != nil {
+		lrk.log.Error("Failed to encode message",
+			"err", err,
+		)
 		return
 	}
 
@@ -460,10 +488,17 @@ func (lrk *Lark) docMessage(ctx context.Context, chatID string, name string, cap
 		Build())
 
 	if err != nil {
+		lrk.log.Error("Failed to send message",
+			"err", err,
+		)
 		return
 	}
 
 	if !resp2.Success() {
+		lrk.log.Error("Failed to send message",
+			"status", resp.StatusCode,
+			"err", resp.Error(),
+		)
 		return
 	}
 }
