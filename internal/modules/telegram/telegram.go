@@ -68,8 +68,8 @@ func New(
 				templates.Bold("<b>", "</b>"),
 				templates.CodeInline("<code>", "</code>"),
 				templates.CodeBlock(
-					`<blockquote expandable><pre><code class="language-{{ codeLanguage .Event.Protocol }}">`,
-					"</code></pre></blockquote>",
+					`<pre><code class="language-{{ codeLanguage .Event.Protocol }}">`,
+					"</code></pre>",
 				),
 			),
 			templates.ExtraFunc("codeLanguage", func(proto models.Proto) string {
