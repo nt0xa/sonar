@@ -68,13 +68,15 @@ func New(
 				templates.Bold("<b>", "</b>"),
 				templates.CodeInline("<code>", "</code>"),
 				templates.CodeBlock(
-					`<pre><code class="language-{{ codeLanguage .Event.Protocol }}">`,
+					`<pre><code class="language-{{ codeLanguage $protocol }}">`,
 					"</code></pre>",
 				),
 			),
-			templates.ExtraFunc("codeLanguage", func(proto models.Proto) string {
+			templates.ExtraFunc("codeLanguage", func(proto string) string {
 				// https://github.com/TelegramMessenger/libprisma#supported-languages
-				switch proto.Category() {
+				category := models.Proto{Name: proto}.Category()
+
+				switch category {
 				case models.ProtoCategoryHTTP:
 					return "http"
 				case models.ProtoCategoryDNS:

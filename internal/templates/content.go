@@ -111,6 +111,7 @@ var event = `
 <bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 
 var eventsGet = event + `
+{{- $protocol := $e.Protocol }}
 
 <pre>
 {{ $e.RW | b64dec }}
@@ -131,20 +132,22 @@ const (
 )
 
 var notificationHeader = `
-{{- $proto := .Event.Protocol.Category.String -}}
-#{{ .Payload.Name }} {{ if eq (upper $proto) "FTP" -}}
+{{- $category := .Event.Protocol.Category.String -}}
+#{{ .Payload.Name }} {{ if eq (upper $category) "FTP" -}}
 📂
-{{- else if eq (upper $proto) "SMTP" -}}
+{{- else if eq (upper $category) "SMTP" -}}
 📧
-{{- else if eq (upper $proto) "DNS" -}}
+{{- else if eq (upper $category) "DNS" -}}
 🔎
-{{- else if eq (upper $proto) "HTTP" -}}
+{{- else if eq (upper $category) "HTTP" -}}
 🌐
 {{- else -}}
 ❓
 {{- end }} <bold>{{ .Event.Protocol.String | upper }}</bold>`
 
-var notificationBody = `📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
+var notificationBody = `
+{{- $protocol := .Event.Protocol.String -}}
+📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
 📆 <bold>Time:</bold> {{ .Event.ReceivedAt.Format "02 Jan 2006 15:04:05 MST" }}
 {{- $geoip := .Event.Meta.geoip }}
 {{- if $geoip }}
