@@ -130,13 +130,15 @@ const (
 	NotificationBodyID   = "notification/body"
 )
 
-var notificationHeader = `#{{ .Payload.Name }} {{ if eq (upper .Event.Protocol.String) "FTP" -}}
+var notificationHeader = `
+{{- $proto := .Event.Protocol.Category.String -}}
+#{{ .Payload.Name }} {{ if eq (upper $proto) "FTP" -}}
 📂
-{{- else if eq (upper .Event.Protocol.String) "SMTP" -}}
+{{- else if eq (upper $proto) "SMTP" -}}
 📧
-{{- else if eq (upper .Event.Protocol.String) "DNS" -}}
+{{- else if eq (upper $proto) "DNS" -}}
 🔎
-{{- else if eq (upper .Event.Protocol.String) "HTTP" -}}
+{{- else if eq (upper $proto) "HTTP" -}}
 🌐
 {{- else -}}
 ❓
