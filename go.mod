@@ -22,13 +22,16 @@ require (
 	github.com/gorilla/schema v1.4.0
 	github.com/invopop/jsonschema v0.8.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/knadh/koanf/parsers/toml v0.1.0
+	github.com/knadh/koanf/providers/confmap v1.0.0
 	github.com/knadh/koanf/providers/env/v2 v2.0.0
-	github.com/knadh/koanf/providers/file v1.2.0
+	github.com/knadh/koanf/providers/fs v1.0.0
 	github.com/knadh/koanf/v2 v2.2.2
-	github.com/larksuite/oapi-sdk-go/v3 v3.4.9
+	github.com/larksuite/oapi-sdk-go/v3 v3.4.22
 	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.64
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
@@ -79,10 +82,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
-	github.com/knadh/koanf/parsers/toml v0.1.0 // indirect
-	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/providers/fs v1.0.0 // indirect
-	github.com/knadh/koanf/providers/rawbytes v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -90,7 +89,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
-	github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.3 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.0.0-beta.7 // indirect
 	github.com/paulmach/orb v0.9.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect

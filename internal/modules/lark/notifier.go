@@ -7,9 +7,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
+	cardv2 "github.com/nt0xa/sonar/internal/modules/lark/card/v2"
 )
 
 // https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create#:~:text=The%20maximum%20size%20of%20the,request%20body%20is%20150%20KB.
@@ -32,53 +32,13 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 
 	body = strings.ReplaceAll(body, "<img", "＜img")
 
-	config := larkcard.NewMessageCardConfig().
-		WideScreenMode(true).
-		EnableForward(true).
-		UpdateMulti(false).
-		Build()
-
-		// header
-	var template string
-
-	switch n.Event.Protocol.Category() {
-	case models.ProtoCategoryDNS:
-		template = larkcard.TemplateCarmine
-	case models.ProtoCategoryFTP:
-		template = larkcard.TemplateTurquoise
-	case models.ProtoCategorySMTP:
-		template = larkcard.TemplateIndigo
-	case models.ProtoCategoryHTTP:
-		template = larkcard.TemplateWathet
-	}
-
-	cardHeader := larkcard.NewMessageCardHeader().
-		Template(template).
-		Title(larkcard.NewMessageCardPlainText().
-			Content(header).
-			Build()).
-		Build()
-
 	if utf8.ValidString(body) {
-
-		// Elements
-		md := larkcard.NewMessageCardMarkdown().
-			Content(body).
-			Build()
-
-		card := larkcard.NewMessageCard().
-			Config(config).
-			Header(cardHeader).
-			Elements([]larkcard.MessageCardElement{md}).
-			Build()
-
-		content, err := card.String()
+		card, err := cardv2.Build(n)
 		if err != nil {
-			// TODO: logging
-			return fmt.Errorf("lark: %w", err)
+			return fmt.Errorf("failed to build card: %w", err)
 		}
 
-		lrk.sendMessage(ctx, n.User.Params.LarkUserID, nil, content)
+		lrk.sendMessage(ctx, n.User.Params.LarkUserID, nil, string(card))
 	} else {
 		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("log-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
