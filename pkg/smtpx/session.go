@@ -60,6 +60,9 @@ type Event struct {
 	// a session.
 	Data *Data
 
+	// Parsed "DATA" command data.
+	Email Email
+
 	// Secure shows connection was secure (with TLS).
 	Secure bool
 
@@ -135,6 +138,7 @@ func SessionHandler(
 				Data:       sess.data,
 				Secure:     secure,
 				ReceivedAt: start,
+				Email:      Parse(sess.data.Data),
 			})
 		}
 
