@@ -1,0 +1,18 @@
+From: John Doe <john.doe@mail.com>
+Date: Tue, 5 Aug 2025 11:48:05 -0400
+Subject: test
+To: "Test Test" <test@example.com>
+Content-Type: multipart/alternative; boundary="000000000000708d25063ba026fc"
+
+--000000000000708d25063ba026fc
+Content-Type: text/plain; charset="UTF-8"
+
+Test email
+
+--000000000000708d25063ba026fc
+Content-Type: text/html; charset="UTF-8"
+
+<div id="editor_version_7.48.0_YgvGKiP9" style="word-break:break-word"><div style="margin-top:4px;margin-bottom:4px;line-height:1.6"><div dir="auto" style="font-size:14px">Test email</div></div></div>
+
+--000000000000708d25063ba026fc--
+
