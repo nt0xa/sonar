@@ -23,6 +23,15 @@ func (lrk *Lark) Name() string {
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	body := string(n.Event.RW)
 
+	// TODO: Change when .Meta is struct
+	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
+		if email, ok := n.Event.Meta["email"].(map[string]any); ok {
+			if text := email["text"]; text != nil {
+				body = text.(string)
+			}
+		}
+	}
+
 	// Bypass: msg:The messages do NOT pass the audit, ext=contain sensitive data: EMAIL_ADDRESS,code:230028
 	for _, m := range emailRegexp.FindAllString(body, -1) {
 		body = strings.ReplaceAll(body, m, strings.Replace(m, "@", "＠", 1))
@@ -52,9 +61,14 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 		if !ok {
 			return nil
 		}
+
 		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 			"", []byte(data))
+
+		lrk.docMessage(ctx, n.User.Params.LarkUserID,
+			fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
+			"", n.Event.RW)
 	}
 
 	return nil

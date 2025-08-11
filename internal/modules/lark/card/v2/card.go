@@ -235,6 +235,76 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 		body = append(body, row)
 	}
 
+	if email, ok := n.Event.Meta["email"].(map[string]any); ok {
+		row := Element{
+			Tag:               "column_set",
+			HorizontalSpacing: "8px",
+			HorizontalAlign:   "left",
+			Margin:            "0px 0px 0px 0px",
+			Columns: []Column{
+				{
+					Tag:             "column",
+					Width:           "weighted",
+					VerticalSpacing: "8px",
+					HorizontalAlign: "left",
+					VerticalAlign:   "top",
+					Weight:          1,
+					Elements:        []Markdown{},
+				},
+				{
+					Tag:             "column",
+					Width:           "weighted",
+					VerticalSpacing: "8px",
+					HorizontalAlign: "left",
+					VerticalAlign:   "top",
+					Weight:          1,
+					Elements:        []Markdown{},
+				},
+			},
+		}
+
+		if from, ok := email["from"].([]any); ok {
+			var s string
+
+			for _, f := range from {
+				s += f.(map[string]any)["email"].(string) + "\n"
+			}
+
+			row.Columns[0].Elements = []Markdown{{
+				Tag:       "markdown",
+				Content:   fmt.Sprintf("<font color=\"grey\">From</font>\n%s", strings.TrimSpace(s)),
+				TextAlign: "left",
+				TextSize:  "custom",
+				Margin:    "0px 0px 0px 0px",
+				Icon: &Icon{
+					Tag:   "standard_icon",
+					Token: "member_outlined",
+					Color: "indigo",
+				},
+			}}
+		}
+
+		if subject, ok := email["subject"].(string); ok {
+			row.Columns[1].Elements = []Markdown{{
+				Tag: "markdown",
+				Content: fmt.Sprintf(
+					"<font color=\"grey\">Subject</font>\n%s",
+					subject,
+				),
+				TextAlign: "left",
+				TextSize:  "custom",
+				Margin:    "0px 0px 0px 0px",
+				Icon: &Icon{
+					Tag:   "standard_icon",
+					Token: "reply-cn_outlined",
+					Color: "purple",
+				},
+			}}
+		}
+
+		body = append(body, row)
+	}
+
 	body = append(body, Element{
 		Tag:    "hr",
 		Margin: "0px 0px 0px 0px",

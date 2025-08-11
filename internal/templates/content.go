@@ -156,7 +156,18 @@ var notificationBody = `
 🏢 <bold>Org:</bold> {{ $geoip.asn.org }} (AS{{ $geoip.asn.number }})
 {{- end }}
 {{- end }}
+{{- $email := .Event.Meta.email }}
+{{- range $from := $email.from }}
+👤 <bold>From:</bold> <code>{{ $from.email }}</code>
+{{- end }}
+{{- if $email.subject }}
+💬 <bold>Subject:</bold> {{ $email.subject }}
+{{- end }}
 
 <pre>
+{{ if $email.text -}}
+{{ $email.text }}
+{{- else -}}
 {{ printf "%s" .Event.RW }}
+{{- end -}}
 </pre>`
