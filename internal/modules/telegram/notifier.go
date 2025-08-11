@@ -40,6 +40,7 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 		}
 
 		tg.docMessage(ctx, n.User.Params.TelegramID, "log.eml", header, []byte(data))
+		tg.docMessage(ctx, n.User.Params.TelegramID, "log.txt", header, n.Event.RW)
 	}
 
 	return nil

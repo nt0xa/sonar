@@ -81,7 +81,9 @@ func New(
 					return "http"
 				case models.ProtoCategoryDNS:
 					return "dns-zone"
-				case models.ProtoCategorySMTP, models.ProtoCategoryFTP:
+				case models.ProtoCategorySMTP:
+					return "markdown"
+				case models.ProtoCategoryFTP:
 					return "log"
 				}
 				return ""
