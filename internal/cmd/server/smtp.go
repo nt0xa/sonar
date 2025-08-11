@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"net/mail"
 	"time"
 
 	"github.com/fatih/structs"
@@ -85,6 +86,21 @@ func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 }
 
 func SMTPEvent(e *smtpx.Event) *models.Event {
+	type Address struct {
+		Name  string `structs:"name"`
+		Email string `structs:"email"`
+	}
+
+	type Email struct {
+		Subject string     `structs:"subject"`
+		From    []Address  `structs:"from"`
+		To      []Address  `structs:"to"`
+		Cc      []Address  `structs:"cc"`
+		Bcc     []Address  `structs:"bcc"`
+		Date    *time.Time `structs:"date"`
+		Text    string     `structs:"text"`
+	}
+
 	type Session struct {
 		Helo     string   `structs:"helo"`
 		Ehlo     string   `structs:"ehlo"`
@@ -95,7 +111,19 @@ func SMTPEvent(e *smtpx.Event) *models.Event {
 
 	type Meta struct {
 		Session Session `structs:"session"`
+		Email   Email   `structs:"email"`
 		Secure  bool    `structs:"secure"`
+	}
+
+	addr := func(mm []*mail.Address) []Address {
+		res := make([]Address, len(mm))
+		for i, m := range mm {
+			res[i] = Address{
+				Name:  m.Name,
+				Email: m.Address,
+			}
+		}
+		return res
 	}
 
 	meta := &Meta{
@@ -105,6 +133,15 @@ func SMTPEvent(e *smtpx.Event) *models.Event {
 			MailFrom: e.Data.MailFrom,
 			RcptTo:   e.Data.RcptTo,
 			Data:     e.Data.Data,
+		},
+		Email: Email{
+			Subject: e.Email.Subject,
+			From:    addr(e.Email.From),
+			To:      addr(e.Email.To),
+			Cc:      addr(e.Email.Cc),
+			Bcc:     addr(e.Email.Bcc),
+			Date:    e.Email.Date,
+			Text:    e.Email.Text,
 		},
 		Secure: e.Secure,
 	}
