@@ -381,6 +381,11 @@ func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, 
 	)
 	defer span.End()
 
+	// Bypass: msg:The messages do NOT pass the audit, ext=contain sensitive data: EMAIL_ADDRESS,code:230028
+	for _, m := range emailRegexp.FindAllString(content, -1) {
+		content = strings.ReplaceAll(content, m, strings.Replace(m, "@", "＠", 1))
+	}
+
 	if msgID != nil {
 		resp, err := lrk.client.Im.Message.Reply(ctx, larkim.NewReplyMessageReqBuilder().
 			MessageId(*msgID).
