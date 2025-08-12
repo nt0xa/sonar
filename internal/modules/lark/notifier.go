@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database/models"
@@ -30,11 +29,6 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 				body = text.(string)
 			}
 		}
-	}
-
-	// Bypass: msg:The messages do NOT pass the audit, ext=contain sensitive data: EMAIL_ADDRESS,code:230028
-	for _, m := range emailRegexp.FindAllString(body, -1) {
-		body = strings.ReplaceAll(body, m, strings.Replace(m, "@", "＠", 1))
 	}
 
 	// TODO: size limit
