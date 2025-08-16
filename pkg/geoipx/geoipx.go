@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/netip"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -99,14 +100,16 @@ func (db *DB) Watch(ctx context.Context) error {
 		return fmt.Errorf("failed to create file watcher: %w", err)
 	}
 
-	if err := watcher.Add(db.cityPath); err != nil {
+	if err := watcher.Add(filepath.Dir(db.cityPath)); err != nil {
 		_ = watcher.Close()
 		return fmt.Errorf("failed to watch city file: %w", err)
 	}
 
-	if err := watcher.Add(db.asnPath); err != nil {
-		_ = watcher.Close()
-		return fmt.Errorf("failed to watch ASN file: %w", err)
+	if filepath.Dir(db.asnPath) != filepath.Dir(db.cityPath) {
+		if err := watcher.Add(filepath.Dir(db.asnPath)); err != nil {
+			_ = watcher.Close()
+			return fmt.Errorf("failed to watch ASN file: %w", err)
+		}
 	}
 
 	db.watcher = watcher
@@ -115,8 +118,8 @@ func (db *DB) Watch(ctx context.Context) error {
 	go db.watchFiles()
 
 	db.log.Info("Started GeoIP file watcher",
-		"cityFile", db.cityPath,
-		"asnFile", db.asnPath,
+		"city", db.cityPath,
+		"asn", db.asnPath,
 	)
 
 	return nil
@@ -133,7 +136,12 @@ func (db *DB) Stop() {
 }
 
 func (db *DB) watchFiles() {
-	defer db.watcher.Close()
+	defer func() {
+		db.log.Warn("Stopping GeoIP file watcher")
+		if db.watcher != nil {
+			db.watcher.Close()
+		}
+	}()
 
 	for {
 		select {
