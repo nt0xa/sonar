@@ -127,9 +127,13 @@ func Run(
 	var gdb *geoipx.DB
 
 	if cfg.GeoIP.Enabled {
-		gdb, err = geoipx.New(cfg.GeoIP.City, cfg.GeoIP.ASN)
+		gdb, err = geoipx.New(log.With("package", "geoipx"), cfg.GeoIP.City, cfg.GeoIP.ASN)
 		if err != nil {
 			return fmt.Errorf("failed to init GeoIP database: %w", err)
+		}
+
+		if err := gdb.Watch(ctx); err != nil {
+			return fmt.Errorf("failed to watch GeoIP database: %w", err)
 		}
 	}
 
