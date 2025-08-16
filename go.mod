@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/adrg/xdg v0.4.0
 	github.com/fatih/structs v1.1.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/go-acme/lego/v3 v3.9.0
 	github.com/go-chi/chi/v5 v5.0.12
@@ -47,6 +48,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.37.0
 	go.opentelemetry.io/otel/trace v1.37.0
 	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+	gopkg.in/square/go-jose.v2 v2.6.0
 )
 
 require (
@@ -61,7 +63,6 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/color v1.14.1 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.6.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -136,7 +137,6 @@ require (
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )
