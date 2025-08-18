@@ -62,7 +62,7 @@ services:
       - 31338:31338 # Webhooks (currently only used by Lark messenger in "webhook" mode)
     volumes:
       - ./tls:/opt/app/tls # TLS certificates persistance
-      - ./config.yml:/opt/app/config.yml # Config file, see "Configuration"
+      - ./config.toml:/opt/app/config.toml # Config file, see "Configuration"
       - ./geoip:/opt/app/geoip:ro # Directory with GeoLite2 databases, see "Configuration->geoip"
 
   db:
@@ -172,3 +172,23 @@ To start the Sonar server, once you have created `docker-compose.yml` and `confi
 ```sh
 docker compose up -d
 ```
+
+## GeoIP databases auto update
+
+To automatically update the GeoLite2 databases, add the following service to the Docker Compose file:
+
+```yml title="docker-compose.yml"
+services:
+  # ...
+  geoipupdate:
+    image: maxmindinc/geoipupdate
+    environment:
+      GEOIPUPDATE_ACCOUNT_ID: <ACCOUNT_ID>
+      GEOIPUPDATE_LICENSE_KEY: <LICENCE_KEY>
+      GEOIPUPDATE_EDITION_IDS: "GeoLite2-ASN GeoLite2-City"
+      GEOIPUPDATE_FREQUENCY: 72
+    volumes:
+      - ./geoip:/usr/share/GeoIP
+```
+
+The databases will then be reloaded automatically after the update.
