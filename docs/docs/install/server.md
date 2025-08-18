@@ -62,7 +62,7 @@ services:
       - 31338:31338 # Webhooks (currently only used by Lark messenger in "webhook" mode)
     volumes:
       - ./tls:/opt/app/tls # TLS certificates persistance
-      - ./config.yml:/opt/app/config.yml # Config file, see "Configuration"
+      - ./config.toml:/opt/app/config.toml # Config file, see "Configuration"
       - ./geoip:/opt/app/geoip:ro # Directory with GeoLite2 databases, see "Configuration->geoip"
 
   db:
