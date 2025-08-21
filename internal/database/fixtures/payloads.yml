@@ -29,3 +29,35 @@
   notify_protocols: '{dns, http, smtp}'
   store_events: true
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 6
+  user_id: 1
+  subdomain: 5d189044
+  name: test1
+  notify_protocols: '{dns, http, smtp}'
+  store_events: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 7
+  user_id: 1
+  subdomain: 75bc9674
+  name: test2
+  notify_protocols: '{dns, http, smtp}'
+  store_events: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 8
+  user_id: 1
+  subdomain: d92a4be4
+  name: test3
+  notify_protocols: '{dns, http, smtp}'
+  store_events: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'
+
+- id: 9
+  user_id: 1
+  subdomain: 51b9b06b
+  name: test4
+  notify_protocols: '{dns, http, smtp}'
+  store_events: true
+  created_at: RAW=NOW() AT TIME ZONE 'UTC'

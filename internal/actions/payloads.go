@@ -215,7 +215,9 @@ func PayloadsClearCommand(acts *Actions, p *PayloadsClearParams, local bool) (*c
 //
 
 type PayloadsListParams struct {
-	Name string `err:"name" query:"name"`
+	Name    string `err:"name"    query:"name"`
+	Page    uint   `err:"page"    query:"page"`
+	PerPage uint   `err:"perPage" query:"perPage"`
 }
 
 func (p PayloadsListParams) Validate() error {
@@ -234,6 +236,9 @@ func PayloadsListCommand(acts *Actions, p *PayloadsListParams, local bool) (*cob
 		Short: "List payloads",
 		Long:  "List payloads whose NAME contain SUBSTR",
 	}
+
+	cmd.Flags().UintVarP(&p.Page, "page", "p", 1, "Page")
+	cmd.Flags().UintVarP(&p.PerPage, "per-page", "s", 10, "Per page")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		if len(args) > 0 {

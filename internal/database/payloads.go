@@ -99,16 +99,35 @@ func (db *DB) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*models
 	return res, err
 }
 
-func (db *DB) PayloadsFindByUserAndName(ctx context.Context, userID int64, name string) ([]*models.Payload, error) {
+func (db *DB) PayloadsFindByUserAndName(
+	ctx context.Context,
+	userID int64,
+	name string,
+	page uint,
+	perPage uint,
+) ([]*models.Payload, error) {
 	ctx, span := db.tel.TraceStart(ctx, "PayloadsFindByUserAndName")
 	defer span.End()
 
 	res := make([]*models.Payload, 0)
 
+	if page == 0 {
+		page = 1 // default page
+	}
+
+	if perPage == 0 {
+		perPage = 10 // default per page
+	}
+
 	err := db.Select(ctx, &res,
-		"SELECT * FROM payloads WHERE user_id = $1 and name ILIKE $2 ORDER BY created_at DESC",
+		"SELECT * FROM payloads "+
+			"WHERE user_id = $1 and name ILIKE $2 "+
+			"ORDER BY id DESC "+
+			"LIMIT $3 OFFSET $4",
 		userID,
 		fmt.Sprintf("%%%s%%", name),
+		perPage,
+		perPage*(page-1),
 	)
 
 	return res, err
@@ -137,7 +156,13 @@ func (db *DB) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name s
 
 	res := make([]*models.Payload, 0)
 
-	if err := db.Select(ctx, &res, "DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING *", userID, fmt.Sprintf("%%%s%%", name)); err != nil {
+	if err := db.Select(
+		ctx,
+		&res,
+		"DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING *",
+		userID,
+		fmt.Sprintf("%%%s%%", name),
+	); err != nil {
 		return nil, err
 	}
 
