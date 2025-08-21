@@ -73,10 +73,12 @@ func TestCmd(t *testing.T) {
 		// List
 
 		{
-			"list substr",
+			"list substr -p 1 -s 10",
 			"PayloadsList",
 			actions.PayloadsListParams{
-				Name: "substr",
+				Name:    "substr",
+				Page:    1,
+				PerPage: 10,
 			},
 			actions.PayloadsListResult{},
 		},

@@ -131,7 +131,7 @@ func TestPayloadsFindByUserAndName_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "payload1")
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "payload1", 1, 10)
 	assert.NoError(t, err)
 	assert.Len(t, pp, 1)
 
@@ -147,9 +147,28 @@ func TestPayloadsFindByUserAndName_Empty(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(t.Context(), 3, "payload1")
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), 3, "payload1", 1, 10)
 	assert.NoError(t, err)
 	assert.Len(t, pp, 0)
+}
+
+func TestPayloadsFindByUserAndName_Pagination(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "", 1, 3)
+	assert.NoError(t, err)
+	assert.Len(t, pp, 3)
+
+	assert.EqualValues(t, 9, pp[0].ID)
+	assert.EqualValues(t, 7, pp[len(pp)-1].ID)
+
+	pp, err = db.PayloadsFindByUserAndName(t.Context(), 1, "", 2, 3)
+	assert.NoError(t, err)
+	assert.Len(t, pp, 3)
+
+	assert.EqualValues(t, 6, pp[0].ID)
+	assert.EqualValues(t, 1, pp[len(pp)-1].ID)
 }
 
 func TestPayloadsDelete_Success(t *testing.T) {
@@ -195,7 +214,7 @@ func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {
 
 	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "")
 	require.NoError(t, err)
-	require.Len(t, removed, 2)
+	require.Len(t, removed, 6)
 
 	left, err := db.PayloadsFindByUserID(t.Context(), 1)
 	require.NoError(t, err)
@@ -208,9 +227,9 @@ func TestPayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
 
 	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "1")
 	require.NoError(t, err)
-	require.Len(t, removed, 1)
+	require.Len(t, removed, 2)
 
 	left, err := db.PayloadsFindByUserID(t.Context(), 1)
 	require.NoError(t, err)
-	require.Len(t, left, 1)
+	require.Len(t, left, 4)
 }

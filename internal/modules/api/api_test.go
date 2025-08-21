@@ -243,8 +243,8 @@ func TestAPI(t *testing.T) {
 			token:  User1Token,
 			schema: (actions.PayloadsListResult)(nil),
 			result: map[string]matcher{
-				"$[0].name": equal("payload1"),
-				"$[1].name": equal("payload4"),
+				"$[0].name": equal("test4"),
+				"$[1].name": equal("test3"),
 			},
 			status: 200,
 		},
