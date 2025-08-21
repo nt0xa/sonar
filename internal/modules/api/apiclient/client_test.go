@@ -258,8 +258,8 @@ func TestClient(t *testing.T) {
 				Name: "",
 			},
 			map[string]matcher{
-				"0.Name": equal("payload1"),
-				"1.Name": equal("payload4"),
+				"0.Name": equal("test4"),
+				"1.Name": equal("test3"),
 			},
 			nil,
 		},

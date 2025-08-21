@@ -211,7 +211,7 @@ func TestListPayloads_Success(t *testing.T) {
 			actions.PayloadsListParams{
 				Name: "",
 			},
-			2,
+			6,
 		},
 		{
 			"payload1",
@@ -387,14 +387,14 @@ func TestClearPayload_Success(t *testing.T) {
 			actions.PayloadsClearParams{
 				Name: "",
 			},
-			2,
+			6,
 		},
 		{
 			"delete some",
 			actions.PayloadsClearParams{
 				Name: "1",
 			},
-			1,
+			2,
 		},
 	}
 

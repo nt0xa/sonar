@@ -151,7 +151,13 @@ func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListPa
 		return nil, errors.Validation(err)
 	}
 
-	recs, err := act.db.PayloadsFindByUserAndName(ctx, u.ID, p.Name)
+	recs, err := act.db.PayloadsFindByUserAndName(
+		ctx,
+		u.ID,
+		p.Name,
+		p.Page,
+		p.PerPage,
+	)
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
