@@ -1,5 +1,6 @@
 # Binary
 dist/
+build/
 cmd/server/server
 cmd/client/client
 /server
