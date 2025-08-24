@@ -31,14 +31,14 @@ builds:
       - arm64
     ignore:
       - goos: windows
-        goarch: 'arm'
+        goarch: "arm"
       - goos: windows
-        goarch: 'arm64'
+        goarch: "arm64"
 
 archives:
   - id: client
-    builds:
-     - client
+    ids:
+      - client
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -48,45 +48,41 @@ archives:
     files:
       - completions/*
 
-
-brews:
+homebrew_casks:
   - name: sonar
-
     ids:
       - client
-
     repository:
       owner: nt0xa
       name: homebrew-sonar
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-      
-    install: |
-      bin.install "sonar"
-      bash_completion.install "completions/sonar.bash" => "sonar"
-      zsh_completion.install "completions/sonar.zsh" => "_sonar"
-      fish_completion.install "completions/sonar.fish" => "sonar.fish"
+    directory: Casks
+    completions:
+      bash: "completions/sonar.bash"
+      zsh: "completions/sonar.zsh"
+      fish: "completions/sonar.fish"
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 
 changelog:
   disable: true
 
 dockers:
-- image_templates:
-    - "ghcr.io/nt0xa/sonar:latest"
-    - "ghcr.io/nt0xa/sonar:{{.Major}}"
-    - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}"
-    - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
-  build_flag_templates:
-    - "--pull"
-    - "--label=org.opencontainers.image.created={{.Date}}"
-    - "--label=org.opencontainers.image.name={{.ProjectName}}"
-    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    - "--label=org.opencontainers.image.version={{.Version}}"
-  extra_files:
-    - internal/database/migrations
-  dockerfile: Dockerfile.ci
+  - image_templates:
+      - "ghcr.io/nt0xa/sonar:latest"
+      - "ghcr.io/nt0xa/sonar:{{.Major}}"
+      - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}"
+      - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - internal/database/migrations
+    dockerfile: Dockerfile.ci
