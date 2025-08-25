@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -30,7 +30,7 @@ func HTTPDefault(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	rnd, _ := utils.GenerateRandomString(8)
-	w.Write([]byte(fmt.Sprintf("<html><body>%s</body></html>", rnd)))
+	_, _ = fmt.Fprintf(w, "<html><body>%s</body></html>", rnd)
 }
 
 func HTTPTelemetry(next http.Handler, tel telemetry.Telemetry) http.Handler {
@@ -154,10 +154,10 @@ func HTTPEvent(e *httpx.Event) *models.Event {
 		Secure: e.Secure,
 	}
 
-	reqBody, _ := ioutil.ReadAll(e.Request.Body)
+	reqBody, _ := io.ReadAll(e.Request.Body)
 	meta.Request.Body = base64.StdEncoding.EncodeToString(reqBody)
 
-	resBody, _ := ioutil.ReadAll(e.Response.Body)
+	resBody, _ := io.ReadAll(e.Response.Body)
 	meta.Response.Body = base64.StdEncoding.EncodeToString(resBody)
 
 	var proto models.Proto

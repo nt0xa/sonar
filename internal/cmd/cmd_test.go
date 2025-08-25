@@ -46,8 +46,8 @@ func TestCmd(t *testing.T) {
 	tests := []struct {
 		cmdline string
 		action  string
-		params  interface{}
-		result  interface{}
+		params  any
+		result  any
 	}{
 
 		//
@@ -391,7 +391,8 @@ func TestCmd(t *testing.T) {
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			c.Exec(ctx, args, res.OnResult)
+			_, _, err = c.Exec(ctx, args, res.OnResult)
+			require.NoError(t, err)
 
 			acts.AssertExpectations(t)
 			res.AssertExpectations(t)

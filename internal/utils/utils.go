@@ -65,7 +65,7 @@ func StringPrintable(s string) bool {
 	r := []rune(s)
 	for i := range r {
 		if r[i] > unicode.MaxASCII ||
-			!(unicode.IsPrint(r[i]) || unicode.IsSpace(r[i])) {
+			!unicode.IsPrint(r[i]) && !unicode.IsSpace(r[i]) {
 			return false
 		}
 	}

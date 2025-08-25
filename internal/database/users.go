@@ -38,13 +38,15 @@ func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	query := "" +
 		"INSERT INTO users (name, is_admin, created_by, created_at) " +
 		"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id"
 
 	if err := tx.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -55,7 +57,6 @@ func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
 			if err := tx.Exec(ctx,
 				"INSERT INTO user_params (user_id, key, value) "+
 					"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
-				tx.Rollback()
 				return err
 			}
 		}
@@ -94,7 +95,7 @@ func (db *DB) UsersGetByName(ctx context.Context, name string) (*models.User, er
 	return &o, nil
 }
 
-func (db *DB) UsersGetByParam(ctx context.Context, key models.UserParamsKey, value interface{}) (*models.User, error) {
+func (db *DB) UsersGetByParam(ctx context.Context, key models.UserParamsKey, value any) (*models.User, error) {
 	ctx, span := db.tel.TraceStart(ctx, "UsersGetByParam")
 	defer span.End()
 
@@ -125,12 +126,14 @@ func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	err = tx.NamedExec(ctx,
 		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -141,7 +144,6 @@ func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
 			if err := tx.Exec(ctx,
 				"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
 				f.Value(), o.ID, f.Tag("json")); err != nil {
-				tx.Rollback()
 				return err
 			}
 		}

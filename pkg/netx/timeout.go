@@ -51,5 +51,5 @@ func (c *TimeoutConn) Read(b []byte) (int, error) {
 
 func (c *TimeoutConn) updateDeadline() error {
 	idleDeadline := time.Now().Add(c.idleTimeout)
-	return c.Conn.SetDeadline(idleDeadline)
+	return c.SetDeadline(idleDeadline)
 }

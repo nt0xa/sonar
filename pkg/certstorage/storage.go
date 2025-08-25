@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -50,7 +49,7 @@ func (s *Storage) SaveAccount(account *Account) error {
 		return fmt.Errorf("fail to encode account data: %w", err)
 	}
 
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		filepath.Join(s.rootPath, accountDataFileName),
 		jsonBytes,
 		s.options.filePerm,
@@ -63,7 +62,7 @@ func (s *Storage) SaveAccount(account *Account) error {
 		return fmt.Errorf("fail to pem encode account key: %w", err)
 	}
 
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		filepath.Join(s.rootPath, accountKeyFileName),
 		pemBytes,
 		s.options.filePerm,
@@ -75,7 +74,7 @@ func (s *Storage) SaveAccount(account *Account) error {
 }
 
 func (s *Storage) LoadAccount() (*Account, error) {
-	jsonBytes, err := ioutil.ReadFile(filepath.Join(s.rootPath, accountDataFileName))
+	jsonBytes, err := os.ReadFile(filepath.Join(s.rootPath, accountDataFileName))
 
 	if err != nil {
 		return nil, fmt.Errorf("fail to load account data: %w", err)
@@ -87,7 +86,7 @@ func (s *Storage) LoadAccount() (*Account, error) {
 		return nil, fmt.Errorf("fail to decode account data: %w", err)
 	}
 
-	keyBytes, err := ioutil.ReadFile(filepath.Join(s.rootPath, accountKeyFileName))
+	keyBytes, err := os.ReadFile(filepath.Join(s.rootPath, accountKeyFileName))
 	if err != nil {
 		return nil, fmt.Errorf("fail to read account key: %w", err)
 	}
@@ -123,7 +122,7 @@ func (s *Storage) SaveCertificate(cert *tls.Certificate) error {
 		return fmt.Errorf("fail to pem encode private key: %w", err)
 	}
 
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		filepath.Join(s.rootPath, certFileName),
 		certPemBytes,
 		s.options.filePerm,
@@ -131,7 +130,7 @@ func (s *Storage) SaveCertificate(cert *tls.Certificate) error {
 		return fmt.Errorf("fail to save certificate: %w", err)
 	}
 
-	if err := ioutil.WriteFile(
+	if err := os.WriteFile(
 		filepath.Join(s.rootPath, keyFileName),
 		keyPemBytes,
 		s.options.filePerm,
@@ -145,7 +144,7 @@ func (s *Storage) SaveCertificate(cert *tls.Certificate) error {
 			return fmt.Errorf("fail to pem encode ca certificate: %w", err)
 		}
 
-		if err := ioutil.WriteFile(
+		if err := os.WriteFile(
 			filepath.Join(s.rootPath, fmt.Sprintf(caFileName, i)),
 			pemBytes,
 			s.options.filePerm,
@@ -159,12 +158,12 @@ func (s *Storage) SaveCertificate(cert *tls.Certificate) error {
 
 func (s *Storage) LoadCertificate() (*tls.Certificate, error) {
 
-	certPemBytes, err := ioutil.ReadFile(filepath.Join(s.rootPath, certFileName))
+	certPemBytes, err := os.ReadFile(filepath.Join(s.rootPath, certFileName))
 	if err != nil {
 		return nil, fmt.Errorf("fail to load certificate: %w", err)
 	}
 
-	keyPemBytes, err := ioutil.ReadFile(filepath.Join(s.rootPath, keyFileName))
+	keyPemBytes, err := os.ReadFile(filepath.Join(s.rootPath, keyFileName))
 	if err != nil {
 		return nil, fmt.Errorf("fail to load key: %w", err)
 	}
@@ -178,7 +177,7 @@ func (s *Storage) LoadCertificate() (*tls.Certificate, error) {
 			break
 		}
 
-		pemBytes, err := ioutil.ReadFile(path)
+		pemBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, fmt.Errorf("fail to load certificate: %w", err)
 		}

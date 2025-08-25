@@ -97,7 +97,7 @@ func parseContent(
 			data,
 			transferEncoding,
 		); err == nil {
-			builder.WriteString(content)
+			_, _ = builder.WriteString(content)
 		} else {
 			return
 		}
@@ -272,16 +272,16 @@ func stripHTML(n *html.Node, buf StringBuilder) {
 			stripHTML(c, &innerText)
 		}
 
-		buf.WriteString("[")
-		buf.WriteString(strings.TrimSpace(innerText.String()))
-		buf.WriteString("]")
+		_, _ = buf.WriteString("[")
+		_, _ = buf.WriteString(strings.TrimSpace(innerText.String()))
+		_, _ = buf.WriteString("]")
 
 		// Find the href attribute
 		for _, attr := range n.Attr {
 			if attr.Key == "href" {
-				buf.WriteString("(")
-				buf.WriteString(attr.Val)
-				buf.WriteString(")")
+				_, _ = buf.WriteString("(")
+				_, _ = buf.WriteString(attr.Val)
+				_, _ = buf.WriteString(")")
 				break
 			}
 		}
@@ -289,7 +289,7 @@ func stripHTML(n *html.Node, buf StringBuilder) {
 	}
 
 	if n.Type == html.TextNode {
-		buf.WriteString(n.Data)
+		_, _ = buf.WriteString(n.Data)
 	}
 
 	// Recurse for all children
@@ -299,6 +299,6 @@ func stripHTML(n *html.Node, buf StringBuilder) {
 
 	if n.Type == html.ElementNode &&
 		(n.Data == "div" || n.Data == "p" || n.Data == "li" || n.Data == "br") {
-		buf.WriteString("\n")
+		_, _ = buf.WriteString("\n")
 	}
 }

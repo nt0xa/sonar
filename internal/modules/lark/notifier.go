@@ -13,7 +13,7 @@ import (
 
 // https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create#:~:text=The%20maximum%20size%20of%20the,request%20body%20is%20150%20KB.
 
-var emailRegexp = regexp.MustCompile("(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,24})")
+var emailRegexp = regexp.MustCompile(`(?i)([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,24})`)
 
 func (lrk *Lark) Name() string {
 	return "lark"
@@ -47,7 +47,7 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 
 	// For SMTP send mail.eml for better preview.
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		sess, ok := n.Event.Meta["session"].(map[string]interface{})
+		sess, ok := n.Event.Meta["session"].(map[string]any)
 		if !ok {
 			return nil
 		}

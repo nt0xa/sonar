@@ -70,7 +70,7 @@ release/snapshot:
 .PHONY: dev/server
 dev/server:
 	@$(LOCAL_BIN)/air \
-		-build.bin ./server \
+		-build.bin $(BUILD_DIR)/$(SERVER_BIN) \
 		-build.cmd "make build/server" \
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true
@@ -78,7 +78,7 @@ dev/server:
 .PHONY: dev/client
 dev/client:
 	@$(LOCAL_BIN)/air \
-		-build.bin "" \
+		-build.bin /usr/bin/true \
 		-build.cmd "make build/client" \
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true

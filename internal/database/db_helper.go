@@ -34,7 +34,7 @@ func (db *DB) QueryRowx(ctx context.Context, query string, args ...any) *row {
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return &row{Row: db.DB.QueryRowxContext(ctx, query, args...)}
+	return &row{Row: db.QueryRowxContext(ctx, query, args...)}
 }
 
 func (db *DB) Exec(ctx context.Context, query string, args ...any) error {
@@ -44,7 +44,7 @@ func (db *DB) Exec(ctx context.Context, query string, args ...any) error {
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	_, err := db.DB.ExecContext(ctx, query, args...)
+	_, err := db.ExecContext(ctx, query, args...)
 	return err
 }
 
@@ -55,7 +55,7 @@ func (db *DB) ExecResult(ctx context.Context, query string, args ...any) (sql.Re
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return db.DB.ExecContext(ctx, query, args...)
+	return db.ExecContext(ctx, query, args...)
 }
 
 func (db *DB) Get(ctx context.Context, dest any, query string, args ...any) error {
@@ -65,7 +65,7 @@ func (db *DB) Get(ctx context.Context, dest any, query string, args ...any) erro
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return db.DB.GetContext(ctx, dest, query, args...)
+	return db.GetContext(ctx, dest, query, args...)
 }
 
 func (db *DB) Select(ctx context.Context, dest any, query string, args ...any) error {
@@ -75,7 +75,7 @@ func (db *DB) Select(ctx context.Context, dest any, query string, args ...any) e
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return db.DB.SelectContext(ctx, dest, query, args...)
+	return db.SelectContext(ctx, dest, query, args...)
 }
 
 func (db *DB) NamedSelect(ctx context.Context, dest any, query string, arg any) error {
@@ -90,7 +90,7 @@ func (db *DB) NamedSelect(ctx context.Context, dest any, query string, arg any) 
 	if err != nil {
 		return err
 	}
-	return db.DB.SelectContext(ctx, dest, query, args...)
+	return db.SelectContext(ctx, dest, query, args...)
 }
 
 func (db *DB) named(query string, arg any) (string, []any, error) {
@@ -120,7 +120,7 @@ func (r *row) Scan(dest ...any) error {
 }
 
 func (db *DB) Beginx(ctx context.Context) (*Tx, error) {
-	tx, err := db.DB.BeginTxx(ctx, nil)
+	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (tx *Tx) QueryRowx(ctx context.Context, query string, args ...any) *row {
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return &row{Row: tx.Tx.QueryRowxContext(ctx, query, args...)}
+	return &row{Row: tx.QueryRowxContext(ctx, query, args...)}
 }
 
 func (tx *Tx) Exec(ctx context.Context, query string, args ...any) error {
@@ -172,7 +172,7 @@ func (tx *Tx) Exec(ctx context.Context, query string, args ...any) error {
 		))
 	defer span.End()
 
-	res, err := tx.Tx.ExecContext(ctx, query, args...)
+	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (tx *Tx) Get(ctx context.Context, dest any, query string, args ...any) erro
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return tx.Tx.GetContext(ctx, dest, query, args...)
+	return tx.GetContext(ctx, dest, query, args...)
 }
 
 func (tx *Tx) Select(ctx context.Context, dest any, query string, args ...any) error {
@@ -203,7 +203,7 @@ func (tx *Tx) Select(ctx context.Context, dest any, query string, args ...any) e
 			attribute.String("sql.query", query),
 		))
 	defer span.End()
-	return tx.Tx.SelectContext(ctx, dest, query, args...)
+	return tx.SelectContext(ctx, dest, query, args...)
 }
 
 func (tx *Tx) NamedSelect(ctx context.Context, dest any, query string, arg any) error {
@@ -218,7 +218,7 @@ func (tx *Tx) NamedSelect(ctx context.Context, dest any, query string, arg any) 
 	if err != nil {
 		return err
 	}
-	return tx.Tx.SelectContext(ctx, dest, query, args...)
+	return tx.SelectContext(ctx, dest, query, args...)
 }
 
 func (tx *Tx) named(query string, arg any) (string, []any, error) {

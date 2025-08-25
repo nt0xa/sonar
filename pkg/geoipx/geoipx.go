@@ -79,11 +79,15 @@ func (db *DB) updateReaders(city, asn *geoip2.Reader) {
 	defer db.mu.Unlock()
 
 	if db.city != nil {
-		db.city.Close()
+		if err := db.city.Close(); err != nil {
+			db.log.Error("Failed to close old city database", "err", err)
+		}
 	}
 
 	if db.asn != nil {
-		db.asn.Close()
+		if err := db.asn.Close(); err != nil {
+			db.log.Error("Failed to close old ASN database", "err", err)
+		}
 	}
 
 	db.city = city
@@ -130,7 +134,9 @@ func (db *DB) Stop() {
 		db.cancel()
 	}
 	if db.watcher != nil {
-		db.watcher.Close()
+		if err := db.watcher.Close(); err != nil {
+			db.log.Error("Failed to close file watcher", "err", err)
+		}
 		db.watcher = nil
 	}
 }
@@ -139,7 +145,9 @@ func (db *DB) watchFiles() {
 	defer func() {
 		db.log.Warn("Stopping GeoIP file watcher")
 		if db.watcher != nil {
-			db.watcher.Close()
+			if err := db.watcher.Close(); err != nil {
+				db.log.Error("Failed to close file watcher", "err", err)
+			}
 		}
 	}()
 

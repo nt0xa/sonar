@@ -33,7 +33,7 @@ type NotifierMock struct {
 	mock.Mock
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]any) {
 	m.Called(remoteAddr, data, meta)
 }
 
@@ -60,14 +60,14 @@ func TestMain(m *testing.M) {
 			httpx.MaxBytesHandler(
 				httpx.NotifyHandler(
 					func(ctx context.Context, e *httpx.Event) {
-						notifier.Notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]interface{}{
+						notifier.Notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]any{
 							"tls": e.Secure,
 						})
 					},
 					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Set("Content-Type", "text/html; charset=utf-8")
 						w.WriteHeader(200)
-						w.Write([]byte("<html><body>test</body></html>"))
+						_, _ = w.Write([]byte("<html><body>test</body></html>"))
 					}),
 				),
 				1<<20,
@@ -355,7 +355,7 @@ func TestHTTPX(t *testing.T) {
 									}
 									return true
 								}),
-								map[string]interface{}{
+								map[string]any{
 									"tls": isTLS,
 								}).
 							Once().
@@ -384,7 +384,9 @@ func TestHTTPX(t *testing.T) {
 				res, err := client.Do(req)
 				require.NoError(t, err)
 
-				defer res.Body.Close()
+				defer func() {
+					_ = res.Body.Close()
+				}()
 
 				assert.Equal(t, 200, res.StatusCode)
 			})
@@ -424,13 +426,14 @@ func TestKeepAlive(t *testing.T) {
 	_, err = io.Copy(io.Discard, res.Body)
 	require.NoError(t, err)
 
-	res.Body.Close()
+	err = res.Body.Close()
+	require.NoError(t, err)
 
 	// 2nd request
 	req, err = http.NewRequestWithContext(traceCtx, http.MethodGet, "http://127.0.0.1:1080", nil)
 	require.NoError(t, err)
 
-	res, err = http.DefaultClient.Do(req)
+	_, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
 	http.DefaultClient.CloseIdleConnections()

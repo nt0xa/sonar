@@ -211,7 +211,7 @@ func (tg *Telegram) handleError(ctx context.Context, chatID int64, msgID *int, e
 }
 
 func (tg *Telegram) htmlMessage(ctx context.Context, chatID int64, msgID *int, html string) {
-	ctx, span := tg.tel.TraceStart(ctx, "telegram.htmlMessage",
+	_, span := tg.tel.TraceStart(ctx, "telegram.htmlMessage",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
 
@@ -234,7 +234,7 @@ func (tg *Telegram) htmlMessage(ctx context.Context, chatID int64, msgID *int, h
 }
 
 func (tg *Telegram) docMessage(ctx context.Context, chatID int64, name string, caption string, data []byte) {
-	ctx, span := tg.tel.TraceStart(ctx, "telegram.docMessage",
+	_, span := tg.tel.TraceStart(ctx, "telegram.docMessage",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
 	defer span.End()

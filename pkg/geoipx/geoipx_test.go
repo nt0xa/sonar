@@ -31,7 +31,9 @@ func Test_Geox(t *testing.T) {
 	// Create DB with temporary files
 	db, err := geoipx.New(log, cityPath, asnPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	// Start watching files
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -75,11 +77,15 @@ func copyFile(t *testing.T, src, dst string) {
 
 	srcFile, err := os.Open(src)
 	require.NoError(t, err)
-	defer srcFile.Close()
+	defer func() {
+		_ = srcFile.Close()
+	}()
 
 	dstFile, err := os.Create(dst)
 	require.NoError(t, err)
-	defer dstFile.Close()
+	defer func() {
+		_ = dstFile.Close()
+	}()
 
 	_, err = io.Copy(dstFile, srcFile)
 	require.NoError(t, err)

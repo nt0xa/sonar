@@ -82,11 +82,11 @@ func main() {
 	cobra.CheckErr(err)
 
 	if stdout != "" {
-		fmt.Fprint(os.Stdout, stdout)
+		_, _ = fmt.Fprint(os.Stdout, stdout)
 	}
 
 	if stderr != "" {
-		fmt.Fprint(os.Stderr, stderr)
+		_, _ = fmt.Fprint(os.Stderr, stderr)
 	}
 }
 
@@ -132,9 +132,9 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	}
 
 	cmd.Flags().StringVarP(&server, "server", "s", "", "Server name from list of servers")
-	viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
+	_ = viper.BindPFlag("context.server", cmd.Flags().Lookup("server"))
 
-	cmd.RegisterFlagCompletionFunc("server", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("server", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return maps.Keys(cfg.Servers), cobra.ShellCompDirectiveNoFileComp
 	})
 

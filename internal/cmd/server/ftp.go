@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"time"
 
@@ -29,12 +30,14 @@ func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.List
 
 func FTPHandler(
 	domain string,
+	log *slog.Logger,
 	tel telemetry.Telemetry,
 	notify func(context.Context, *ftpx.Event),
 ) netx.Handler {
 	return FTPTelemetry(
 		ftpx.SessionHandler(
 			ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
+			log,
 			notify,
 		),
 		tel,
