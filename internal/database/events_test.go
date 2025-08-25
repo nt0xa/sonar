@@ -133,7 +133,7 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, o.ID, 1)
 
-	o, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 1337)
+	_, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 1337)
 	assert.Error(t, err)
 }
 
@@ -144,7 +144,7 @@ func TestEventsRace(t *testing.T) {
 	var wg sync.WaitGroup
 	count := 10
 
-	for i := 0; i < count; i++ {
+	for range count {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

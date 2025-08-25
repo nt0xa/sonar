@@ -18,15 +18,16 @@ type Config struct {
 	Servers map[string]Server `mapstructure:"servers"`
 }
 
-func (c Config) ValidateWithContext(ctx context.Context) error {
+type serversKey struct{}
 
-	servers := make([]interface{}, 0)
+func (c Config) ValidateWithContext(ctx context.Context) error {
+	servers := make([]any, 0)
 
 	for s := range c.Servers {
 		servers = append(servers, s)
 	}
 
-	ctx = context.WithValue(ctx, "servers", servers)
+	ctx = context.WithValue(ctx, serversKey{}, servers)
 
 	return validation.ValidateStructWithContext(ctx, &c,
 		validation.Field(&c.Context),
@@ -47,7 +48,7 @@ type Context struct {
 }
 
 func (c Context) ValidateWithContext(ctx context.Context) error {
-	servers, ok := ctx.Value("servers").([]interface{})
+	servers, ok := ctx.Value(serversKey{}).([]any)
 	if !ok {
 		panic(`fail to find "servers" key in context`)
 	}

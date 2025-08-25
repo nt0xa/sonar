@@ -104,7 +104,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 		if record.LastAnswer != nil &&
 			record.LastAccessedAt != nil &&
 			len(record.LastAnswer) > 0 &&
-			time.Now().Sub(*record.LastAccessedAt) < time.Second*3 {
+			time.Since(*record.LastAccessedAt) < time.Second*3 {
 			i := slice.FindIndex(record.Values, record.LastAnswer[0])
 			res = []dns.RR{rrs[min(i+1, len(rrs)-1)]}
 		} else {

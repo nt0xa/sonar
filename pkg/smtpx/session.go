@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"regexp"
 	"strings"
@@ -81,6 +82,9 @@ type Msg struct {
 
 // session contains all data required to handle SMTP session.
 type session struct {
+	// log is a session logger.
+	log *slog.Logger
+
 	// messages stores provided command responses.
 	messages Msg
 
@@ -107,6 +111,7 @@ type session struct {
 
 func SessionHandler(
 	msgs Msg,
+	log *slog.Logger,
 	tlsConfig *tls.Config,
 	onClose func(context.Context, *Event),
 ) netx.Handler {
@@ -115,6 +120,7 @@ func SessionHandler(
 
 		sess := &session{
 			messages:  msgs,
+			log:       log,
 			tlsConfig: tlsConfig,
 			onClose:   onClose,
 			conn:      newConn,
@@ -128,6 +134,7 @@ func SessionHandler(
 		start := time.Now()
 
 		newConn.OnClose = func() {
+			fmt.Println("connection closed")
 			_, secure := sess.conn.Conn.(*tls.Conn)
 
 			sess.onClose(ctx, &Event{
@@ -142,12 +149,16 @@ func SessionHandler(
 			})
 		}
 
-		sess.start(ctx)
+		if err := sess.start(ctx); err != nil {
+			sess.log.Warn("session error", "err", err)
+		}
 	})
 }
 
 func (s *session) start(ctx context.Context) error {
-	defer s.conn.Close()
+	defer func() {
+		_ = s.conn.Close()
+	}()
 
 	if err := s.greet(); err != nil {
 		return err
@@ -278,7 +289,7 @@ func (s *session) handleHelo(args string) error {
 }
 
 // NOOP
-func (s *session) handleNoop(args string) error {
+func (s *session) handleNoop(_ string) error {
 	return s.writeLine("250 OK")
 }
 
@@ -301,11 +312,9 @@ func (s *session) handleEhlo(args string) error {
 }
 
 // STARTTLS
-func (s *session) handleStartTLS(args string) error {
-
+func (s *session) handleStartTLS(_ string) error {
 	if s.tlsConfig == nil {
-		s.writeLine("502 Command is not implemented")
-		return nil
+		return s.commandError()
 	}
 
 	if err := s.writeLine("220 Ready to start TLS"); err != nil {
@@ -323,6 +332,8 @@ func (s *session) handleStartTLS(args string) error {
 	newConn.RW.Write(s.conn.RW.Bytes())
 	newConn.R.Write(s.conn.R.Bytes())
 	newConn.W.Write(s.conn.W.Bytes())
+
+	newConn.OnClose = s.conn.OnClose
 
 	s.conn = newConn
 	s.scanner = bufio.NewScanner(newConn)
@@ -360,7 +371,7 @@ func (s *session) handleData(args string) error {
 }
 
 // QUIT
-func (s *session) handleQuit(args string) error {
+func (s *session) handleQuit(_ string) error {
 	_ = s.writeLine("221 OK")
 	return ErrQuit
 }

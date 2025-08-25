@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -93,15 +92,15 @@ func NotifyHandler(notify func(context.Context, *Event), next http.Handler) http
 			}
 		}
 		w.WriteHeader(wr.Code)
-		w.Write(wr.Body.Bytes())
+		_, _ = w.Write(wr.Body.Bytes())
 	})
 }
 
 // BodyReaderHandler reads body so it will appear in request log.
 func BodyReaderHandler(next http.Handler, maxMemory int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := ioutil.ReadAll(r.Body)
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		body, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		next.ServeHTTP(w, r)
 	})

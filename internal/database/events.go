@@ -71,7 +71,7 @@ func (db *DB) EventsListByPayloadID(ctx context.Context, payloadID int64, opts .
 		opt(&options)
 	}
 
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 
 	query := "SELECT * FROM (SELECT *, ROW_NUMBER() OVER(ORDER BY id ASC) AS index FROM events WHERE payload_id = :payload_id) subq"
 	params["payload_id"] = payloadID

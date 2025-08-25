@@ -123,16 +123,16 @@ func teardown(t *testing.T) {}
 // Matchers
 //
 
-type matcher func(*testing.T, interface{})
+type matcher func(*testing.T, any)
 
 func regex(re *regexp.Regexp) matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		assert.Regexp(t, re, value)
 	}
 }
 
 func withinDuration(d time.Duration) matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		var (
 			tm  time.Time
 			err error
@@ -152,27 +152,9 @@ func withinDuration(d time.Duration) matcher {
 	}
 }
 
-func equal(expected interface{}) matcher {
-	return func(t *testing.T, value interface{}) {
+func equal(expected any) matcher {
+	return func(t *testing.T, value any) {
 		assert.EqualValues(t, expected, value)
-	}
-}
-
-func contains(s interface{}) matcher {
-	return func(t *testing.T, value interface{}) {
-		assert.Contains(t, value, s)
-	}
-}
-
-func notEmpty() matcher {
-	return func(t *testing.T, value interface{}) {
-		assert.NotEmpty(t, value)
-	}
-}
-
-func length(l int) matcher {
-	return func(t *testing.T, value interface{}) {
-		assert.Len(t, value, l)
 	}
 }
 
@@ -180,12 +162,12 @@ func length(l int) matcher {
 // keyPath
 //
 
-func keyPath(obj interface{}, kp string) (interface{}, error) {
+func keyPath(obj any, kp string) (any, error) {
 	keys := strings.Split(kp, ".")
 	v := reflect.ValueOf(obj)
 
 	for _, key := range keys {
-		for v.Kind() == reflect.Ptr {
+		for v.Kind() == reflect.Pointer {
 			v = v.Elem()
 		}
 
@@ -212,7 +194,7 @@ func keyPath(obj interface{}, kp string) (interface{}, error) {
 
 func TestClient(t *testing.T) {
 	tests := []struct {
-		params interface{}
+		params any
 		m      map[string]matcher
 		err    errors.Error
 	}{
@@ -534,7 +516,7 @@ func TestClient(t *testing.T) {
 			defer teardown(t)
 
 			var (
-				res interface{}
+				res any
 				err errors.Error
 			)
 

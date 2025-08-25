@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -44,7 +44,7 @@ var dnsTemplate = tpl.MustParse(`
 * SOA ns1 hostmaster 1337 86400 7200 4000000 11200
 `)
 
-func parseDNSRecords(s, origin string, ip net.IP) *dnsx.Records {
+func parseDNSRecords(s, origin string, _ net.IP) *dnsx.Records {
 	rrs, err := dnsx.ParseRecords(s, origin)
 	if err != nil {
 		panic(err)
@@ -58,7 +58,7 @@ func DNSDefaultRecords(origin string, ip net.IP) *dnsx.Records {
 }
 
 func DNSZoneFileRecords(filePath, origin string, ip net.IP) *dnsx.Records {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil
 	}

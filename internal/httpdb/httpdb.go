@@ -100,7 +100,7 @@ func (rr *Routes) handleFn(route *models.HTTPRoute) http.HandlerFunc {
 		w.WriteHeader(route.Code)
 
 		if len(route.Body) > 0 {
-			w.Write(body)
+			_, _ = w.Write(body)
 		}
 	}
 }
@@ -157,7 +157,7 @@ func (d *Data) Cookie(key string) string {
 	return c.Value
 }
 
-func renderTemplate(t string, data interface{}) (string, error) {
+func renderTemplate(t string, data any) (string, error) {
 	tpl, err := template.New("").Parse(t)
 	if err != nil {
 		return "", err
@@ -172,5 +172,5 @@ func renderTemplate(t string, data interface{}) (string, error) {
 
 func handleError(w http.ResponseWriter, err error) {
 	w.WriteHeader(500)
-	w.Write([]byte(err.Error()))
+	_, _ = w.Write([]byte(err.Error()))
 }

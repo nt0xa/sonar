@@ -18,7 +18,7 @@ func init() {
 	decoder.SetAliasTag("query")
 }
 
-func fromPath(r *http.Request, dst interface{}) error {
+func fromPath(r *http.Request, dst any) error {
 	pp := chi.RouteContext(r.Context()).URLParams
 
 	pmap := make(map[string]string)
@@ -44,7 +44,7 @@ func fromPath(r *http.Request, dst interface{}) error {
 	return nil
 }
 
-func fromQuery(r *http.Request, dst interface{}) error {
+func fromQuery(r *http.Request, dst any) error {
 	if err := decoder.Decode(dst, r.URL.Query()); err != nil {
 		return errors.BadFormatf("query: %s", err)
 	}
@@ -52,7 +52,7 @@ func fromQuery(r *http.Request, dst interface{}) error {
 	return nil
 }
 
-func fromJSON(r *http.Request, dst interface{}) error {
+func fromJSON(r *http.Request, dst any) error {
 	rdr := http.MaxBytesReader(nil, r.Body, 1024*1024)
 
 	if err := parse.JSON(rdr, dst); err != nil {
@@ -62,8 +62,8 @@ func fromJSON(r *http.Request, dst interface{}) error {
 	return nil
 }
 
-func responseJSON(w http.ResponseWriter, res interface{}, status int) {
+func responseJSON(w http.ResponseWriter, res any, status int) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(res)
+	_ = json.NewEncoder(w).Encode(res)
 }
