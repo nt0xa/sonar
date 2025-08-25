@@ -50,6 +50,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
+          install-mode: goinstall
           version: v2.1
 
       - name: Test
