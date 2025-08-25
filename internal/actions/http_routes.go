@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -121,18 +121,14 @@ func HTTPRoutesCreateCommand(acts *Actions, p *HTTPRoutesCreateParams, local boo
 			parts := strings.SplitN(header, ":", 2)
 			name, value := parts[0], strings.TrimLeft(parts[1], " ")
 
-			if h, ok := hh[name]; ok {
-				h = append(h, value)
-			} else {
-				hh[name] = []string{value}
-			}
+			hh[name] = append(hh[name], value)
 		}
 		p.Headers = hh
 
 		var body []byte
 
 		if file {
-			b, err := ioutil.ReadFile(args[0])
+			b, err := os.ReadFile(args[0])
 			if err != nil {
 				return errors.Validationf("fail to read file %q", args[0])
 			}
@@ -250,11 +246,7 @@ func HTTPRoutesUpdateCommand(acts *Actions, p *HTTPRoutesUpdateParams, local boo
 				parts := strings.SplitN(header, ":", 2)
 				name, value := parts[0], strings.TrimLeft(parts[1], " ")
 
-				if h, ok := hh[name]; ok {
-					h = append(h, value)
-				} else {
-					hh[name] = []string{value}
-				}
+				hh[name] = append(hh[name], value)
 			}
 			p.Headers = hh
 		}
@@ -274,7 +266,7 @@ func HTTPRoutesUpdateCommand(acts *Actions, p *HTTPRoutesUpdateParams, local boo
 			var bodyBytes []byte
 
 			if file {
-				b, err := ioutil.ReadFile(body)
+				b, err := os.ReadFile(body)
 				if err != nil {
 					return errors.Validationf("fail to read file %q", body)
 				}

@@ -29,7 +29,7 @@ func NewRecords(rrs []dns.RR) *Records {
 }
 
 // Add adds new DNS record to Records.
-func (r *Records) Add(rr dns.RR) error {
+func (r *Records) Add(rr dns.RR) {
 	key := makeKey(rr.Header().Name, rr.Header().Rrtype)
 
 	r.mu.Lock()
@@ -40,8 +40,6 @@ func (r *Records) Add(rr dns.RR) error {
 	}
 
 	r.records[key] = append(r.records[key], rr)
-
-	return nil
 }
 
 // Del removes DNS record from Records.

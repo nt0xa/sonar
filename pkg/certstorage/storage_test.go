@@ -88,6 +88,7 @@ func Test_SaveLoadAccount(t *testing.T) {
 
 	// Remove root directory
 	err = os.RemoveAll("test")
+	require.NoError(t, err)
 
 	err = s.SaveAccount(&accSave)
 	assert.Error(t, err)
@@ -123,6 +124,7 @@ func Test_SaveLoadCert(t *testing.T) {
 
 	// Remove root directory
 	err = os.RemoveAll("test")
+	require.NoError(t, err)
 
 	err = s.SaveCertificate(cert)
 	assert.Error(t, err)

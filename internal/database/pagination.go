@@ -26,12 +26,12 @@ func (p *Page) IsBackward() bool {
 
 func paginate(
 	query string,
-	params map[string]interface{},
+	params map[string]any,
 	column string,
 	prefix string,
 	order string,
 	p Page,
-) (string, map[string]interface{}) {
+) (string, map[string]any) {
 
 	var (
 		cmp string

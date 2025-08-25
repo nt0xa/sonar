@@ -40,7 +40,10 @@ func (s *Server) ListenAndServe() error {
 		return err
 	}
 
-	defer listener.Close()
+	defer func() {
+		// TODO: logging
+		_ = listener.Close()
+	}()
 
 	l := listener
 
@@ -61,7 +64,7 @@ func (s *Server) ListenAndServe() error {
 		go func() {
 			// TODO: logging
 			s.Handle(context.Background(), conn)
-			conn.Close()
+			_ = conn.Close()
 		}()
 	}
 }

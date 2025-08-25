@@ -22,7 +22,7 @@ import (
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
-type NotifyFunc func(net.Addr, []byte, map[string]interface{})
+type NotifyFunc func(net.Addr, []byte, map[string]any)
 
 var (
 	subdomainRegexp = regexp.MustCompile("[a-fA-F0-9]{8}")
@@ -208,7 +208,7 @@ func (h *EventsHandler) notify(
 	notification *modules.Notification,
 	notifier modules.Notifier,
 ) {
-	ctx, span := h.tel.TraceStart(ctx, "notify",
+	_, span := h.tel.TraceStart(ctx, "notify",
 		trace.WithSpanKind(trace.SpanKindInternal),
 		trace.WithAttributes(
 			attribute.String("event.id", notification.Event.UUID.String()),

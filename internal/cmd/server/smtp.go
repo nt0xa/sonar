@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
+	"log/slog"
 	"net"
 	"net/mail"
 	"time"
@@ -31,6 +32,7 @@ func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Lis
 
 func SMTPHandler(
 	domain string,
+	log *slog.Logger,
 	tel telemetry.Telemetry,
 	tlsConfig *tls.Config,
 	notify func(context.Context, *smtpx.Event),
@@ -38,6 +40,7 @@ func SMTPHandler(
 	return SMTPTelemetry(
 		smtpx.SessionHandler(
 			smtpx.Msg{Greet: domain, Ehlo: domain},
+			log,
 			tlsConfig,
 			notify,
 		),

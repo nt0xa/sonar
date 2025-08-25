@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"strings"
@@ -25,7 +26,7 @@ type NotifierMock struct {
 	mock.Mock
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]any) {
 	m.Called(remoteAddr, data, meta)
 }
 
@@ -62,6 +63,7 @@ func TestMain(m *testing.M) {
 
 	handler := ftpx.SessionHandler(
 		ftpx.Msg{},
+		slog.New(slog.DiscardHandler),
 		func(ctx context.Context, e *ftpx.Event) {
 			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
 		},
@@ -171,7 +173,9 @@ func TestFTP(t *testing.T) {
 				conn, err = net.Dial("tcp", "127.0.0.1:10021")
 				require.NoError(st, err)
 			}
-			defer conn.Close()
+			defer func() {
+				_ = conn.Close()
+			}()
 
 			contains := []string{tt.user, tt.pass, tt.retr}
 

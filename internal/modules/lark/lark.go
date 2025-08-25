@@ -151,26 +151,23 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 	if dedupEvents {
 		go func() {
 			ticker := time.NewTicker(10 * time.Second)
-			for {
-				select {
-				case <-ticker.C:
-					toRemove := make([]string, 0)
+			for range ticker.C {
+				toRemove := make([]string, 0)
 
-					for eventID, handledAt := range recentEvents {
+				for eventID, handledAt := range recentEvents {
 
-						// Cleanup events after 10m
-						// TODO: config
-						if time.Since(handledAt) > time.Minute*5 {
-							toRemove = append(toRemove, eventID)
-						}
+					// Cleanup events after 10m
+					// TODO: config
+					if time.Since(handledAt) > time.Minute*5 {
+						toRemove = append(toRemove, eventID)
 					}
-
-					recentEventsMutex.Lock()
-					for _, eventID := range toRemove {
-						delete(recentEvents, eventID)
-					}
-					recentEventsMutex.Unlock()
 				}
+
+				recentEventsMutex.Lock()
+				for _, eventID := range toRemove {
+					delete(recentEvents, eventID)
+				}
+				recentEventsMutex.Unlock()
 			}
 		}()
 	}
@@ -239,6 +236,12 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 				}
 
 				user, err := lrk.db.UsersGetByParam(ctx, models.UserLarkID, *userID)
+				if err != nil {
+					lrk.log.Error("Failed to get user",
+						"user_id", *userID,
+						"err", err)
+					return nil
+				}
 
 				if user == nil {
 					// Create user if not exists
@@ -346,7 +349,7 @@ func (lrk *Lark) startWebhook(eventHandler *dispatcher.EventDispatcher) error {
 }
 
 func (lrk *Lark) message(ctx context.Context, userID string, msgID *string, content string) {
-	ctx, span := lrk.tel.TraceStart(context.Background(), "lark.message",
+	ctx, span := lrk.tel.TraceStart(ctx, "lark.message",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)
 	defer span.End()
@@ -436,7 +439,7 @@ func (lrk *Lark) sendMessage(ctx context.Context, userID string, msgID *string, 
 	}
 }
 
-func (lrk *Lark) docMessage(ctx context.Context, chatID string, name string, caption string, data []byte) {
+func (lrk *Lark) docMessage(ctx context.Context, chatID string, name string, _ string, data []byte) {
 	ctx, span := lrk.tel.TraceStart(ctx, "lark.sendMessage",
 		trace.WithSpanKind(trace.SpanKindClient),
 	)

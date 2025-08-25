@@ -29,6 +29,9 @@ var templatesMap = map[string]string{
 	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
 	actions.HTTPRoutesClearResultID:  httpRoutesClear,
 
+	actions.UsersCreateResultID: usersCreate,
+	actions.UsersDeleteResultID: usersDelete,
+
 	actions.EventsListResultID: eventsList,
 	actions.EventsGetResultID:  eventsGet,
 }

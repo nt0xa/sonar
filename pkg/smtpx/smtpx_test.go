@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/smtp"
 	"os"
@@ -28,7 +29,11 @@ type NotifierMock struct {
 	mock.Mock
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
+func (m *NotifierMock) Notify(
+	remoteAddr net.Addr,
+	data []byte,
+	meta map[string]any,
+) {
 	m.Called(remoteAddr, data, meta)
 }
 
@@ -62,12 +67,25 @@ func TestMain(m *testing.M) {
 			}
 		}),
 	}
+	cert, err := tls.LoadX509KeyPair(
+		"../../test/cert.pem",
+		"../../test/key.pem",
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
+		os.Exit(1)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
 
 	handler := smtpx.SessionHandler(
 		smtpx.Msg{},
-		nil,
+		slog.New(slog.DiscardHandler),
+		tlsConfig,
 		func(ctx context.Context, e *smtpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.RW, map[string]interface{}{})
+			notifier.Notify(e.RemoteAddr, e.RW, map[string]any{})
 		},
 	)
 
@@ -79,18 +97,8 @@ func TestMain(m *testing.M) {
 	}()
 
 	go func() {
-		cert, err := tls.LoadX509KeyPair(
-			"../../test/cert.pem",
-			"../../test/key.pem",
-		)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
-			os.Exit(1)
-		}
 
-		options := append(options, smtpx.TLSConfig(&tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}))
+		options := append(options, smtpx.TLSConfig(tlsConfig))
 		srv := smtpx.New("127.0.0.1:1465", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -148,7 +156,7 @@ func TestSMTP(t *testing.T) {
 		if tt.tls {
 			name = "SMTPS"
 		} else if tt.startTLS {
-			name = "SMTP/STARTTLS"
+			name = "STARTTLS"
 		} else {
 			name = "SMTP"
 		}
@@ -199,8 +207,9 @@ func TestSMTP(t *testing.T) {
 			require.NoError(st, err)
 
 			// Send "STARTTLS" if required
-			if tt.startTLS {
-				c.StartTLS(tlsConfig)
+			if tt.startTLS && !tt.tls {
+				err = c.StartTLS(tlsConfig)
+				require.NoError(st, err)
 			}
 
 			// Set the sender and recipient first
@@ -220,7 +229,8 @@ func TestSMTP(t *testing.T) {
 			err = wc.Close()
 			require.NoError(st, err)
 
-			c.Quit()
+			err = c.Quit()
+			require.NoError(st, err)
 
 			time.Sleep(time.Microsecond * 500)
 

@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
@@ -62,6 +63,9 @@ type Msg struct {
 
 // session contains all data required to handle FTP session.
 type session struct {
+	// log is a session logger.
+	log *slog.Logger
+
 	// messages stores provided command responses.
 	messages Msg
 
@@ -79,11 +83,12 @@ type session struct {
 	data Data
 }
 
-func SessionHandler(msg Msg, onClose func(context.Context, *Event)) netx.Handler {
+func SessionHandler(msg Msg, log *slog.Logger, onClose func(context.Context, *Event)) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		newConn := netx.NewLoggingConn(conn)
 
 		sess := &session{
+			log:      log,
 			messages: msg,
 			onClose:  onClose,
 			conn:     newConn,
@@ -106,12 +111,16 @@ func SessionHandler(msg Msg, onClose func(context.Context, *Event)) netx.Handler
 			})
 		}
 
-		sess.start(ctx)
+		if err := sess.start(ctx); err != nil {
+			sess.log.Warn("session error", "err", err)
+		}
 	})
 }
 
 func (s *session) start(ctx context.Context) error {
-	defer s.conn.Close()
+	defer func() {
+		_ = s.conn.Close()
+	}()
 
 	if err := s.greet(); err != nil {
 		return err
@@ -259,13 +268,13 @@ func (s *session) handleRetr(args string) error {
 	s.data.Retr = args
 	// Return 451 error instead of "226 Transfer complete." to force client not to wait for
 	// active mode data connection.
-	s.writeLine("451 Nope.")
-	s.writeLine("221 Goodbye.")
+	_ = s.writeLine("451 Nope.")
+	_ = s.writeLine("221 Goodbye.")
 	return ErrClose
 }
 
 // QUIT
-func (s *session) handleQuit(args string) error {
-	s.writeLine("221 Goodbye.")
+func (s *session) handleQuit(_ string) error {
+	_ = s.writeLine("221 Goodbye.")
 	return ErrClose
 }

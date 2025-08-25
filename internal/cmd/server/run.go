@@ -264,6 +264,7 @@ func Run(
 			":25",
 			SMTPHandler(
 				cfg.Domain,
+				log.With("package", "smtpx"),
 				tel,
 				tlsConfig,
 				func(ctx context.Context, e *smtpx.Event) {
@@ -288,6 +289,7 @@ func Run(
 			":21",
 			FTPHandler(
 				cfg.Domain,
+				log.With("package", "ftpx"),
 				tel,
 				func(ctx context.Context, e *ftpx.Event) {
 					events.Emit(ctx, FTPEvent(e))

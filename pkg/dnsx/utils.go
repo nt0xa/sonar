@@ -18,7 +18,7 @@ func ParseRecords(s string, origin string) ([]dns.RR, error) {
 		ss += "\n"
 	}
 
-	return ParseRecordsFile(strings.NewReader(s+"\n"), origin)
+	return ParseRecordsFile(strings.NewReader(ss), origin)
 }
 
 // ParseRecordsFile parses DNS records from file.

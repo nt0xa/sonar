@@ -17,7 +17,7 @@ var _ actions.Actions = &Client{}
 
 func New(url string, token string, insecure bool, proxy *string) *Client {
 	c := resty.New().
-		SetHostURL(url).
+		SetBaseURL(url).
 		SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
 		SetHeader("Content-Type", "application/json")
 
