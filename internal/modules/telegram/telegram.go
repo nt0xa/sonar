@@ -168,8 +168,8 @@ func (tg *Telegram) processUpdateWithTelemetry(ctx context.Context, update tgbot
 		trace.WithSpanKind(trace.SpanKindServer),
 		trace.WithAttributes(
 			attribute.Int("telegram.update.id", update.UpdateID),
-			attribute.Int64("telegram.chat.id", update.Message.Chat.ID),
-			attribute.String("telegram.chat.type", update.Message.Chat.Type),
+			attribute.Int64("telegram.chat.id", msg.Chat.ID),
+			attribute.String("telegram.chat.type", msg.Chat.Type),
 		),
 	)
 	defer span.End()
