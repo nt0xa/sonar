@@ -152,7 +152,15 @@ func (tg *Telegram) Start() error {
 }
 
 func (tg *Telegram) processUpdateWithTelemetry(ctx context.Context, update tgbotapi.Update) error {
-	if update.Message == nil {
+	var msg *tgbotapi.Message
+
+	switch {
+	case update.Message != nil:
+		msg = update.Message
+	case update.EditedMessage != nil:
+		msg = update.EditedMessage
+
+	default:
 		return fmt.Errorf("telegram update has no message: %v", update)
 	}
 
@@ -166,11 +174,10 @@ func (tg *Telegram) processUpdateWithTelemetry(ctx context.Context, update tgbot
 	)
 	defer span.End()
 
-	return tg.processUpdate(ctx, update)
+	return tg.processUpdate(ctx, msg)
 }
 
-func (tg *Telegram) processUpdate(ctx context.Context, update tgbotapi.Update) error {
-	msg := update.Message
+func (tg *Telegram) processUpdate(ctx context.Context, msg *tgbotapi.Message) error {
 	chat := msg.Chat
 
 	// Ignore error because user=nil is unauthorized user and there are
@@ -179,7 +186,7 @@ func (tg *Telegram) processUpdate(ctx context.Context, update tgbotapi.Update) e
 	ctx = actionsdb.SetUser(ctx, chatUser)
 	ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 
-	stdout, stderr, err := tg.cmd.ParseAndExec(ctx, update.Message.Text,
+	stdout, stderr, err := tg.cmd.ParseAndExec(ctx, msg.Text,
 		func(ctx context.Context, res actions.Result) error {
 			s, err := tg.tmpl.RenderResult(res)
 			if err != nil {
