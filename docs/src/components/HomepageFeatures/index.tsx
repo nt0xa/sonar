@@ -32,17 +32,20 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: "Different messengers support",
-    description: <>Receive notifications to you favourite messenger.</>,
+    description: <>Receive notifications to you favourite messenger</>,
   },
   {
     title: "Manage via Messenger/CLI",
-    description: <>Use favourite messenger or CLI to manage your payloads.</>,
+    description: <>Use favourite messenger or CLI to manage your payloads</>,
   },
   {
-    title: "REST API",
-    description: (
-      <>Automate vulnerability scanning with via REST API.</>
-    ),
+    title: "API",
+    description: <>Automate vulnerability scanning with via REST API</>,
+  },
+  { title: "", description: <></> },
+  {
+    title: "Geo IP detection",
+    description: <>Country, city and organization information</>,
   },
 ];
 
