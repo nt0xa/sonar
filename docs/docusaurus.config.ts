@@ -5,7 +5,7 @@ import type * as Preset from "@docusaurus/preset-classic";
 const config: Config = {
   title: "Sonar",
   tagline:
-    "The Swiss army knife for discovering and exploiting out-of-band vulnerabilities.",
+    "Swiss army knife for discovering and exploiting out-of-band vulnerabilities.",
   favicon: "img/favicon.svg",
 
   url: "https://nt0xa.github.io",
