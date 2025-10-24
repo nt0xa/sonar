@@ -16,6 +16,7 @@ builds:
       - linux
     goarch:
       - amd64
+      - arm64
   - id: client
     binary: sonar
     dir: ./cmd/client
@@ -71,18 +72,26 @@ snapshot:
 changelog:
   disable: true
 
-dockers:
-  - image_templates:
-      - "ghcr.io/nt0xa/sonar:latest"
-      - "ghcr.io/nt0xa/sonar:{{.Major}}"
-      - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}"
-      - "ghcr.io/nt0xa/sonar:{{.Major}}.{{.Minor}}.{{.Patch}}"
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.name={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
+dockers_v2:
+  - images:
+      - "ghcr.io/nt0xa/sonar"
+    ids:
+      - server
+    tags:
+      - "latest"
+      - "{{.Major}}"
+      - "{{.Major}}.{{.Minor}}"
+      - "{{.Major}}.{{.Minor}}.{{.Patch}}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
     extra_files:
       - internal/database/migrations
     dockerfile: Dockerfile.ci
+    flags:
+      - "--pull"
