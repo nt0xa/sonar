@@ -1,6 +1,7 @@
 FROM alpine:latest
+ARG TARGETPLATFORM
 RUN apk add --no-cache ca-certificates
 WORKDIR /opt/app
-COPY server /opt/app/
+COPY $TARGETPLATFORM/server /opt/app/
 EXPOSE 53/udp 25 80 443
 CMD ["./server"]
