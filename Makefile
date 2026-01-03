@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 
 # Directories and paths
-LOCAL_BIN := $(CURDIR)/.bin
-BUILD_DIR := $(CURDIR)/build
-COMPLETIONS_DIR := $(CURDIR)/completions
+LOCAL_BIN ?= $(CURDIR)/.bin
+BUILD_DIR := $(CURDIR)/dist
+COMPLETIONS_DIR := $(BUILD_DIR)/completions
 DOCS_DIR := $(CURDIR)/docs
 
 # Build targets
@@ -36,7 +36,7 @@ build/client:
 
 clean:
 	$(call INFO,"Cleaning build artifacts...")
-	@rm -rf $(BUILD_DIR) $(COMPLETIONS_DIR) coverage.out
+	@rm -rf $(BUILD_DIR) coverage.out
 
 #
 # Shell completions
@@ -66,6 +66,36 @@ release/snapshot:
 #
 # Dev
 #
+
+# Compose
+override COMPOSE := docker compose --project-name sonar --project-directory . --file dev/docker-compose.yml
+
+.PHONY: dev/compose/up
+dev/compose/up:
+	@$(COMPOSE) up
+
+.PHONY: dev/compose/down
+dev/compose/down:
+	@$(COMPOSE) down
+
+.PHONY: dev/compose/clean
+dev/compose/clean: dev/compose/clean/volumes dev/compose/clean/images
+
+.PHONY: dev/compose/clean/volumes
+dev/compose/clean-volumes:
+	@$(COMPOSE) down --volumes
+
+.PHONY: dev/compose/clean/images
+dev/compose/clean/images:
+	@$(COMPOSE) down --rmi local
+
+.PHONY: dev/compose/exec/client
+dev/compose/exec/client:
+	@$(COMPOSE) exec client bash
+
+.PHONY: dev/compose/exec/server
+dev/compose/exec/server:
+	@$(COMPOSE) exec server bash
 
 .PHONY: dev/server
 dev/server:

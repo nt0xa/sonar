@@ -1,10 +1,5 @@
 # Binary
 dist/
-build/
-cmd/server/server
-cmd/client/client
-/server
-/sonar
 /.tmp/
 /.bin/
 
@@ -18,15 +13,9 @@ tls/
 
 # Secrets
 .env
-env
 
 # Dev
-docker-compose.yml
 .idea/
-
-# Test configs
-client.toml
-config.toml
 
 # Completions
 /completions/

@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: db
+      POSTGRES_PASSWORD: db
+      POSTGRES_DB: db_test
+    networks:
+      - sonar
+
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:latest
+    environment:
+      PEBBLE_VA_NOSLEEP: 1
+      PEBBLE_VA_ALWAYS_VALID: 1
+      PEBBLE_AUTHZREUSE: 0
+      PEBBLE_WFE_NONCEREJECT: 0
+    networks:
+      - sonar
+
+  server:
+    restart: always
+    build:
+      dockerfile: dev/Dockerfile
+    volumes:
+      - .:/app
+      - cache:/cache
+      - tls:/tls
+    working_dir: /app
+    ports:
+      - 21:21
+      - 25:25
+      - 53:53/udp
+      - 80:80
+      - 443:443
+      - 31337:31337
+    environment:
+      GOMODCACHE: /cache/gomod
+      GOCACHE: /cache/go
+      SONAR_DB_DSN: postgres://db:db@postgres:5432/db_test?sslmode=disable
+      SONAR_DOMAIN: sonar.test
+      SONAR_IP: 127.0.0.1
+      SONAR_TLS_TYPE: letsencrypt
+      SONAR_TLS_LETSENCRYPT_DIRECTORY: /tls
+      SONAR_TLS_LETSENCRYPT_EMAIL: test@example.com
+      SONAR_TLS_LETSENCRYPT_CA_DIR_URL: https://pebble:14000/dir
+      SONAR_TLS_LETSENCRYPT_CA_INSECURE: true
+      SONAR_MODULES_ENABLED: api${TELEGRAM_TOKEN:+,telegram}
+      SONAR_MODULES_API_ADMIN: 00112233445566778899aabbccddeeff
+      SONAR_MODULES_TELEGRAM_ADMIN: ${TELEGRAM_ADMIN}
+      SONAR_MODULES_TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+    command: |
+      make dev/server
+    networks:
+      sonar:
+        aliases:
+          - sonar.test
+
+  client:
+    build:
+      dockerfile: dev/Dockerfile
+    volumes:
+      - .:/app
+      - ./dev/client.toml:/root/.config/sonar/config.toml
+      - cache:/cache
+    working_dir: /app
+    environment:
+      GOMODCACHE: /cache/gomod
+      GOCACHE: /cache/go
+    command: |
+      make dev/client
+    networks:
+      - sonar
+
+
+volumes:
+  cache:
+  db:
+  tls:
+
+networks:
+  sonar:
