@@ -1,0 +1,7 @@
+[context]
+server = "test"
+
+[servers.test]
+insecure = true
+token = "00112233445566778899aabbccddeeff"
+url = "https://sonar.test:31337"
