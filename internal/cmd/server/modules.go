@@ -12,6 +12,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/lark"
+	"github.com/nt0xa/sonar/internal/modules/slack"
 	"github.com/nt0xa/sonar/internal/modules/telegram"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
@@ -28,12 +29,13 @@ type ModulesConfig struct {
 	Telegram telegram.Config
 	API      api.Config
 	Lark     lark.Config
+	Slack    slack.Config
 }
 
 func (c ModulesConfig) Validate() error {
 	rules := make([]*validation.FieldRules, 0)
 	rules = append(rules, validation.Field(&c.Enabled,
-		validation.Each(validation.In("telegram", "api", "lark"))))
+		validation.Each(validation.In("telegram", "api", "lark", "slack"))))
 
 	// TODO: dynamic modules registration. Something like sql drivers
 	for _, name := range c.Enabled {
@@ -84,6 +86,9 @@ func Modules(
 
 		case "lark":
 			m, err = lark.New(&cfg.Lark, db, log.With("package", "lark"), tel, tls, actions, domain)
+
+		case "slack":
+			m, err = slack.New(&cfg.Slack, db, log.With("package", "slack"), tel, actions, domain)
 
 		}
 
