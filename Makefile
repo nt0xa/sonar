@@ -74,6 +74,19 @@ override COMPOSE := docker compose --project-name sonar --project-directory . --
 dev/compose/up:
 	@$(COMPOSE) up
 
+.PHONY: dev/compose/restart/server
+dev/compose/restart/server:
+	@$(COMPOSE) restart server
+
+.PHONY: dev/compose/restart/client
+dev/compose/restart/client:
+	@$(COMPOSE) restart client
+
+.PHONY: dev/compose/recreate/server
+dev/compose/recreate/server:
+	@$(COMPOSE) rm --force --stop server
+	@$(COMPOSE) up --detach
+
 .PHONY: dev/compose/down
 dev/compose/down:
 	@$(COMPOSE) down
