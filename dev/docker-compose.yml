@@ -11,7 +11,8 @@ services:
       POSTGRES_PASSWORD: db
       POSTGRES_DB: db_test
     networks:
-      - sonar
+      sonar:
+        ipv4_address: 192.168.97.2
 
   pebble:
     image: ghcr.io/letsencrypt/pebble:latest
@@ -21,7 +22,8 @@ services:
       PEBBLE_AUTHZREUSE: 0
       PEBBLE_WFE_NONCEREJECT: 0
     networks:
-      - sonar
+      sonar:
+        ipv4_address: 192.168.97.3
 
   server:
     restart: always
@@ -44,22 +46,27 @@ services:
       GOCACHE: /cache/go
       SONAR_DB_DSN: postgres://db:db@postgres:5432/db_test?sslmode=disable
       SONAR_DOMAIN: sonar.test
-      SONAR_IP: 127.0.0.1
+      SONAR_IP: 192.168.97.4
       SONAR_TLS_TYPE: letsencrypt
       SONAR_TLS_LETSENCRYPT_DIRECTORY: /tls
       SONAR_TLS_LETSENCRYPT_EMAIL: test@example.com
       SONAR_TLS_LETSENCRYPT_CA_DIR_URL: https://pebble:14000/dir
       SONAR_TLS_LETSENCRYPT_CA_INSECURE: true
-      SONAR_MODULES_ENABLED: api${TELEGRAM_TOKEN:+,telegram}
+      SONAR_GEOIP_ENABLED: true
+      SONAR_GEOIP_CITY: /app/dev/GeoLite2-City.mmdb
+      SONAR_GEOIP_ASN: /app/dev/GeoLite2-ASN.mmdb
+      SONAR_MODULES_ENABLED: api${TELEGRAM_TOKEN:+,telegram}${SLACK_APP_TOKEN:+,slack}
       SONAR_MODULES_API_ADMIN: 00112233445566778899aabbccddeeff
       SONAR_MODULES_TELEGRAM_ADMIN: ${TELEGRAM_ADMIN}
       SONAR_MODULES_TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      SONAR_MODULES_SLACK_ADMIN: ${SLACK_ADMIN}
+      SONAR_MODULES_SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
+      SONAR_MODULES_SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
     command: |
       make dev/server
     networks:
       sonar:
-        aliases:
-          - sonar.test
+        ipv4_address: 192.168.97.4
 
   client:
     build:
@@ -74,8 +81,12 @@ services:
       GOCACHE: /cache/go
     command: |
       make dev/client
+    dns:
+      - 192.168.97.4 # use server as a DNS
+      - 8.8.8.8      # fallback to Google DNS
     networks:
-      - sonar
+      sonar:
+        ipv4_address: 192.168.97.5
 
 
 volumes:
@@ -85,3 +96,7 @@ volumes:
 
 networks:
   sonar:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.97.0/24
