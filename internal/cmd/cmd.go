@@ -149,6 +149,7 @@ func (c *Command) Exec(
 	return stdout.String(), stderr.String(), nil
 }
 
+// TODO: change api, having result callback, stdout and stderr is confusing.
 func (c *Command) ParseAndExec(
 	ctx context.Context,
 	s string,

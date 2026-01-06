@@ -367,6 +367,7 @@ func createOrUpdateAdminUser(
 			TelegramID: cfg.Modules.Telegram.Admin,
 			APIToken:   cfg.Modules.API.Admin,
 			LarkUserID: cfg.Modules.Lark.Admin,
+			SlackID:    cfg.Modules.Slack.Admin,
 		},
 	}
 
