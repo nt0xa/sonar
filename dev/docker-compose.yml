@@ -88,6 +88,21 @@ services:
       sonar:
         ipv4_address: 192.168.97.5
 
+  docs:
+    build:
+      dockerfile: dev/Dockerfile
+    volumes:
+      - .:/app
+    working_dir: /app
+    command:
+      - /bin/bash
+      - -c
+      - make docs/deps && make docs/dev
+    ports:
+      - 3000:3000
+    networks:
+      sonar:
+        ipv4_address: 192.168.97.6
 
 volumes:
   cache:

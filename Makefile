@@ -126,9 +126,17 @@ dev/client:
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true
 
-.PHONY: dev/docs
-dev/docs:
-	cd $(DOCS_DIR) && npm start
+#
+# Docs
+#
+
+.PHONY: docs/dev
+docs/dev:
+	cd $(DOCS_DIR) && npm run start -- --host 0.0.0.0 --port 3000
+
+.PHONY: docs/deps
+docs/deps:
+	cd $(DOCS_DIR) && npm install
 
 
 #
