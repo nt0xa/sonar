@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 # Directories and paths
 LOCAL_BIN ?= $(CURDIR)/.bin
-BUILD_DIR := $(CURDIR)/dist
+BUILD_DIR := $(CURDIR)/build
 COMPLETIONS_DIR := $(CURDIR)/completions
 DOCS_DIR := $(CURDIR)/docs
 
