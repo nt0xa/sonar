@@ -124,18 +124,19 @@ city = "geoip/GeoLite2-City.mmdb"
 asn = "geoip/GeoLite2-ASN.mmdb"
 
 [modules]
-# List of enabled modules. Currently three modules are supported: "api", "telegram" and "lark".
+# List of enabled modules. Currently 4 modules are supported: "api", "telegram", "lark" and "slack".
 #
 # "api" — provides REST API on port 31337, recommended to enable, required if you want to use CLI.
 #
 # Other modules provide various messengers integrations:
 #
-# "telegram" — Telegram messenger.
-# "lark" — Lark messenger.
+# "telegram" — Telegram messenger intergration.
+# "lark" — Lark messenger intergration.
+# "slack" — Slack messenger intergration.
 #
 # Messenger modules can work together, but it is recommended to use only one.
 # Otherwise all notifications will be sent to all the messengers.
-enabled = ["api", "telegram", "lark"]
+enabled = ["api", "telegram", "lark", "slack"]
 
 # API configuration.
 [modules.api]
@@ -163,6 +164,19 @@ mode = "webhook"
 # Verification token. Required only for "webhook" mode. You can find it on the "Events & callbacks" page of your app
 # under the "Encryption strategy" tab.
 verification_token = "<VERIFICATION_TOKEN>"
+
+# Slack configuration.
+[modules.slack]
+# Profile -> three dots -> Copy member ID
+admin = "<ADMIN_USER_ID>"
+
+# OAuth token from https://api.slack.com/apps/<YOUR_APP_ID>/oauth
+# Format: xoxb-...
+bot_token = "<BOT_TOKEN>"
+
+# From "App-Level Tokens" on https://api.slack.com/apps/<YOUR_APP_ID>/general
+# Format: xapp-...
+app_token = "<APP_TOKEN>"
 ```
 
 ## Startup
