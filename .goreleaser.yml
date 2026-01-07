@@ -93,5 +93,6 @@ dockers_v2:
     extra_files:
       - internal/database/migrations
     dockerfile: Dockerfile.ci
+    sbom: false
     flags:
       - "--pull"
