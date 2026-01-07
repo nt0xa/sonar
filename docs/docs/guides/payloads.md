@@ -73,7 +73,7 @@ automate something and retrieve all events for your subdomain using API or CLI t
 ## List payloads
 
 ```
-List payloads whose NAME contain SUBSTR
+List payloads which NAME contain SUBSTR
 
 Usage:
   /list [SUBSTR] [flags]
