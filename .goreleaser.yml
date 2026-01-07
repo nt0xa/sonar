@@ -59,9 +59,9 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Casks
     completions:
-      bash: "dist/completions/sonar.bash"
-      zsh: "dist/completions/sonar.zsh"
-      fish: "dist/completions/sonar.fish"
+      bash: "completions/sonar.bash"
+      zsh: "completions/sonar.zsh"
+      fish: "completions/sonar.fish"
 
 checksum:
   name_template: "checksums.txt"

@@ -3,7 +3,7 @@ SHELL := /bin/bash
 # Directories and paths
 LOCAL_BIN ?= $(CURDIR)/.bin
 BUILD_DIR := $(CURDIR)/dist
-COMPLETIONS_DIR := $(BUILD_DIR)/completions
+COMPLETIONS_DIR := $(CURDIR)/completions
 DOCS_DIR := $(CURDIR)/docs
 
 # Build targets
