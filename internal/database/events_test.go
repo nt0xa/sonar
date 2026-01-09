@@ -26,7 +26,12 @@ func TestEventsCreate_Success(t *testing.T) {
 		W:         []byte{2, 4},
 		RW:        []byte{1, 2, 3, 4, 5},
 		Meta: models.Meta{
-			"key": "value",
+			DNS: &models.DNSMeta{
+				Question: models.DNSQuestion{
+					Name: "example.com",
+					Type: "A",
+				},
+			},
 		},
 		ReceivedAt: time.Now(),
 		RemoteAddr: "127.0.0.1:1337",
@@ -49,7 +54,13 @@ func TestEventsGetByID_Success(t *testing.T) {
 	assert.Equal(t, []byte("read"), o.R)
 	assert.Equal(t, []byte("written"), o.W)
 	assert.Equal(t, []byte("read-and-written"), o.RW)
-	assert.Equal(t, models.Meta{"key": "value"}, o.Meta)
+	// Old fixture data with {"key": "value"} won't map to any protocol-specific fields
+	// All fields should be nil for old data
+	assert.Nil(t, o.Meta.DNS)
+	assert.Nil(t, o.Meta.HTTP)
+	assert.Nil(t, o.Meta.SMTP)
+	assert.Nil(t, o.Meta.FTP)
+	assert.Nil(t, o.Meta.GeoIP)
 	assert.Equal(t, "127.0.0.1:1337", o.RemoteAddr)
 	assert.Equal(t, "c0b49dee-3ce9-4bd9-b111-7abd7a2f16f0", o.UUID.String())
 }
@@ -157,7 +168,12 @@ func TestEventsRace(t *testing.T) {
 				W:         []byte{2, 4},
 				RW:        []byte{1, 2, 3, 4, 5},
 				Meta: models.Meta{
-					"key": "value",
+					DNS: &models.DNSMeta{
+						Question: models.DNSQuestion{
+							Name: "test.example.com",
+							Type: "A",
+						},
+					},
 				},
 				ReceivedAt: time.Now(),
 				RemoteAddr: "127.0.0.1:1337",
