@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
@@ -12,13 +13,18 @@ import (
 )
 
 func Event(m models.Event) actions.Event {
+	// Convert Meta struct to map[string]interface{} for API response
+	metaMap := make(map[string]interface{})
+	metaJSON, _ := json.Marshal(m.Meta)
+	_ = json.Unmarshal(metaJSON, &metaMap)
+
 	return actions.Event{
 		Index:      m.Index,
 		Protocol:   m.Protocol.String(),
 		R:          base64.StdEncoding.EncodeToString(m.R),
 		W:          base64.StdEncoding.EncodeToString(m.W),
 		RW:         base64.StdEncoding.EncodeToString(m.RW),
-		Meta:       m.Meta,
+		Meta:       metaMap,
 		RemoteAddr: m.RemoteAddr,
 		ReceivedAt: m.ReceivedAt,
 	}

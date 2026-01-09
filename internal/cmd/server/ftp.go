@@ -7,7 +7,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/fatih/structs"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/netx"
@@ -83,22 +82,28 @@ func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 }
 
 func FTPEvent(e *ftpx.Event) *models.Event {
-	type Meta struct {
-		Session ftpx.Data `structs:"session"`
-		Secure  bool      `structs:"secure"`
-	}
-
-	meta := &Meta{
-		Session: e.Data,
-		Secure:  e.Secure,
+	ftpMeta := &models.FTPMeta{
+		Session: models.FTPSession{
+			User: e.Data.User,
+			Pass: e.Data.Pass,
+			Type: e.Data.Type,
+			Pasv: e.Data.Pasv,
+			Epsv: e.Data.Epsv,
+			Port: e.Data.Port,
+			Eprt: e.Data.Eprt,
+			Retr: e.Data.Retr,
+		},
+		Secure: e.Secure,
 	}
 
 	return &models.Event{
-		Protocol:   models.ProtoFTP,
-		R:          e.R,
-		W:          e.W,
-		RW:         e.RW,
-		Meta:       structs.Map(meta),
+		Protocol: models.ProtoFTP,
+		R:        e.R,
+		W:        e.W,
+		RW:       e.RW,
+		Meta: models.Meta{
+			FTP: ftpMeta,
+		},
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}

@@ -21,16 +21,16 @@ func TestBuild(t *testing.T) {
 			Protocol: models.Proto{Name: "http"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"geoip": map[string]any{
-					"city": "London",
-					"country": map[string]any{
-						"name":      "United Kingdom",
-						"isoCode":   "GB",
-						"flagEmoji": "🇬🇧",
+				GeoIP: &models.GeoIPMeta{
+					City: "London",
+					Country: models.GeoIPCountryInfo{
+						Name:      "United Kingdom",
+						ISOCode:   "GB",
+						FlagEmoji: "🇬🇧",
 					},
-					"asn": map[string]any{
-						"org":    "Google Inc.",
-						"number": 1234,
+					ASN: models.GeoIPASNInfo{
+						Org:    "Google Inc.",
+						Number: 1234,
 					},
 				},
 			},
@@ -119,13 +119,15 @@ func TestBuildWithEmail(t *testing.T) {
 			Protocol: models.Proto{Name: "smtp"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"email": map[string]any{
-					"from": []any{
-						map[string]any{
-							"email": "sender@example.com",
+				SMTP: &models.SMTPMeta{
+					Email: models.SMTPEmail{
+						From: []models.SMTPAddress{
+							{
+								Email: "sender@example.com",
+							},
 						},
+						Subject: "Test Subject",
 					},
-					"subject": "Test Subject",
 				},
 			},
 			RemoteAddr: "10.13.37.1:1337",
