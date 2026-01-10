@@ -34,7 +34,9 @@ func New(root string, opts ...Option) (*Storage, error) {
 	}
 
 	if _, err := os.Stat(root); os.IsNotExist(err) {
-		return nil, fmt.Errorf("root path %q doesn't exist: %w", root, err)
+		if err := os.MkdirAll(root, 0700); err != nil {
+			return nil, fmt.Errorf("fail to create root path %q: %w", root, err)
+		}
 	}
 
 	return &Storage{

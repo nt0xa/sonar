@@ -33,14 +33,6 @@ func teardown(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func Test_New_Fail(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-
-	_, err := certstorage.New("not-exist")
-	assert.Error(t, err)
-}
-
 func Test_New_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
