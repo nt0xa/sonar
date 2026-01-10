@@ -1,17 +1,14 @@
 SHELL := /bin/bash
 
-# Directories and paths
-LOCAL_BIN ?= $(CURDIR)/.bin
-BUILD_DIR := $(CURDIR)/build
-COMPLETIONS_DIR := $(CURDIR)/completions
-DOCS_DIR := $(CURDIR)/docs
+# Docker compose
+COMPOSE := docker compose --project-name sonar --project-directory . --file dev/docker-compose.yml
+IN_DOCKER := $(shell [ -f /.dockerenv ] && echo 1)
 
-# Build targets
-SERVER_BIN := server
-CLIENT_BIN := sonar
-
-# Configuration
-DB_DSN := postgres://db:db@localhost:5432/db_test?sslmode=disable
+ifdef IN_DOCKER
+    EXEC :=
+else
+    EXEC := $(COMPOSE) exec server
+endif
 
 #
 # Build
@@ -23,20 +20,20 @@ default: build
 build: build/server build/client
 
 .PHONY: build/server
-build/server:
-	$(call INFO,"Building server...")
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(SERVER_BIN) ./cmd/server
+build/server: require-container-server
+	@echo "Building server..."
+	@$(EXEC) mkdir -p build
+	@$(EXEC) go build -o build/server ./cmd/server
 
 .PHONY: build/client
-build/client:
-	$(call INFO,"Building client...")
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(CLIENT_BIN) ./cmd/client
+build/client: require-container-server
+	@echo "Building client..."
+	@$(EXEC) mkdir -p build
+	@$(EXEC) go build -o build/sonar ./cmd/client
 
-clean:
-	$(call INFO,"Cleaning build artifacts...")
-	@rm -rf $(BUILD_DIR) coverage.out
+clean: require-container-server
+	@echo "Cleaning build artifacts..."
+	@$(EXEC) rm -rf build completions coverage.out
 
 #
 # Shell completions
@@ -44,83 +41,77 @@ clean:
 
 .PHONY: completions
 completions: build/client
-	$(call INFO,"Generating shell completions...")
-	@rm -rf $(COMPLETIONS_DIR)
-	@mkdir -p $(COMPLETIONS_DIR)
-	@$(BUILD_DIR)/$(CLIENT_BIN) completion bash > $(COMPLETIONS_DIR)/$(CLIENT_BIN).bash
-	@$(BUILD_DIR)/$(CLIENT_BIN) completion zsh > $(COMPLETIONS_DIR)/$(CLIENT_BIN).zsh
-	@$(BUILD_DIR)/$(CLIENT_BIN) completion fish > $(COMPLETIONS_DIR)/$(CLIENT_BIN).fish
+	@echo "Generating shell completions..."
+	@$(EXEC) rm -rf completions
+	@$(EXEC) mkdir -p completions
+	@$(EXEC) build/sonar completion bash > completions/sonar.bash
+	@$(EXEC) build/sonar completion zsh > completions/sonar.zsh
+	@$(EXEC) build/sonar completion fish > completions/sonar.fish
 
 #
 # Release
 #
 
-.PHONY: release
-release:
-	@$(LOCAL_BIN)/goreleaser release --clean
-
 .PHONY: release/snapshot
-release/snapshot:
-	@$(LOCAL_BIN)/goreleaser release --clean --snapshot
+release/snapshot: require-container-server
+	@$(EXEC) goreleaser release --clean --snapshot
 
 #
-# Dev
+# Docker compose
 #
 
-# Compose
-override COMPOSE := docker compose --project-name sonar --project-directory . --file dev/docker-compose.yml
-
-.PHONY: dev/compose/up
-dev/compose/up:
+.PHONY: up
+up:
 	@$(COMPOSE) up
 
-.PHONY: dev/compose/restart/server
-dev/compose/restart/server:
+.PHONY: down
+down:
+	@$(COMPOSE) down
+
+.PHONY: restart/server
+restart/server:
 	@$(COMPOSE) restart server
 
-.PHONY: dev/compose/restart/client
-dev/compose/restart/client:
+.PHONY: restart/client
+restart/client:
 	@$(COMPOSE) restart client
 
-.PHONY: dev/compose/recreate/server
-dev/compose/recreate/server:
+.PHONY: recreate/server
+recreate/server:
 	@$(COMPOSE) rm --force --stop server
 	@$(COMPOSE) up --detach
 
-.PHONY: dev/compose/down
-dev/compose/down:
-	@$(COMPOSE) down
-
-.PHONY: dev/compose/clean
-dev/compose/clean: dev/compose/clean/volumes dev/compose/clean/images
-
-.PHONY: dev/compose/clean/volumes
-dev/compose/clean-volumes:
+.PHONY: clean/volumes
+clean/volumes:
 	@$(COMPOSE) down --volumes
 
-.PHONY: dev/compose/clean/images
-dev/compose/clean/images:
+.PHONY: clean/images
+clean/images:
 	@$(COMPOSE) down --rmi local
 
-.PHONY: dev/compose/exec/client
-dev/compose/exec/client:
+.PHONY: exec/client
+exec/client:
 	@$(COMPOSE) exec client bash
 
-.PHONY: dev/compose/exec/server
-dev/compose/exec/server:
+.PHONY: exec/server
+exec/server:
 	@$(COMPOSE) exec server bash
 
-.PHONY: dev/server
-dev/server:
-	@$(LOCAL_BIN)/air \
-		-build.bin $(BUILD_DIR)/$(SERVER_BIN) \
+#
+# Watch (auto-restart)
+#
+
+.PHONY: watch/server
+watch/server:
+	@$(EXEC) air \
+		-build.bin build/server \
 		-build.cmd "make build/server" \
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true
 
-.PHONY: dev/client
-dev/client:
-	@$(LOCAL_BIN)/air \
+.PHONY: watch/client
+watch/client:
+	@$(EXEC) air \
 		-build.bin /usr/bin/true \
 		-build.cmd "make build/client" \
 		-build.exclude_dir docs \
@@ -132,24 +123,21 @@ dev/client:
 
 .PHONY: docs/dev
 docs/dev:
-	cd $(DOCS_DIR) && npm run start -- --host 0.0.0.0 --port 3000
+	@cd docs && npm run start -- --host 0.0.0.0 --port 3000
 
 .PHONY: docs/deps
 docs/deps:
-	cd $(DOCS_DIR) && npm install
+	@cd docs && npm install
 
 
 #
 # Tools
 #
 
-override GOBIN := $(LOCAL_BIN)
-export GOBIN
-
-.PHONY: tools
-tools: 
-	$(call INFO,"Installing development tools...")
-	@go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+.PHONY: devtools
+devtools: 
+	@echo "Installing development tools..."
+	@go install -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	@go install github.com/air-verse/air@latest
 	@go install github.com/abice/go-enum@latest
 	@go install github.com/vektra/mockery/v2@latest 
@@ -160,12 +148,12 @@ tools:
 #
 
 .PHONY: test
-test:
-	$(call INFO,"Running tests...")
-	@go test ./... -v -p 1 -coverprofile coverage.out
+test: require-container-server
+	@echo "Running tests..."
+	@$(EXEC) go test ./... -v -p 1 -coverprofile coverage.out
 
-.PHONY: coverage/html
-coverage/html:
+.PHONY: coverage
+coverage: require-container-server
 	@go tool cover -html=coverage.out
 
 #
@@ -173,13 +161,13 @@ coverage/html:
 #
 
 .PHONY: fmt
-fmt:
-	$(call INFO,"Formatting code...")
+fmt: require-container-server
+	@echo "Formatting code..."
 	@go fmt ./...
 
 .PHONY: lint
-lint:
-	$(call INFO,"Linting code...")
+lint: require-container-server
+	@echo "Linting code..."
 	@golangci-lint run
 
 #
@@ -190,27 +178,27 @@ lint:
 generate: generate/api generate/cmd generate/client generate/mocks
 
 .PHONY: generate/api
-generate/api:
-	$(call INFO,"Generating API...")
-	@go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
+generate/api: require-container-server
+	@echo "Generating API..."
+	@$(EXEC) go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/cmd
-generate/cmd:
-	$(call INFO,"Generating CLI...")
-	@go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
+generate/cmd: require-container-server
+	@echo "Generating CLI..."
+	@$(EXEC) go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/client
-generate/client:
-	$(call INFO,"Generating API client...")
-	@go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
+generate/client: require-container-server
+	@echo "Generating API client..."
+	@$(EXEC) go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/mocks
-generate/mocks:
-	$(call INFO,"Generating mocks...")
-	@$(LOCAL_BIN)/mockery \
+generate/mocks: require-container-server
+	@echo "Generating mocks..."
+	@$(EXEC) mockery \
 		--dir internal/actions \
 		--output internal/actions/mock \
 		--outpkg actions_mock \
@@ -257,6 +245,15 @@ endef
 
 guard-%:
 	@if [ "${${*}}" = "" ]; then \
-		echo "Environment variable $* not set"; \
+		echo "ERROR: Environment variable \"$*\" not set"; \
+		exit 1; \
+	fi
+
+require-container-%:
+	@if [ -f /.dockerenv ]; then \
+		exit 0; \
+	fi; \
+	if [ -z "$$($(COMPOSE) ps -q $* --status running 2>/dev/null)" ]; then \
+		echo "ERROR: Container \"$*\" is not running"; \
 		exit 1; \
 	fi

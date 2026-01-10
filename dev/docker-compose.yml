@@ -44,6 +44,7 @@ services:
     environment:
       GOMODCACHE: /cache/gomod
       GOCACHE: /cache/go
+      CERTMGR_CA_DIR_URL: https://pebble:14000/dir
       SONAR_DB_DSN: postgres://db:db@postgres:5432/db_test?sslmode=disable
       SONAR_DOMAIN: sonar.test
       SONAR_IP: 192.168.97.4
@@ -63,7 +64,7 @@ services:
       SONAR_MODULES_SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
       SONAR_MODULES_SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
     command: |
-      make dev/server
+      make watch/server
     networks:
       sonar:
         ipv4_address: 192.168.97.4
@@ -80,7 +81,7 @@ services:
       GOMODCACHE: /cache/gomod
       GOCACHE: /cache/go
     command: |
-      make dev/client
+      make watch/client
     dns:
       - 192.168.97.4 # use server as a DNS
       - 8.8.8.8      # fallback to Google DNS
