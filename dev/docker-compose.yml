@@ -10,9 +10,6 @@ services:
       POSTGRES_USER: db
       POSTGRES_PASSWORD: db
       POSTGRES_DB: db_test
-    networks:
-      sonar:
-        ipv4_address: 192.168.97.2
 
   pebble:
     image: ghcr.io/letsencrypt/pebble:latest
@@ -21,35 +18,26 @@ services:
       PEBBLE_VA_ALWAYS_VALID: 1
       PEBBLE_AUTHZREUSE: 0
       PEBBLE_WFE_NONCEREJECT: 0
-    networks:
-      sonar:
-        ipv4_address: 192.168.97.3
 
-  server:
+  dev:
     restart: always
     build:
       dockerfile: dev/Dockerfile
     volumes:
       - .:/app
+      - ./dev/client.toml:/root/.config/sonar/config.toml
       - cache:/cache
-      - tls:/tls
+      - /var/run/docker.sock:/var/run/docker.sock # for release/snapshot command
     working_dir: /app
-    ports:
-      - 21:21
-      - 25:25
-      - 53:53/udp
-      - 80:80
-      - 443:443
-      - 31337:31337
     environment:
       GOMODCACHE: /cache/gomod
       GOCACHE: /cache/go
       CERTMGR_CA_DIR_URL: https://pebble:14000/dir
       SONAR_DB_DSN: postgres://db:db@postgres:5432/db_test?sslmode=disable
       SONAR_DOMAIN: sonar.test
-      SONAR_IP: 192.168.97.4
+      SONAR_IP: 127.0.0.1
       SONAR_TLS_TYPE: letsencrypt
-      SONAR_TLS_LETSENCRYPT_DIRECTORY: /tls
+      SONAR_TLS_LETSENCRYPT_DIRECTORY: /cache/tls
       SONAR_TLS_LETSENCRYPT_EMAIL: test@example.com
       SONAR_TLS_LETSENCRYPT_CA_DIR_URL: https://pebble:14000/dir
       SONAR_TLS_LETSENCRYPT_CA_INSECURE: true
@@ -64,55 +52,23 @@ services:
       SONAR_MODULES_SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
       SONAR_MODULES_SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
     command: |
-      make watch/server
-    networks:
-      sonar:
-        ipv4_address: 192.168.97.4
-
-  client:
-    build:
-      dockerfile: dev/Dockerfile
-    volumes:
-      - .:/app
-      - ./dev/client.toml:/root/.config/sonar/config.toml
-      - cache:/cache
-    working_dir: /app
-    environment:
-      GOMODCACHE: /cache/gomod
-      GOCACHE: /cache/go
-    command: |
-      make watch/client
+      make watch
     dns:
-      - 192.168.97.4 # use server as a DNS
-      - 8.8.8.8      # fallback to Google DNS
-    networks:
-      sonar:
-        ipv4_address: 192.168.97.5
+      - 127.0.0.1 # use sonar server as a DNS
+      - 8.8.8.8   # fallback to Google DNS
 
   docs:
-    build:
-      dockerfile: dev/Dockerfile
+    image: node:latest
     volumes:
-      - .:/app
+      - ./docs:/app
     working_dir: /app
     command:
       - /bin/bash
       - -c
-      - make docs/deps && make docs/dev
+      - npm install && npm run start -- --host 0.0.0.0 --port 3000
     ports:
       - 3000:3000
-    networks:
-      sonar:
-        ipv4_address: 192.168.97.6
 
 volumes:
   cache:
   db:
-  tls:
-
-networks:
-  sonar:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.97.0/24

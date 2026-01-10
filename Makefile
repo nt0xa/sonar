@@ -4,10 +4,11 @@ SHELL := /bin/bash
 COMPOSE := docker compose --project-name sonar --project-directory . --file dev/docker-compose.yml
 IN_DOCKER := $(shell [ -f /.dockerenv ] && echo 1)
 
+# Required because some commands need to be run inside the container.
 ifdef IN_DOCKER
     EXEC :=
 else
-    EXEC := $(COMPOSE) exec server
+    EXEC := $(COMPOSE) exec dev
 endif
 
 #
@@ -20,18 +21,19 @@ default: build
 build: build/server build/client
 
 .PHONY: build/server
-build/server: require-container-server
+build/server:
 	@echo "Building server..."
 	@$(EXEC) mkdir -p build
 	@$(EXEC) go build -o build/server ./cmd/server
 
 .PHONY: build/client
-build/client: require-container-server
+build/client:
 	@echo "Building client..."
 	@$(EXEC) mkdir -p build
 	@$(EXEC) go build -o build/sonar ./cmd/client
 
-clean: require-container-server
+.PHONY: clean/build
+clean/build:
 	@echo "Cleaning build artifacts..."
 	@$(EXEC) rm -rf build completions coverage.out
 
@@ -53,87 +55,68 @@ completions: build/client
 #
 
 .PHONY: release/snapshot
-release/snapshot: require-container-server
+release/snapshot:
 	@$(EXEC) goreleaser release --clean --snapshot
 
 #
-# Docker compose
+# Docker compose commands.
 #
 
+# Start the development environment.
 .PHONY: up
 up:
 	@$(COMPOSE) up
 
+# Stop the development environment.
 .PHONY: down
 down:
 	@$(COMPOSE) down
 
-.PHONY: restart/server
-restart/server:
-	@$(COMPOSE) restart server
+# Restart the development container.
+.PHONY: restart
+restart:
+	@$(COMPOSE) restart dev
 
-.PHONY: restart/client
-restart/client:
-	@$(COMPOSE) restart client
-
-.PHONY: recreate/server
-recreate/server:
-	@$(COMPOSE) rm --force --stop server
+# Recreates the development container.
+.PHONY: recreate
+recreate:
+	@$(COMPOSE) rm --force --stop dev
 	@$(COMPOSE) up --detach
 
+# Clean docker volumes.
 .PHONY: clean/volumes
 clean/volumes:
 	@$(COMPOSE) down --volumes
 
+# Clean docker images.
 .PHONY: clean/images
 clean/images:
 	@$(COMPOSE) down --rmi local
 
-.PHONY: exec/client
-exec/client:
-	@$(COMPOSE) exec client bash
-
-.PHONY: exec/server
-exec/server:
-	@$(COMPOSE) exec server bash
+# Start a shell inside the development container.
+.PHONY: enter
+enter:
+	@$(COMPOSE) exec dev bash
 
 #
 # Watch (auto-restart)
 #
 
-.PHONY: watch/server
-watch/server:
+# Rebuilds both server and client on code changes and restarts the server.
+# Used as a dev container command in dev/docker-compose.yml.
+.PHONY: watch
+watch:
 	@$(EXEC) air \
 		-build.bin build/server \
-		-build.cmd "make build/server" \
+		-build.cmd "make build" \
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true
-
-.PHONY: watch/client
-watch/client:
-	@$(EXEC) air \
-		-build.bin /usr/bin/true \
-		-build.cmd "make build/client" \
-		-build.exclude_dir docs \
-		-misc.clean_on_exit true
-
-#
-# Docs
-#
-
-.PHONY: docs/dev
-docs/dev:
-	@cd docs && npm run start -- --host 0.0.0.0 --port 3000
-
-.PHONY: docs/deps
-docs/deps:
-	@cd docs && npm install
-
 
 #
 # Tools
 #
 
+# Used in dev/Dockerfile to install devtools inside a development container image.
 .PHONY: devtools
 devtools: 
 	@echo "Installing development tools..."
@@ -148,12 +131,12 @@ devtools:
 #
 
 .PHONY: test
-test: require-container-server
+test:
 	@echo "Running tests..."
 	@$(EXEC) go test ./... -v -p 1 -coverprofile coverage.out
 
 .PHONY: coverage
-coverage: require-container-server
+coverage:
 	@go tool cover -html=coverage.out
 
 #
@@ -161,12 +144,12 @@ coverage: require-container-server
 #
 
 .PHONY: fmt
-fmt: require-container-server
+fmt:
 	@echo "Formatting code..."
 	@go fmt ./...
 
 .PHONY: lint
-lint: require-container-server
+lint:
 	@echo "Linting code..."
 	@golangci-lint run
 
@@ -178,49 +161,48 @@ lint: require-container-server
 generate: generate/api generate/cmd generate/client generate/mocks
 
 .PHONY: generate/api
-generate/api: require-container-server
+generate/api:
 	@echo "Generating API..."
 	@$(EXEC) go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/cmd
-generate/cmd: require-container-server
+generate/cmd:
 	@echo "Generating CLI..."
 	@$(EXEC) go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/client
-generate/client: require-container-server
+generate/client:
 	@echo "Generating API client..."
 	@$(EXEC) go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
 	@$(MAKE) fmt
 
 .PHONY: generate/mocks
-generate/mocks: require-container-server
+generate/mocks:
 	@echo "Generating mocks..."
 	@$(EXEC) mockery \
 		--dir internal/actions \
 		--output internal/actions/mock \
 		--outpkg actions_mock \
-		--name Actions ;
+		--name Actions
 
 #
 # Migrations
 #
 
-DB_MIGRATIONS_DIR := internal/database/migrations
-override MIGRATE := $(LOCAL_BIN)/migrate -path $(DB_MIGRATIONS_DIR) -database $(DB_DSN)
+MIGRATE := $(EXEC) migrate -path internal/database/migrations -database $(SONAR_DB_DSN)
 
 .PHONY: migrations/create
 migrations/create: guard-NAME
-	@$(LOCAL_BIN)/migrate create -ext sql -dir $(DB_MIGRATIONS_DIR) -seq $(NAME) ;
+	@$(EXEC) migrate create -ext sql -dir internal/database/migrations -seq $(NAME)
 
 .PHONY: migrations/up
-migrations/up:
+migrations/up: guard-N
 	@$(MIGRATE) up $(N)
 
 .PHONY: migrations/down
-migrations/down:
+migrations/down: guard-N
 	@$(MIGRATE) down $(N)
 
 .PHONY: migrations/goto
@@ -239,21 +221,8 @@ migrations/force: guard-V
 # Helpers
 #
 
-define INFO
-	@echo -e "\033[1m$(1)\033[0m"
-endef
-
 guard-%:
 	@if [ "${${*}}" = "" ]; then \
 		echo "ERROR: Environment variable \"$*\" not set"; \
-		exit 1; \
-	fi
-
-require-container-%:
-	@if [ -f /.dockerenv ]; then \
-		exit 0; \
-	fi; \
-	if [ -z "$$($(COMPOSE) ps -q $* --status running 2>/dev/null)" ]; then \
-		echo "ERROR: Container \"$*\" is not running"; \
 		exit 1; \
 	fi
