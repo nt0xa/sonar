@@ -6,9 +6,9 @@ IN_DOCKER := $(shell [ -f /.dockerenv ] && echo 1)
 
 # Required because some commands need to be run inside the container.
 ifdef IN_DOCKER
-    EXEC :=
+    EXEC ?=
 else
-    EXEC := $(COMPOSE) exec dev
+    EXEC ?= $(COMPOSE) exec dev
 endif
 
 #
