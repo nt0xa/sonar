@@ -1,6 +1,7 @@
 FROM golang:latest
 ENV PATH="/app/build:${PATH}"
 RUN apt-get update && apt-get install -y \
+  docker-cli \
   bind9-host \
   curl \
   swaks \

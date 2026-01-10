@@ -7,6 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  EXEC: "" # execute outside of Docker in CI
 
 jobs:
   release:
@@ -52,5 +53,6 @@ jobs:
         version: latest
         args: release --clean
       env:
+        EXEC: ""
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_PAT }}

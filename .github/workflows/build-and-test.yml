@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+env:
+  EXEC: "" # execute outside of Docker in CI
+
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
