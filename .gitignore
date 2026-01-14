@@ -9,6 +9,7 @@ dist/
 
 # Tests
 coverage.out
+coverage.html
 letsencrypt/
 tls/
 
