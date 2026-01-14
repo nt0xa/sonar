@@ -137,7 +137,7 @@ test:
 
 .PHONY: coverage
 coverage:
-	@go tool cover -html=coverage.out
+	@$(EXEC) go tool cover -html coverage.out -o coverage.html
 
 #
 # Lint & format
