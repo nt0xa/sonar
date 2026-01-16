@@ -196,8 +196,20 @@ func (h *EventsHandler) addGeoIPMetadata(e *models.Event) {
 			return
 		}
 
-		if m := utils.StructToMap(info); len(m) > 0 {
-			e.Meta["geoip"] = m
+		if info != nil {
+			e.Meta.GeoIPMeta = &models.GeoIPMeta{
+				City:         info.City,
+				Country: models.GeoIPCountry{
+					Name:      info.Country.Name,
+					ISOCode:   info.Country.ISOCode,
+					FlagEmoji: info.Country.FlagEmoji,
+				},
+				Subdivisions: info.Subdivisions,
+				ASN: models.GeoIPASN{
+					Number: info.ASN.Number,
+					Org:    info.ASN.Org,
+				},
+			}
 		}
 	}
 }

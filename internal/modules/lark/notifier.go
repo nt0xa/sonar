@@ -22,12 +22,9 @@ func (lrk *Lark) Name() string {
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	body := string(n.Event.RW)
 
-	// TODO: Change when .Meta is struct
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		if email, ok := n.Event.Meta["email"].(map[string]any); ok {
-			if text := email["text"]; text != nil {
-				body = text.(string)
-			}
+		if n.Event.Meta.SMTPMeta != nil && len(n.Event.Meta.SMTPMeta.Email.Text) > 0 {
+			body = n.Event.Meta.SMTPMeta.Email.Text
 		}
 	}
 
@@ -47,14 +44,10 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 
 	// For SMTP send mail.eml for better preview.
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		sess, ok := n.Event.Meta["session"].(map[string]any)
-		if !ok {
+		if n.Event.Meta.SMTPMeta == nil {
 			return nil
 		}
-		data, ok := sess["data"].(string)
-		if !ok {
-			return nil
-		}
+		data := n.Event.Meta.SMTPMeta.Session.Data
 
 		lrk.docMessage(ctx, n.User.Params.LarkUserID,
 			fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),

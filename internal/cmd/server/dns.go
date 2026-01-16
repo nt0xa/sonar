@@ -144,31 +144,18 @@ func DNSTelemetryHandler(tel telemetry.Telemetry, next dnsx.Handler) dnsx.Handle
 }
 
 func DNSEvent(e *dnsx.Event) *models.Event {
-	type Question struct {
-		Name string `structs:"name"`
-		Type string `structs:"type"`
+	dnsMeta := &models.DNSMeta{
+		Question: models.DNSQuestion{
+			Name: strings.Trim(e.Msg.Question[0].Name, "."),
+			Type: dnsx.QtypeString(e.Msg.Question[0].Qtype),
+		},
 	}
 
-	type Answer struct {
-		Name string `structs:"name"`
-		Type string `structs:"type"`
-		TTL  uint32 `structs:"ttl"`
-	}
-
-	type Meta struct {
-		Question Question `structs:"question"`
-		Answer   []Answer `structs:"answer"`
-	}
-
-	meta := new(Meta)
 	w := ""
-
-	meta.Question.Name = strings.Trim(e.Msg.Question[0].Name, ".")
-	meta.Question.Type = dnsx.QtypeString(e.Msg.Question[0].Qtype)
 
 	if len(e.Msg.Answer) > 0 {
 		for _, rr := range e.Msg.Answer {
-			meta.Answer = append(meta.Answer, Answer{
+			dnsMeta.Answer = append(dnsMeta.Answer, models.DNSAnswer{
 				Name: strings.Trim(rr.Header().Name, "."),
 				Type: dnsx.QtypeString(rr.Header().Rrtype),
 				TTL:  rr.Header().Ttl,
@@ -184,6 +171,8 @@ func DNSEvent(e *dnsx.Event) *models.Event {
 		RW:         []byte(e.Msg.String()),
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
-		Meta:       models.Meta(structs.Map(meta)),
+		Meta: models.Meta{
+			DNSMeta: dnsMeta,
+		},
 	}
 }

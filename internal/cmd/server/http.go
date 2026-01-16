@@ -118,47 +118,25 @@ func HTTPHandler(
 }
 
 func HTTPEvent(e *httpx.Event) *models.Event {
-	type Request struct {
-		Method  string      `structs:"method"`
-		Proto   string      `structs:"proto"`
-		URL     string      `structs:"url"`
-		Host    string      `structs:"host"`
-		Headers http.Header `structs:"headers"`
-		Body    string      `structs:"body"`
-	}
+	reqBody, _ := io.ReadAll(e.Request.Body)
+	resBody, _ := io.ReadAll(e.Response.Body)
 
-	type Response struct {
-		Status  int         `structs:"status"`
-		Headers http.Header `structs:"headers"`
-		Body    string      `structs:"body"`
-	}
-
-	type Meta struct {
-		Request  Request  `structs:"request"`
-		Response Response `structs:"response"`
-		Secure   bool     `structs:"secure"`
-	}
-
-	meta := &Meta{
-		Request: Request{
+	httpMeta := &models.HTTPMeta{
+		Request: models.HTTPRequest{
 			Method:  e.Request.Method,
 			Proto:   e.Request.Proto,
 			Headers: e.Request.Header,
 			Host:    e.Request.Host,
 			URL:     e.Request.URL.String(),
+			Body:    base64.StdEncoding.EncodeToString(reqBody),
 		},
-		Response: Response{
+		Response: models.HTTPResponse{
 			Status:  e.Response.StatusCode,
 			Headers: e.Response.Header,
+			Body:    base64.StdEncoding.EncodeToString(resBody),
 		},
 		Secure: e.Secure,
 	}
-
-	reqBody, _ := io.ReadAll(e.Request.Body)
-	meta.Request.Body = base64.StdEncoding.EncodeToString(reqBody)
-
-	resBody, _ := io.ReadAll(e.Response.Body)
-	meta.Response.Body = base64.StdEncoding.EncodeToString(resBody)
 
 	var proto models.Proto
 
@@ -173,7 +151,9 @@ func HTTPEvent(e *httpx.Event) *models.Event {
 		R:          e.RawRequest,
 		W:          e.RawResponse,
 		RW:         append(e.RawRequest[:], e.RawResponse...),
-		Meta:       models.Meta(structs.Map(meta)),
+		Meta: models.Meta{
+			HTTPMeta: httpMeta,
+		},
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}

@@ -48,18 +48,18 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	))
 
 	// GeoIP information if available
-	if geo, ok := n.Event.Meta["geoip"]; ok {
-		g, _ := geo.(map[string]any)
+	if n.Event.Meta.GeoIPMeta != nil {
+		g := n.Event.Meta.GeoIPMeta
 		var locationField, orgField *slack.TextBlockObject
 
-		if country, ok := g["country"].(map[string]any); ok {
+		if g.Country.Name != "" {
 			location := fmt.Sprintf(":round_pushpin: *Location*\n%s %s",
-				country["flagEmoji"],
-				country["name"],
+				g.Country.FlagEmoji,
+				g.Country.Name,
 			)
 
-			if city, ok := g["city"]; ok {
-				location += ", " + city.(string)
+			if g.City != "" {
+				location += ", " + g.City
 			}
 
 			locationField = &slack.TextBlockObject{
@@ -68,12 +68,12 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 			}
 		}
 
-		if asn, ok := g["asn"].(map[string]any); ok {
+		if g.ASN.Org != "" {
 			orgField = &slack.TextBlockObject{
 				Type: slack.MarkdownType,
 				Text: fmt.Sprintf(":office: *Org*\n%s (AS%d)",
-					asn["org"],
-					asn["number"],
+					g.ASN.Org,
+					g.ASN.Number,
 				),
 			}
 		}
@@ -96,13 +96,14 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	}
 
 	// Email metadata if available
-	if email, ok := n.Event.Meta["email"].(map[string]any); ok {
+	if n.Event.Meta.SMTPMeta != nil {
+		email := n.Event.Meta.SMTPMeta.Email
 		var fromField, subjectField *slack.TextBlockObject
 
-		if from, ok := email["from"].([]any); ok {
+		if len(email.From) > 0 {
 			var emails []string
-			for _, f := range from {
-				emails = append(emails, f.(map[string]any)["email"].(string))
+			for _, f := range email.From {
+				emails = append(emails, f.Email)
 			}
 
 			fromField = &slack.TextBlockObject{
@@ -111,10 +112,10 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 			}
 		}
 
-		if subject, ok := email["subject"].(string); ok {
+		if email.Subject != "" {
 			subjectField = &slack.TextBlockObject{
 				Type: slack.MarkdownType,
-				Text: fmt.Sprintf(":memo: *Subject*\n%s", subject),
+				Text: fmt.Sprintf(":memo: *Subject*\n%s", email.Subject),
 			}
 		}
 

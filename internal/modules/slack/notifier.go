@@ -17,15 +17,9 @@ func (s *Slack) Name() string {
 func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 	codeBlocks := make([]string, 0)
 
-	// TODO: Change when .Meta is struct
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		if email, ok := n.Event.Meta["email"].(map[string]any); ok {
-			if text := email["text"]; text != nil {
-				txt := text.(string)
-				if len(txt) > 0 {
-					codeBlocks = append(codeBlocks, txt)
-				}
-			}
+		if n.Event.Meta.SMTPMeta != nil && len(n.Event.Meta.SMTPMeta.Email.Text) > 0 {
+			codeBlocks = append(codeBlocks, n.Event.Meta.SMTPMeta.Email.Text)
 		}
 	} else {
 		codeBlocks = append(codeBlocks, string(n.Event.RW))
@@ -47,15 +41,11 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 
 	// For SMTP send mail.eml for better preview
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		sess, ok := n.Event.Meta["session"].(map[string]any)
-		if !ok {
+		if n.Event.Meta.SMTPMeta == nil {
 			return nil
 		}
 
-		data, ok := sess["data"].(string)
-		if !ok {
-			return nil
-		}
+		data := n.Event.Meta.SMTPMeta.Session.Data
 
 		// Upload .eml file
 		if len(data) > 0 {
