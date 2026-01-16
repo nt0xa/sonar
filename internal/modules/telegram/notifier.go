@@ -29,13 +29,11 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 
 	// For SMTP send log.eml for better preview.
 	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		// TODO: make .Meta structure
-		sess, ok := n.Event.Meta["session"].(map[string]any)
-		if !ok {
+		if n.Event.Meta.SMTP == nil {
 			return nil
 		}
-		data, ok := sess["data"].(string)
-		if !ok {
+		data := n.Event.Meta.SMTP.Session.Data
+		if len(data) == 0 {
 			return nil
 		}
 

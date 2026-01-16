@@ -177,16 +177,16 @@ func TestCard(t *testing.T) {
 			Protocol: models.Proto{Name: "http"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"geoip": map[string]any{
-					"city": "London",
-					"country": map[string]any{
-						"name":      "United Kingdom",
-						"isoCode":   "GB",
-						"flagEmoji": "🇬🇧",
+				GeoIP: &models.GeoIPMeta{
+					City: "London",
+					Country: models.GeoIPCountry{
+						Name:      "United Kingdom",
+						ISOCode:   "GB",
+						FlagEmoji: "🇬🇧",
 					},
-					"asn": map[string]any{
-						"org":    "Google Inc.",
-						"number": 1234,
+					ASN: models.GeoIPASN{
+						Org:    "Google Inc.",
+						Number: 1234,
 					},
 				},
 			},

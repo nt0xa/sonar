@@ -83,14 +83,20 @@ func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 }
 
 func FTPEvent(e *ftpx.Event) *models.Event {
-	type Meta struct {
-		Session ftpx.Data `structs:"session"`
-		Secure  bool      `structs:"secure"`
-	}
-
-	meta := &Meta{
-		Session: e.Data,
-		Secure:  e.Secure,
+	meta := models.Meta{
+		FTP: &models.FTPMeta{
+			Session: models.FTPSession{
+				User: e.Data.User,
+				Pass: e.Data.Pass,
+				Type: e.Data.Type,
+				Pasv: e.Data.Pasv,
+				Epsv: e.Data.Epsv,
+				Port: e.Data.Port,
+				Eprt: e.Data.Eprt,
+				Retr: e.Data.Retr,
+			},
+			Secure: e.Secure,
+		},
 	}
 
 	return &models.Event{
@@ -98,7 +104,7 @@ func FTPEvent(e *ftpx.Event) *models.Event {
 		R:          e.R,
 		W:          e.W,
 		RW:         e.RW,
-		Meta:       structs.Map(meta),
+		Meta:       meta,
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}

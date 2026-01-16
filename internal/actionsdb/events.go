@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
@@ -12,13 +13,20 @@ import (
 )
 
 func Event(m models.Event) actions.Event {
+	// Convert models.Meta to map[string]interface{} via JSON marshaling
+	// This uses the custom MarshalJSON method which produces the correct format
+	var meta map[string]interface{}
+	if metaBytes, err := json.Marshal(m.Meta); err == nil {
+		_ = json.Unmarshal(metaBytes, &meta)
+	}
+
 	return actions.Event{
 		Index:      m.Index,
 		Protocol:   m.Protocol.String(),
 		R:          base64.StdEncoding.EncodeToString(m.R),
 		W:          base64.StdEncoding.EncodeToString(m.W),
 		RW:         base64.StdEncoding.EncodeToString(m.RW),
-		Meta:       m.Meta,
+		Meta:       meta,
 		RemoteAddr: m.RemoteAddr,
 		ReceivedAt: m.ReceivedAt,
 	}

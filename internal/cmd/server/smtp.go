@@ -89,39 +89,10 @@ func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 }
 
 func SMTPEvent(e *smtpx.Event) *models.Event {
-	type Address struct {
-		Name  string `structs:"name"`
-		Email string `structs:"email"`
-	}
-
-	type Email struct {
-		Subject string     `structs:"subject"`
-		From    []Address  `structs:"from"`
-		To      []Address  `structs:"to"`
-		Cc      []Address  `structs:"cc"`
-		Bcc     []Address  `structs:"bcc"`
-		Date    *time.Time `structs:"date"`
-		Text    string     `structs:"text"`
-	}
-
-	type Session struct {
-		Helo     string   `structs:"helo"`
-		Ehlo     string   `structs:"ehlo"`
-		MailFrom string   `structs:"mailFrom"`
-		RcptTo   []string `structs:"rcptTo"`
-		Data     string   `structs:"data"`
-	}
-
-	type Meta struct {
-		Session Session `structs:"session"`
-		Email   Email   `structs:"email"`
-		Secure  bool    `structs:"secure"`
-	}
-
-	addr := func(mm []*mail.Address) []Address {
-		res := make([]Address, len(mm))
+	addr := func(mm []*mail.Address) []models.SMTPAddress {
+		res := make([]models.SMTPAddress, len(mm))
 		for i, m := range mm {
-			res[i] = Address{
+			res[i] = models.SMTPAddress{
 				Name:  m.Name,
 				Email: m.Address,
 			}
@@ -129,24 +100,26 @@ func SMTPEvent(e *smtpx.Event) *models.Event {
 		return res
 	}
 
-	meta := &Meta{
-		Session: Session{
-			Helo:     e.Data.Helo,
-			Ehlo:     e.Data.Ehlo,
-			MailFrom: e.Data.MailFrom,
-			RcptTo:   e.Data.RcptTo,
-			Data:     e.Data.Data,
+	meta := models.Meta{
+		SMTP: &models.SMTPMeta{
+			Session: models.SMTPSession{
+				Helo:     e.Data.Helo,
+				Ehlo:     e.Data.Ehlo,
+				MailFrom: e.Data.MailFrom,
+				RcptTo:   e.Data.RcptTo,
+				Data:     e.Data.Data,
+			},
+			Email: models.SMTPEmail{
+				Subject: e.Email.Subject,
+				From:    addr(e.Email.From),
+				To:      addr(e.Email.To),
+				Cc:      addr(e.Email.Cc),
+				Bcc:     addr(e.Email.Bcc),
+				Date:    e.Email.Date,
+				Text:    e.Email.Text,
+			},
+			Secure: e.Secure,
 		},
-		Email: Email{
-			Subject: e.Email.Subject,
-			From:    addr(e.Email.From),
-			To:      addr(e.Email.To),
-			Cc:      addr(e.Email.Cc),
-			Bcc:     addr(e.Email.Bcc),
-			Date:    e.Email.Date,
-			Text:    e.Email.Text,
-		},
-		Secure: e.Secure,
 	}
 
 	return &models.Event{
@@ -154,7 +127,7 @@ func SMTPEvent(e *smtpx.Event) *models.Event {
 		RW:         e.RW,
 		R:          e.R,
 		W:          e.W,
-		Meta:       structs.Map(meta),
+		Meta:       meta,
 		RemoteAddr: e.RemoteAddr.String(),
 		ReceivedAt: e.ReceivedAt,
 	}
