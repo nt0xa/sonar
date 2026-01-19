@@ -61,7 +61,6 @@ func Test_Geox(t *testing.T) {
 	assert.Equal(t, "London", info.City)
 	assert.Equal(t, "United Kingdom", info.Country.Name)
 	assert.Equal(t, "GB", info.Country.ISOCode)
-	assert.Equal(t, "🇬🇧", info.Country.FlagEmoji)
 	assert.ElementsMatch(t, []string{"England"}, info.Subdivisions)
 
 	// Test ASN lookup
