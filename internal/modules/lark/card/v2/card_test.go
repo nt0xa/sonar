@@ -183,7 +183,6 @@ func TestCard(t *testing.T) {
 					Country: geoipx.Country{
 						Name:      "United Kingdom",
 						ISOCode:   "GB",
-						FlagEmoji: "🇬🇧",
 					},
 					ASN: geoipx.ASN{
 						Org:    "Google Inc.",
