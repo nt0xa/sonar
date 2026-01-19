@@ -21,15 +21,34 @@ const (
 	contentTypeTextHTML  = "text/html"
 )
 
+type Address struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
 type Email struct {
-	Subject string
-	From    []*mail.Address
-	To      []*mail.Address
-	Cc      []*mail.Address
-	Bcc     []*mail.Address
-	Date    *time.Time
-	Text    string
-	HTML    string
+	Subject string     `json:"subject"`
+	From    []Address  `json:"from"`
+	To      []Address  `json:"to"`
+	Cc      []Address  `json:"cc"`
+	Bcc     []Address  `json:"bcc"`
+	Date    *time.Time `json:"date"`
+	Text    string     `json:"text"`
+	HTML    string     `json:"html"`
+}
+
+func parseAddressList(s string) []Address {
+	res := make([]Address, 0)
+	parsed, err := mail.ParseAddressList(s)
+	if err != nil {
+		return res
+	}
+
+	for _, addr := range parsed {
+		res = append(res, Address{Name: addr.Name, Address: addr.Address})
+	}
+
+	return res
 }
 
 // Parse an email message read from io.Reader into parsemail.Email struct, only extracting text/plain.
@@ -42,10 +61,10 @@ func Parse(data string) Email {
 	}
 
 	email.Subject = decodeMimeSentence(msg.Header.Get("Subject"))
-	email.From, _ = mail.ParseAddressList(msg.Header.Get("From"))
-	email.To, _ = mail.ParseAddressList(msg.Header.Get("To"))
-	email.Cc, _ = mail.ParseAddressList(msg.Header.Get("Cc"))
-	email.Bcc, _ = mail.ParseAddressList(msg.Header.Get("Bcc"))
+	email.From = parseAddressList(msg.Header.Get("From"))
+	email.To = parseAddressList(msg.Header.Get("To"))
+	email.Cc = parseAddressList(msg.Header.Get("Cc"))
+	email.Bcc = parseAddressList(msg.Header.Get("Bcc"))
 	email.Date, _ = parseDate(msg.Header.Get("Date"))
 
 	var (

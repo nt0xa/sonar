@@ -33,8 +33,8 @@ type NotifierMock struct {
 	mock.Mock
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]any) {
-	m.Called(remoteAddr, data, meta)
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, secure bool) {
+	m.Called(remoteAddr.String(), string(data), secure)
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -59,10 +59,15 @@ func TestMain(m *testing.M) {
 		httpx.BodyReaderHandler(
 			httpx.MaxBytesHandler(
 				httpx.NotifyHandler(
-					func(ctx context.Context, e *httpx.Event) {
-						notifier.Notify(e.RemoteAddr, append(e.RawRequest[:], e.RawResponse...), map[string]any{
-							"tls": e.Secure,
-						})
+					func(
+						ctx context.Context,
+						remoteAddr net.Addr,
+						receivedAt *time.Time,
+						secure bool,
+						read, written, combined []byte,
+						meta *httpx.Meta,
+					) {
+						notifier.Notify(remoteAddr, combined, secure)
 					},
 					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -344,20 +349,17 @@ func TestHTTPX(t *testing.T) {
 						// know remote address of the connection.
 						notifier.
 							On("Notify",
-								mock.MatchedBy(func(addr net.Addr) bool {
-									return conn.LocalAddr().String() == addr.String()
-								}),
-								mock.MatchedBy(func(data []byte) bool {
+								conn.LocalAddr().String(),
+								mock.MatchedBy(func(data string) bool {
 									for _, s := range contains {
-										if !strings.Contains(string(data), s) {
+										if !strings.Contains(data, s) {
 											return false
 										}
 									}
 									return true
 								}),
-								map[string]any{
-									"tls": isTLS,
-								}).
+								isTLS,
+							).
 							Once().
 							Run(func(args mock.Arguments) {
 								wg.Done()

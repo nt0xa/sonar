@@ -191,14 +191,14 @@ generate/mocks:
 # Migrations
 #
 
-MIGRATE := $(EXEC) migrate -path internal/database/migrations -database $(SONAR_DB_DSN)
+MIGRATE = $(EXEC) sh -c 'migrate -path internal/database/migrations -database "$$SONAR_DB_DSN" "$$@"' _
 
 .PHONY: migrations/create
 migrations/create: guard-NAME
 	@$(EXEC) migrate create -ext sql -dir internal/database/migrations -seq $(NAME)
 
 .PHONY: migrations/up
-migrations/up: guard-N
+migrations/up:
 	@$(MIGRATE) up $(N)
 
 .PHONY: migrations/down

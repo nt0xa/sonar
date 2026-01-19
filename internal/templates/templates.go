@@ -88,6 +88,7 @@ func makeTemplate(s string, domain string, opts templateOptions) *template {
 		"domain": func() string {
 			return domain
 		},
+		"flag": FlagEmoji,
 	}
 
 	maps.Copy(extraFuncs, opts.extraFuncs)
@@ -129,4 +130,19 @@ func (t *template) render(data any) (string, error) {
 	}
 
 	return s, nil
+}
+
+func FlagEmoji(countryCode string) string {
+	countryCode = strings.ToUpper(countryCode)
+	if len(countryCode) != 2 {
+		return "" // Invalid code
+	}
+	runes := []rune{}
+	for _, c := range countryCode {
+		if c < 'A' || c > 'Z' {
+			return "" // Invalid character
+		}
+		runes = append(runes, 0x1F1E6+(c-'A'))
+	}
+	return string(runes)
 }

@@ -4,21 +4,16 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"time"
 
 	"github.com/nt0xa/sonar/pkg/netx"
 )
-
-// Response represents simplified version of HTTP response.
-type Response struct {
-	Code    int
-	Headers http.Header
-	Body    io.ReadCloser
-}
 
 func MaxBytesHandler(h http.Handler, n int64) http.Handler {
 	return &maxBytesHandler{h, n}
@@ -34,40 +29,27 @@ func (h *maxBytesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.h.ServeHTTP(w, r)
 }
 
-// Event represents HTTP event.
-type Event struct {
-	// RemoteAddr is the address of client.
-	RemoteAddr net.Addr
+type NotifyFunc func(
+	ctx context.Context,
+	remoteAddr net.Addr,
+	receivedAt *time.Time,
+	secure bool,
+	read []byte,
+	written []byte,
+	combined []byte,
+	meta *Meta,
+)
 
-	// Request is a HTTP request.
-	Request *http.Request
-
-	// RawRequest is raw HTTP request.
-	RawRequest []byte
-
-	// Response is a HTTP response.
-	Response *http.Response
-
-	// RawResponse is raw HTTP response.
-	RawResponse []byte
-
-	// Secure shows if connection is TLS.
-	Secure bool
-
-	// ReceivedAt is the time of receiving query.
-	ReceivedAt time.Time
-}
-
-func NotifyHandler(notify func(context.Context, *Event), next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func NotifyHandler(notify NotifyFunc, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		wr := httptest.NewRecorder()
 		start := time.Now()
 
-		next.ServeHTTP(wr, r)
+		next.ServeHTTP(wr, req)
 
 		res := wr.Result()
 
-		conn, ok := getConn(r).(*netx.LoggingConn)
+		conn, ok := getConn(req).(*netx.LoggingConn)
 		if !ok {
 			return
 		}
@@ -75,15 +57,37 @@ func NotifyHandler(notify func(context.Context, *Event), next http.Handler) http
 		conn.OnClose = func() {
 			_, secure := conn.Conn.(*tls.Conn)
 
-			notify(r.Context(), &Event{
-				RemoteAddr:  conn.RemoteAddr(),
-				Request:     r,
-				RawRequest:  conn.R.Bytes(),
-				Response:    res,
-				RawResponse: conn.W.Bytes(),
-				Secure:      secure,
-				ReceivedAt:  start,
-			})
+			reqBody, _ := io.ReadAll(req.Body)
+			resBody, _ := io.ReadAll(res.Body)
+
+			request := Request{
+				Method:  req.Method,
+				Proto:   req.Proto,
+				Headers: req.Header,
+				Host:    req.Host,
+				URL:     req.URL.String(),
+				Body:    base64.StdEncoding.EncodeToString(reqBody),
+			}
+
+			response := Response{
+				Status:  res.StatusCode,
+				Headers: res.Header,
+				Body:    base64.StdEncoding.EncodeToString(resBody),
+			}
+
+			notify(
+				req.Context(),
+				conn.RemoteAddr(),
+				&start,
+				secure,
+				conn.R.Bytes(),
+				conn.W.Bytes(),
+				slices.Concat(conn.R.Bytes(), conn.W.Bytes()),
+				&Meta{
+					Request:  request,
+					Response: response,
+				},
+			)
 		}
 
 		for k, vv := range res.Header {

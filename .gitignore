@@ -3,6 +3,7 @@ build/
 dist/
 /.tmp/
 /.bin/
+/tmp/
 
 # macOS
 .DS_Store

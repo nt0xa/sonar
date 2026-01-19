@@ -7,6 +7,8 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/slack/block"
+	"github.com/nt0xa/sonar/pkg/geoipx"
+	"github.com/nt0xa/sonar/pkg/smtpx"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/require"
 )
@@ -21,16 +23,16 @@ func TestBuild(t *testing.T) {
 			Protocol: models.Proto{Name: "http"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"geoip": map[string]any{
-					"city": "London",
-					"country": map[string]any{
-						"name":      "United Kingdom",
-						"isoCode":   "GB",
-						"flagEmoji": "🇬🇧",
+				GeoIP: &geoipx.Meta{
+					City: "London",
+					Country: geoipx.Country{
+						Name:      "United Kingdom",
+						ISOCode:   "GB",
+						FlagEmoji: "🇬🇧",
 					},
-					"asn": map[string]any{
-						"org":    "Google Inc.",
-						"number": 1234,
+					ASN: geoipx.ASN{
+						Org:    "Google Inc.",
+						Number: 1234,
 					},
 				},
 			},
@@ -119,13 +121,13 @@ func TestBuildWithEmail(t *testing.T) {
 			Protocol: models.Proto{Name: "smtp"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"email": map[string]any{
-					"from": []any{
-						map[string]any{
-							"email": "sender@example.com",
+				SMTP: &smtpx.Meta{
+					Email: smtpx.Email{
+						From: []smtpx.Address{
+							{Address: "sender@example.com"},
 						},
+						Subject: "Test Subject",
 					},
-					"subject": "Test Subject",
 				},
 			},
 			RemoteAddr: "10.13.37.1:1337",

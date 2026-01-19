@@ -17,7 +17,6 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
-	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
@@ -196,9 +195,7 @@ func (h *EventsHandler) addGeoIPMetadata(e *models.Event) {
 			return
 		}
 
-		if m := utils.StructToMap(info); len(m) > 0 {
-			e.Meta["geoip"] = m
-		}
+		e.Meta.GeoIP = info
 	}
 }
 

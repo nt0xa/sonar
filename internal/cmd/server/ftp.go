@@ -7,13 +7,13 @@ import (
 	"net"
 	"time"
 
-	"github.com/fatih/structs"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
@@ -32,7 +32,7 @@ func FTPHandler(
 	domain string,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
-	notify func(context.Context, *ftpx.Event),
+	notify ftpx.OnCloseFunc,
 ) netx.Handler {
 	return FTPTelemetry(
 		ftpx.SessionHandler(
@@ -82,24 +82,26 @@ func FTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 	})
 }
 
-func FTPEvent(e *ftpx.Event) *models.Event {
-	type Meta struct {
-		Session ftpx.Data `structs:"session"`
-		Secure  bool      `structs:"secure"`
-	}
-
-	meta := &Meta{
-		Session: e.Data,
-		Secure:  e.Secure,
-	}
-
-	return &models.Event{
-		Protocol:   models.ProtoFTP,
-		R:          e.R,
-		W:          e.W,
-		RW:         e.RW,
-		Meta:       structs.Map(meta),
-		RemoteAddr: e.RemoteAddr.String(),
-		ReceivedAt: e.ReceivedAt,
+func emitFTP(events *EventsHandler) ftpx.OnCloseFunc {
+	return func(
+		ctx context.Context,
+		remoteAddr net.Addr,
+		receivedAt *time.Time,
+		secure bool,
+		read, written, combined []byte,
+		meta *ftpx.Meta,
+	) {
+		events.Emit(ctx, &models.Event{
+			Protocol: models.ProtoFTP,
+			R:        read,
+			W:        written,
+			RW:       combined,
+			Meta: models.Meta{
+				FTP:    meta,
+				Secure: secure,
+			},
+			RemoteAddr: remoteAddr.String(),
+			ReceivedAt: *receivedAt,
+		})
 	}
 }

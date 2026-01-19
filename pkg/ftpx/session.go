@@ -34,32 +34,22 @@ type Data struct {
 	Retr string `structs:"retr"`
 }
 
-// Event represents FTP event.
-type Event struct {
-	// RemoteAddre is remote IP address.
-	RemoteAddr net.Addr
-
-	// RW is a full session log.
-	RW []byte
-
-	R []byte
-	W []byte
-
-	// Data stores args passed to the corresponding FTP commands during a session.
-	Data Data
-
-	// Secure shows connection was secure (with TLS).
-	Secure bool
-
-	// ReceivedAt is a session start time.
-	ReceivedAt time.Time
-}
-
 // Msg is used to store provided command responses.
 type Msg struct {
 	// Greet is server greet message.
 	Greet string
 }
+
+type OnCloseFunc func(
+	ctx context.Context,
+	remoteAddr net.Addr,
+	receivedAt *time.Time,
+	secure bool,
+	read []byte,
+	written []byte,
+	combined []byte,
+	meta *Meta,
+)
 
 // session contains all data required to handle FTP session.
 type session struct {
@@ -70,7 +60,7 @@ type session struct {
 	messages Msg
 
 	// onClose is a function that will be called when session is ended.
-	onClose func(context.Context, *Event)
+	onClose OnCloseFunc
 
 	// conn is a current TCP connection.
 	conn *netx.LoggingConn
@@ -83,7 +73,7 @@ type session struct {
 	data Data
 }
 
-func SessionHandler(msg Msg, log *slog.Logger, onClose func(context.Context, *Event)) netx.Handler {
+func SessionHandler(msg Msg, log *slog.Logger, onClose OnCloseFunc) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		newConn := netx.NewLoggingConn(conn)
 
@@ -100,15 +90,17 @@ func SessionHandler(msg Msg, log *slog.Logger, onClose func(context.Context, *Ev
 		newConn.OnClose = func() {
 			_, secure := sess.conn.Conn.(*tls.Conn)
 
-			sess.onClose(ctx, &Event{
-				RemoteAddr: sess.conn.RemoteAddr(),
-				RW:         sess.conn.RW.Bytes(),
-				R:          sess.conn.R.Bytes(),
-				W:          sess.conn.W.Bytes(),
-				Data:       sess.data,
-				Secure:     secure,
-				ReceivedAt: start,
-			})
+			sess.onClose(ctx,
+				sess.conn.RemoteAddr(),
+				&start,
+				secure,
+				sess.conn.R.Bytes(),
+				sess.conn.W.Bytes(),
+				sess.conn.RW.Bytes(),
+				&Meta{
+					Session: sess.data,
+				},
+			)
 		}
 
 		if err := sess.start(ctx); err != nil {

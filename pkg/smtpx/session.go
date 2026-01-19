@@ -31,45 +31,31 @@ var (
 // Data stores args passed to the corresponding SMTP commands.
 type Data struct {
 	// Helo is a "HELO" command data.
-	Helo string
+	Helo string `json:"helo"`
 
 	// Ehlo is a "EHLO" command data.
-	Ehlo string
+	Ehlo string `json:"ehlo"`
 
 	// MailFrom is a "MAIL FROM" command data.
-	MailFrom string
+	MailFrom string `json:"mailFrom"`
 
 	// RcptTo is a "RCPT TO" command data.
-	RcptTo []string
+	RcptTo []string `json:"rcptTo"`
 
 	// Data is a "DATA" command data.
-	Data string
+	Data string `json:"data"`
 }
 
-// Event represents SMTP event.
-type Event struct {
-	// RemoteAddre is remote IP address.
-	RemoteAddr net.Addr
-
-	// Log is a full session log.
-	RW []byte
-
-	R []byte
-	W []byte
-
-	// Data stores args passed to the corresponding SMTP commands during
-	// a session.
-	Data *Data
-
-	// Parsed "DATA" command data.
-	Email Email
-
-	// Secure shows connection was secure (with TLS).
-	Secure bool
-
-	// ReceivedAt is a session start time.
-	ReceivedAt time.Time
-}
+type OnCloseFunc func(
+	ctx context.Context,
+	remoteAddr net.Addr,
+	receivedAt *time.Time,
+	secure bool,
+	read []byte,
+	written []byte,
+	combined []byte,
+	meta *Meta,
+)
 
 // Msg is used to store provided command responses.
 type Msg struct {
@@ -93,7 +79,7 @@ type session struct {
 	tlsConfig *tls.Config
 
 	// onClose is a function that will be called when session is ended.
-	onClose func(context.Context, *Event)
+	onClose OnCloseFunc
 
 	// conn is a current TCP connection.
 	conn *netx.LoggingConn
@@ -113,7 +99,7 @@ func SessionHandler(
 	msgs Msg,
 	log *slog.Logger,
 	tlsConfig *tls.Config,
-	onClose func(context.Context, *Event),
+	onClose OnCloseFunc,
 ) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
 		newConn := netx.NewLoggingConn(conn)
@@ -134,19 +120,21 @@ func SessionHandler(
 		start := time.Now()
 
 		newConn.OnClose = func() {
-			fmt.Println("connection closed")
 			_, secure := sess.conn.Conn.(*tls.Conn)
 
-			sess.onClose(ctx, &Event{
-				RemoteAddr: sess.conn.RemoteAddr(),
-				RW:         sess.conn.RW.Bytes(),
-				R:          sess.conn.R.Bytes(),
-				W:          sess.conn.W.Bytes(),
-				Data:       sess.data,
-				Secure:     secure,
-				ReceivedAt: start,
-				Email:      Parse(sess.data.Data),
-			})
+			sess.onClose(
+				ctx,
+				sess.conn.RemoteAddr(),
+				&start,
+				secure,
+				sess.conn.R.Bytes(),
+				sess.conn.W.Bytes(),
+				sess.conn.RW.Bytes(),
+				&Meta{
+					Session: *sess.data,
+					Email:   Parse(sess.data.Data),
+				},
+			)
 		}
 
 		if err := sess.start(ctx); err != nil {

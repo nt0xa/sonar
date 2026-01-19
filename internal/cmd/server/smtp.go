@@ -5,10 +5,8 @@ import (
 	"crypto/tls"
 	"log/slog"
 	"net"
-	"net/mail"
 	"time"
 
-	"github.com/fatih/structs"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -35,7 +33,7 @@ func SMTPHandler(
 	log *slog.Logger,
 	tel telemetry.Telemetry,
 	tlsConfig *tls.Config,
-	notify func(context.Context, *smtpx.Event),
+	notify smtpx.OnCloseFunc,
 ) netx.Handler {
 	return SMTPTelemetry(
 		smtpx.SessionHandler(
@@ -88,74 +86,26 @@ func SMTPTelemetry(next netx.Handler, tel telemetry.Telemetry) netx.Handler {
 	})
 }
 
-func SMTPEvent(e *smtpx.Event) *models.Event {
-	type Address struct {
-		Name  string `structs:"name"`
-		Email string `structs:"email"`
-	}
-
-	type Email struct {
-		Subject string     `structs:"subject"`
-		From    []Address  `structs:"from"`
-		To      []Address  `structs:"to"`
-		Cc      []Address  `structs:"cc"`
-		Bcc     []Address  `structs:"bcc"`
-		Date    *time.Time `structs:"date"`
-		Text    string     `structs:"text"`
-	}
-
-	type Session struct {
-		Helo     string   `structs:"helo"`
-		Ehlo     string   `structs:"ehlo"`
-		MailFrom string   `structs:"mailFrom"`
-		RcptTo   []string `structs:"rcptTo"`
-		Data     string   `structs:"data"`
-	}
-
-	type Meta struct {
-		Session Session `structs:"session"`
-		Email   Email   `structs:"email"`
-		Secure  bool    `structs:"secure"`
-	}
-
-	addr := func(mm []*mail.Address) []Address {
-		res := make([]Address, len(mm))
-		for i, m := range mm {
-			res[i] = Address{
-				Name:  m.Name,
-				Email: m.Address,
-			}
-		}
-		return res
-	}
-
-	meta := &Meta{
-		Session: Session{
-			Helo:     e.Data.Helo,
-			Ehlo:     e.Data.Ehlo,
-			MailFrom: e.Data.MailFrom,
-			RcptTo:   e.Data.RcptTo,
-			Data:     e.Data.Data,
-		},
-		Email: Email{
-			Subject: e.Email.Subject,
-			From:    addr(e.Email.From),
-			To:      addr(e.Email.To),
-			Cc:      addr(e.Email.Cc),
-			Bcc:     addr(e.Email.Bcc),
-			Date:    e.Email.Date,
-			Text:    e.Email.Text,
-		},
-		Secure: e.Secure,
-	}
-
-	return &models.Event{
-		Protocol:   models.ProtoSMTP,
-		RW:         e.RW,
-		R:          e.R,
-		W:          e.W,
-		Meta:       structs.Map(meta),
-		RemoteAddr: e.RemoteAddr.String(),
-		ReceivedAt: e.ReceivedAt,
+func emitSMTP(events *EventsHandler) smtpx.OnCloseFunc {
+	return func(
+		ctx context.Context,
+		remoteAddr net.Addr,
+		receivedAt *time.Time,
+		secure bool,
+		read, written, combined []byte,
+		meta *smtpx.Meta,
+	) {
+		events.Emit(ctx, &models.Event{
+			Protocol: models.ProtoSMTP,
+			RW:       combined,
+			R:        read,
+			W:        written,
+			Meta: models.Meta{
+				SMTP:   meta,
+				Secure: secure,
+			},
+			RemoteAddr: remoteAddr.String(),
+			ReceivedAt: *receivedAt,
+		})
 	}
 }

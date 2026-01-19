@@ -42,3 +42,8 @@
   user_id: 3
   key: lark.userid
   value: bca2924
+
+- id: 10
+  user_id: 3
+  key: slack.id
+  value: e9ab95

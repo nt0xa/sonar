@@ -165,9 +165,7 @@ func Run(
 		tel,
 		cfg.Domain,
 		net.ParseIP(cfg.IP),
-		func(ctx context.Context, e *dnsx.Event) {
-			events.Emit(ctx, DNSEvent(e))
-		},
+		emitDNS(events),
 	)
 
 	go func() {
@@ -220,9 +218,7 @@ func Run(
 				db,
 				tel,
 				cfg.Domain,
-				func(ctx context.Context, e *httpx.Event) {
-					events.Emit(ctx, HTTPEvent(e))
-				},
+				emitHTTP(events),
 			),
 		)
 
@@ -242,9 +238,7 @@ func Run(
 				db,
 				tel,
 				cfg.Domain,
-				func(ctx context.Context, e *httpx.Event) {
-					events.Emit(ctx, HTTPEvent(e))
-				},
+				emitHTTP(events),
 			),
 			httpx.TLSConfig(tlsConfig),
 		)
@@ -267,9 +261,7 @@ func Run(
 				log.With("package", "smtpx"),
 				tel,
 				tlsConfig,
-				func(ctx context.Context, e *smtpx.Event) {
-					events.Emit(ctx, SMTPEvent(e))
-				},
+				emitSMTP(events),
 			),
 			smtpx.ListenerWrapper(SMTPListenerWrapper(1<<20, time.Second*5)), // TODO: change to handler
 		)
@@ -291,9 +283,7 @@ func Run(
 				cfg.Domain,
 				log.With("package", "ftpx"),
 				tel,
-				func(ctx context.Context, e *ftpx.Event) {
-					events.Emit(ctx, FTPEvent(e))
-				},
+				emitFTP(events),
 			),
 			ftpx.ListenerWrapper(SMTPListenerWrapper(1<<20, time.Second*5)),
 		)
