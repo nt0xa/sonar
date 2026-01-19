@@ -2,13 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io"
+	"net"
 	"net/http"
 	"time"
 
-	"github.com/fatih/structs"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -93,7 +91,7 @@ func HTTPHandler(
 	db *database.DB,
 	tel telemetry.Telemetry,
 	origin string,
-	notify func(context.Context, *httpx.Event),
+	notify httpx.NotifyFunc,
 ) http.Handler {
 	return HTTPTelemetry(
 		http.TimeoutHandler(
@@ -117,64 +115,34 @@ func HTTPHandler(
 	)
 }
 
-func HTTPEvent(e *httpx.Event) *models.Event {
-	type Request struct {
-		Method  string      `structs:"method"`
-		Proto   string      `structs:"proto"`
-		URL     string      `structs:"url"`
-		Host    string      `structs:"host"`
-		Headers http.Header `structs:"headers"`
-		Body    string      `structs:"body"`
-	}
+func emitHTTP(events *EventsHandler) httpx.NotifyFunc {
+	return func(
+		ctx context.Context,
+		remoteAddr net.Addr,
+		receivedAt *time.Time,
+		secure bool,
+		read, written, combined []byte,
+		meta *httpx.Meta,
+	) {
+		var proto models.Proto
 
-	type Response struct {
-		Status  int         `structs:"status"`
-		Headers http.Header `structs:"headers"`
-		Body    string      `structs:"body"`
-	}
+		if secure {
+			proto = models.ProtoHTTPS
+		} else {
+			proto = models.ProtoHTTP
+		}
 
-	type Meta struct {
-		Request  Request  `structs:"request"`
-		Response Response `structs:"response"`
-		Secure   bool     `structs:"secure"`
-	}
-
-	meta := &Meta{
-		Request: Request{
-			Method:  e.Request.Method,
-			Proto:   e.Request.Proto,
-			Headers: e.Request.Header,
-			Host:    e.Request.Host,
-			URL:     e.Request.URL.String(),
-		},
-		Response: Response{
-			Status:  e.Response.StatusCode,
-			Headers: e.Response.Header,
-		},
-		Secure: e.Secure,
-	}
-
-	reqBody, _ := io.ReadAll(e.Request.Body)
-	meta.Request.Body = base64.StdEncoding.EncodeToString(reqBody)
-
-	resBody, _ := io.ReadAll(e.Response.Body)
-	meta.Response.Body = base64.StdEncoding.EncodeToString(resBody)
-
-	var proto models.Proto
-
-	if e.Secure {
-		proto = models.ProtoHTTPS
-	} else {
-		proto = models.ProtoHTTP
-	}
-
-	return &models.Event{
-		Protocol:   proto,
-		R:          e.RawRequest,
-		W:          e.RawResponse,
-		RW:         append(e.RawRequest[:], e.RawResponse...),
-		Meta:       models.Meta(structs.Map(meta)),
-		RemoteAddr: e.RemoteAddr.String(),
-		ReceivedAt: e.ReceivedAt,
+		events.Emit(ctx, &models.Event{
+			Protocol: proto,
+			R:        read,
+			W:        written,
+			RW:       combined,
+			Meta: models.Meta{
+				HTTP:   meta,
+				Secure: secure,
+			},
+			RemoteAddr: remoteAddr.String(),
+			ReceivedAt: *receivedAt,
+		})
 	}
 }

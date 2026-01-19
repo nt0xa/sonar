@@ -32,9 +32,8 @@ type NotifierMock struct {
 func (m *NotifierMock) Notify(
 	remoteAddr net.Addr,
 	data []byte,
-	meta map[string]any,
 ) {
-	m.Called(remoteAddr, data, meta)
+	m.Called(remoteAddr.String(), string(data))
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -84,8 +83,15 @@ func TestMain(m *testing.M) {
 		smtpx.Msg{},
 		slog.New(slog.DiscardHandler),
 		tlsConfig,
-		func(ctx context.Context, e *smtpx.Event) {
-			notifier.Notify(e.RemoteAddr, e.RW, map[string]any{})
+		func(
+			ctx context.Context,
+			remoteAddr net.Addr,
+			receivedAt *time.Time,
+			secure bool,
+			read, written, combined []byte,
+			meta *smtpx.Meta,
+		) {
+			notifier.Notify(remoteAddr, combined)
 		},
 	)
 
@@ -188,17 +194,15 @@ func TestSMTP(t *testing.T) {
 
 			notifier.
 				On("Notify",
-					mock.MatchedBy(func(addr net.Addr) bool {
-						return conn.LocalAddr().String() == addr.String()
-					}),
-					mock.MatchedBy(func(data []byte) bool {
+					conn.LocalAddr().String(),
+					mock.MatchedBy(func(data string) bool {
 						for _, s := range contains {
-							if !strings.Contains(string(data), s) {
+							if !strings.Contains(data, s) {
 								return false
 							}
 						}
 						return true
-					}), mock.Anything).
+					})).
 				Return().
 				Once()
 

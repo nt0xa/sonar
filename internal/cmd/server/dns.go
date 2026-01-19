@@ -4,10 +4,8 @@ import (
 	"context"
 	"net"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/fatih/structs"
 	"github.com/miekg/dns"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -71,7 +69,7 @@ func DNSHandler(
 	tel telemetry.Telemetry,
 	origin string,
 	ip net.IP,
-	notify func(context.Context, *dnsx.Event),
+	notify dnsx.NofitifyFunc,
 ) dnsx.HandlerProvider {
 	// Do not handle DNS queries which are not subdomains of the origin.
 	h := dnsx.NewServeMux()
@@ -143,47 +141,24 @@ func DNSTelemetryHandler(tel telemetry.Telemetry, next dnsx.Handler) dnsx.Handle
 	})
 }
 
-func DNSEvent(e *dnsx.Event) *models.Event {
-	type Question struct {
-		Name string `structs:"name"`
-		Type string `structs:"type"`
-	}
-
-	type Answer struct {
-		Name string `structs:"name"`
-		Type string `structs:"type"`
-		TTL  uint32 `structs:"ttl"`
-	}
-
-	type Meta struct {
-		Question Question `structs:"question"`
-		Answer   []Answer `structs:"answer"`
-	}
-
-	meta := new(Meta)
-	w := ""
-
-	meta.Question.Name = strings.Trim(e.Msg.Question[0].Name, ".")
-	meta.Question.Type = dnsx.QtypeString(e.Msg.Question[0].Qtype)
-
-	if len(e.Msg.Answer) > 0 {
-		for _, rr := range e.Msg.Answer {
-			meta.Answer = append(meta.Answer, Answer{
-				Name: strings.Trim(rr.Header().Name, "."),
-				Type: dnsx.QtypeString(rr.Header().Rrtype),
-				TTL:  rr.Header().Ttl,
-			})
-		}
-		w = e.Msg.Answer[0].String()
-	}
-
-	return &models.Event{
-		Protocol:   models.ProtoDNS,
-		R:          []byte(e.Msg.Question[0].String()),
-		W:          []byte(w),
-		RW:         []byte(e.Msg.String()),
-		RemoteAddr: e.RemoteAddr.String(),
-		ReceivedAt: e.ReceivedAt,
-		Meta:       models.Meta(structs.Map(meta)),
+func emitDNS(events *EventsHandler) dnsx.NofitifyFunc {
+	return func(
+		ctx context.Context,
+		remoteAddr net.Addr,
+		receivedAt *time.Time,
+		read, written, combined []byte,
+		meta *dnsx.Meta,
+	) {
+		events.Emit(ctx, &models.Event{
+			Protocol: models.ProtoDNS,
+			R:        read,
+			W:        written,
+			RW:       combined,
+			Meta: models.Meta{
+				DNS: meta,
+			},
+			RemoteAddr: remoteAddr.String(),
+			ReceivedAt: *receivedAt,
+		})
 	}
 }

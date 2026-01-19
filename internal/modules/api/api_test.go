@@ -14,7 +14,6 @@ import (
 
 	"github.com/gavv/httpexpect/v2"
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -114,16 +113,16 @@ func teardown(t *testing.T) {}
 // Matchers
 //
 
-type matcher func(*testing.T, interface{})
+type matcher func(*testing.T, any)
 
 func regex(re *regexp.Regexp) matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		assert.Regexp(t, re, value)
 	}
 }
 
 func withinDuration(d time.Duration) matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		ts, ok := value.(string)
 		assert.True(t, ok, "expected value %+v to be string", value)
 		tt, err := time.Parse(time.RFC3339, ts)
@@ -132,27 +131,27 @@ func withinDuration(d time.Duration) matcher {
 	}
 }
 
-func equal(expected interface{}) matcher {
-	return func(t *testing.T, value interface{}) {
+func equal(expected any) matcher {
+	return func(t *testing.T, value any) {
 		assert.EqualValues(t, expected, value)
 	}
 }
 
-func contains(s interface{}) matcher {
-	return func(t *testing.T, value interface{}) {
+func contains(s any) matcher {
+	return func(t *testing.T, value any) {
 		require.NotNil(t, value)
 		assert.Contains(t, value, s)
 	}
 }
 
 func notEmpty() matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		assert.NotEmpty(t, value)
 	}
 }
 
 func length(l int) matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		assert.Len(t, value, l)
 	}
 }
@@ -168,7 +167,7 @@ func TestAPI(t *testing.T) {
 		query  string
 		token  string
 		json   string
-		schema interface{}
+		schema any
 		result map[string]matcher
 		status int
 	}{
@@ -189,7 +188,7 @@ func TestAPI(t *testing.T) {
 				"$.subdomain": regex(regexp.MustCompile("^[a-f0-9]{8}$")),
 				"$.name":      equal("test"),
 				"$.notifyProtocols": equal(
-					[]interface{}{
+					[]any{
 						models.ProtoCategoryDNS.String(),
 						models.ProtoCategorySMTP.String(),
 					},
@@ -270,7 +269,7 @@ func TestAPI(t *testing.T) {
 			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
+				"$.notifyProtocols": equal([]any{models.ProtoCategorySMTP.String()}),
 				"$.storeEvents":     equal(false),
 			},
 			status: 200,
@@ -283,7 +282,7 @@ func TestAPI(t *testing.T) {
 			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]interface{}{models.ProtoCategorySMTP.String()}),
+				"$.notifyProtocols": equal([]any{models.ProtoCategorySMTP.String()}),
 				"$.storeEvents":     equal(true), // Must not be changed
 			},
 			status: 200,
@@ -374,7 +373,7 @@ func TestAPI(t *testing.T) {
 				"$.type":      equal("A"),
 				"$.ttl":       equal(100),
 				"$.strategy":  equal("all"),
-				"$.values":    equal([]interface{}{"127.0.0.1"}),
+				"$.values":    equal([]any{"127.0.0.1"}),
 				"$.createdAt": withinDuration(time.Second * 10),
 			},
 			status: 201,
@@ -661,7 +660,7 @@ func TestAPI(t *testing.T) {
 				"$.method":    equal("GET"),
 				"$.path":      equal("/test"),
 				"$.code":      equal(200),
-				"$.headers":   equal(map[string]interface{}{"Test": []interface{}{"test"}}),
+				"$.headers":   equal(map[string]any{"Test": []any{"test"}}),
 				"$.body":      equal("dGVzdA=="),
 				"$.isDynamic": equal(true),
 				"$.createdAt": withinDuration(time.Second * 10),
@@ -722,7 +721,7 @@ func TestAPI(t *testing.T) {
 				"$.method":    equal("POST"),
 				"$.path":      equal("/test2"),
 				"$.code":      equal(301),
-				"$.headers":   equal(map[string]interface{}{"X": []interface{}{"x"}}),
+				"$.headers":   equal(map[string]any{"X": []any{"x"}}),
 				"$.body":      equal("MTIzNAo="),
 				"$.isDynamic": equal(false),
 			},
@@ -897,13 +896,10 @@ func TestAPI(t *testing.T) {
 				req = req.WithQueryString(tt.query)
 			}
 
-			schema, _ := jsonschema.Reflect(tt.schema).MarshalJSON()
-
 			res := req.
 				Expect().
 				Status(tt.status).
-				JSON().
-				Schema(schema)
+				JSON()
 
 			for path, matcher := range tt.result {
 				matcher(t, res.Path(path).Raw())

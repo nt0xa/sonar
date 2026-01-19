@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/netip"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -203,25 +202,24 @@ func (db *DB) Close() error {
 	return nil
 }
 
-type Info struct {
-	City         string      `json:"city"`
-	Country      CountryInfo `json:"country"`
-	Subdivisions []string    `json:"subdivisions"`
-	ASN          ASNInfo     `json:"asn"`
+type Meta struct {
+	City         string   `json:"city"`
+	Country      Country  `json:"country"`
+	Subdivisions []string `json:"subdivisions"`
+	ASN          ASN      `json:"asn"`
 }
 
-type CountryInfo struct {
-	Name      string `json:"name"`
-	ISOCode   string `json:"isoCode"`
-	FlagEmoji string `json:"flagEmoji"`
+type Country struct {
+	Name    string `json:"name"`
+	ISOCode string `json:"isoCode"`
 }
 
-type ASNInfo struct {
+type ASN struct {
 	Number uint   `json:"number"`
 	Org    string `json:"org"`
 }
 
-func (db *DB) Lookup(ip netip.Addr) (*Info, error) {
+func (db *DB) Lookup(ip netip.Addr) (*Meta, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
@@ -240,32 +238,16 @@ func (db *DB) Lookup(ip netip.Addr) (*Info, error) {
 		subdivisions = append(subdivisions, s.Names.English)
 	}
 
-	return &Info{
+	return &Meta{
 		City:         city.City.Names.English,
 		Subdivisions: subdivisions,
-		Country: CountryInfo{
-			Name:      city.Country.Names.English,
-			ISOCode:   city.Country.ISOCode,
-			FlagEmoji: flagEmoji(city.Country.ISOCode),
+		Country: Country{
+			Name:    city.Country.Names.English,
+			ISOCode: city.Country.ISOCode,
 		},
-		ASN: ASNInfo{
+		ASN: ASN{
 			Number: asn.AutonomousSystemNumber,
 			Org:    asn.AutonomousSystemOrganization,
 		},
 	}, nil
-}
-
-func flagEmoji(countryCode string) string {
-	countryCode = strings.ToUpper(countryCode)
-	if len(countryCode) != 2 {
-		return "" // Invalid code
-	}
-	runes := []rune{}
-	for _, c := range countryCode {
-		if c < 'A' || c > 'Z' {
-			return "" // Invalid character
-		}
-		runes = append(runes, 0x1F1E6+(c-'A'))
-	}
-	return string(runes)
 }

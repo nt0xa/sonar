@@ -6,15 +6,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-// Meta represents DNS event metadata.
-type Meta struct {
-	// DNS query type ("A", "AAAA", "TXT", etc.)
-	Qtype string
-
-	// Name is the name from query.
-	Name string
-}
-
 type Server interface {
 	ListenAndServe() error
 }

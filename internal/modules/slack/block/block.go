@@ -7,6 +7,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/slack-go/slack"
 )
 
@@ -48,61 +49,45 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	))
 
 	// GeoIP information if available
-	if geo, ok := n.Event.Meta["geoip"]; ok {
-		g, _ := geo.(map[string]any)
-		var locationField, orgField *slack.TextBlockObject
+	if geoip := n.Event.Meta.GeoIP; geoip != nil {
+		location := fmt.Sprintf(":round_pushpin: *Location*\n%s %s",
+			templates.FlagEmoji(geoip.Country.ISOCode),
+			geoip.Country.Name,
+		)
 
-		if country, ok := g["country"].(map[string]any); ok {
-			location := fmt.Sprintf(":round_pushpin: *Location*\n%s %s",
-				country["flagEmoji"],
-				country["name"],
-			)
-
-			if city, ok := g["city"]; ok {
-				location += ", " + city.(string)
-			}
-
-			locationField = &slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: location,
-			}
+		if geoip.City != "" {
+			location += ", " + geoip.City
 		}
 
-		if asn, ok := g["asn"].(map[string]any); ok {
-			orgField = &slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: fmt.Sprintf(":office: *Org*\n%s (AS%d)",
-					asn["org"],
-					asn["number"],
-				),
-			}
+		locationField := &slack.TextBlockObject{
+			Type: slack.MarkdownType,
+			Text: location,
 		}
 
-		if locationField != nil || orgField != nil {
-			fields := make([]*slack.TextBlockObject, 0)
-			if locationField != nil {
-				fields = append(fields, locationField)
-			}
-			if orgField != nil {
-				fields = append(fields, orgField)
-			}
-
-			blocks = append(blocks, slack.NewSectionBlock(
-				nil,
-				fields,
-				nil,
-			))
+		orgField := &slack.TextBlockObject{
+			Type: slack.MarkdownType,
+			Text: fmt.Sprintf(":office: *Org*\n%s (AS%d)",
+				geoip.ASN.Org,
+				geoip.ASN.Number,
+			),
 		}
+
+		blocks = append(blocks, slack.NewSectionBlock(
+			nil,
+			[]*slack.TextBlockObject{locationField, orgField},
+			nil,
+		))
 	}
 
 	// Email metadata if available
-	if email, ok := n.Event.Meta["email"].(map[string]any); ok {
+	if n.Event.Meta.SMTP != nil {
+		email := n.Event.Meta.SMTP.Email
 		var fromField, subjectField *slack.TextBlockObject
 
-		if from, ok := email["from"].([]any); ok {
+		if len(email.From) > 0 {
 			var emails []string
-			for _, f := range from {
-				emails = append(emails, f.(map[string]any)["email"].(string))
+			for _, f := range email.From {
+				emails = append(emails, f.Address)
 			}
 
 			fromField = &slack.TextBlockObject{
@@ -111,10 +96,10 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 			}
 		}
 
-		if subject, ok := email["subject"].(string); ok {
+		if email.Subject != "" {
 			subjectField = &slack.TextBlockObject{
 				Type: slack.MarkdownType,
-				Text: fmt.Sprintf(":memo: *Subject*\n%s", subject),
+				Text: fmt.Sprintf(":memo: *Subject*\n%s", email.Subject),
 			}
 		}
 

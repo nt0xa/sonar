@@ -7,6 +7,7 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/lark/card/v2"
+	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/square/go-jose.v2/json"
 )
@@ -177,16 +178,16 @@ func TestCard(t *testing.T) {
 			Protocol: models.Proto{Name: "http"},
 			RW:       []byte("test"),
 			Meta: models.Meta{
-				"geoip": map[string]any{
-					"city": "London",
-					"country": map[string]any{
-						"name":      "United Kingdom",
-						"isoCode":   "GB",
-						"flagEmoji": "🇬🇧",
+				GeoIP: &geoipx.Meta{
+					City: "London",
+					Country: geoipx.Country{
+						Name:      "United Kingdom",
+						ISOCode:   "GB",
+						FlagEmoji: "🇬🇧",
 					},
-					"asn": map[string]any{
-						"org":    "Google Inc.",
-						"number": 1234,
+					ASN: geoipx.ASN{
+						Org:    "Google Inc.",
+						Number: 1234,
 					},
 				},
 			},

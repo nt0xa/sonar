@@ -152,25 +152,32 @@ var notificationBody = `
 {{- $protocol := .Event.Protocol.String -}}
 📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
 📆 <bold>Time:</bold> {{ .Event.ReceivedAt.Format "02 Jan 2006 15:04:05 MST" }}
-{{- $geoip := .Event.Meta.geoip }}
+{{- $geoip := .Event.Meta.GeoIP }}
 {{- if $geoip }}
-📍 <bold>Location:</bold> {{ $geoip.country.flagEmoji }} {{ $geoip.country.name }}, {{ $geoip.city }}
-{{- if $geoip.asn }}
-🏢 <bold>Org:</bold> {{ $geoip.asn.org }} (AS{{ $geoip.asn.number }})
+📍 <bold>Location:</bold> {{ flag $geoip.Country.ISOCode }} {{ $geoip.Country.Name }}, {{ $geoip.City }}
+{{- if $geoip.ASN }}
+🏢 <bold>Org:</bold> {{ $geoip.ASN.Org }} (AS{{ $geoip.ASN.Number }})
 {{- end }}
 {{- end }}
-{{- $email := .Event.Meta.email }}
-{{- range $from := $email.from }}
-👤 <bold>From:</bold> <code>{{ $from.email }}</code>
+{{- $smtp := .Event.Meta.SMTP }}
+{{- if $smtp }}
+{{- range $from := $smtp.Email.From }}
+👤 <bold>From:</bold> <code>{{ $from.Address }}</code>
 {{- end }}
-{{- if $email.subject }}
-💬 <bold>Subject:</bold> {{ $email.subject }}
+{{- if $smtp.Email.Subject }}
+💬 <bold>Subject:</bold> {{ $smtp.Email.Subject }}
 {{- end }}
 
 <pre>
-{{ if $email.text -}}
-{{ $email.text }}
+{{ if $smtp -}}
+{{ $smtp.Email.Text }}
 {{- else -}}
 {{ printf "%s" .Event.RW }}
 {{- end -}}
-</pre>`
+</pre>
+{{- else }}
+
+<pre>
+{{ printf "%s" .Event.RW }}
+</pre>
+{{- end }}`

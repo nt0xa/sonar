@@ -27,8 +27,8 @@ type NotifierMock struct {
 	mock.Mock
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, meta map[string]interface{}) {
-	m.Called(remoteAddr, data, meta)
+func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, qtype, name string) {
+	m.Called(remoteAddr, data, qtype, name)
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -54,11 +54,14 @@ func TestMain(m *testing.M) {
 
 	handler.Handle("sonar.test",
 		dnsx.NotifyHandler(
-			func(ctx context.Context, e *dnsx.Event) {
-				notifier.Notify(e.RemoteAddr, []byte(e.Msg.String()), map[string]interface{}{
-					"name":  strings.Trim(e.Msg.Question[0].Name, "."),
-					"qtype": dnsx.QtypeString(e.Msg.Question[0].Qtype),
-				})
+			func(
+				ctx context.Context,
+				remoteAddr net.Addr,
+				receivedAt *time.Time,
+				read, written, combined []byte,
+				meta *dnsx.Meta,
+			) {
+				notifier.Notify(remoteAddr, combined, meta.Question.Type, meta.Question.Name)
 			},
 			dnsx.RecordSetHandler(dnsx.NewRecords([]dns.RR{
 				dnsx.NewRR("*.sonar.test.", dns.TypeA, 10, "1.1.1.1"),
@@ -148,10 +151,9 @@ func TestDNS(t *testing.T) {
 						mock.MatchedBy(func(data []byte) bool {
 							return strings.Contains(string(data), name)
 						}),
-						map[string]interface{}{
-							"qtype": dns.Type(tt.qtype).String(),
-							"name":  strings.Trim(tt.name, "."),
-						}).
+						dns.Type(tt.qtype).String(),
+						strings.Trim(tt.name, "."),
+					).
 					Return()
 
 				in, _, err := c.Exchange(msg, "127.0.0.1:1053")
@@ -172,7 +174,6 @@ func TestDNS(t *testing.T) {
 }
 
 func TestProvider(t *testing.T) {
-
 	for _, name := range []string{
 		"_acme-challenge.sonar.test.",
 		"_aCme-chAlLEnge.sonar.test.",
@@ -217,6 +218,7 @@ func TestProvider(t *testing.T) {
 			mock.Anything,
 			mock.Anything,
 			mock.Anything,
+			mock.Anything,
 		).Return()
 
 		in, _, err = c.Exchange(msg, "127.0.0.1:1053")
@@ -224,4 +226,6 @@ func TestProvider(t *testing.T) {
 		require.NotNil(t, in)
 		require.Len(t, in.Answer, 0)
 	}
+
+	notifier.AssertExpectations(t)
 }

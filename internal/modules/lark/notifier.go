@@ -22,12 +22,9 @@ func (lrk *Lark) Name() string {
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	body := string(n.Event.RW)
 
-	// TODO: Change when .Meta is struct
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		if email, ok := n.Event.Meta["email"].(map[string]any); ok {
-			if text := email["text"]; text != nil {
-				body = text.(string)
-			}
+	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+		if text := n.Event.Meta.SMTP.Email.Text; text != "" {
+			body = text
 		}
 	}
 
@@ -46,23 +43,17 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	// For SMTP send mail.eml for better preview.
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP {
-		sess, ok := n.Event.Meta["session"].(map[string]any)
-		if !ok {
-			return nil
-		}
-		data, ok := sess["data"].(string)
-		if !ok {
-			return nil
-		}
+	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+		data := n.Event.Meta.SMTP.Session.Data
+		if data != "" {
+			lrk.docMessage(ctx, n.User.Params.LarkUserID,
+				fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
+				"", []byte(data))
 
-		lrk.docMessage(ctx, n.User.Params.LarkUserID,
-			fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-			"", []byte(data))
-
-		lrk.docMessage(ctx, n.User.Params.LarkUserID,
-			fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-			"", n.Event.RW)
+			lrk.docMessage(ctx, n.User.Params.LarkUserID,
+				fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
+				"", n.Event.RW)
+		}
 	}
 
 	return nil

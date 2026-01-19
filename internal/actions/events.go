@@ -8,6 +8,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
+	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -27,15 +28,15 @@ type EventsHandler interface {
 }
 
 type Event struct {
-	Index      int64                  `json:"index"`
-	UUID       string                 `json:"uuid"`
-	Protocol   string                 `json:"protocol"`
-	R          string                 `json:"r,omitempty"`
-	W          string                 `json:"w,omitempty"`
-	RW         string                 `json:"rw,omitempty"`
-	Meta       map[string]interface{} `json:"meta"`
-	RemoteAddr string                 `json:"remoteAddress"`
-	ReceivedAt time.Time              `json:"receivedAt"`
+	Index      int64       `json:"index"`
+	UUID       string      `json:"uuid"`
+	Protocol   string      `json:"protocol"`
+	R          string      `json:"r,omitempty"`
+	W          string      `json:"w,omitempty"`
+	RW         string      `json:"rw,omitempty"`
+	Meta       models.Meta `json:"meta"`
+	RemoteAddr string      `json:"remoteAddress"`
+	ReceivedAt time.Time   `json:"receivedAt"`
 }
 
 //

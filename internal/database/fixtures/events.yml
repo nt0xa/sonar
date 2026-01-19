@@ -6,7 +6,14 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    dns:
+      question:
+        name: test.example.com
+        type: A
+      answer:
+        - name: test.example.com
+          type: A
+          ttl: 60
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -19,7 +26,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -32,7 +51,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -45,7 +76,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -58,7 +101,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -71,7 +126,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -84,7 +151,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -97,7 +176,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -110,7 +201,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -123,7 +226,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
@@ -136,7 +251,19 @@
   w: written
   rw: read-and-written
   meta:
-    key: value
+    http:
+      request:
+        method: GET
+        proto: HTTP/1.1
+        url: /test
+        host: example.com
+        headers: {}
+        body: ""
+      response:
+        status: 200
+        headers: {}
+        body: ""
+    secure: false
   remote_addr: 127.0.0.1:1337
   received_at: RAW=NOW() AT TIME ZONE 'UTC'
   created_at: RAW=NOW() AT TIME ZONE 'UTC'

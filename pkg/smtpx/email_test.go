@@ -1,7 +1,6 @@
 package smtpx_test
 
 import (
-	"net/mail"
 	"os"
 	"testing"
 	"time"
@@ -27,13 +26,13 @@ func TestEmailParse(t *testing.T) {
 			"2.eml",
 			smtpx.Email{
 				Subject: "test",
-				To: []*mail.Address{
+				To: []smtpx.Address{
 					{
 						Name:    "Test Test",
 						Address: "test@example.com",
 					},
 				},
-				From: []*mail.Address{
+				From: []smtpx.Address{
 					{
 						Name:    "John Doe",
 						Address: "john.doe@mail.com",
@@ -49,12 +48,12 @@ func TestEmailParse(t *testing.T) {
 			"3.eml",
 			smtpx.Email{
 				Subject: "🚀 Your GitHub launch code",
-				To: []*mail.Address{
+				To: []smtpx.Address{
 					{
 						Address: "user@test.com",
 					},
 				},
-				From: []*mail.Address{
+				From: []smtpx.Address{
 					{
 						Name:    "GitHub",
 						Address: "noreply@github.com",
@@ -85,12 +84,12 @@ San Francisco, CA 94107`,
 			"4.eml",
 			smtpx.Email{
 				Subject: "🚀 Your GitHub launch code",
-				To: []*mail.Address{
+				To: []smtpx.Address{
 					{
 						Address: "user@test.com",
 					},
 				},
-				From: []*mail.Address{
+				From: []smtpx.Address{
 					{
 						Name:    "GitHub",
 						Address: "noreply@github.com",
@@ -124,12 +123,12 @@ GitHub, Inc. ・88 Colin P Kelly Jr Street ・San Francisco, CA 94107`,
 			"5.eml",
 			smtpx.Email{
 				Subject: "Security alert",
-				To: []*mail.Address{
+				To: []smtpx.Address{
 					{
 						Address: "user1.asdfgh@gmail.com",
 					},
 				},
-				From: []*mail.Address{
+				From: []smtpx.Address{
 					{
 						Name:    "Google",
 						Address: "no-reply@accounts.google.com",
@@ -159,12 +158,12 @@ Google Account and services.
 			"6.eml",
 			smtpx.Email{
 				Subject: "Security alert",
-				To: []*mail.Address{
+				To: []smtpx.Address{
 					{
 						Address: "user1.asdfgh@gmail.com",
 					},
 				},
-				From: []*mail.Address{
+				From: []smtpx.Address{
 					{
 						Name:    "Google",
 						Address: "no-reply@accounts.google.com",

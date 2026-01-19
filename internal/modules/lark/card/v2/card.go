@@ -7,6 +7,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/templates"
 	"gopkg.in/square/go-jose.v2/json"
 )
 
@@ -159,8 +160,7 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 		},
 	})
 
-	// TODO: change after Event.Meta is struct
-	if geo, ok := n.Event.Meta["geoip"]; ok {
+	if geoip := n.Event.Meta.GeoIP; geoip != nil {
 		row := Element{
 			Tag:               "column_set",
 			HorizontalSpacing: "8px",
@@ -188,54 +188,50 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 			},
 		}
 
-		g, _ := geo.(map[string]any)
-		if country, ok := g["country"].(map[string]any); ok {
-			location := fmt.Sprintf(
-				"<font color=\"grey\">Location</font>\n%s %s",
-				country["flagEmoji"],
-				country["name"],
-			)
+		location := fmt.Sprintf(
+			"<font color=\"grey\">Location</font>\n%s %s",
+			templates.FlagEmoji(geoip.Country.ISOCode),
+			geoip.Country.Name,
+		)
 
-			if city, ok := g["city"]; ok {
-				location += ", " + city.(string)
-			}
-
-			row.Columns[0].Elements = []Markdown{{
-				Tag:       "markdown",
-				Content:   location,
-				TextAlign: "left",
-				TextSize:  "custom",
-				Margin:    "0px 0px 0px 0px",
-				Icon: &Icon{
-					Tag:   "standard_icon",
-					Token: "local_outlined",
-					Color: "red",
-				},
-			}}
+		if geoip.City != "" {
+			location += ", " + geoip.City
 		}
 
-		if asn, ok := g["asn"].(map[string]any); ok {
-			row.Columns[1].Elements = []Markdown{{
-				Tag: "markdown",
-				Content: fmt.Sprintf(
-					"<font color=\"grey\">Org</font>\n%s (AS%d)",
-					asn["org"],
-					asn["number"],
-				),
-				TextAlign: "left",
-				TextSize:  "custom",
-				Margin:    "0px 0px 0px 0px",
-				Icon: &Icon{
-					Tag:   "standard_icon",
-					Token: "company_outlined",
-					Color: "orange",
-				},
-			}}
-		}
+		row.Columns[0].Elements = []Markdown{{
+			Tag:       "markdown",
+			Content:   location,
+			TextAlign: "left",
+			TextSize:  "custom",
+			Margin:    "0px 0px 0px 0px",
+			Icon: &Icon{
+				Tag:   "standard_icon",
+				Token: "local_outlined",
+				Color: "red",
+			},
+		}}
+
+		row.Columns[1].Elements = []Markdown{{
+			Tag: "markdown",
+			Content: fmt.Sprintf(
+				"<font color=\"grey\">Org</font>\n%s (AS%d)",
+				geoip.ASN.Org,
+				geoip.ASN.Number,
+			),
+			TextAlign: "left",
+			TextSize:  "custom",
+			Margin:    "0px 0px 0px 0px",
+			Icon: &Icon{
+				Tag:   "standard_icon",
+				Token: "company_outlined",
+				Color: "orange",
+			},
+		}}
 		body = append(body, row)
 	}
 
-	if email, ok := n.Event.Meta["email"].(map[string]any); ok {
+	if n.Event.Meta.SMTP != nil {
+		email := n.Event.Meta.SMTP.Email
 		row := Element{
 			Tag:               "column_set",
 			HorizontalSpacing: "8px",
@@ -263,11 +259,11 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 			},
 		}
 
-		if from, ok := email["from"].([]any); ok {
+		if len(email.From) > 0 {
 			var s string
 
-			for _, f := range from {
-				s += f.(map[string]any)["email"].(string) + "\n"
+			for _, f := range email.From {
+				s += f.Address + "\n"
 			}
 
 			row.Columns[0].Elements = []Markdown{{
@@ -284,12 +280,12 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 			}}
 		}
 
-		if subject, ok := email["subject"].(string); ok {
+		if email.Subject != "" {
 			row.Columns[1].Elements = []Markdown{{
 				Tag: "markdown",
 				Content: fmt.Sprintf(
 					"<font color=\"grey\">Subject</font>\n%s",
-					subject,
+					email.Subject,
 				),
 				TextAlign: "left",
 				TextSize:  "custom",

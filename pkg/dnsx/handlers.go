@@ -72,29 +72,52 @@ func ChainHandler(set RecordGetter, next Handler) Handler {
 	})
 }
 
-// Event represents DNS event.
-type Event struct {
-	// RemoteAddr is the address of client.
-	RemoteAddr net.Addr
-
-	// Msg is DNS query and answer for this query.
-	Msg *dns.Msg
-
-	// ReceivedAt is the time of receiving query.
-	ReceivedAt time.Time
-}
+type NofitifyFunc func(
+	ctx context.Context,
+	remoteAddr net.Addr,
+	receivedAt *time.Time,
+	read []byte,
+	written []byte,
+	combined []byte,
+	meta *Meta,
+)
 
 // NotifyHandler calls notify function after processing query.
-func NotifyHandler(notify func(context.Context, *Event), next Handler) Handler {
+func NotifyHandler(notify NofitifyFunc, next Handler) Handler {
 	return HandlerFunc(func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		wr := NewRecorder(w)
 
 		defer func() {
-			notify(ctx, &Event{
-				RemoteAddr: w.RemoteAddr(),
-				Msg:        wr.Msg,
-				ReceivedAt: wr.Start,
-			})
+			question := Question{
+				Name: strings.Trim(wr.Msg.Question[0].Name, "."),
+				Type: QtypeString(wr.Msg.Question[0].Qtype),
+			}
+
+			var answers []Answer
+			written := ""
+
+			if len(r.Answer) > 0 {
+				for _, rr := range wr.Msg.Answer {
+					answers = append(answers, Answer{
+						Name: strings.Trim(rr.Header().Name, "."),
+						Type: QtypeString(rr.Header().Rrtype),
+						TTL:  rr.Header().Ttl,
+					})
+				}
+				written += wr.Msg.Answer[0].String() + "\n"
+			}
+
+			notify(ctx,
+				wr.RemoteAddr(),
+				&wr.Start,
+				[]byte(wr.Msg.Question[0].String()),
+				[]byte(written),
+				[]byte(wr.Msg.String()),
+				&Meta{
+					Question: question,
+					Answer:   answers,
+				},
+			)
 		}()
 
 		next.ServeDNS(ctx, wr, r)

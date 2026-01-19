@@ -21,6 +21,7 @@ func Event(m models.Event) actions.Event {
 		Meta:       m.Meta,
 		RemoteAddr: m.RemoteAddr,
 		ReceivedAt: m.ReceivedAt,
+		UUID:       m.UUID.String(),
 	}
 }
 
