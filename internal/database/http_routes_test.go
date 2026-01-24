@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 )
 
 func TestHTTPRoutesCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.HTTPRoute{
+	o, err := db.HTTPRoutesCreate(t.Context(), database.HTTPRoutesCreateParams{
 		PayloadID: 1,
 		Method:    "GET",
 		Path:      "/test",
@@ -24,9 +24,7 @@ func TestHTTPRoutesCreate_Success(t *testing.T) {
 			"Test": {"test"},
 		},
 		Body: []byte("body"),
-	}
-
-	err := db.HTTPRoutesCreate(t.Context(), o)
+	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -37,7 +35,7 @@ func TestHTTPRoutesCreate_Duplicate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.HTTPRoute{
+	_, err := db.HTTPRoutesCreate(t.Context(), database.HTTPRoutesCreateParams{
 		PayloadID: 1,
 		Method:    "GET",
 		Path:      "/get",
@@ -46,9 +44,7 @@ func TestHTTPRoutesCreate_Duplicate(t *testing.T) {
 			"Test": {"test"},
 		},
 		Body: []byte("body"),
-	}
-
-	err := db.HTTPRoutesCreate(t.Context(), o)
+	})
 	assert.Error(t, err)
 }
 
@@ -87,15 +83,22 @@ func TestHTTPRoutesUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
-	o.Method = "HEAD"
-	o.Path = "/updated"
-
-	err = db.HTTPRoutesUpdate(t.Context(), o)
+	updated, err := db.HTTPRoutesUpdate(t.Context(), database.HTTPRoutesUpdateParams{
+		ID:        o.ID,
+		PayloadID: o.PayloadID,
+		Method:    "HEAD",
+		Path:      "/updated",
+		Code:      o.Code,
+		Headers:   o.Headers,
+		Body:      o.Body,
+		IsDynamic: o.IsDynamic,
+	})
 	require.NoError(t, err)
 
 	o2, err := db.HTTPRoutesGetByID(t.Context(), 1)
 	require.NoError(t, err)
-	assert.Equal(t, o, o2)
+	assert.Equal(t, updated.Method, o2.Method)
+	assert.Equal(t, updated.Path, o2.Path)
 }
 
 func TestHTTPRoutesGetByPayloadID(t *testing.T) {

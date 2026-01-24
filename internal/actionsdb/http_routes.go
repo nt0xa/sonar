@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
@@ -51,7 +52,7 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Validationf("body: invalid base64 data")
 	}
 
-	rec := &models.HTTPRoute{
+	rec, err := act.db.HTTPRoutesCreate(ctx, database.HTTPRoutesCreateParams{
 		PayloadID: payload.ID,
 		Method:    strings.ToUpper(p.Method),
 		Path:      p.Path,
@@ -59,9 +60,8 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		Headers:   p.Headers,
 		Body:      body,
 		IsDynamic: p.IsDynamic,
-	}
-
-	if err := act.db.HTTPRoutesCreate(ctx, rec); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
@@ -91,41 +91,56 @@ func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
+	method := rec.Method
 	if p.Method != nil {
-		rec.Method = *p.Method
+		method = *p.Method
 	}
 
+	path := rec.Path
 	if p.Path != nil {
-		rec.Path = *p.Path
+		path = *p.Path
 	}
 
+	code := rec.Code
 	if p.Code != nil {
-		rec.Code = *p.Code
+		code = *p.Code
 	}
 
+	headers := rec.Headers
 	if p.Headers != nil {
-		rec.Headers = p.Headers
+		headers = p.Headers
 	}
 
+	body := rec.Body
 	if p.Body != nil {
-		body, err := base64.StdEncoding.DecodeString(*p.Body)
+		var err error
+		body, err = base64.StdEncoding.DecodeString(*p.Body)
 
 		if err != nil {
 			return nil, errors.Validationf("body: invalid base64 data")
 		}
-
-		rec.Body = body
 	}
 
+	isDynamic := rec.IsDynamic
 	if p.IsDynamic != nil {
-		rec.IsDynamic = *p.IsDynamic
+		isDynamic = *p.IsDynamic
 	}
 
-	if err := act.db.HTTPRoutesUpdate(ctx, rec); err != nil {
+	updated, err := act.db.HTTPRoutesUpdate(ctx, database.HTTPRoutesUpdateParams{
+		ID:        rec.ID,
+		PayloadID: rec.PayloadID,
+		Method:    method,
+		Path:      path,
+		Code:      code,
+		Headers:   headers,
+		Body:      body,
+		IsDynamic: isDynamic,
+	})
+	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.HTTPRoutesUpdateResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesUpdateResult{HTTPRoute: HTTPRoute(*updated, payload.Subdomain)}, nil
 }
 
 func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {

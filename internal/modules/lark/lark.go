@@ -245,14 +245,14 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 				if user == nil {
 					// Create user if not exists
-					user = &models.User{
+					var err error
+					user, err = lrk.db.UsersCreate(ctx, database.UsersCreateParams{
 						Name: fmt.Sprintf("user-%s", *userID),
 						Params: models.UserParams{
 							LarkUserID: *userID,
 						},
-					}
-
-					if err := lrk.db.UsersCreate(ctx, user); err != nil {
+					})
+					if err != nil {
 						lrk.log.Error("Failed to create user",
 							"err", err,
 						)

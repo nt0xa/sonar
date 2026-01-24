@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/internal/utils/errors"
@@ -40,15 +41,13 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Internal(err)
 	}
 
-	rec := &models.Payload{
+	rec, err := act.db.PayloadsCreate(ctx, database.PayloadsCreateParams{
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            p.Name,
 		NotifyProtocols: models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...),
 		StoreEvents:     p.StoreEvents,
-	}
-
-	err = act.db.PayloadsCreate(ctx, rec)
+	})
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -73,24 +72,34 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Internal(err)
 	}
 
+	name := rec.Name
 	if p.NewName != "" {
-		rec.Name = p.NewName
+		name = p.NewName
 	}
 
+	notifyProtocols := rec.NotifyProtocols
 	if p.NotifyProtocols != nil {
-		rec.NotifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
+		notifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
 	}
 
+	storeEvents := rec.StoreEvents
 	if p.StoreEvents != nil {
-		rec.StoreEvents = *p.StoreEvents
+		storeEvents = *p.StoreEvents
 	}
 
-	err = act.db.PayloadsUpdate(ctx, rec)
+	updated, err := act.db.PayloadsUpdate(ctx, database.PayloadsUpdateParams{
+		ID:              rec.ID,
+		UserID:          rec.UserID,
+		Subdomain:       rec.Subdomain,
+		Name:            name,
+		NotifyProtocols: notifyProtocols,
+		StoreEvents:     storeEvents,
+	})
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.PayloadsUpdateResult{Payload: Payload(*rec)}, nil
+	return &actions.PayloadsUpdateResult{Payload: Payload(*updated)}, nil
 }
 
 func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (*actions.PayloadsDeleteResult, errors.Error) {

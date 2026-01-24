@@ -20,23 +20,37 @@ var usersInnerQuery = "" +
 
 var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
 
-func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
+type UsersCreateParams struct {
+	Name      string
+	Params    models.UserParams
+	IsAdmin   bool
+	CreatedBy *int64
+}
+
+func (db *DB) UsersCreate(ctx context.Context, p UsersCreateParams) (*models.User, error) {
 	ctx, span := db.tel.TraceStart(ctx, "UsersCreate")
 	defer span.End()
 
-	o.CreatedAt = now()
-
-	if o.Params.APIToken == "" {
+	params := p.Params
+	if params.APIToken == "" {
 		token, err := utils.GenerateRandomString(16)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		o.Params.APIToken = token
+		params.APIToken = token
+	}
+
+	o := &models.User{
+		Name:      p.Name,
+		Params:    params,
+		IsAdmin:   p.IsAdmin,
+		CreatedBy: p.CreatedBy,
+		CreatedAt: now(),
 	}
 
 	tx, err := db.Beginx(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -47,7 +61,7 @@ func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
 		"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id"
 
 	if err := tx.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, f := range structs.Fields(o.Params) {
@@ -57,12 +71,16 @@ func (db *DB) UsersCreate(ctx context.Context, o *models.User) error {
 			if err := tx.Exec(ctx,
 				"INSERT INTO user_params (user_id, key, value) "+
 					"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 func (db *DB) UsersGetByID(ctx context.Context, id int64) (*models.User, error) {
@@ -118,13 +136,29 @@ func (db *DB) UsersDelete(ctx context.Context, id int64) error {
 	return db.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
 }
 
-func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
+type UsersUpdateParams struct {
+	ID        int64
+	Name      string
+	Params    models.UserParams
+	IsAdmin   bool
+	CreatedBy *int64
+}
+
+func (db *DB) UsersUpdate(ctx context.Context, p UsersUpdateParams) (*models.User, error) {
 	ctx, span := db.tel.TraceStart(ctx, "UsersUpdate")
 	defer span.End()
 
+	o := &models.User{
+		ID:        p.ID,
+		Name:      p.Name,
+		Params:    p.Params,
+		IsAdmin:   p.IsAdmin,
+		CreatedBy: p.CreatedBy,
+	}
+
 	tx, err := db.Beginx(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -134,7 +168,7 @@ func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
 		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, f := range structs.Fields(o.Params) {
@@ -144,10 +178,14 @@ func (db *DB) UsersUpdate(ctx context.Context, o *models.User) error {
 			if err := tx.Exec(ctx,
 				"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
 				f.Value(), o.ID, f.Tag("json")); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }

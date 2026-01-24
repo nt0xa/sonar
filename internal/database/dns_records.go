@@ -2,15 +2,38 @@ package database
 
 import (
 	"context"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) DNSRecordsCreate(ctx context.Context, o *models.DNSRecord) error {
+type DNSRecordsCreateParams struct {
+	PayloadID      int64
+	Name           string
+	Type           string
+	TTL            int
+	Values         []string
+	Strategy       string
+	LastAnswer     []string
+	LastAccessedAt *time.Time
+}
+
+func (db *DB) DNSRecordsCreate(ctx context.Context, p DNSRecordsCreateParams) (*models.DNSRecord, error) {
 	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsCreate")
 	defer span.End()
 
-	o.CreatedAt = now()
+	o := &models.DNSRecord{
+		PayloadID:      p.PayloadID,
+		Name:           p.Name,
+		Type:           p.Type,
+		TTL:            p.TTL,
+		Values:         pq.StringArray(p.Values),
+		Strategy:       p.Strategy,
+		LastAnswer:     pq.StringArray(p.LastAnswer),
+		LastAccessedAt: p.LastAccessedAt,
+		CreatedAt:      now(),
+	}
 
 	query := "" +
 		"INSERT INTO dns_records (payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at, index) " +
@@ -18,14 +41,42 @@ func (db *DB) DNSRecordsCreate(ctx context.Context, o *models.DNSRecord) error {
 		" (SELECT COALESCE(MAX(index), 0) FROM dns_records dr WHERE dr.payload_id = :payload_id) + 1) " +
 		"RETURNING id, index"
 
-	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index)
+	if err := db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
-func (db *DB) DNSRecordsUpdate(ctx context.Context, o *models.DNSRecord) error {
+type DNSRecordsUpdateParams struct {
+	ID             int64
+	PayloadID      int64
+	Name           string
+	Type           string
+	TTL            int
+	Values         []string
+	Strategy       string
+	LastAnswer     []string
+	LastAccessedAt *time.Time
+}
+
+func (db *DB) DNSRecordsUpdate(ctx context.Context, p DNSRecordsUpdateParams) (*models.DNSRecord, error) {
 	ctx, span := db.tel.TraceStart(ctx, "DNSRecordsUpdate")
 	defer span.End()
 
-	return db.NamedExec(ctx,
+	o := &models.DNSRecord{
+		ID:             p.ID,
+		PayloadID:      p.PayloadID,
+		Name:           p.Name,
+		Type:           p.Type,
+		TTL:            p.TTL,
+		Values:         pq.StringArray(p.Values),
+		Strategy:       p.Strategy,
+		LastAnswer:     pq.StringArray(p.LastAnswer),
+		LastAccessedAt: p.LastAccessedAt,
+	}
+
+	if err := db.NamedExec(ctx,
 		"UPDATE dns_records SET "+
 			"payload_id = :payload_id, "+
 			"name = :name, "+
@@ -35,7 +86,11 @@ func (db *DB) DNSRecordsUpdate(ctx context.Context, o *models.DNSRecord) error {
 			"strategy = :strategy, "+
 			"last_answer = :last_answer, "+
 			"last_accessed_at = :last_accessed_at "+
-			"WHERE id = :id", o)
+			"WHERE id = :id", o); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 func (db *DB) DNSRecordsGetByID(ctx context.Context, id int64) (*models.DNSRecord, error) {

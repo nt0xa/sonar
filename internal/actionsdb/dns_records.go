@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
@@ -45,16 +46,15 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 			p.PayloadName, p.Name, p.Type)
 	}
 
-	rec := &models.DNSRecord{
+	rec, err := act.db.DNSRecordsCreate(ctx, database.DNSRecordsCreateParams{
 		PayloadID: payload.ID,
 		Name:      p.Name,
 		TTL:       p.TTL,
 		Type:      strings.ToUpper(p.Type),
 		Values:    p.Values,
 		Strategy:  p.Strategy,
-	}
-
-	if err := act.db.DNSRecordsCreate(ctx, rec); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Internal(err)
 	}
 

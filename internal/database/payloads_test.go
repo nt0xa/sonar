@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
@@ -15,15 +16,13 @@ func TestPayloadsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.Payload{
+	o, err := db.PayloadsCreate(t.Context(), database.PayloadsCreateParams{
 		UserID:          1,
 		Subdomain:       "8a8b58beaf",
 		Name:            "test",
 		NotifyProtocols: models.ProtoCategoriesAll,
 		StoreEvents:     true,
-	}
-
-	err := db.PayloadsCreate(t.Context(), o)
+	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -35,13 +34,11 @@ func TestPayloadsCreate_Duplicate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.Payload{
+	_, err := db.PayloadsCreate(t.Context(), database.PayloadsCreateParams{
 		UserID:    1,
 		Subdomain: "8a8b58beaf",
 		Name:      "payload1",
-	}
-
-	err := db.PayloadsCreate(t.Context(), o)
+	})
 	assert.Error(t, err)
 }
 
@@ -196,16 +193,21 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
-	o.Name = "payload1_updated"
-	o.NotifyProtocols = models.ProtoCategories("dns")
-	o.StoreEvents = false
-
-	err = db.PayloadsUpdate(t.Context(), o)
+	updated, err := db.PayloadsUpdate(t.Context(), database.PayloadsUpdateParams{
+		ID:              o.ID,
+		UserID:          o.UserID,
+		Subdomain:       o.Subdomain,
+		Name:            "payload1_updated",
+		NotifyProtocols: models.ProtoCategories("dns"),
+		StoreEvents:     false,
+	})
 	require.NoError(t, err)
 
 	o2, err := db.PayloadGetByID(t.Context(), 1)
 	require.NoError(t, err)
-	assert.Equal(t, o, o2)
+	assert.Equal(t, updated.Name, o2.Name)
+	assert.Equal(t, updated.NotifyProtocols, o2.NotifyProtocols)
+	assert.Equal(t, updated.StoreEvents, o2.StoreEvents)
 }
 
 func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {

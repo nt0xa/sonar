@@ -349,27 +349,32 @@ func createOrUpdateAdminUser(
 	ctx, span := tel.TraceStart(ctx, "db.init.admin")
 	defer span.End()
 
-	admin := &models.User{
-		Name:      "admin",
-		IsAdmin:   true,
-		CreatedBy: nil,
-		Params: models.UserParams{
-			TelegramID: cfg.Modules.Telegram.Admin,
-			APIToken:   cfg.Modules.API.Admin,
-			LarkUserID: cfg.Modules.Lark.Admin,
-			SlackID:    cfg.Modules.Slack.Admin,
-		},
+	params := models.UserParams{
+		TelegramID: cfg.Modules.Telegram.Admin,
+		APIToken:   cfg.Modules.API.Admin,
+		LarkUserID: cfg.Modules.Lark.Admin,
+		SlackID:    cfg.Modules.Slack.Admin,
 	}
 
 	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
 		// There is no admin yet - create one
-		if err := db.UsersCreate(ctx, admin); err != nil {
+		if _, err := db.UsersCreate(ctx, database.UsersCreateParams{
+			Name:      "admin",
+			Params:    params,
+			IsAdmin:   true,
+			CreatedBy: nil,
+		}); err != nil {
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
 	} else if err == nil {
 		// Admin user exists - update
-		admin.ID = u.ID
-		if err := db.UsersUpdate(ctx, admin); err != nil {
+		if _, err := db.UsersUpdate(ctx, database.UsersUpdateParams{
+			ID:        u.ID,
+			Name:      "admin",
+			Params:    params,
+			IsAdmin:   true,
+			CreatedBy: nil,
+		}); err != nil {
 			return fmt.Errorf("failed to update admin user: %w", err)
 		}
 	} else {

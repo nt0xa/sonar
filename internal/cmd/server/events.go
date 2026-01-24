@@ -137,7 +137,17 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 
 		// Store event in database
 		if p.StoreEvents {
-			if err := h.db.EventsCreate(ctx, e); err != nil {
+			if _, err := h.db.EventsCreate(ctx, database.EventsCreateParams{
+				UUID:       e.UUID,
+				PayloadID:  e.PayloadID,
+				Protocol:   e.Protocol,
+				R:          e.R,
+				W:          e.W,
+				RW:         e.RW,
+				Meta:       e.Meta,
+				RemoteAddr: e.RemoteAddr,
+				ReceivedAt: e.ReceivedAt,
+			}); err != nil {
 				h.log.Error("Failed to save event",
 					"err", err,
 					"event", e,

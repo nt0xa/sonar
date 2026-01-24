@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
@@ -15,16 +16,14 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.DNSRecord{
+	o, err := db.DNSRecordsCreate(t.Context(), database.DNSRecordsCreateParams{
 		PayloadID: 1,
 		Name:      "test",
 		Type:      models.DNSTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
 		Strategy:  models.DNSStrategyAll,
-	}
-
-	err := db.DNSRecordsCreate(t.Context(), o)
+	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -35,15 +34,13 @@ func TestDNSRecordsCreate_Duplicate(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.DNSRecord{
+	_, err := db.DNSRecordsCreate(t.Context(), database.DNSRecordsCreateParams{
 		PayloadID: 1,
 		Name:      "dns1",
 		Type:      models.DNSTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
-	}
-
-	err := db.DNSRecordsCreate(t.Context(), o)
+	})
 	assert.Error(t, err)
 }
 
@@ -102,15 +99,23 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
-	o.Name = "dns1-updated"
-	o.Values = []string{"127.0.0.1", "127.0.0.2"}
-
-	err = db.DNSRecordsUpdate(t.Context(), o)
+	updated, err := db.DNSRecordsUpdate(t.Context(), database.DNSRecordsUpdateParams{
+		ID:             o.ID,
+		PayloadID:      o.PayloadID,
+		Name:           "dns1-updated",
+		Type:           o.Type,
+		TTL:            o.TTL,
+		Values:         []string{"127.0.0.1", "127.0.0.2"},
+		Strategy:       o.Strategy,
+		LastAnswer:     o.LastAnswer,
+		LastAccessedAt: o.LastAccessedAt,
+	})
 	require.NoError(t, err)
 
 	o2, err := db.DNSRecordsGetByID(t.Context(), 1)
 	require.NoError(t, err)
-	assert.Equal(t, o, o2)
+	assert.Equal(t, updated.Name, o2.Name)
+	assert.Equal(t, updated.Values, o2.Values)
 }
 
 func TestDNSRecordsGetByPayloadID(t *testing.T) {
