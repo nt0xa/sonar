@@ -19,7 +19,7 @@ func TestEventsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o := &models.Event{
+	o, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 		PayloadID: 1,
 		UUID:      uuid.New(),
 		Protocol:  models.ProtoDNS,
@@ -33,9 +33,7 @@ func TestEventsCreate_Success(t *testing.T) {
 		},
 		ReceivedAt: time.Now(),
 		RemoteAddr: "127.0.0.1:1337",
-	}
-
-	err := db.EventsCreate(t.Context(), o)
+	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -154,7 +152,7 @@ func TestEventsRace(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			o := &models.Event{
+			_, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 				PayloadID: 1,
 				UUID:      uuid.New(),
 				Protocol:  models.ProtoDNS,
@@ -168,9 +166,7 @@ func TestEventsRace(t *testing.T) {
 				},
 				ReceivedAt: time.Now(),
 				RemoteAddr: "127.0.0.1:1337",
-			}
-
-			err := db.EventsCreate(t.Context(), o)
+			})
 			assert.NoError(t, err)
 		}()
 	}

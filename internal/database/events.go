@@ -2,22 +2,51 @@ package database
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) EventsCreate(ctx context.Context, o *models.Event) error {
+type EventsCreateParams struct {
+	UUID       uuid.UUID
+	PayloadID  int64
+	Protocol   models.Proto
+	R          []byte
+	W          []byte
+	RW         []byte
+	Meta       models.Meta
+	RemoteAddr string
+	ReceivedAt time.Time
+}
+
+func (db *DB) EventsCreate(ctx context.Context, p EventsCreateParams) (*models.Event, error) {
 	ctx, span := db.tel.TraceStart(ctx, "EventsCreate")
 	defer span.End()
 
-	o.CreatedAt = now()
+	o := &models.Event{
+		UUID:       p.UUID,
+		PayloadID:  p.PayloadID,
+		Protocol:   p.Protocol,
+		R:          p.R,
+		W:          p.W,
+		RW:         p.RW,
+		Meta:       p.Meta,
+		RemoteAddr: p.RemoteAddr,
+		ReceivedAt: p.ReceivedAt,
+		CreatedAt:  now(),
+	}
 
 	query := "" +
 		"INSERT INTO events (uuid, payload_id, protocol, r, w, rw, meta, remote_addr, received_at, created_at) " +
 		"VALUES(:uuid, :payload_id, :protocol, :r, :w, :rw, :meta, :remote_addr, :received_at, :created_at)" +
 		"RETURNING id"
 
-	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID)
+	if err := db.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 func (db *DB) EventsGetByID(ctx context.Context, id int64) (*models.Event, error) {

@@ -6,11 +6,30 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) HTTPRoutesCreate(ctx context.Context, o *models.HTTPRoute) error {
+type HTTPRoutesCreateParams struct {
+	PayloadID int64
+	Method    string
+	Path      string
+	Code      int
+	Headers   models.Headers
+	Body      []byte
+	IsDynamic bool
+}
+
+func (db *DB) HTTPRoutesCreate(ctx context.Context, p HTTPRoutesCreateParams) (*models.HTTPRoute, error) {
 	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesCreate")
 	defer span.End()
 
-	o.CreatedAt = now()
+	o := &models.HTTPRoute{
+		PayloadID: p.PayloadID,
+		Method:    p.Method,
+		Path:      p.Path,
+		Code:      p.Code,
+		Headers:   p.Headers,
+		Body:      p.Body,
+		IsDynamic: p.IsDynamic,
+		CreatedAt: now(),
+	}
 
 	query := "" +
 		"INSERT INTO http_routes (payload_id, method, path, code, headers, body, is_dynamic, created_at, index) " +
@@ -18,12 +37,38 @@ func (db *DB) HTTPRoutesCreate(ctx context.Context, o *models.HTTPRoute) error {
 		"(SELECT COALESCE(MAX(index), 0) FROM http_routes hr WHERE hr.payload_id = :payload_id) + 1) " +
 		"RETURNING id, index"
 
-	return db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index)
+	if err := db.NamedQueryRowx(ctx, query, o).Scan(&o.ID, &o.Index); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
-func (db *DB) HTTPRoutesUpdate(ctx context.Context, o *models.HTTPRoute) error {
+type HTTPRoutesUpdateParams struct {
+	ID        int64
+	PayloadID int64
+	Method    string
+	Path      string
+	Code      int
+	Headers   models.Headers
+	Body      []byte
+	IsDynamic bool
+}
+
+func (db *DB) HTTPRoutesUpdate(ctx context.Context, p HTTPRoutesUpdateParams) (*models.HTTPRoute, error) {
 	ctx, span := db.tel.TraceStart(ctx, "HTTPRoutesUpdate")
 	defer span.End()
+
+	o := &models.HTTPRoute{
+		ID:        p.ID,
+		PayloadID: p.PayloadID,
+		Method:    p.Method,
+		Path:      p.Path,
+		Code:      p.Code,
+		Headers:   p.Headers,
+		Body:      p.Body,
+		IsDynamic: p.IsDynamic,
+	}
 
 	query := "" +
 		"UPDATE http_routes SET " +
@@ -36,7 +81,11 @@ func (db *DB) HTTPRoutesUpdate(ctx context.Context, o *models.HTTPRoute) error {
 		"is_dynamic = :is_dynamic " +
 		"WHERE id = :id"
 
-	return db.NamedExec(ctx, query, o)
+	if err := db.NamedExec(ctx, query, o); err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 func (db *DB) HTTPRoutesGetByID(ctx context.Context, id int64) (*models.HTTPRoute, error) {

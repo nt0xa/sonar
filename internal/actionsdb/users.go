@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
@@ -34,14 +35,13 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 
 	// TODO: check telegram.id and api.token duplicate
 
-	rec := &models.User{
+	rec, err := act.db.UsersCreate(ctx, database.UsersCreateParams{
 		Name:      p.Name,
 		Params:    p.Params,
 		IsAdmin:   p.IsAdmin,
 		CreatedBy: &u.ID,
-	}
-
-	if err := act.db.UsersCreate(ctx, rec); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Internal(err)
 	}
 

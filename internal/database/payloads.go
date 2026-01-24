@@ -7,40 +7,76 @@ import (
 	"github.com/nt0xa/sonar/internal/database/models"
 )
 
-func (db *DB) PayloadsCreate(ctx context.Context, o *models.Payload) error {
+type PayloadsCreateParams struct {
+	UserID          int64
+	Subdomain       string
+	Name            string
+	NotifyProtocols models.ProtoCategoryArray
+	StoreEvents     bool
+}
+
+func (db *DB) PayloadsCreate(ctx context.Context, p PayloadsCreateParams) (*models.Payload, error) {
 	ctx, span := db.tel.TraceStart(ctx, "PayloadsCreate")
 	defer span.End()
 
-	o.CreatedAt = now()
+	o := &models.Payload{
+		UserID:          p.UserID,
+		Subdomain:       p.Subdomain,
+		Name:            p.Name,
+		NotifyProtocols: p.NotifyProtocols,
+		StoreEvents:     p.StoreEvents,
+		CreatedAt:       now(),
+	}
 
 	query := "" +
 		"INSERT INTO payloads (subdomain, user_id, name, notify_protocols, store_events, created_at) " +
 		"VALUES(:subdomain, :user_id, :name, :notify_protocols, :store_events, :created_at) RETURNING id"
 
 	if err := db.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, observer := range db.obserers {
 		observer.PayloadCreated(*o)
 	}
 
-	return nil
+	return o, nil
 }
 
-func (db *DB) PayloadsUpdate(ctx context.Context, o *models.Payload) error {
+type PayloadsUpdateParams struct {
+	ID              int64
+	UserID          int64
+	Subdomain       string
+	Name            string
+	NotifyProtocols models.ProtoCategoryArray
+	StoreEvents     bool
+}
+
+func (db *DB) PayloadsUpdate(ctx context.Context, p PayloadsUpdateParams) (*models.Payload, error) {
 	ctx, span := db.tel.TraceStart(ctx, "PayloadsUpdate")
 	defer span.End()
 
-	return db.NamedExec(ctx,
+	o := &models.Payload{
+		ID:              p.ID,
+		UserID:          p.UserID,
+		Subdomain:       p.Subdomain,
+		Name:            p.Name,
+		NotifyProtocols: p.NotifyProtocols,
+		StoreEvents:     p.StoreEvents,
+	}
+
+	if err := db.NamedExec(ctx,
 		"UPDATE payloads SET "+
 			"subdomain = :subdomain, "+
 			"user_id = :user_id, "+
 			"name = :name, "+
 			"notify_protocols = :notify_protocols, "+
 			"store_events = :store_events "+
-			"WHERE id = :id", o)
+			"WHERE id = :id", o); err != nil {
+		return nil, err
+	}
 
+	return o, nil
 }
 
 func (db *DB) PayloadGetByID(ctx context.Context, id int64) (*models.Payload, error) {

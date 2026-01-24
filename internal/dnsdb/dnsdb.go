@@ -114,10 +114,20 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 	}
 
 	// Update last answer and last answer time.
-	record.LastAnswer = dnsx.RRsToStrings(res)
-	record.LastAccessedAt = pointer.Time(time.Now())
+	lastAnswer := dnsx.RRsToStrings(res)
+	lastAccessedAt := pointer.Time(time.Now())
 
-	if err := h.DB.DNSRecordsUpdate(ctx, record); err != nil {
+	if _, err := h.DB.DNSRecordsUpdate(ctx, database.DNSRecordsUpdateParams{
+		ID:             record.ID,
+		PayloadID:      record.PayloadID,
+		Name:           record.Name,
+		Type:           record.Type,
+		TTL:            record.TTL,
+		Values:         record.Values,
+		Strategy:       record.Strategy,
+		LastAnswer:     lastAnswer,
+		LastAccessedAt: lastAccessedAt,
+	}); err != nil {
 		return nil, err
 	}
 
