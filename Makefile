@@ -125,6 +125,8 @@ devtools:
 	@go install github.com/abice/go-enum@latest
 	@go install github.com/vektra/mockery/v2@latest 
 	@go install github.com/goreleaser/goreleaser/v2@latest
+	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
 
 #
 # Test
@@ -186,6 +188,12 @@ generate/mocks:
 		--output internal/actions/mock \
 		--outpkg actions_mock \
 		--name Actions
+
+.PHONY: generate/db
+generate/db:
+	@echo "Generating datatabase access code..."
+	@$(EXEC) sqlc vet
+	@$(EXEC) sqlc generate
 
 #
 # Migrations

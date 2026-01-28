@@ -1,0 +1,66 @@
+version: 2
+sql:
+  - engine: postgresql
+    queries: internal/database2/queries/*.sql
+    schema: internal/database/migrations/*.sql
+    gen:
+      go:
+        package: database2
+        out: internal/database2
+        sql_package: pgx/v5
+        emit_pointers_for_null_types: true
+        emit_result_struct_pointers: true
+        emit_db_tags: true
+        emit_interface: true
+        emit_empty_slices: true
+        emit_all_enum_values: true
+        query_parameter_limit: 2
+        output_files_suffix: .gen
+        output_db_file_name: db.gen.go
+        output_models_file_name: models.gen.go
+        output_querier_file_name: querier.gen.go
+        initialisms:
+          - id
+          - ip
+          - rw
+          - ttl
+          - dns
+          - http
+          - uuid
+        overrides:
+          - db_type: pg_catalog.timestamptz
+            go_type:
+              import: "time"
+              type: "Time"
+          - db_type: timestamptz
+            go_type:
+              import: "time"
+              type: "Time"
+          - db_type: pg_catalog.timestamptz
+            nullable: true
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          - db_type: uuid
+            go_type: github.com/google/uuid.UUID
+          - column: events.meta
+            go_type:
+              type: EventsMeta
+          - column: http_routes.headers
+            go_type:
+              type: HTTPHeaders
+          - column: users_full.params
+            go_type:
+              type: UserParams
+    rules:
+      - sqlc/db-prepare
+    database:
+      uri: "${SONAR_DB_DSN}"
+
