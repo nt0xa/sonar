@@ -30,8 +30,8 @@ func TestMain(m *testing.M) {
 	)
 
 	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
-		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "Skipping database tests: SONAR_DB_DSN not set")
+		os.Exit(0)
 	}
 
 	db, err = database.New(dsn, log, tel)
