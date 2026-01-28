@@ -19,6 +19,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.5.4
 	github.com/gorilla/schema v1.4.1
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/confmap v1.0.0
@@ -47,6 +48,13 @@ require (
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
 	golang.org/x/net v0.43.0
 	gopkg.in/square/go-jose.v2 v2.6.0
+)
+
+require (
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 )
 
 require (

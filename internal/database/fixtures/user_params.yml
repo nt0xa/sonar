@@ -1,7 +1,7 @@
 - id: 1
   user_id: 1
   key: telegram.id
-  value: 31337
+  value: "31337"
 
 - id: 2
   user_id: 1
@@ -11,7 +11,7 @@
 - id: 3
   user_id: 2
   key: telegram.id
-  value: 31338
+  value: "31338"
 
 - id: 4
   user_id: 2
@@ -21,7 +21,7 @@
 - id: 5
   user_id: 3
   key: telegram.id
-  value: 1337
+  value: "1337"
 
 - id: 6
   user_id: 3
