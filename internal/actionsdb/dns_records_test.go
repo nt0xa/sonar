@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +8,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -25,9 +24,9 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 		},
 		{
@@ -36,9 +35,9 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeAAAA,
+				Type:        string(database.DNSRecordTypeAAAA),
 				Values:      []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 		},
 		{
@@ -47,9 +46,9 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeMX,
+				Type:        string(database.DNSRecordTypeMX),
 				Values:      []string{"10 mx.example.com."},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 		},
 		{
@@ -58,9 +57,9 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeTXT,
+				Type:        string(database.DNSRecordTypeTXT),
 				Values:      []string{"test string"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 		},
 		{
@@ -69,9 +68,9 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeTXT,
+				Type:        string(database.DNSRecordTypeTXT),
 				Values:      []string{"test.example.com."},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 		},
 	}
@@ -110,9 +109,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.InternalError{},
 		},
@@ -123,9 +122,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -136,9 +135,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -149,9 +148,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -162,9 +161,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"invalid"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -175,9 +174,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeAAAA,
+				Type:        string(database.DNSRecordTypeAAAA),
 				Values:      []string{"invalid"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -188,9 +187,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeMX,
+				Type:        string(database.DNSRecordTypeMX),
 				Values:      []string{"10 example.com"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -201,9 +200,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeCNAME,
+				Type:        string(database.DNSRecordTypeCNAME),
 				Values:      []string{"example.com"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ValidationError{},
 		},
@@ -214,9 +213,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "not-exist",
 				Name:        "test",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.NotFoundError{},
 		},
@@ -227,9 +226,9 @@ func TestDNSRecordsCreate_Error(t *testing.T) {
 				PayloadName: "payload1",
 				Name:        "test-a",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"127.0.0.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&errors.ConflictError{},
 		},
@@ -297,8 +296,12 @@ func TestDNSRecordsDelete_Success(t *testing.T) {
 			p, err := db.PayloadsGetByUserAndName(t.Context(), u.ID, tt.p.PayloadName)
 			assert.NoError(t, err)
 
-			_, err = db.DNSRecordsGetByPayloadNameAndType(t.Context(), p.ID, tt.name, tt.typ)
-			assert.Error(t, err, sql.ErrNoRows)
+			_, err = db.DNSRecordsGetByPayloadNameAndType(t.Context(), database.DNSRecordsGetByPayloadNameAndTypeParams{
+				PayloadID: p.ID,
+				Name:      tt.name,
+				Type:      database.DNSRecordType(tt.typ),
+			})
+			assert.Error(t, err, database.ErrNoRows)
 		})
 	}
 }

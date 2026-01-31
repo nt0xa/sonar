@@ -1,15 +1,14 @@
 package database_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 func TestUsersCreate_Success(t *testing.T) {
@@ -18,8 +17,8 @@ func TestUsersCreate_Success(t *testing.T) {
 
 	o, err := db.UsersCreate(t.Context(), database.UsersCreateParams{
 		Name: "test",
-		Params: models.UserParams{
-			TelegramID: 1234,
+		Params: database.UserParams{
+			TelegramID: "1234",
 		},
 	})
 	require.NoError(t, err)
@@ -46,8 +45,8 @@ func TestUsersCreate_DuplicateParam(t *testing.T) {
 
 	_, err := db.UsersCreate(t.Context(), database.UsersCreateParams{
 		Name: "test",
-		Params: models.UserParams{
-			TelegramID: 1337,
+		Params: database.UserParams{
+			TelegramID: "1337",
 		},
 	})
 	assert.Error(t, err)
@@ -58,8 +57,7 @@ func TestUsersGetByID_Success(t *testing.T) {
 	defer teardown(t)
 
 	o, err := db.UsersGetByID(t.Context(), 1)
-	assert.NoError(t, err)
-	assert.NotNil(t, o)
+	require.NoError(t, err)
 	assert.Equal(t, "user1", o.Name)
 }
 
@@ -67,10 +65,9 @@ func TestUsersGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByID(t.Context(), 1337)
+	_, err := db.UsersGetByID(t.Context(), 1337)
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestUsersGetByName_Success(t *testing.T) {
@@ -79,7 +76,6 @@ func TestUsersGetByName_Success(t *testing.T) {
 
 	o, err := db.UsersGetByName(t.Context(), "user1")
 	assert.NoError(t, err)
-	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
 }
 
@@ -89,7 +85,7 @@ func TestUsersGetByName_NotExist(t *testing.T) {
 
 	_, err := db.UsersGetByName(t.Context(), "not-exist")
 	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestUsersDelete_Success(t *testing.T) {
@@ -109,7 +105,7 @@ func TestUsersUpdate_Success(t *testing.T) {
 	assert.NotNil(t, o)
 
 	params := o.Params
-	params.TelegramID = 1234
+	params.TelegramID = "1234"
 
 	updated, err := db.UsersUpdate(t.Context(), database.UsersUpdateParams{
 		ID:        o.ID,
@@ -130,9 +126,8 @@ func TestUsersGetByParams_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByParam(t.Context(), models.UserTelegramID, 31337)
+	o, err := db.UsersGetByParam(t.Context(), database.UserTelegramID, "31337")
 	assert.NoError(t, err)
-	assert.NotNil(t, o)
 	assert.Equal(t, "user1", o.Name)
 }
 
@@ -140,8 +135,7 @@ func TestUsersGetByParams_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.UsersGetByParam(t.Context(), models.UserTelegramID, 1)
+	_, err := db.UsersGetByParam(t.Context(), database.UserTelegramID, "1")
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }

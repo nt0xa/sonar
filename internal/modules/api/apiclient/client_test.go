@@ -21,7 +21,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
 	"github.com/nt0xa/sonar/internal/utils/errors"
@@ -69,13 +68,13 @@ func TestMain(m *testing.M) {
 	log := slog.New(slog.DiscardHandler)
 	tel := telemetry.NewNoop()
 
-	db, err = database.New(dsn, log, tel)
+	db, err = database.NewWithDSN(dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := db.Migrate(); err != nil {
+	if _, err := database.Migrate(dsn); err != nil {
 		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
 		os.Exit(1)
 	}
@@ -83,7 +82,7 @@ func TestMain(m *testing.M) {
 	acts := actionsdb.New(db, log, "sonar.test")
 
 	tf, err = testfixtures.New(
-		testfixtures.Database(db.DB.DB),
+		testfixtures.Database(db.DB()),
 		testfixtures.Dialect("postgres"),
 		testfixtures.Directory("../../../database/fixtures"),
 	)
@@ -220,7 +219,7 @@ func TestClient(t *testing.T) {
 		{
 			actions.PayloadsCreateParams{
 				Name:            "test",
-				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
+				NotifyProtocols: []string{database.ProtoCategoryDNS},
 				StoreEvents:     true,
 			},
 			map[string]matcher{
@@ -252,7 +251,7 @@ func TestClient(t *testing.T) {
 			actions.PayloadsUpdateParams{
 				Name:            "payload1",
 				NewName:         "test",
-				NotifyProtocols: []string{models.ProtoCategoryHTTP.String()},
+				NotifyProtocols: []string{database.ProtoCategoryHTTP},
 			},
 			map[string]matcher{
 				"Name":            equal("test"),
@@ -295,14 +294,14 @@ func TestClient(t *testing.T) {
 			actions.DNSRecordsCreateParams{
 				PayloadName: "payload1",
 				Name:        "test",
-				Type:        models.DNSTypeA,
-				Strategy:    models.DNSStrategyAll,
+				Type:        string(database.DNSRecordTypeA),
+				Strategy:    string(database.DNSStrategyAll),
 				Values:      []string{"10.1.1.2"},
 				TTL:         100,
 			},
 			map[string]matcher{
 				"Name":      equal("test"),
-				"Type":      equal(models.DNSTypeA),
+				"Type":      equal(database.DNSRecordTypeA),
 				"TTL":       equal(100),
 				"Values":    equal([]string{"10.1.1.2"}),
 				"CreatedAt": withinDuration(time.Second * 5),
@@ -358,15 +357,15 @@ func TestClient(t *testing.T) {
 		{
 			actions.UsersCreateParams{
 				Name: "test",
-				Params: models.UserParams{
-					TelegramID: 1234,
+				Params: database.UserParams{
+					TelegramID: "1234",
 					APIToken:   "test",
 				},
 				IsAdmin: false,
 			},
 			map[string]matcher{
 				"Name":              equal("test"),
-				"Params.TelegramID": equal(1234),
+				"Params.TelegramID": equal("1234"),
 				"Params.APIToken":   equal("test"),
 				"IsAdmin":           equal(false),
 				"CreatedAt":         withinDuration(time.Second * 5),

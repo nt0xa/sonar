@@ -30,7 +30,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
@@ -235,7 +234,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				user, err := lrk.db.UsersGetByParam(ctx, models.UserLarkID, *userID)
+				user, err := lrk.db.UsersGetByParam(ctx, database.UserLarkID, *userID)
 				if err != nil {
 					lrk.log.Error("Failed to get user",
 						"user_id", *userID,
@@ -248,7 +247,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					var err error
 					user, err = lrk.db.UsersCreate(ctx, database.UsersCreateParams{
 						Name: fmt.Sprintf("user-%s", *userID),
-						Params: models.UserParams{
+						Params: database.UserParams{
 							LarkUserID: *userID,
 						},
 					})

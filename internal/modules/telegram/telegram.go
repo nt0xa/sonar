@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
@@ -16,7 +17,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/pkg/telemetry"
@@ -74,16 +74,16 @@ func New(
 			),
 			templates.ExtraFunc("codeLanguage", func(proto string) string {
 				// https://github.com/TelegramMessenger/libprisma#supported-languages
-				category := models.Proto{Name: proto}.Category()
+				category := database.ProtoToCategory(proto)
 
 				switch category {
-				case models.ProtoCategoryHTTP:
+				case database.ProtoCategoryHTTP:
 					return "http"
-				case models.ProtoCategoryDNS:
+				case database.ProtoCategoryDNS:
 					return "dns-zone"
-				case models.ProtoCategorySMTP:
+				case database.ProtoCategorySMTP:
 					return "markdown"
-				case models.ProtoCategoryFTP:
+				case database.ProtoCategoryFTP:
 					return "log"
 				}
 				return ""
@@ -182,7 +182,7 @@ func (tg *Telegram) processUpdate(ctx context.Context, msg *tgbotapi.Message) er
 
 	// Ignore error because user=nil is unauthorized user and there are
 	// some commands available for unauthorized users (e.g. "/id")
-	chatUser, _ := tg.db.UsersGetByParam(ctx, models.UserTelegramID, chat.ID)
+	chatUser, _ := tg.db.UsersGetByParam(ctx, database.UserTelegramID, strconv.FormatInt(chat.ID, 10))
 	ctx = actionsdb.SetUser(ctx, chatUser)
 	ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 

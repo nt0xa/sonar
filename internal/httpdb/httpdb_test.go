@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/httpdb"
-	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
@@ -40,13 +38,13 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, slog.New(slog.DiscardHandler), telemetry.NewNoop())
+	db, err = database.NewWithDSN(dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := db.Migrate(); err != nil {
+	if _, err := database.Migrate(dsn); err != nil {
 		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
 		os.Exit(1)
 	}
@@ -57,7 +55,7 @@ func TestMain(m *testing.M) {
 	}))
 
 	tf, err = testfixtures.New(
-		testfixtures.Database(db.DB.DB),
+		testfixtures.Database(db.DB()),
 		testfixtures.Dialect("postgres"),
 		testfixtures.Directory("../database/fixtures"),
 	)

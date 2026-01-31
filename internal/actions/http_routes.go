@@ -13,7 +13,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/internal/utils/valid"
 )
@@ -61,8 +61,8 @@ type HTTPRoutesCreateParams struct {
 }
 
 func (p HTTPRoutesCreateParams) Validate() error {
-	methods := []string{models.HTTPMethodAny}
-	methods = append(methods, models.HTTPMethods...)
+	methods := []string{database.HTTPMethodAny}
+	methods = append(methods, database.HTTPMethods...)
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
@@ -93,7 +93,7 @@ func HTTPRoutesCreateCommand(acts *Actions, p *HTTPRoutesCreateParams, local boo
 		file    bool
 	)
 
-	methods := append([]string{models.HTTPMethodAny}, models.HTTPMethods...)
+	methods := append([]string{database.HTTPMethodAny}, database.HTTPMethods...)
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&p.Method, "method", "m", "GET",
@@ -159,8 +159,8 @@ type HTTPRoutesUpdateParams struct {
 }
 
 func (p HTTPRoutesUpdateParams) Validate() error {
-	methods := []string{models.HTTPMethodAny}
-	methods = append(methods, models.HTTPMethods...)
+	methods := []string{database.HTTPMethodAny}
+	methods = append(methods, database.HTTPMethods...)
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Payload, validation.Required),
@@ -198,7 +198,7 @@ func HTTPRoutesUpdateCommand(acts *Actions, p *HTTPRoutesUpdateParams, local boo
 		body      string
 	)
 
-	methods := append([]string{models.HTTPMethodAny}, models.HTTPMethods...)
+	methods := append([]string{database.HTTPMethodAny}, database.HTTPMethods...)
 
 	cmd.Flags().StringVarP(&p.Payload, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&method, "method", "m", "GET",

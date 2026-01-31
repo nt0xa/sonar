@@ -9,7 +9,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -27,8 +27,8 @@ func TestUsersCreate_Success(t *testing.T) {
 			"regular",
 			actions.UsersCreateParams{
 				Name: "test",
-				Params: models.UserParams{
-					TelegramID: 1000,
+				Params: database.UserParams{
+					TelegramID: "1000",
 					APIToken:   "token",
 				},
 			},
@@ -37,8 +37,8 @@ func TestUsersCreate_Success(t *testing.T) {
 			"admin",
 			actions.UsersCreateParams{
 				Name: "test",
-				Params: models.UserParams{
-					TelegramID: 1000,
+				Params: database.UserParams{
+					TelegramID: "1000",
 					APIToken:   "token",
 				},
 				IsAdmin: true,
@@ -56,7 +56,7 @@ func TestUsersCreate_Success(t *testing.T) {
 
 			assert.NotNil(t, r)
 			assert.Equal(t, tt.p.Name, r.Name)
-			assert.Equal(t, int64(tt.p.Params.TelegramID), r.Params.TelegramID)
+			assert.Equal(t, tt.p.Params.TelegramID, r.Params.TelegramID)
 			assert.Equal(t, tt.p.Params.APIToken, r.Params.APIToken)
 			assert.Equal(t, tt.p.IsAdmin, r.IsAdmin)
 		})

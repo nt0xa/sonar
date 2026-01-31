@@ -2,190 +2,122 @@ package database
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/fatih/structs"
-
-	"github.com/nt0xa/sonar/internal/database/models"
-	"github.com/nt0xa/sonar/internal/utils"
+	"iter"
+	"reflect"
 )
 
-var usersInnerQuery = "" +
-	"SELECT users.*, " +
-	"COALESCE(json_object_agg(user_params.key, user_params.value) " +
-	"FILTER (WHERE user_params.key IS NOT NULL), '{}') AS params " +
-	"FROM users " +
-	"LEFT JOIN user_params ON user_params.user_id = users.id " +
-	"GROUP BY users.id"
+const (
+	UserTelegramID string = "telegram.id"
+	UserAPIToken   string = "api.token"
+	UserLarkID     string = "lark.userid"
+	UserSlackID    string = "slack.id"
+)
 
-var usersQuery = "SELECT * FROM (" + usersInnerQuery + ") AS users %s"
-
-type UsersCreateParams struct {
-	Name      string
-	Params    models.UserParams
-	IsAdmin   bool
-	CreatedBy *int64
+var UserParamKeys = []string{
+	UserTelegramID,
+	UserAPIToken,
+	UserLarkID,
+	UserSlackID,
 }
 
-func (db *DB) UsersCreate(ctx context.Context, p UsersCreateParams) (*models.User, error) {
-	ctx, span := db.tel.TraceStart(ctx, "UsersCreate")
-	defer span.End()
+type UserParams struct {
+	TelegramID string `json:"telegram.id" mapstructure:"telegram.id"`
+	APIToken   string `json:"api.token"   mapstructure:"api.token"`
+	LarkUserID string `json:"lark.userid" mapstructure:"lark.userid"`
+	SlackID    string `json:"slack.id"    mapstructure:"slack.id"`
+}
 
-	params := p.Params
-	if params.APIToken == "" {
-		token, err := utils.GenerateRandomString(16)
+func (up UserParams) Iter() iter.Seq2[string, string] {
+	return func(yield func(string, string) bool) {
+		v := reflect.ValueOf(up)
+		t := v.Type()
+		for i := 0; i < v.NumField(); i++ {
+			key := t.Field(i).Tag.Get("json")
+			value := v.Field(i).Interface().(string)
+
+			if !yield(key, value) {
+				return
+			}
+		}
+	}
+}
+
+type UsersCreateParams struct {
+	Name      string     `db:"name"`
+	IsAdmin   bool       `db:"is_admin"`
+	CreatedBy *int64     `db:"created_by"`
+	Params    UserParams `db:"params"`
+}
+
+func (db *DB) UsersCreate(ctx context.Context, arg UsersCreateParams) (*UsersFull, error) {
+	return RunInTx(ctx, db, func(ctx context.Context, db Querier) (*UsersFull, error) {
+		user, err := db.usersInsert(ctx, usersInsertParams{
+			Name:      arg.Name,
+			IsAdmin:   arg.IsAdmin,
+			CreatedBy: arg.CreatedBy,
+		})
 		if err != nil {
 			return nil, err
 		}
-		params.APIToken = token
-	}
 
-	o := &models.User{
-		Name:      p.Name,
-		Params:    params,
-		IsAdmin:   p.IsAdmin,
-		CreatedBy: p.CreatedBy,
-		CreatedAt: now(),
-	}
-
-	tx, err := db.Beginx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-
-	query := "" +
-		"INSERT INTO users (name, is_admin, created_by, created_at) " +
-		"VALUES(:name, :is_admin, :created_by, :created_at) RETURNING id"
-
-	if err := tx.NamedQueryRowx(ctx, query, o).Scan(&o.ID); err != nil {
-		return nil, err
-	}
-
-	for _, f := range structs.Fields(o.Params) {
-		// Filter zero values here, because if for example "telegram" module is disabled we will have
-		// conflict error for all users with telegram id 0.
-		if !f.IsZero() {
-			if err := tx.Exec(ctx,
-				"INSERT INTO user_params (user_id, key, value) "+
-					"VALUES($1, $2, $3::TEXT)", o.ID, f.Tag("json"), f.Value()); err != nil {
+		for key, value := range arg.Params.Iter() {
+			if err := db.userParamsInsert(ctx, userParamsInsertParams{
+				UserID: user.ID,
+				Key:    key,
+				Value:  value,
+			}); err != nil {
 				return nil, err
 			}
 		}
-	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return o, nil
-}
-
-func (db *DB) UsersGetByID(ctx context.Context, id int64) (*models.User, error) {
-	ctx, span := db.tel.TraceStart(ctx, "UsersGetByID")
-	defer span.End()
-
-	var o models.User
-
-	err := db.Get(ctx, &o, fmt.Sprintf(usersQuery, "WHERE users.id = $1"), id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &o, nil
-}
-
-func (db *DB) UsersGetByName(ctx context.Context, name string) (*models.User, error) {
-	ctx, span := db.tel.TraceStart(ctx, "UsersGetByName")
-	defer span.End()
-
-	var o models.User
-
-	err := db.Get(ctx, &o, fmt.Sprintf(usersQuery, "WHERE users.name = $1"), name)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &o, nil
-}
-
-func (db *DB) UsersGetByParam(ctx context.Context, key models.UserParamsKey, value any) (*models.User, error) {
-	ctx, span := db.tel.TraceStart(ctx, "UsersGetByParam")
-	defer span.End()
-
-	var o models.User
-
-	err := db.Get(ctx, &o,
-		fmt.Sprintf(usersQuery, "WHERE users.params->>$1 = $2::TEXT"), key, value)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &o, nil
-}
-
-func (db *DB) UsersDelete(ctx context.Context, id int64) error {
-	ctx, span := db.tel.TraceStart(ctx, "UsersDelete")
-	defer span.End()
-
-	return db.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+		return &UsersFull{
+			ID:        user.ID,
+			Name:      user.Name,
+			CreatedAt: user.CreatedAt,
+			IsAdmin:   user.IsAdmin,
+			CreatedBy: user.CreatedBy,
+			Params:    arg.Params,
+		}, nil
+	})
 }
 
 type UsersUpdateParams struct {
-	ID        int64
-	Name      string
-	Params    models.UserParams
-	IsAdmin   bool
-	CreatedBy *int64
+	ID        int64      `db:"id"`
+	Name      string     `db:"name"`
+	IsAdmin   bool       `db:"is_admin"`
+	CreatedBy *int64     `db:"created_by"`
+	Params    UserParams `db:"params"`
 }
 
-func (db *DB) UsersUpdate(ctx context.Context, p UsersUpdateParams) (*models.User, error) {
-	ctx, span := db.tel.TraceStart(ctx, "UsersUpdate")
-	defer span.End()
+func (db *DB) UsersUpdate(ctx context.Context, arg UsersUpdateParams) (*UsersFull, error) {
+	return RunInTx(ctx, db, func(ctx context.Context, db Querier) (*UsersFull, error) {
+		user, err := db.usersUpdate(ctx, usersUpdateParams{
+			ID:        arg.ID,
+			Name:      arg.Name,
+			IsAdmin:   arg.IsAdmin,
+			CreatedBy: arg.CreatedBy,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	o := &models.User{
-		ID:        p.ID,
-		Name:      p.Name,
-		Params:    p.Params,
-		IsAdmin:   p.IsAdmin,
-		CreatedBy: p.CreatedBy,
-	}
-
-	tx, err := db.Beginx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-
-	err = tx.NamedExec(ctx,
-		"UPDATE users SET name = :name, is_admin = :is_admin, created_by = :created_by WHERE id = :id", o)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, f := range structs.Fields(o.Params) {
-		// Filter zero values here, because if for example "telegram" module is disabled we will have
-		// conflict error for all users with telegram id 0.
-		if !f.IsZero() {
-			if err := tx.Exec(ctx,
-				"UPDATE user_params SET value = $1 WHERE user_id = $2 AND key = $3",
-				f.Value(), o.ID, f.Tag("json")); err != nil {
+		for key, value := range arg.Params.Iter() {
+			if err := db.userParamsUpdate(ctx, userParamsUpdateParams{
+				UserID: user.ID,
+				Key:    key,
+				Value:  value,
+			}); err != nil {
 				return nil, err
 			}
 		}
-	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return o, nil
+		return &UsersFull{
+			ID:        user.ID,
+			Name:      user.Name,
+			CreatedAt: user.CreatedAt,
+			IsAdmin:   user.IsAdmin,
+			CreatedBy: user.CreatedBy,
+			Params:    arg.Params,
+		}, nil
+	})
 }

@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/templates"
 	"gopkg.in/square/go-jose.v2/json"
@@ -311,17 +311,17 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 		headerIcon     string
 	)
 
-	switch n.Event.Protocol.Category() {
-	case models.ProtoCategoryDNS:
+	switch database.ProtoToCategory(n.Event.Protocol) {
+	case database.ProtoCategoryDNS:
 		headerTemplate = "carmine"
 		headerIcon = "history-search_filled"
-	case models.ProtoCategoryFTP:
+	case database.ProtoCategoryFTP:
 		headerTemplate = "turquoise"
 		headerIcon = "multi-folder_filled"
-	case models.ProtoCategorySMTP:
+	case database.ProtoCategorySMTP:
 		headerTemplate = "indigo"
 		headerIcon = "tab-mail_filled"
-	case models.ProtoCategoryHTTP:
+	case database.ProtoCategoryHTTP:
 		headerTemplate = "wathet"
 		headerIcon = "language_filled"
 	}
@@ -355,7 +355,7 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 				Content: fmt.Sprintf(
 					"[%s] %s",
 					n.Payload.Name,
-					strings.ToUpper(n.Event.Protocol.String()),
+					strings.ToUpper(n.Event.Protocol),
 				),
 			},
 			Subtitle: HeaderText{

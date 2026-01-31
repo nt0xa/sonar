@@ -135,7 +135,7 @@ devtools:
 .PHONY: test
 test:
 	@echo "Running tests..."
-	@$(EXEC) go test ./... -v -p 1 -coverprofile coverage.out
+	@$(EXEC) go test ./... -p 1 -coverprofile coverage.out
 
 .PHONY: coverage
 coverage:

@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package database2
+package database
 
 import (
 	"context"
@@ -15,21 +15,21 @@ type Querier interface {
 	DNSRecordsDeleteAllByPayloadIDAndName(ctx context.Context, payloadID int64, name string) ([]*DNSRecord, error)
 	DNSRecordsGetByID(ctx context.Context, id *int64) (*DNSRecord, error)
 	DNSRecordsGetByPayloadID(ctx context.Context, payloadID int64) ([]*DNSRecord, error)
-	DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int32) (*DNSRecord, error)
+	DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int) (*DNSRecord, error)
 	DNSRecordsGetByPayloadNameAndType(ctx context.Context, arg DNSRecordsGetByPayloadNameAndTypeParams) (*DNSRecord, error)
 	DNSRecordsGetCountByPayloadID(ctx context.Context, payloadID int64) (int64, error)
 	DNSRecordsUpdate(ctx context.Context, arg DNSRecordsUpdateParams) (*DNSRecord, error)
 	EventsCreate(ctx context.Context, arg EventsCreateParams) (*Event, error)
 	EventsGetByID(ctx context.Context, id int64) (*Event, error)
 	EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*EventsGetByPayloadAndIndexRow, error)
-	EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*Event, error)
+	EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*EventsListByPayloadIDRow, error)
 	HTTPRoutesCreate(ctx context.Context, arg HTTPRoutesCreateParams) (*HTTPRoute, error)
 	HTTPRoutesDelete(ctx context.Context, id int64) error
 	HTTPRoutesDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*HTTPRoute, error)
 	HTTPRoutesDeleteAllByPayloadIDAndPath(ctx context.Context, payloadID int64, path string) ([]*HTTPRoute, error)
 	HTTPRoutesGetByID(ctx context.Context, id int64) (*HTTPRoute, error)
 	HTTPRoutesGetByPayloadID(ctx context.Context, payloadID int64) ([]*HTTPRoute, error)
-	HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int32) (*HTTPRoute, error)
+	HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int) (*HTTPRoute, error)
 	HTTPRoutesGetByPayloadMethodAndPath(ctx context.Context, arg HTTPRoutesGetByPayloadMethodAndPathParams) (*HTTPRoute, error)
 	HTTPRoutesUpdate(ctx context.Context, arg HTTPRoutesUpdateParams) (*HTTPRoute, error)
 	PayloadsCreate(ctx context.Context, arg PayloadsCreateParams) (*Payload, error)

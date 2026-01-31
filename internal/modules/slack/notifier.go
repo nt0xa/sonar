@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/slack/block"
 	"github.com/slack-go/slack"
@@ -17,7 +17,7 @@ func (s *Slack) Name() string {
 func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 	codeBlocks := make([]string, 0)
 
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		if text := n.Event.Meta.SMTP.Email.Text; len(text) > 0 {
 			codeBlocks = append(codeBlocks, text)
 		}
@@ -40,7 +40,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	// For SMTP send mail.eml for better preview
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 
 		// Upload .eml file

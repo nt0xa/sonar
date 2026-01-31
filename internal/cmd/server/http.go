@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/httpdb"
 	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/pkg/httpx"
@@ -124,20 +123,20 @@ func emitHTTP(events *EventsHandler) httpx.NotifyFunc {
 		read, written, combined []byte,
 		meta *httpx.Meta,
 	) {
-		var proto models.Proto
+		var proto string
 
 		if secure {
-			proto = models.ProtoHTTPS
+			proto = database.ProtoHTTPS
 		} else {
-			proto = models.ProtoHTTP
+			proto = database.ProtoHTTP
 		}
 
-		events.Emit(ctx, &models.Event{
+		events.Emit(ctx, &database.Event{
 			Protocol: proto,
 			R:        read,
 			W:        written,
 			RW:       combined,
-			Meta: models.Meta{
+			Meta: database.EventsMeta{
 				HTTP:   meta,
 				Secure: secure,
 			},

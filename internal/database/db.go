@@ -1,71 +1,95 @@
 package database
 
 import (
-	"embed"
-	"fmt"
-	"log/slog"
+	"context"
+	"database/sql"
 
-	_ "github.com/lib/pq"
-	"github.com/nt0xa/sonar/pkg/telemetry"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/jmoiron/sqlx"
+	"github.com/nt0xa/sonar/pkg/dnsx"
+	"github.com/nt0xa/sonar/pkg/ftpx"
+	"github.com/nt0xa/sonar/pkg/geoipx"
+	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
-//go:embed migrations/*.sql
-var migrationsFS embed.FS
-
 type DB struct {
-	*sqlx.DB
-	log      *slog.Logger
-	tel      telemetry.Telemetry
-	obserers []Observer
+	*Queries
+	pool *pgxpool.Pool
 }
 
-func New(
-	dsn string,
-	log *slog.Logger,
-	tel telemetry.Telemetry,
-) (*DB, error) {
-	db, err := sqlx.Connect("postgres", dsn)
+func NewWithDSN(dsn string) (*DB, error) {
+	ctx := context.Background()
 
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("new: fail to connect to database: %w", err)
+		return nil, err
 	}
 
-	return &DB{
-		DB:       db,
-		log:      log,
-		tel:      tel,
-		obserers: make([]Observer, 0),
-	}, nil
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DB{pool: pool, Queries: New(pool)}, nil
 }
 
-func (db *DB) Migrate() error {
-	fs, err := iofs.New(migrationsFS, "migrations")
-	if err != nil {
-		return fmt.Errorf("migrate: fail to create source: %w", err)
-	}
-
-	driver, err := postgres.WithInstance(db.DB.DB, &postgres.Config{})
-	if err != nil {
-		return fmt.Errorf("migrate: fail to create driver: %w", err)
-	}
-
-	migrations, err := migrate.NewWithInstance("iofs", fs, "postgres", driver)
-	if err != nil {
-		return fmt.Errorf("migrate: fail to init: %w", err)
-	}
-
-	if err := migrations.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("migrate: fail to apply: %w", err)
-	}
-
-	return nil
+func (db DB) DB() *sql.DB {
+	return sql.OpenDB(stdlib.GetPoolConnector(db.pool))
 }
 
-func (db *DB) Observe(observer Observer) {
-	db.obserers = append(db.obserers, observer)
+type txFunc func(ctx context.Context, db Querier) error
+
+func (db *DB) RunInTx(ctx context.Context, fn txFunc) error {
+	tx, err := db.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx) //nolint: errcheck // Safe to ignore
+
+	if err := fn(ctx, db.WithTx(tx)); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
+
+func RunInTx[T any](
+	ctx context.Context,
+	db *DB,
+	fn func(ctx context.Context, db Querier) (*T, error),
+) (*T, error) {
+	tx, err := db.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(ctx) //nolint: errcheck // Safe to ignore
+
+	res, err := fn(ctx, db.WithTx(tx))
+	if err != nil {
+		return nil, err
+	}
+
+	return res, tx.Commit(ctx)
+}
+
+// EventsMeta contains protocol-specific event metadata.
+// Only one of the protocol-specific fields will be populated per event.
+type EventsMeta struct {
+	// Protocol-specific metadata (only one is populated per event)
+	DNS  *dnsx.Meta  `json:"dns,omitempty"`
+	HTTP *httpx.Meta `json:"http,omitempty"`
+	SMTP *smtpx.Meta `json:"smtp,omitempty"`
+	FTP  *ftpx.Meta  `json:"ftp,omitempty"`
+
+	// Common fields across protocols
+	Secure bool `json:"secure,omitempty"`
+
+	// GeoIP information (populated by event handler for all protocols)
+	GeoIP *geoipx.Meta `json:"geoip,omitempty"`
+}
+
+type HTTPHeaders = map[string][]string

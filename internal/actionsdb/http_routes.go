@@ -2,19 +2,17 @@ package actionsdb
 
 import (
 	"context"
-	"database/sql"
 	"encoding/base64"
 	"strings"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
-func HTTPRoute(m models.HTTPRoute, payloadSubdomain string) actions.HTTPRoute {
+func HTTPRoute(m database.HTTPRoute, payloadSubdomain string) actions.HTTPRoute {
 	return actions.HTTPRoute{
-		Index:            m.Index,
+		Index:            int64(m.Index),
 		PayloadSubdomain: payloadSubdomain,
 		Method:           m.Method,
 		Path:             m.Path,
@@ -37,11 +35,15 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	if _, err := act.db.HTTPRoutesGetByPayloadMethodAndPath(ctx, payload.ID, strings.ToUpper(p.Method), p.Path); err != sql.ErrNoRows {
+	if _, err := act.db.HTTPRoutesGetByPayloadMethodAndPath(ctx, database.HTTPRoutesGetByPayloadMethodAndPathParams{
+		PayloadID: payload.ID,
+		Method:    strings.ToUpper(p.Method),
+		Path:      p.Path,
+	}); err != database.ErrNoRows {
 		return nil, errors.Conflictf("http route for payload %q with method %q and path %q already exist",
 			p.PayloadName, strings.ToUpper(p.Method), p.Path)
 	}
@@ -79,12 +81,12 @@ func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutes
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Payload)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.Payload)
 	}
 
-	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, p.Index)
-	if err == sql.ErrNoRows {
+	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, int(p.Index))
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("http route for payload %q with index %d not found",
 			p.Payload, p.Index)
 	} else if err != nil {
@@ -154,12 +156,12 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, p.Index)
-	if err == sql.ErrNoRows {
+	rec, err := act.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, payload.ID, int(p.Index))
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("http route for payload %q with index %d not found",
 			p.PayloadName, p.Index)
 	} else if err != nil {
@@ -184,11 +186,11 @@ func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesC
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	var recs []*models.HTTPRoute
+	var recs []*database.HTTPRoute
 
 	if p.Path != "" {
 		recs, err = act.db.HTTPRoutesDeleteAllByPayloadIDAndPath(ctx, payload.ID, p.Path)
@@ -219,7 +221,7 @@ func (act *dbactions) HTTPRoutesList(ctx context.Context, p actions.HTTPRoutesLi
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 

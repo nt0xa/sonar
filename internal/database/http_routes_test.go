@@ -1,10 +1,10 @@
 package database_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -61,10 +61,9 @@ func TestHTTPRoutesGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.HTTPRoutesGetByID(t.Context(), 1337)
+	_, err := db.HTTPRoutesGetByID(t.Context(), 1337)
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.Error(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestHTTPRoutesDelete_Success(t *testing.T) {
@@ -129,12 +128,20 @@ func TestHTTPRoutesGetByPayloadMethodAndPath(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), 1, "POST", "/post")
+	o, err := db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), database.HTTPRoutesGetByPayloadMethodAndPathParams{
+		PayloadID: 1,
+		Method:    "POST",
+		Path:      "/post",
+	})
 	assert.NoError(t, err)
 	assert.EqualValues(t, "/post", o.Path)
 
 	// Not exist
-	_, err = db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), 1337, "POST", "/post")
+	_, err = db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), database.HTTPRoutesGetByPayloadMethodAndPathParams{
+		PayloadID: 1337,
+		Method:    "POST",
+		Path:      "/post",
+	})
 	assert.Error(t, err)
 }
 
@@ -147,7 +154,7 @@ func TestHTTPRoutesDeleteAllByPayloadID(t *testing.T) {
 	assert.Len(t, l, 5)
 }
 
-func TestHTTPRoutesDeleteAllByPayloadIDAndName(t *testing.T) {
+func TestHTTPRoutesDeleteAllByPayloadIDAndPath(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 

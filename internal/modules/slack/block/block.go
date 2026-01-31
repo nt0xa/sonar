@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/slack-go/slack"
@@ -27,7 +27,7 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 			Text: fmt.Sprintf("%s [%s] %s",
 				getHeaderEmoji(n.Event.Protocol),
 				n.Payload.Name,
-				strings.ToUpper(n.Event.Protocol.String())),
+				strings.ToUpper(n.Event.Protocol)),
 		},
 	))
 
@@ -135,15 +135,15 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 }
 
 // getHeaderEmoji returns the appropriate emoji and color for the protocol
-func getHeaderEmoji(protocol models.Proto) string {
-	switch protocol.Category() {
-	case models.ProtoCategoryDNS:
+func getHeaderEmoji(protocol string) string {
+	switch database.ProtoToCategory(protocol) {
+	case database.ProtoCategoryDNS:
 		return ":mag:"
-	case models.ProtoCategoryFTP:
+	case database.ProtoCategoryFTP:
 		return ":file_folder:"
-	case models.ProtoCategorySMTP:
+	case database.ProtoCategorySMTP:
 		return ":e-mail:"
-	case models.ProtoCategoryHTTP:
+	case database.ProtoCategoryHTTP:
 		return ":globe_with_meridians:"
 	default:
 		return ":bell:"

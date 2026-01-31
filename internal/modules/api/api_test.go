@@ -20,7 +20,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/pkg/telemetry"
@@ -68,13 +67,13 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, log, tel)
+	db, err = database.NewWithDSN(dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := db.Migrate(); err != nil {
+	if _, err := database.Migrate(dsn); err != nil {
 		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
 		os.Exit(1)
 	}
@@ -82,7 +81,7 @@ func TestMain(m *testing.M) {
 	acts := actionsdb.New(db, log, "sonar.test")
 
 	tf, err = testfixtures.New(
-		testfixtures.Database(db.DB.DB),
+		testfixtures.Database(db.DB()),
 		testfixtures.Dialect("postgres"),
 		testfixtures.Directory("../../database/fixtures"),
 	)
@@ -189,8 +188,8 @@ func TestAPI(t *testing.T) {
 				"$.name":      equal("test"),
 				"$.notifyProtocols": equal(
 					[]any{
-						models.ProtoCategoryDNS.String(),
-						models.ProtoCategorySMTP.String(),
+						database.ProtoCategoryDNS,
+						database.ProtoCategorySMTP,
 					},
 				),
 				"$.storeEvents": equal(true),
@@ -269,7 +268,7 @@ func TestAPI(t *testing.T) {
 			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]any{models.ProtoCategorySMTP.String()}),
+				"$.notifyProtocols": equal([]any{database.ProtoCategorySMTP}),
 				"$.storeEvents":     equal(false),
 			},
 			status: 200,
@@ -282,7 +281,7 @@ func TestAPI(t *testing.T) {
 			schema: actions.PayloadsUpdateResult{},
 			result: map[string]matcher{
 				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]any{models.ProtoCategorySMTP.String()}),
+				"$.notifyProtocols": equal([]any{database.ProtoCategorySMTP}),
 				"$.storeEvents":     equal(true), // Must not be changed
 			},
 			status: 200,
@@ -539,13 +538,13 @@ func TestAPI(t *testing.T) {
 			method: "POST",
 			path:   "/users",
 			token:  AdminToken,
-			json:   `{"name": "test", "params": {"api.token": "token", "telegram.id": 1234}}`,
+			json:   `{"name": "test", "params": {"api.token": "token", "telegram.id": "1234"}}`,
 			schema: actions.UsersCreateResult{},
 			result: map[string]matcher{
 				"$.name":                  equal("test"),
 				"$.isAdmin":               equal(false),
 				`$.params["api.token"]`:   equal("token"),
-				`$.params["telegram.id"]`: equal(1234),
+				`$.params["telegram.id"]`: equal("1234"),
 				"$.createdAt":             withinDuration(time.Second * 10),
 			},
 			status: 201,
@@ -566,7 +565,7 @@ func TestAPI(t *testing.T) {
 			method: "POST",
 			path:   "/users",
 			token:  AdminToken,
-			json:   `{"name": "user1", "params": {"api.token": "token", "telegram.id": 1234}}`,
+			json:   `{"name": "user1", "params": {"api.token": "token", "telegram.id": "1234"}}`,
 			schema: &errors.ConflictError{},
 			result: map[string]matcher{
 				"$.message": contains("conflict"),

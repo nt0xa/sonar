@@ -7,7 +7,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/internal/utils/valid"
 )
@@ -50,7 +50,7 @@ func (p PayloadsCreateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
 		validation.Field(&p.NotifyProtocols, validation.Each(valid.OneOf(
-			models.ProtoCategoriesAll.Strings(),
+			database.ProtoCategoriesAll,
 			true,
 		))),
 	)
@@ -73,10 +73,10 @@ func PayloadsCreateCommand(acts *Actions, p *PayloadsCreateParams, local bool) (
 	}
 
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p",
-		models.ProtoCategoriesAll.Strings(), "Protocols to notify")
+		database.ProtoCategoriesAll, "Protocols to notify")
 	cmd.Flags().BoolVarP(&p.StoreEvents, "events", "e", false, "Store events in database")
 
-	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(models.ProtoCategoriesAll.Strings()))
+	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(database.ProtoCategoriesAll))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
@@ -99,7 +99,7 @@ func (p PayloadsUpdateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required),
 		validation.Field(&p.NotifyProtocols, validation.Each(valid.OneOf(
-			models.ProtoCategoriesAll.Strings(),
+			database.ProtoCategoriesAll,
 			true,
 		))),
 	)
@@ -128,7 +128,7 @@ func PayloadsUpdateCommand(acts *Actions, p *PayloadsUpdateParams, local bool) (
 	cmd.Flags().StringSliceVarP(&p.NotifyProtocols, "protocols", "p", nil, "Protocols to notify")
 	cmd.Flags().BoolVarP(&storeEvents, "events", "e", false, "Store events in database")
 
-	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(models.ProtoCategoriesAll.Strings()))
+	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(database.ProtoCategoriesAll))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]

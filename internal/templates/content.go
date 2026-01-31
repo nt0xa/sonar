@@ -135,21 +135,21 @@ const (
 )
 
 var notificationHeader = `
-{{- $category := .Event.Protocol.Category.String -}}
-#{{ .Payload.Name }} {{ if eq (upper $category) "FTP" -}}
+{{- $protocol := .Event.Protocol -}}
+#{{ .Payload.Name }} {{ if eq $protocol "ftp" -}}
 📂
-{{- else if eq (upper $category) "SMTP" -}}
+{{- else if eq $protocol "smtp" -}}
 📧
-{{- else if eq (upper $category) "DNS" -}}
+{{- else if eq $protocol "dns" -}}
 🔎
-{{- else if eq (upper $category) "HTTP" -}}
+{{- else if or (eq $protocol "http") (eq $protocol "https") -}}
 🌐
 {{- else -}}
 ❓
-{{- end }} <bold>{{ .Event.Protocol.String | upper }}</bold>`
+{{- end }} <bold>{{ .Event.Protocol | upper }}</bold>`
 
 var notificationBody = `
-{{- $protocol := .Event.Protocol.String -}}
+{{- $protocol := .Event.Protocol -}}
 📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
 📆 <bold>Time:</bold> {{ .Event.ReceivedAt.Format "02 Jan 2006 15:04:05 MST" }}
 {{- $geoip := .Event.Meta.GeoIP }}

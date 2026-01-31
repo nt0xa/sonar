@@ -2,15 +2,13 @@ package actionsdb
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
-func User(m models.User) actions.User {
+func User(m database.UsersFull) actions.User {
 	return actions.User{
 		Name:      m.Name,
 		Params:    m.Params,
@@ -29,7 +27,7 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Validation(err)
 	}
 
-	if _, err := act.db.UsersGetByName(ctx, p.Name); err != sql.ErrNoRows {
+	if _, err := act.db.UsersGetByName(ctx, p.Name); err != database.ErrNoRows {
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
 

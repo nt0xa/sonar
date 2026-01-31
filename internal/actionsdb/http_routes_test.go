@@ -1,7 +1,6 @@
 package actionsdb_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +8,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -26,7 +25,7 @@ func TestHTTPRoutesCreate_Success(t *testing.T) {
 				Method:      "GET",
 				Path:        "/test",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -40,7 +39,7 @@ func TestHTTPRoutesCreate_Success(t *testing.T) {
 				Method:      "POST",
 				Path:        "/test-2",
 				Code:        201,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -89,7 +88,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "/test",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -105,7 +104,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -121,7 +120,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "/test",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -137,7 +136,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "/test",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "xxxxxxx",
@@ -153,7 +152,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "/test",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -169,7 +168,7 @@ func TestHTTPRoutesCreate_Error(t *testing.T) {
 				Method:      "GET",
 				Path:        "/get",
 				Code:        200,
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      "test",
@@ -241,8 +240,12 @@ func TestHTTPRoutesDelete_Success(t *testing.T) {
 			p, err := db.PayloadsGetByUserAndName(t.Context(), u.ID, tt.p.PayloadName)
 			assert.NoError(t, err)
 
-			_, err = db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), p.ID, tt.method, tt.path)
-			assert.Error(t, err, sql.ErrNoRows)
+			_, err = db.HTTPRoutesGetByPayloadMethodAndPath(t.Context(), database.HTTPRoutesGetByPayloadMethodAndPathParams{
+				PayloadID: p.ID,
+				Method:    tt.method,
+				Path:      tt.path,
+			})
+			assert.Error(t, err, database.ErrNoRows)
 		})
 	}
 }
@@ -519,7 +522,7 @@ func TestHTTPRoutesUpdate_Success(t *testing.T) {
 				Method:  ptr("GET"),
 				Path:    ptr("/test"),
 				Code:    ptr(200),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("test"),
@@ -534,7 +537,7 @@ func TestHTTPRoutesUpdate_Success(t *testing.T) {
 				Method:  ptr("POST"),
 				Path:    ptr("/test-2"),
 				Code:    ptr(201),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("test"),
@@ -584,7 +587,7 @@ func TestHTTPRoutesUpdate_Error(t *testing.T) {
 				Method:  ptr("GET"),
 				Path:    ptr("/test"),
 				Code:    ptr(200),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("test"),
@@ -601,7 +604,7 @@ func TestHTTPRoutesUpdate_Error(t *testing.T) {
 				Method:  ptr("GET"),
 				Path:    ptr("/test"),
 				Code:    ptr(200),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("test"),
@@ -618,7 +621,7 @@ func TestHTTPRoutesUpdate_Error(t *testing.T) {
 				Method:  ptr("GET"),
 				Path:    ptr("/test"),
 				Code:    ptr(200),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("test"),
@@ -635,7 +638,7 @@ func TestHTTPRoutesUpdate_Error(t *testing.T) {
 				Method:  ptr("GET"),
 				Path:    ptr("/test"),
 				Code:    ptr(200),
-				Headers: models.Headers{
+				Headers: database.HTTPHeaders{
 					"Test": {"test"},
 				},
 				Body:      ptr("xxxxxx"),

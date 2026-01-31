@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: dns_records.sql
 
-package database2
+package database
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type DNSRecordsCreateParams struct {
 	PayloadID      int64         `db:"payload_id"`
 	Name           string        `db:"name"`
 	Type           DNSRecordType `db:"type"`
-	TTL            int32         `db:"ttl"`
+	TTL            int           `db:"ttl"`
 	Values         []string      `db:"values"`
 	Strategy       DNSStrategy   `db:"strategy"`
 	LastAnswer     []string      `db:"last_answer"`
@@ -201,7 +201,7 @@ const dNSRecordsGetByPayloadIDAndIndex = `-- name: DNSRecordsGetByPayloadIDAndIn
 SELECT id, payload_id, name, type, ttl, values, strategy, last_answer, last_accessed_at, created_at, index FROM dns_records WHERE payload_id = $1 AND index = $2
 `
 
-func (q *Queries) DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int32) (*DNSRecord, error) {
+func (q *Queries) DNSRecordsGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int) (*DNSRecord, error) {
 	row := q.db.QueryRow(ctx, dNSRecordsGetByPayloadIDAndIndex, payloadID, index)
 	var i DNSRecord
 	err := row.Scan(
@@ -280,7 +280,7 @@ type DNSRecordsUpdateParams struct {
 	PayloadID      int64         `db:"payload_id"`
 	Name           string        `db:"name"`
 	Type           DNSRecordType `db:"type"`
-	TTL            int32         `db:"ttl"`
+	TTL            int           `db:"ttl"`
 	Values         []string      `db:"values"`
 	Strategy       DNSStrategy   `db:"strategy"`
 	LastAnswer     []string      `db:"last_answer"`

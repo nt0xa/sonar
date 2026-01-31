@@ -7,7 +7,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -22,10 +22,10 @@ type UsersActions interface {
 }
 
 type User struct {
-	Name      string            `json:"name"`
-	Params    models.UserParams `json:"params"`
-	IsAdmin   bool              `json:"isAdmin"`
-	CreatedAt time.Time         `json:"createdAt"`
+	Name      string              `json:"name"`
+	Params    database.UserParams `json:"params"`
+	IsAdmin   bool                `json:"isAdmin"`
+	CreatedAt time.Time           `json:"createdAt"`
 }
 
 //
@@ -33,9 +33,9 @@ type User struct {
 //
 
 type UsersCreateParams struct {
-	Name    string            `err:"name"    json:"name"`
-	Params  models.UserParams `err:"params"  json:"params"`
-	IsAdmin bool              `err:"isAdmin" json:"isAdmin"`
+	Name    string              `err:"name"    json:"name"`
+	Params  database.UserParams `err:"params"  json:"params"`
+	IsAdmin bool                `err:"isAdmin" json:"isAdmin"`
 }
 
 func (p UsersCreateParams) Validate() error {
