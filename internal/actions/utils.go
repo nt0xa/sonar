@@ -3,7 +3,6 @@ package actions
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 
 	"github.com/nt0xa/sonar/internal/utils/errors"
@@ -38,18 +37,4 @@ func quoteAndJoin(values []string) string {
 	}
 
 	return s
-}
-
-func mapToStruct(src map[string]string, dst interface{}) error {
-	c := &mapstructure.DecoderConfig{
-		Metadata:         nil,
-		Result:           dst,
-		WeaklyTypedInput: true,
-	}
-	decoder, err := mapstructure.NewDecoder(c)
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(src)
 }

@@ -7,7 +7,6 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -22,10 +21,13 @@ type UsersActions interface {
 }
 
 type User struct {
-	Name      string              `json:"name"`
-	Params    database.UserParams `json:"params"`
-	IsAdmin   bool                `json:"isAdmin"`
-	CreatedAt time.Time           `json:"createdAt"`
+	Name       string    `json:"name"`
+	IsAdmin    bool      `json:"isAdmin"`
+	APIToken   *string   `json:"apiToken,omitempty"`
+	TelegramID *int64    `json:"telegramId,omitempty"`
+	LarkID     *string   `json:"larkId,omitempty"`
+	SlackID    *string   `json:"slackId,omitempty"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 //
@@ -33,9 +35,12 @@ type User struct {
 //
 
 type UsersCreateParams struct {
-	Name    string              `err:"name"    json:"name"`
-	Params  database.UserParams `err:"params"  json:"params"`
-	IsAdmin bool                `err:"isAdmin" json:"isAdmin"`
+	Name       string  `json:"name"`
+	APIToken   *string `json:"apiToken,omitempty"`
+	TelegramID *int64  `json:"telegramId,omitempty"`
+	LarkID     *string `json:"larkId,omitempty"`
+	SlackID    *string `json:"slackId,omitempty"`
+	IsAdmin    bool    `json:"isAdmin"`
 }
 
 func (p UsersCreateParams) Validate() error {
@@ -59,15 +64,36 @@ func UsersCreateCommand(acts *Actions, p *UsersCreateParams, local bool) (*cobra
 		Args:  oneArg("NAME"),
 	}
 
-	cmd.Flags().StringToStringP("params", "p", map[string]string{}, "User parameters")
+	var (
+		apiToken   string
+		telegramID int64
+		larkID     string
+		slackID    string
+	)
+
 	cmd.Flags().BoolVarP(&p.IsAdmin, "admin", "a", false, "Admin user")
+	cmd.Flags().StringVar(&apiToken, "token", "", "API token")
+	cmd.Flags().Int64Var(&telegramID, "telegram", 0, "Telegram user ID")
+	cmd.Flags().StringVar(&larkID, "lark", "", "Lark user ID")
+	cmd.Flags().StringVar(&slackID, "slack", "", "Slack user ID")
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Name = args[0]
 
-		params, _ := cmd.Flags().GetStringToString("params")
-		if err := mapToStruct(params, &p.Params); err != nil {
-			return errors.BadFormat(err)
+		if cmd.Flags().Changed("token") {
+			p.APIToken = &apiToken
+		}
+
+		if cmd.Flags().Changed("telegram") {
+			p.TelegramID = &telegramID
+		}
+
+		if cmd.Flags().Changed("lark") {
+			p.LarkID = &larkID
+		}
+
+		if cmd.Flags().Changed("slack") {
+			p.SlackID = &slackID
 		}
 
 		return nil
@@ -79,7 +105,7 @@ func UsersCreateCommand(acts *Actions, p *UsersCreateParams, local bool) (*cobra
 //
 
 type UsersDeleteParams struct {
-	Name string `err:"name" path:"name"`
+	Name string `path:"name"`
 }
 
 func (p UsersDeleteParams) Validate() error {

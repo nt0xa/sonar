@@ -11,7 +11,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"time"
 
@@ -349,31 +348,30 @@ func createOrUpdateAdminUser(
 	ctx, span := tel.TraceStart(ctx, "db.init.admin")
 	defer span.End()
 
-	params := database.UserParams{
-		TelegramID: strconv.FormatInt(cfg.Modules.Telegram.Admin, 10),
-		APIToken:   cfg.Modules.API.Admin,
-		LarkUserID: cfg.Modules.Lark.Admin,
-		SlackID:    cfg.Modules.Slack.Admin,
-	}
-
 	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, sql.ErrNoRows) {
 		// There is no admin yet - create one
 		if _, err := db.UsersCreate(ctx, database.UsersCreateParams{
-			Name:      "admin",
-			Params:    params,
-			IsAdmin:   true,
-			CreatedBy: nil,
+			Name:       "admin",
+			IsAdmin:    true,
+			CreatedBy:  nil,
+			TelegramID: &cfg.Modules.Telegram.Admin,
+			APIToken:   &cfg.Modules.API.Admin,
+			LarkID:     &cfg.Modules.Lark.Admin,
+			SlackID:    &cfg.Modules.Slack.Admin,
 		}); err != nil {
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
 	} else if err == nil {
 		// Admin user exists - update
 		if _, err := db.UsersUpdate(ctx, database.UsersUpdateParams{
-			ID:        u.ID,
-			Name:      "admin",
-			Params:    params,
-			IsAdmin:   true,
-			CreatedBy: nil,
+			ID:         u.ID,
+			Name:       "admin",
+			IsAdmin:    true,
+			CreatedBy:  nil,
+			TelegramID: &cfg.Modules.Telegram.Admin,
+			APIToken:   &cfg.Modules.API.Admin,
+			LarkID:     &cfg.Modules.Lark.Admin,
+			SlackID:    &cfg.Modules.Slack.Admin,
 		}); err != nil {
 			return fmt.Errorf("failed to update admin user: %w", err)
 		}

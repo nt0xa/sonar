@@ -234,7 +234,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				user, err := lrk.db.UsersGetByParam(ctx, database.UserLarkID, *userID)
+				user, err := lrk.db.UsersGetByLarkID(ctx, *userID)
 				if err != nil {
 					lrk.log.Error("Failed to get user",
 						"user_id", *userID,
@@ -246,10 +246,8 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					// Create user if not exists
 					var err error
 					user, err = lrk.db.UsersCreate(ctx, database.UsersCreateParams{
-						Name: fmt.Sprintf("user-%s", *userID),
-						Params: database.UserParams{
-							LarkUserID: *userID,
-						},
+						Name:   fmt.Sprintf("user-%s", *userID),
+						LarkID: userID,
 					})
 					if err != nil {
 						lrk.log.Error("Failed to create user",

@@ -115,7 +115,6 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event) {
 	for _, m := range matches {
 		d := strings.ToLower(string(m[0]))
 
-
 		if _, ok := seen[d]; !ok {
 			seen[d] = struct{}{}
 		} else {

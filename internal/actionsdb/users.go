@@ -8,12 +8,15 @@ import (
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
-func User(m database.UsersFull) actions.User {
+func User(m database.User) actions.User {
 	return actions.User{
-		Name:      m.Name,
-		Params:    m.Params,
-		IsAdmin:   m.IsAdmin,
-		CreatedAt: m.CreatedAt,
+		Name:       m.Name,
+		IsAdmin:    m.IsAdmin,
+		CreatedAt:  m.CreatedAt,
+		APIToken:   m.APIToken,
+		TelegramID: m.TelegramID,
+		LarkID:     m.LarkID,
+		SlackID:    m.SlackID,
 	}
 }
 
@@ -31,13 +34,14 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Conflictf("user with name %q already exist", p.Name)
 	}
 
-	// TODO: check telegram.id and api.token duplicate
-
 	rec, err := act.db.UsersCreate(ctx, database.UsersCreateParams{
-		Name:      p.Name,
-		Params:    p.Params,
-		IsAdmin:   p.IsAdmin,
-		CreatedBy: &u.ID,
+		Name:       p.Name,
+		IsAdmin:    p.IsAdmin,
+		CreatedBy:  &u.ID,
+		APIToken:   p.APIToken,
+		TelegramID: p.TelegramID,
+		LarkID:     p.LarkID,
+		SlackID:    p.SlackID,
 	})
 	if err != nil {
 		return nil, errors.Internal(err)

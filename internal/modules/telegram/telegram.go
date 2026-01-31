@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
@@ -182,7 +181,7 @@ func (tg *Telegram) processUpdate(ctx context.Context, msg *tgbotapi.Message) er
 
 	// Ignore error because user=nil is unauthorized user and there are
 	// some commands available for unauthorized users (e.g. "/id")
-	chatUser, _ := tg.db.UsersGetByParam(ctx, database.UserTelegramID, strconv.FormatInt(chat.ID, 10))
+	chatUser, _ := tg.db.UsersGetByTelegramID(ctx, chat.ID)
 	ctx = actionsdb.SetUser(ctx, chatUser)
 	ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 

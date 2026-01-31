@@ -17,7 +17,7 @@ func TestBuild(t *testing.T) {
 	receivedAt, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
 
 	blocks, err := block.Build(&modules.Notification{
-		User:    &database.UsersFull{},
+		User:    &database.User{},
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "http",
@@ -83,7 +83,7 @@ func TestBuildMinimal(t *testing.T) {
 	receivedAt, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
 
 	blocks, err := block.Build(&modules.Notification{
-		User:    &database.UsersFull{},
+		User:    &database.User{},
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol:   "dns",
@@ -114,7 +114,7 @@ func TestBuildWithEmail(t *testing.T) {
 	receivedAt, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
 
 	blocks, err := block.Build(&modules.Notification{
-		User:    &database.UsersFull{},
+		User:    &database.User{},
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "smtp",

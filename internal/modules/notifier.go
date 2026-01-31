@@ -7,7 +7,7 @@ import (
 )
 
 type Notification struct {
-	User    *database.UsersFull
+	User    *database.User
 	Payload *database.Payload
 	Event   *database.Event
 }

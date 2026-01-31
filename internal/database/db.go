@@ -3,7 +3,15 @@ package database
 import (
 	"context"
 	"database/sql"
+	"embed"
+	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
@@ -13,6 +21,11 @@ import (
 	"github.com/nt0xa/sonar/pkg/httpx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
 )
+
+//go:embed migrations/*.sql
+var migrations embed.FS
+
+var ErrNoRows = pgx.ErrNoRows
 
 type DB struct {
 	*Queries
@@ -33,6 +46,33 @@ func NewWithDSN(dsn string) (*DB, error) {
 	}
 
 	return &DB{pool: pool, Queries: New(pool)}, nil
+}
+
+func Migrate(dsn string) (uint, error) {
+	source, err := iofs.New(migrations, "migrations")
+	if err != nil {
+		return 0, err
+	}
+
+	m, err := migrate.NewWithSourceInstance(
+		"iofs",
+		source,
+		strings.ReplaceAll(dsn, "postgres://", "pgx5://"),
+	)
+	if err != nil {
+		return 0, fmt.Errorf("fail to create source: %w", err)
+	}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return 0, fmt.Errorf("fail to apply: %w", err)
+	}
+
+	v, _, err := m.Version()
+	if err != nil {
+		return 0, err
+	}
+
+	return v, nil
 }
 
 func (db DB) DB() *sql.DB {

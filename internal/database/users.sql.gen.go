@@ -9,6 +9,47 @@ import (
 	"context"
 )
 
+const usersCreate = `-- name: UsersCreate :one
+INSERT INTO users (name, is_admin, created_by, api_token, telegram_id, lark_id, slack_id, created_at)
+VALUES ($1, $2, $3, COALESCE(NULLIF($4, ''), encode(gen_random_bytes(16), 'hex')), $5, $6, $7, now())
+RETURNING id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token
+`
+
+type UsersCreateParams struct {
+	Name       string  `db:"name"`
+	IsAdmin    bool    `db:"is_admin"`
+	CreatedBy  *int64  `db:"created_by"`
+	APIToken   *string `db:"api_token"`
+	TelegramID *int64  `db:"telegram_id"`
+	LarkID     *string `db:"lark_id"`
+	SlackID    *string `db:"slack_id"`
+}
+
+func (q *Queries) UsersCreate(ctx context.Context, arg UsersCreateParams) (*User, error) {
+	row := q.db.QueryRow(ctx, usersCreate,
+		arg.Name,
+		arg.IsAdmin,
+		arg.CreatedBy,
+		arg.APIToken,
+		arg.TelegramID,
+		arg.LarkID,
+		arg.SlackID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.IsAdmin,
+		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
+	)
+	return &i, err
+}
+
 const usersDelete = `-- name: UsersDelete :exec
 DELETE FROM users WHERE id = $1
 `
@@ -18,80 +59,155 @@ func (q *Queries) UsersDelete(ctx context.Context, id int64) error {
 	return err
 }
 
-const usersGetByID = `-- name: UsersGetByID :one
-SELECT id, name, created_at, is_admin, created_by, params FROM users_full WHERE id = $1
+const usersGetByAPIToken = `-- name: UsersGetByAPIToken :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE api_token = $1::text
 `
 
-func (q *Queries) UsersGetByID(ctx context.Context, id int64) (*UsersFull, error) {
-	row := q.db.QueryRow(ctx, usersGetByID, id)
-	var i UsersFull
+func (q *Queries) UsersGetByAPIToken(ctx context.Context, token string) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetByAPIToken, token)
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.IsAdmin,
 		&i.CreatedBy,
-		&i.Params,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
+	)
+	return &i, err
+}
+
+const usersGetByID = `-- name: UsersGetByID :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE id = $1
+`
+
+func (q *Queries) UsersGetByID(ctx context.Context, id int64) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.IsAdmin,
+		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
+	)
+	return &i, err
+}
+
+const usersGetByLarkID = `-- name: UsersGetByLarkID :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE lark_id = $1::text
+`
+
+func (q *Queries) UsersGetByLarkID(ctx context.Context, id string) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetByLarkID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.IsAdmin,
+		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
 	)
 	return &i, err
 }
 
 const usersGetByName = `-- name: UsersGetByName :one
-SELECT id, name, created_at, is_admin, created_by, params FROM users_full WHERE name = $1
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE name = $1
 `
 
-func (q *Queries) UsersGetByName(ctx context.Context, name string) (*UsersFull, error) {
+func (q *Queries) UsersGetByName(ctx context.Context, name string) (*User, error) {
 	row := q.db.QueryRow(ctx, usersGetByName, name)
-	var i UsersFull
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.IsAdmin,
 		&i.CreatedBy,
-		&i.Params,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
 	)
 	return &i, err
 }
 
-const usersGetByParam = `-- name: UsersGetByParam :one
-SELECT id, name, created_at, is_admin, created_by, params FROM users_full WHERE params->>$1::text = $2::text
+const usersGetBySlackID = `-- name: UsersGetBySlackID :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE slack_id = $1::text
 `
 
-func (q *Queries) UsersGetByParam(ctx context.Context, key string, value string) (*UsersFull, error) {
-	row := q.db.QueryRow(ctx, usersGetByParam, key, value)
-	var i UsersFull
+func (q *Queries) UsersGetBySlackID(ctx context.Context, id string) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetBySlackID, id)
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.IsAdmin,
 		&i.CreatedBy,
-		&i.Params,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
+	)
+	return &i, err
+}
+
+const usersGetByTelegramID = `-- name: UsersGetByTelegramID :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE telegram_id = $1::bigint
+`
+
+func (q *Queries) UsersGetByTelegramID(ctx context.Context, id int64) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetByTelegramID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.IsAdmin,
+		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
 	)
 	return &i, err
 }
 
 const usersList = `-- name: UsersList :many
-SELECT id, name, created_at, is_admin, created_by, params FROM users_full
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users
 `
 
-func (q *Queries) UsersList(ctx context.Context) ([]*UsersFull, error) {
+func (q *Queries) UsersList(ctx context.Context) ([]*User, error) {
 	rows, err := q.db.Query(ctx, usersList)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []*UsersFull{}
+	items := []*User{}
 	for rows.Next() {
-		var i UsersFull
+		var i User
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.CreatedAt,
 			&i.IsAdmin,
 			&i.CreatedBy,
-			&i.Params,
+			&i.TelegramID,
+			&i.SlackID,
+			&i.LarkID,
+			&i.APIToken,
 		); err != nil {
 			return nil, err
 		}
@@ -103,88 +219,41 @@ func (q *Queries) UsersList(ctx context.Context) ([]*UsersFull, error) {
 	return items, nil
 }
 
-const userParamsInsert = `-- name: userParamsInsert :exec
-INSERT INTO user_params(user_id, key, value)
-VALUES ($1, $2, $3)
-`
-
-type userParamsInsertParams struct {
-	UserID int64  `db:"user_id"`
-	Key    string `db:"key"`
-	Value  string `db:"value"`
-}
-
-func (q *Queries) userParamsInsert(ctx context.Context, arg userParamsInsertParams) error {
-	_, err := q.db.Exec(ctx, userParamsInsert, arg.UserID, arg.Key, arg.Value)
-	return err
-}
-
-const userParamsUpdate = `-- name: userParamsUpdate :exec
-UPDATE user_params
-SET
-  value = $3
-WHERE user_id = $1 AND key = $2
-`
-
-type userParamsUpdateParams struct {
-	UserID int64  `db:"user_id"`
-	Key    string `db:"key"`
-	Value  string `db:"value"`
-}
-
-func (q *Queries) userParamsUpdate(ctx context.Context, arg userParamsUpdateParams) error {
-	_, err := q.db.Exec(ctx, userParamsUpdate, arg.UserID, arg.Key, arg.Value)
-	return err
-}
-
-const usersInsert = `-- name: usersInsert :one
-INSERT INTO users (name, is_admin, created_by, created_at)
-VALUES ($1, $2, $3, now())
-RETURNING id, name, created_at, is_admin, created_by
-`
-
-type usersInsertParams struct {
-	Name      string `db:"name"`
-	IsAdmin   bool   `db:"is_admin"`
-	CreatedBy *int64 `db:"created_by"`
-}
-
-func (q *Queries) usersInsert(ctx context.Context, arg usersInsertParams) (*User, error) {
-	row := q.db.QueryRow(ctx, usersInsert, arg.Name, arg.IsAdmin, arg.CreatedBy)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.CreatedAt,
-		&i.IsAdmin,
-		&i.CreatedBy,
-	)
-	return &i, err
-}
-
-const usersUpdate = `-- name: usersUpdate :one
+const usersUpdate = `-- name: UsersUpdate :one
 UPDATE users
 SET
   name = $2,
   is_admin = $3,
-  created_by = $4
+  created_by = $4,
+  api_token = $5,
+  telegram_id = $6,
+  lark_id = $7,
+  slack_id = $8
 WHERE id = $1
-RETURNING id, name, created_at, is_admin, created_by
+RETURNING id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token
 `
 
-type usersUpdateParams struct {
-	ID        int64  `db:"id"`
-	Name      string `db:"name"`
-	IsAdmin   bool   `db:"is_admin"`
-	CreatedBy *int64 `db:"created_by"`
+type UsersUpdateParams struct {
+	ID         int64   `db:"id"`
+	Name       string  `db:"name"`
+	IsAdmin    bool    `db:"is_admin"`
+	CreatedBy  *int64  `db:"created_by"`
+	APIToken   *string `db:"api_token"`
+	TelegramID *int64  `db:"telegram_id"`
+	LarkID     *string `db:"lark_id"`
+	SlackID    *string `db:"slack_id"`
 }
 
-func (q *Queries) usersUpdate(ctx context.Context, arg usersUpdateParams) (*User, error) {
+func (q *Queries) UsersUpdate(ctx context.Context, arg UsersUpdateParams) (*User, error) {
 	row := q.db.QueryRow(ctx, usersUpdate,
 		arg.ID,
 		arg.Name,
 		arg.IsAdmin,
 		arg.CreatedBy,
+		arg.APIToken,
+		arg.TelegramID,
+		arg.LarkID,
+		arg.SlackID,
 	)
 	var i User
 	err := row.Scan(
@@ -193,6 +262,10 @@ func (q *Queries) usersUpdate(ctx context.Context, arg usersUpdateParams) (*User
 		&i.CreatedAt,
 		&i.IsAdmin,
 		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
 	)
 	return &i, err
 }

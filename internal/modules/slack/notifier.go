@@ -15,6 +15,12 @@ func (s *Slack) Name() string {
 }
 
 func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
+	if n.User.SlackID == nil {
+		return fmt.Errorf("user %d has no slack id", n.User.ID)
+	}
+
+	slackID := *n.User.SlackID
+
 	codeBlocks := make([]string, 0)
 
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
@@ -32,7 +38,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 
 	channelID, timestamp, err := s.client.PostMessageContext(
 		ctx,
-		n.User.Params.SlackID,
+		slackID,
 		slack.MsgOptionBlocks(blocks...),
 	)
 	if err != nil {

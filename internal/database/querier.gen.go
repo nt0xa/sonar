@@ -42,15 +42,16 @@ type Querier interface {
 	PayloadsGetBySubdomain(ctx context.Context, subdomain string) (*Payload, error)
 	PayloadsGetByUserAndName(ctx context.Context, userID int64, name string) (*Payload, error)
 	PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) (*Payload, error)
+	UsersCreate(ctx context.Context, arg UsersCreateParams) (*User, error)
 	UsersDelete(ctx context.Context, id int64) error
-	UsersGetByID(ctx context.Context, id int64) (*UsersFull, error)
-	UsersGetByName(ctx context.Context, name string) (*UsersFull, error)
-	UsersGetByParam(ctx context.Context, key string, value string) (*UsersFull, error)
-	UsersList(ctx context.Context) ([]*UsersFull, error)
-	userParamsInsert(ctx context.Context, arg userParamsInsertParams) error
-	userParamsUpdate(ctx context.Context, arg userParamsUpdateParams) error
-	usersInsert(ctx context.Context, arg usersInsertParams) (*User, error)
-	usersUpdate(ctx context.Context, arg usersUpdateParams) (*User, error)
+	UsersGetByAPIToken(ctx context.Context, token string) (*User, error)
+	UsersGetByID(ctx context.Context, id int64) (*User, error)
+	UsersGetByLarkID(ctx context.Context, id string) (*User, error)
+	UsersGetByName(ctx context.Context, name string) (*User, error)
+	UsersGetBySlackID(ctx context.Context, id string) (*User, error)
+	UsersGetByTelegramID(ctx context.Context, id int64) (*User, error)
+	UsersList(ctx context.Context) ([]*User, error)
+	UsersUpdate(ctx context.Context, arg UsersUpdateParams) (*User, error)
 }
 
 var _ Querier = (*Queries)(nil)

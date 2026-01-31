@@ -184,6 +184,10 @@ func keyPath(obj any, kp string) (any, error) {
 		}
 	}
 
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+
 	return v.Interface(), nil
 }
 
@@ -356,19 +360,17 @@ func TestClient(t *testing.T) {
 
 		{
 			actions.UsersCreateParams{
-				Name: "test",
-				Params: database.UserParams{
-					TelegramID: "1234",
-					APIToken:   "test",
-				},
-				IsAdmin: false,
+				Name:       "test",
+				TelegramID: ptr[int64](1234),
+				APIToken:   ptr("test"),
+				IsAdmin:    false,
 			},
 			map[string]matcher{
-				"Name":              equal("test"),
-				"Params.TelegramID": equal("1234"),
-				"Params.APIToken":   equal("test"),
-				"IsAdmin":           equal(false),
-				"CreatedAt":         withinDuration(time.Second * 5),
+				"Name":       equal("test"),
+				"TelegramID": equal(1234),
+				"APIToken":   equal("test"),
+				"IsAdmin":    equal(false),
+				"CreatedAt":  withinDuration(time.Second * 5),
 			},
 			nil,
 		},

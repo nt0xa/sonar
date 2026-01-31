@@ -44,9 +44,9 @@ type Event struct {
 //
 
 type EventsListParams struct {
-	PayloadName string `err:"payload" path:"payload" query:"-"`
-	Limit       uint   `err:"limit"   query:"limit,omitempty"`
-	Offset      uint   `err:"offset"  query:"offset,omitempty"`
+	PayloadName string `path:"payload" query:"-"`
+	Limit       uint   `query:"limit,omitempty"`
+	Offset      uint   `query:"offset,omitempty"`
 }
 
 func (p EventsListParams) Validate() error {
@@ -81,8 +81,8 @@ func EventsListCommand(acts *Actions, p *EventsListParams, local bool) (*cobra.C
 //
 
 type EventsGetParams struct {
-	PayloadName string `err:"payload" path:"payload"`
-	Index       int64  `err:"index"   path:"index"`
+	PayloadName string `path:"payload"`
+	Index       int64  `path:"index"`
 }
 
 func (p EventsGetParams) Validate() error {

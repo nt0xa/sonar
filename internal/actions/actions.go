@@ -1,15 +1,10 @@
 package actions
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
-
-func init() {
-	validation.ErrorTag = "err"
-}
 
 type Actions interface {
 	PayloadsActions
