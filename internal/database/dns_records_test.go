@@ -1,16 +1,19 @@
 package database_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 )
+
+func ptr[T any](v T) *T {
+	return &v
+}
 
 func TestDNSRecordsCreate_Success(t *testing.T) {
 	setup(t)
@@ -19,13 +22,13 @@ func TestDNSRecordsCreate_Success(t *testing.T) {
 	o, err := db.DNSRecordsCreate(t.Context(), database.DNSRecordsCreateParams{
 		PayloadID: 1,
 		Name:      "test",
-		Type:      models.DNSTypeA,
+		Type:      database.DNSRecordTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
-		Strategy:  models.DNSStrategyAll,
+		Strategy:  database.DNSStrategyAll,
 	})
 	assert.NoError(t, err)
-	assert.NotZero(t, o.ID)
+	assert.NotNil(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 	assert.EqualValues(t, 10, o.Index)
 }
@@ -36,8 +39,8 @@ func TestDNSRecordsCreate_Duplicate(t *testing.T) {
 
 	_, err := db.DNSRecordsCreate(t.Context(), database.DNSRecordsCreateParams{
 		PayloadID: 1,
-		Name:      "dns1",
-		Type:      models.DNSTypeA,
+		Name:      "test-a",
+		Type:      database.DNSRecordTypeA,
 		TTL:       60,
 		Values:    []string{"127.0.0.1"},
 	})
@@ -48,7 +51,7 @@ func TestDNSRecordsGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(t.Context(), 1)
+	o, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
 	assert.NoError(t, err)
 	assert.Equal(t, "test-a", o.Name)
 }
@@ -57,37 +60,43 @@ func TestDNSRecordsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(t.Context(), 1337)
+	_, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1337)))
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.Error(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestDNSRecordsGetByPayloadNameAndType_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), 1, "test-a", models.DNSTypeA)
+	o, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), database.DNSRecordsGetByPayloadNameAndTypeParams{
+		PayloadID: 1,
+		Name:      "test-a",
+		Type:      database.DNSRecordTypeA,
+	})
 	require.NoError(t, err)
 	require.NotNil(t, o)
-	assert.Equal(t, int64(1), o.ID)
+	assert.Equal(t, ptr(int64(1)), o.ID)
 }
 
 func TestDNSRecordsGetByPayloadNameAndType_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), 1337, "dns1", models.DNSTypeA)
+	_, err := db.DNSRecordsGetByPayloadNameAndType(t.Context(), database.DNSRecordsGetByPayloadNameAndTypeParams{
+		PayloadID: 1337,
+		Name:      "dns1",
+		Type:      database.DNSRecordTypeA,
+	})
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.Error(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestDNSRecordsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.DNSRecordsDelete(t.Context(), 1)
+	err := db.DNSRecordsDelete(t.Context(), ptr(int64(1)))
 	assert.NoError(t, err)
 }
 
@@ -95,7 +104,7 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(t.Context(), 1)
+	o, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -112,7 +121,7 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	o2, err := db.DNSRecordsGetByID(t.Context(), 1)
+	o2, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
 	require.NoError(t, err)
 	assert.Equal(t, updated.Name, o2.Name)
 	assert.Equal(t, updated.Values, o2.Values)

@@ -12,7 +12,7 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 	actions_mock "github.com/nt0xa/sonar/internal/actions/mock"
 	"github.com/nt0xa/sonar/internal/cmd"
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/pointer"
 )
 
@@ -62,8 +62,8 @@ func TestCmd(t *testing.T) {
 			actions.PayloadsCreateParams{
 				Name: "test",
 				NotifyProtocols: []string{
-					models.ProtoCategoryDNS.String(),
-					models.ProtoCategoryHTTP.String(),
+					database.ProtoCategoryDNS,
+					database.ProtoCategoryHTTP,
 				},
 				StoreEvents: true,
 			},
@@ -91,7 +91,7 @@ func TestCmd(t *testing.T) {
 			actions.PayloadsUpdateParams{
 				Name:            "old",
 				NewName:         "new",
-				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
+				NotifyProtocols: []string{database.ProtoCategoryDNS},
 				StoreEvents:     pointer.Bool(false),
 			},
 			&actions.PayloadsUpdateResult{},
@@ -140,9 +140,9 @@ func TestCmd(t *testing.T) {
 				PayloadName: "payload",
 				Name:        "name",
 				TTL:         60,
-				Type:        models.DNSTypeA,
+				Type:        string(database.DNSRecordTypeA),
 				Values:      []string{"192.168.1.1"},
-				Strategy:    models.DNSStrategyAll,
+				Strategy:    string(database.DNSStrategyAll),
 			},
 			&actions.DNSRecordsCreateResult{},
 		},
@@ -153,9 +153,9 @@ func TestCmd(t *testing.T) {
 				PayloadName: "payload",
 				Name:        "name",
 				TTL:         120,
-				Type:        strings.ToLower(models.DNSTypeMX),
+				Type:        strings.ToLower(string(database.DNSRecordTypeMX)),
 				Values:      []string{"10 mx.example.com."},
-				Strategy:    models.DNSStrategyRoundRobin,
+				Strategy:    string(database.DNSStrategyRoundRobin),
 			},
 			&actions.DNSRecordsCreateResult{},
 		},
@@ -166,9 +166,9 @@ func TestCmd(t *testing.T) {
 				PayloadName: "payload",
 				Name:        "name",
 				TTL:         100,
-				Type:        strings.ToLower(models.DNSTypeA),
+				Type:        strings.ToLower(string(database.DNSRecordTypeA)),
 				Values:      []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"},
-				Strategy:    models.DNSStrategyRebind,
+				Strategy:    string(database.DNSStrategyRebind),
 			},
 			&actions.DNSRecordsCreateResult{},
 		},
@@ -219,8 +219,8 @@ func TestCmd(t *testing.T) {
 			"UsersCreate",
 			actions.UsersCreateParams{
 				Name: "test",
-				Params: models.UserParams{
-					TelegramID: 1337,
+				Params: database.UserParams{
+					TelegramID: "1337",
 					APIToken:   "token",
 				},
 				IsAdmin: true,
@@ -257,23 +257,12 @@ func TestCmd(t *testing.T) {
 		// List
 
 		{
-			"events list -p test -c 5 -a 3",
+			"events list -p test -l 5 -o 3",
 			"EventsList",
 			actions.EventsListParams{
 				PayloadName: "test",
-				Count:       5,
-				After:       3,
-			},
-			actions.EventsListResult{},
-		},
-		{
-			"events list -p test -c 5 -b 3 -r",
-			"EventsList",
-			actions.EventsListParams{
-				PayloadName: "test",
-				Count:       5,
-				Before:      3,
-				Reverse:     true,
+				Limit:       5,
+				Offset:       3,
 			},
 			actions.EventsListResult{},
 		},

@@ -1,12 +1,12 @@
 version: 2
 sql:
   - engine: postgresql
-    queries: internal/database2/queries/*.sql
+    queries: internal/database/queries/*.sql
     schema: internal/database/migrations/*.sql
     gen:
       go:
-        package: database2
-        out: internal/database2
+        package: database
+        out: internal/database
         sql_package: pgx/v5
         emit_pointers_for_null_types: true
         emit_result_struct_pointers: true
@@ -50,6 +50,18 @@ sql:
               pointer: true
           - db_type: uuid
             go_type: github.com/google/uuid.UUID
+          - db_type: pg_catalog.int4
+            go_type:
+              type: "int"
+              builtin: true
+          - db_type: int4
+            go_type:
+              type: "int"
+              builtin: true
+          - db_type: integer
+            go_type:
+              type: "int"
+              builtin: true
           - column: events.meta
             go_type:
               type: EventsMeta

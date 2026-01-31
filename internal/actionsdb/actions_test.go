@@ -12,7 +12,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 var (
@@ -20,7 +19,6 @@ var (
 	db   *database.DB
 	acts actions.Actions
 	log  = slog.New(slog.DiscardHandler)
-	tel  = telemetry.NewNoop()
 )
 
 func TestMain(m *testing.M) {
@@ -34,13 +32,13 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	db, err = database.New(dsn, log, tel)
+	db, err = database.NewWithDSN(dsn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
 		os.Exit(1)
 	}
 
-	if err := db.Migrate(); err != nil {
+	if _, err := database.Migrate(dsn); err != nil {
 		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
 		os.Exit(1)
 	}
@@ -48,7 +46,7 @@ func TestMain(m *testing.M) {
 	acts = actionsdb.New(db, log, "sonar.test")
 
 	tf, err = testfixtures.New(
-		testfixtures.Database(db.DB.DB),
+		testfixtures.Database(db.DB()),
 		testfixtures.Dialect("postgres"),
 		testfixtures.Directory("../database/fixtures"),
 	)

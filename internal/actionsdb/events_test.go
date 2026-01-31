@@ -27,7 +27,7 @@ func TestEventsList_Success(t *testing.T) {
 			"all",
 			actions.EventsListParams{
 				PayloadName: "payload1",
-				Count:       10,
+				Limit:       10,
 			},
 			10,
 			10, 1,
@@ -36,41 +36,20 @@ func TestEventsList_Success(t *testing.T) {
 			"count",
 			actions.EventsListParams{
 				PayloadName: "payload1",
-				Count:       5,
+				Limit:       5,
 			},
 			5,
 			10, 6,
 		},
 		{
-			"after",
+			"offset",
 			actions.EventsListParams{
 				PayloadName: "payload1",
-				Count:       5,
-				After:       4,
+				Limit:       5,
+				Offset:      5,
 			},
 			5,
-			9, 5,
-		},
-		{
-			"before",
-			actions.EventsListParams{
-				PayloadName: "payload1",
-				Count:       5,
-				Before:      9,
-			},
-			5,
-			8, 4,
-		},
-		{
-			"reverse",
-			actions.EventsListParams{
-				PayloadName: "payload1",
-				Count:       5,
-				Before:      9,
-				Reverse:     true,
-			},
-			5,
-			4, 8,
+			5, 1,
 		},
 	}
 
@@ -170,7 +149,7 @@ func TestEventsGet_Success(t *testing.T) {
 			defer teardown(t)
 
 			e, err := acts.EventsGet(ctx, tt.p)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.EqualValues(t, tt.protocol, e.Protocol)
 		})

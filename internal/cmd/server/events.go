@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
@@ -41,7 +40,7 @@ type EventsHandler struct {
 
 type eventWithContext struct {
 	ctx   context.Context
-	event *models.Event
+	event *database.Event
 }
 
 func NewEventsHandler(
@@ -96,7 +95,7 @@ func (h *EventsHandler) worker(id int) {
 			trace.WithAttributes(
 				attribute.String("event.id", e.event.UUID.String()),
 				attribute.Int("event.worker.id", id),
-				attribute.String("event.protocol", e.event.Protocol.Name),
+				attribute.String("event.protocol", e.event.Protocol),
 			),
 			trace.WithLinks(trace.LinkFromContext(e.ctx)),
 		)
@@ -105,7 +104,7 @@ func (h *EventsHandler) worker(id int) {
 	}
 }
 
-func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
+func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event) {
 	seen := make(map[string]struct{})
 
 	matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
@@ -116,9 +115,6 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 	for _, m := range matches {
 		d := strings.ToLower(string(m[0]))
 
-		if !h.cache.SubdomainExists(d) {
-			continue
-		}
 
 		if _, ok := seen[d]; !ok {
 			seen[d] = struct{}{}
@@ -156,7 +152,7 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 		}
 
 		// Skip if current event protocol is muted for payload.
-		if !p.NotifyProtocols.Contains(e.Protocol.Category()) {
+		if !database.ProtoCategoryContains(p.NotifyProtocols, database.ProtoToCategory(e.Protocol)) {
 			continue
 		}
 
@@ -176,7 +172,7 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *models.Event) {
 	}
 }
 
-func (h *EventsHandler) addGeoIPMetadata(e *models.Event) {
+func (h *EventsHandler) addGeoIPMetadata(e *database.Event) {
 	if h.gdb != nil {
 		host, _, err := net.SplitHostPort(e.RemoteAddr)
 		if err != nil {
@@ -234,7 +230,7 @@ func (h *EventsHandler) notify(
 	}
 }
 
-func (h *EventsHandler) Emit(ctx context.Context, e *models.Event) {
+func (h *EventsHandler) Emit(ctx context.Context, e *database.Event) {
 	h.events <- eventWithContext{ctx: ctx, event: e}
 }
 

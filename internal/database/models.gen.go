@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.30.0
 
-package database2
+package database
 
 import (
 	"database/sql/driver"
@@ -127,13 +127,13 @@ type DNSRecord struct {
 	PayloadID      int64         `db:"payload_id"`
 	Name           string        `db:"name"`
 	Type           DNSRecordType `db:"type"`
-	TTL            int32         `db:"ttl"`
+	TTL            int           `db:"ttl"`
 	Values         []string      `db:"values"`
 	Strategy       DNSStrategy   `db:"strategy"`
 	LastAnswer     []string      `db:"last_answer"`
 	LastAccessedAt *time.Time    `db:"last_accessed_at"`
 	CreatedAt      time.Time     `db:"created_at"`
-	Index          int32         `db:"index"`
+	Index          int           `db:"index"`
 }
 
 type Event struct {
@@ -155,12 +155,12 @@ type HTTPRoute struct {
 	PayloadID int64       `db:"payload_id"`
 	Method    string      `db:"method"`
 	Path      string      `db:"path"`
-	Code      int32       `db:"code"`
+	Code      int         `db:"code"`
 	Headers   HTTPHeaders `db:"headers"`
 	Body      []byte      `db:"body"`
 	IsDynamic bool        `db:"is_dynamic"`
 	CreatedAt time.Time   `db:"created_at"`
-	Index     int32       `db:"index"`
+	Index     int         `db:"index"`
 }
 
 type Payload struct {

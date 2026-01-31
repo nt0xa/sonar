@@ -27,14 +27,14 @@ SELECT * FROM payloads WHERE user_id = $1 ORDER BY created_at DESC;
 
 -- name: PayloadsFindByUserAndName :many
 SELECT * FROM payloads
-WHERE user_id = $1 AND name ILIKE $2
+WHERE user_id = $1 AND name ILIKE '%' || @name::text || '%'
 ORDER BY id DESC LIMIT $3 OFFSET $4;
 
 -- name: PayloadsDelete :one
 DELETE FROM payloads WHERE id = $1 RETURNING *;
 
 -- name: PayloadsDeleteByNamePart :many
-DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING *;
+DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || @name::text || '%' RETURNING *;
 
 -- name: PayloadsGetAllSubdomains :many
 SELECT subdomain FROM payloads;

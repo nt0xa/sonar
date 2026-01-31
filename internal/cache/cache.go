@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 type Cache interface {
@@ -13,7 +12,6 @@ type Cache interface {
 }
 
 type cache struct {
-	database.DefaultObserver
 	subdomains sync.Map
 }
 
@@ -25,8 +23,6 @@ func New(ctx context.Context, db *database.DB) (Cache, error) {
 	if err := c.loadSubdomains(ctx, db); err != nil {
 		return nil, err
 	}
-
-	db.Observe(c)
 
 	return c, nil
 }
@@ -42,14 +38,6 @@ func (c *cache) loadSubdomains(ctx context.Context, db *database.DB) error {
 	}
 
 	return nil
-}
-
-func (c *cache) PayloadCreated(p models.Payload) {
-	c.subdomains.Store(p.Subdomain, struct{}{})
-}
-
-func (c *cache) PayloadDeleted(p models.Payload) {
-	c.subdomains.Delete(p.Subdomain)
 }
 
 func (c *cache) SubdomainExists(subdomain string) bool {

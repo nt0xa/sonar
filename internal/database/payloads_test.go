@@ -1,15 +1,14 @@
 package database_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 func TestPayloadsCreate_Success(t *testing.T) {
@@ -20,13 +19,13 @@ func TestPayloadsCreate_Success(t *testing.T) {
 		UserID:          1,
 		Subdomain:       "8a8b58beaf",
 		Name:            "test",
-		NotifyProtocols: models.ProtoCategoriesAll,
+		NotifyProtocols: []string{"dns", "http", "smtp"},
 		StoreEvents:     true,
 	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
-	assert.Equal(t, models.ProtoCategoriesAll, o.NotifyProtocols)
+	assert.Equal(t, []string{"dns", "http", "smtp"}, o.NotifyProtocols)
 	assert.Equal(t, true, o.StoreEvents)
 }
 
@@ -42,24 +41,23 @@ func TestPayloadsCreate_Duplicate(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestPayloadGetByID_Success(t *testing.T) {
+func TestPayloadsGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(t.Context(), 1)
+	o, err := db.PayloadsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.Equal(t, "payload1", o.Name)
 }
 
-func TestPayloadGetByID_NotExist(t *testing.T) {
+func TestPayloadsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(t.Context(), 1337)
+	_, err := db.PayloadsGetByID(t.Context(), 1337)
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.Error(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestPayloadsGetBySubdomain_Success(t *testing.T) {
@@ -77,7 +75,7 @@ func TestPayloadsGetBySubdomain_NotExist(t *testing.T) {
 
 	_, err := db.PayloadsGetBySubdomain(t.Context(), "not_exist")
 	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestPayloadsGetByUserAndName_Success(t *testing.T) {
@@ -95,7 +93,7 @@ func TestPayloadsGetByUserAndName_NotExist(t *testing.T) {
 
 	_, err := db.PayloadsGetByUserAndName(t.Context(), 1, "not_exist")
 	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestPayloadsFindByUserID_Success(t *testing.T) {
@@ -128,7 +126,12 @@ func TestPayloadsFindByUserAndName_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "payload1", 1, 10)
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), database.PayloadsFindByUserAndNameParams{
+		UserID: 1,
+		Name:   "%payload1%",
+		Limit:  10,
+		Offset: 0,
+	})
 	assert.NoError(t, err)
 	assert.Len(t, pp, 1)
 
@@ -144,7 +147,12 @@ func TestPayloadsFindByUserAndName_Empty(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(t.Context(), 3, "payload1", 1, 10)
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), database.PayloadsFindByUserAndNameParams{
+		UserID: 3,
+		Name:   "%payload1%",
+		Limit:  10,
+		Offset: 0,
+	})
 	assert.NoError(t, err)
 	assert.Len(t, pp, 0)
 }
@@ -153,14 +161,24 @@ func TestPayloadsFindByUserAndName_Pagination(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	pp, err := db.PayloadsFindByUserAndName(t.Context(), 1, "", 1, 3)
+	pp, err := db.PayloadsFindByUserAndName(t.Context(), database.PayloadsFindByUserAndNameParams{
+		UserID: 1,
+		Name:   "%%",
+		Limit:  3,
+		Offset: 0,
+	})
 	assert.NoError(t, err)
 	assert.Len(t, pp, 3)
 
 	assert.EqualValues(t, 9, pp[0].ID)
 	assert.EqualValues(t, 7, pp[len(pp)-1].ID)
 
-	pp, err = db.PayloadsFindByUserAndName(t.Context(), 1, "", 2, 3)
+	pp, err = db.PayloadsFindByUserAndName(t.Context(), database.PayloadsFindByUserAndNameParams{
+		UserID: 1,
+		Name:   "%%",
+		Limit:  3,
+		Offset: 3,
+	})
 	assert.NoError(t, err)
 	assert.Len(t, pp, 3)
 
@@ -172,7 +190,7 @@ func TestPayloadsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.PayloadsDelete(t.Context(), 1)
+	_, err := db.PayloadsDelete(t.Context(), 1)
 	assert.NoError(t, err)
 }
 
@@ -180,16 +198,16 @@ func TestPayloadsDelete_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.PayloadsDelete(t.Context(), 1337)
+	_, err := db.PayloadsDelete(t.Context(), 1337)
 	assert.Error(t, err)
-	assert.EqualError(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestPayloadsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.PayloadGetByID(t.Context(), 1)
+	o, err := db.PayloadsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -198,12 +216,12 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 		UserID:          o.UserID,
 		Subdomain:       o.Subdomain,
 		Name:            "payload1_updated",
-		NotifyProtocols: models.ProtoCategories("dns"),
+		NotifyProtocols: []string{"dns"},
 		StoreEvents:     false,
 	})
 	require.NoError(t, err)
 
-	o2, err := db.PayloadGetByID(t.Context(), 1)
+	o2, err := db.PayloadsGetByID(t.Context(), 1)
 	require.NoError(t, err)
 	assert.Equal(t, updated.Name, o2.Name)
 	assert.Equal(t, updated.NotifyProtocols, o2.NotifyProtocols)
@@ -214,7 +232,7 @@ func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "")
+	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "%%")
 	require.NoError(t, err)
 	require.Len(t, removed, 6)
 
@@ -227,7 +245,7 @@ func TestPayloadsDeleteByNamePart_Substr_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "1")
+	removed, err := db.PayloadsDeleteByNamePart(t.Context(), 1, "%1%")
 	require.NoError(t, err)
 	require.Len(t, removed, 2)
 

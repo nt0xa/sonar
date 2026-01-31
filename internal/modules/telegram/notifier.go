@@ -3,9 +3,10 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"unicode/utf8"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 )
 
@@ -16,23 +17,28 @@ func (tg *Telegram) Name() string {
 }
 
 func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
+	chatID, err := strconv.ParseInt(n.User.Params.TelegramID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("telegram: invalid telegram id: %w", err)
+	}
+
 	header, body, err := tg.tmpl.RenderNotification(n)
 	if err != nil {
 		return fmt.Errorf("telegram: %w", err)
 	}
 
 	if len(header+body) < maxMessageSize && utf8.ValidString(body) {
-		tg.htmlMessage(ctx, n.User.Params.TelegramID, nil, header+body)
+		tg.htmlMessage(ctx, chatID, nil, header+body)
 	} else {
-		tg.docMessage(ctx, n.User.Params.TelegramID, "log.txt", header, n.Event.RW)
+		tg.docMessage(ctx, chatID, "log.txt", header, n.Event.RW)
 	}
 
 	// For SMTP send log.eml for better preview.
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 		if data != "" {
-			tg.docMessage(ctx, n.User.Params.TelegramID, "log.eml", header, []byte(data))
-			tg.docMessage(ctx, n.User.Params.TelegramID, "log.txt", header, n.Event.RW)
+			tg.docMessage(ctx, chatID, "log.eml", header, []byte(data))
+			tg.docMessage(ctx, chatID, "log.txt", header, n.Event.RW)
 		}
 	}
 

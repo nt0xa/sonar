@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: payloads.sql
 
-package database2
+package database
 
 import (
 	"context"
@@ -64,7 +64,7 @@ func (q *Queries) PayloadsDelete(ctx context.Context, id int64) (*Payload, error
 }
 
 const payloadsDeleteByNamePart = `-- name: PayloadsDeleteByNamePart :many
-DELETE FROM payloads WHERE user_id = $1 AND name ILIKE $2 RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
+DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%' RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
 `
 
 func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name string) ([]*Payload, error) {
@@ -97,7 +97,7 @@ func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, na
 
 const payloadsFindByUserAndName = `-- name: PayloadsFindByUserAndName :many
 SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads
-WHERE user_id = $1 AND name ILIKE $2
+WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%'
 ORDER BY id DESC LIMIT $3 OFFSET $4
 `
 

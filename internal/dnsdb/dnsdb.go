@@ -2,14 +2,14 @@ package dnsdb
 
 import (
 	"context"
-	"database/sql"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/miekg/dns"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/pointer"
 	"github.com/nt0xa/sonar/internal/utils/slice"
 	"github.com/nt0xa/sonar/pkg/dnsx"
@@ -36,7 +36,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 	domain := parts[len(parts)-1]
 
 	payload, err := h.DB.PayloadsGetBySubdomain(ctx, domain)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -53,15 +53,19 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 	// [test1 test2 0a88a087] -> test1.test2
 	subdomain := strings.Join(parts[:len(parts)-1], ".")
 
-	var record *models.DNSRecord
+	var record *database.DNSRecord
 
 	typ := dnsx.QtypeString(qtype)
 
 	for _, n := range dnsx.MakeWildcards(subdomain) {
 
 		// TODO: add db query for multiple names.
-		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(ctx, payload.ID, n, typ)
-		if err == sql.ErrNoRows {
+		record, err = h.DB.DNSRecordsGetByPayloadNameAndType(ctx, database.DNSRecordsGetByPayloadNameAndTypeParams{
+			PayloadID: payload.ID,
+			Name:      n,
+			Type:      database.DNSRecordType(strings.ToUpper(typ)),
+		})
+		if errors.Is(err, database.ErrNoRows) {
 			continue
 		} else if err != nil {
 			return nil, err
@@ -69,10 +73,11 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 
 		break
 	}
+	fmt.Printf("record = %+v\n", record)
 
 	res := make([]dns.RR, 0)
 
-	if record == nil {
+	if errors.Is(err, database.ErrNoRows) {
 		// Return non nil here to stop handlers chain and return empty answer
 		// instead of fallback to default records set.
 		// This is required in case when you, for example, want that your subdomain only return
@@ -87,11 +92,11 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 	switch record.Strategy {
 
 	// "all" — just return all values.
-	case models.DNSStrategyAll:
+	case database.DNSStrategyAll:
 		res = rrs
 
 	// "round-robin" — return all records but rotate them cyclically.
-	case models.DNSStrategyRoundRobin:
+	case database.DNSStrategyRoundRobin:
 		if record.LastAnswer != nil {
 			res = rotate(dnsx.NewRRs(name, record.Qtype(), record.TTL, record.LastAnswer))
 		} else {
@@ -100,7 +105,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 
 	// "rebind" - if time since last request is less then threshold,
 	// return next record, else return first record.
-	case models.DNSStrategyRebind:
+	case database.DNSStrategyRebind:
 		if record.LastAnswer != nil &&
 			record.LastAccessedAt != nil &&
 			len(record.LastAnswer) > 0 &&

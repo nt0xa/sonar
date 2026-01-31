@@ -1,17 +1,16 @@
 package database_test
 
 import (
-	"database/sql"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 )
 
@@ -22,11 +21,11 @@ func TestEventsCreate_Success(t *testing.T) {
 	o, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 		PayloadID: 1,
 		UUID:      uuid.New(),
-		Protocol:  models.ProtoDNS,
+		Protocol:  "dns",
 		R:         []byte{1, 3, 5},
 		W:         []byte{2, 4},
 		RW:        []byte{1, 2, 3, 4, 5},
-		Meta: models.Meta{
+		Meta: database.EventsMeta{
 			DNS: &dnsx.Meta{
 				Question: dnsx.Question{Name: "test.example.com", Type: "A"},
 			},
@@ -61,71 +60,47 @@ func TestEventsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.EventsGetByID(t.Context(), 1337)
+	_, err := db.EventsGetByID(t.Context(), 1337)
 	assert.Error(t, err)
-	assert.Nil(t, o)
-	assert.Error(t, err, sql.ErrNoRows.Error())
+	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
 func TestEventsListByPayloadID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	// Default
-	l, err := db.EventsListByPayloadID(t.Context(), 1)
+	// All events for payload 1
+	l, err := db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
+		PayloadID: 1,
+		Limit:     100,
+		Offset:    0,
+	})
 	assert.NoError(t, err)
 	require.Len(t, l, 10)
-	assert.EqualValues(t, l[0].ID, 11)
-	assert.EqualValues(t, l[len(l)-1].ID, 1)
+	assert.EqualValues(t, 11, l[0].Event.ID)
+	assert.EqualValues(t, 1, l[len(l)-1].Event.ID)
 
-	l, err = db.EventsListByPayloadID(t.Context(), 1,
-		database.EventsPagination(database.Page{
-			Count: 3,
-		}),
-	)
-
-	// Count
+	// Limit
+	l, err = db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
+		PayloadID: 1,
+		Limit:     3,
+		Offset:    0,
+	})
 	assert.NoError(t, err)
 	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 11)
-	assert.EqualValues(t, l[len(l)-1].ID, 8)
+	assert.EqualValues(t, 11, l[0].Event.ID)
+	assert.EqualValues(t, 8, l[len(l)-1].Event.ID)
 
-	// Before
-	l, err = db.EventsListByPayloadID(t.Context(), 1,
-		database.EventsPagination(database.Page{
-			Count:  5,
-			Before: 7,
-		}),
-	)
+	// Offset
+	l, err = db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
+		PayloadID: 1,
+		Limit:     5,
+		Offset:    5,
+	})
 	assert.NoError(t, err)
 	require.Len(t, l, 5)
-	assert.EqualValues(t, l[0].ID, 6)
-	assert.EqualValues(t, l[len(l)-1].ID, 2)
-
-	// After
-	l, err = db.EventsListByPayloadID(t.Context(), 1,
-		database.EventsPagination(database.Page{
-			Count: 5,
-			After: 7,
-		}),
-	)
-	assert.NoError(t, err)
-	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 11)
-	assert.EqualValues(t, l[len(l)-1].ID, 8)
-
-	// Reverse
-	l, err = db.EventsListByPayloadID(t.Context(), 1,
-		database.EventsPagination(database.Page{
-			Count: 5,
-			After: 7,
-		}),
-		database.EventsReverse(true),
-	)
-	assert.NoError(t, err)
-	require.Len(t, l, 3)
-	assert.EqualValues(t, l[0].ID, 8)
-	assert.EqualValues(t, l[len(l)-1].ID, 11)
+	assert.EqualValues(t, 5, l[0].Event.ID)
+	assert.EqualValues(t, 1, l[len(l)-1].Event.ID)
 }
 
 func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
@@ -134,7 +109,7 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 
 	o, err := db.EventsGetByPayloadAndIndex(t.Context(), 1, 1)
 	assert.NoError(t, err)
-	assert.EqualValues(t, o.ID, 1)
+	assert.EqualValues(t, 1, o.Event.ID)
 
 	_, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 1337)
 	assert.Error(t, err)
@@ -155,11 +130,11 @@ func TestEventsRace(t *testing.T) {
 			_, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 				PayloadID: 1,
 				UUID:      uuid.New(),
-				Protocol:  models.ProtoDNS,
+				Protocol:  "dns",
 				R:         []byte{1, 3, 5},
 				W:         []byte{2, 4},
 				RW:        []byte{1, 2, 3, 4, 5},
-				Meta: models.Meta{
+				Meta: database.EventsMeta{
 					DNS: &dnsx.Meta{
 						Question: dnsx.Question{Name: "test.example.com", Type: "A"},
 					},

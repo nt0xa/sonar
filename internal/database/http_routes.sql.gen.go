@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: http_routes.sql
 
-package database2
+package database
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type HTTPRoutesCreateParams struct {
 	PayloadID int64       `db:"payload_id"`
 	Method    string      `db:"method"`
 	Path      string      `db:"path"`
-	Code      int32       `db:"code"`
+	Code      int         `db:"code"`
 	Headers   HTTPHeaders `db:"headers"`
 	Body      []byte      `db:"body"`
 	IsDynamic bool        `db:"is_dynamic"`
@@ -193,7 +193,7 @@ const hTTPRoutesGetByPayloadIDAndIndex = `-- name: HTTPRoutesGetByPayloadIDAndIn
 SELECT id, payload_id, method, path, code, headers, body, is_dynamic, created_at, index FROM http_routes WHERE payload_id = $1 AND index = $2
 `
 
-func (q *Queries) HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int32) (*HTTPRoute, error) {
+func (q *Queries) HTTPRoutesGetByPayloadIDAndIndex(ctx context.Context, payloadID int64, index int) (*HTTPRoute, error) {
 	row := q.db.QueryRow(ctx, hTTPRoutesGetByPayloadIDAndIndex, payloadID, index)
 	var i HTTPRoute
 	err := row.Scan(
@@ -258,7 +258,7 @@ type HTTPRoutesUpdateParams struct {
 	PayloadID int64       `db:"payload_id"`
 	Method    string      `db:"method"`
 	Path      string      `db:"path"`
-	Code      int32       `db:"code"`
+	Code      int         `db:"code"`
 	Headers   HTTPHeaders `db:"headers"`
 	Body      []byte      `db:"body"`
 	IsDynamic bool        `db:"is_dynamic"`

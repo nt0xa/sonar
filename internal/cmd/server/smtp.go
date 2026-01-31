@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/nt0xa/sonar/pkg/smtpx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
@@ -95,12 +95,12 @@ func emitSMTP(events *EventsHandler) smtpx.OnCloseFunc {
 		read, written, combined []byte,
 		meta *smtpx.Meta,
 	) {
-		events.Emit(ctx, &models.Event{
-			Protocol: models.ProtoSMTP,
+		events.Emit(ctx, &database.Event{
+			Protocol: database.ProtoSMTP,
 			RW:       combined,
 			R:        read,
 			W:        written,
-			Meta: models.Meta{
+			Meta: database.EventsMeta{
 				SMTP:   meta,
 				Secure: secure,
 			},

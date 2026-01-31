@@ -9,7 +9,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/internal/utils/valid"
 )
@@ -56,9 +56,9 @@ func (p DNSRecordsCreateParams) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.PayloadName, validation.Required),
 		validation.Field(&p.Name, validation.Required, validation.By(valid.Subdomain)),
-		validation.Field(&p.Type, valid.OneOf(models.DNSTypesAll, false)),
+		validation.Field(&p.Type, valid.OneOf(database.DNSTypesAll, false)),
 		validation.Field(&p.Values, validation.Required, validation.Each(valid.DNSRecord(p.Type))),
-		validation.Field(&p.Strategy, valid.OneOf(models.DNSStrategiesAll, true)),
+		validation.Field(&p.Strategy, valid.OneOf(database.DNSStrategiesAll, true)),
 	)
 }
 
@@ -81,14 +81,14 @@ func DNSRecordsCreateCommand(acts *Actions, p *DNSRecordsCreateParams, local boo
 	cmd.Flags().StringVarP(&p.Name, "name", "n", "", "Subdomain")
 	cmd.Flags().IntVarP(&p.TTL, "ttl", "l", 60, "Record TTL (in seconds)")
 	cmd.Flags().StringVarP(&p.Type, "type", "t", "A",
-		fmt.Sprintf("Record type (one of %s)", quoteAndJoin(models.DNSTypesAll)))
-	cmd.Flags().StringVarP(&p.Strategy, "strategy", "s", models.DNSStrategyAll,
-		fmt.Sprintf("Strategy for multiple records (one of %s)", quoteAndJoin(models.DNSStrategiesAll)))
+		fmt.Sprintf("Record type (one of %s)", quoteAndJoin(database.DNSTypesAll)))
+	cmd.Flags().StringVarP(&p.Strategy, "strategy", "s", string(database.DNSStrategyAll),
+		fmt.Sprintf("Strategy for multiple records (one of %s)", quoteAndJoin(database.DNSStrategiesAll)))
 
 	_ = cmd.MarkFlagRequired("name")
 	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
-	_ = cmd.RegisterFlagCompletionFunc("type", completeOne(models.DNSTypesAll))
-	_ = cmd.RegisterFlagCompletionFunc("strategy", completeOne(models.DNSStrategiesAll))
+	_ = cmd.RegisterFlagCompletionFunc("type", completeOne(database.DNSTypesAll))
+	_ = cmd.RegisterFlagCompletionFunc("strategy", completeOne(database.DNSStrategiesAll))
 
 	return cmd, func(cmd *cobra.Command, args []string) errors.Error {
 		p.Values = args

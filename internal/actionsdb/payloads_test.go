@@ -9,7 +9,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/internal/utils/pointer"
 )
@@ -35,7 +35,7 @@ func TestCreatePayload_Success(t *testing.T) {
 			"dns only",
 			actions.PayloadsCreateParams{
 				Name:            "test-dns",
-				NotifyProtocols: []string{models.ProtoCategoryDNS.String()},
+				NotifyProtocols: []string{database.ProtoCategoryDNS},
 			},
 		},
 		{
@@ -285,7 +285,7 @@ func TestUpdatePayload_Success(t *testing.T) {
 			"update notify protocols",
 			actions.PayloadsUpdateParams{
 				Name:            "payload1",
-				NotifyProtocols: []string{models.ProtoCategoryHTTP.String()},
+				NotifyProtocols: []string{database.ProtoCategoryHTTP},
 			},
 		},
 		{

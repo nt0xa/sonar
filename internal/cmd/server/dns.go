@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/dnsdb"
 	"github.com/nt0xa/sonar/internal/utils/tpl"
 	"github.com/nt0xa/sonar/pkg/dnsx"
@@ -149,12 +148,12 @@ func emitDNS(events *EventsHandler) dnsx.NofitifyFunc {
 		read, written, combined []byte,
 		meta *dnsx.Meta,
 	) {
-		events.Emit(ctx, &models.Event{
-			Protocol: models.ProtoDNS,
+		events.Emit(ctx, &database.Event{
+			Protocol: database.ProtoDNS,
 			R:        read,
 			W:        written,
 			RW:       combined,
-			Meta: models.Meta{
+			Meta: database.EventsMeta{
 				DNS: meta,
 			},
 			RemoteAddr: remoteAddr.String(),

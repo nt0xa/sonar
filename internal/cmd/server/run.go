@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/geoipx"
@@ -87,12 +87,12 @@ func Run(
 	// DB
 	//
 
-	db, err := database.New(cfg.DB.DSN, log.With("package", "database"), tel)
+	db, err := database.NewWithDSN(cfg.DB.DSN)
 	if err != nil {
 		return fmt.Errorf("failed to init database: %w", err)
 	}
 
-	if err := db.Migrate(); err != nil {
+	if _, err := database.Migrate(cfg.DB.DSN); err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
@@ -349,8 +349,8 @@ func createOrUpdateAdminUser(
 	ctx, span := tel.TraceStart(ctx, "db.init.admin")
 	defer span.End()
 
-	params := models.UserParams{
-		TelegramID: cfg.Modules.Telegram.Admin,
+	params := database.UserParams{
+		TelegramID: strconv.FormatInt(cfg.Modules.Telegram.Admin, 10),
 		APIToken:   cfg.Modules.API.Admin,
 		LarkUserID: cfg.Modules.Lark.Admin,
 		SlackID:    cfg.Modules.Slack.Admin,

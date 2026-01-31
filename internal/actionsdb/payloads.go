@@ -2,21 +2,19 @@ package actionsdb
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/internal/utils/slice"
 )
 
-func Payload(m models.Payload) actions.Payload {
+func Payload(m database.Payload) actions.Payload {
 	return actions.Payload{
 		Subdomain:       m.Subdomain,
 		Name:            m.Name,
-		NotifyProtocols: m.NotifyProtocols.Strings(),
+		NotifyProtocols: m.NotifyProtocols,
 		StoreEvents:     m.StoreEvents,
 		CreatedAt:       m.CreatedAt,
 	}
@@ -32,7 +30,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Validation(err)
 	}
 
-	if _, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name); err != sql.ErrNoRows {
+	if _, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name); err != database.ErrNoRows {
 		return nil, errors.Conflictf("payload with name %q already exist", p.Name)
 	}
 
@@ -45,7 +43,7 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            p.Name,
-		NotifyProtocols: models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...),
+		NotifyProtocols: slice.StringsDedup(p.NotifyProtocols),
 		StoreEvents:     p.StoreEvents,
 	})
 	if err != nil {
@@ -66,7 +64,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 	}
 
 	rec, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.Name)
 	} else if err != nil {
 		return nil, errors.Internal(err)
@@ -79,7 +77,7 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 
 	notifyProtocols := rec.NotifyProtocols
 	if p.NotifyProtocols != nil {
-		notifyProtocols = models.ProtoCategories(slice.StringsDedup(p.NotifyProtocols)...)
+		notifyProtocols = slice.StringsDedup(p.NotifyProtocols)
 	}
 
 	storeEvents := rec.StoreEvents
@@ -113,17 +111,18 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 	}
 
 	rec, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.Name)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("you don't have payload with name %q", p.Name)
 	} else if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	if err := act.db.PayloadsDelete(ctx, rec.ID); err != nil {
+	deleted, err := act.db.PayloadsDelete(ctx, rec.ID)
+	if err != nil {
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.PayloadsDeleteResult{Payload: Payload(*rec)}, nil
+	return &actions.PayloadsDeleteResult{Payload: Payload(*deleted)}, nil
 }
 
 func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClearParams) (actions.PayloadsClearResult, errors.Error) {
@@ -160,13 +159,21 @@ func (act *dbactions) PayloadsList(ctx context.Context, p actions.PayloadsListPa
 		return nil, errors.Validation(err)
 	}
 
-	recs, err := act.db.PayloadsFindByUserAndName(
-		ctx,
-		u.ID,
-		p.Name,
-		p.Page,
-		p.PerPage,
-	)
+	perPage := p.PerPage
+	if perPage == 0 {
+		perPage = 10
+	}
+	page := p.Page
+	if page == 0 {
+		page = 1
+	}
+
+	recs, err := act.db.PayloadsFindByUserAndName(ctx, database.PayloadsFindByUserAndNameParams{
+		UserID: u.ID,
+		Name:   p.Name,
+		Limit:  int64(perPage),
+		Offset: int64((page - 1) * perPage),
+	})
 	if err != nil {
 		return nil, errors.Internal(err)
 	}

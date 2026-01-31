@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/netx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
@@ -91,12 +91,12 @@ func emitFTP(events *EventsHandler) ftpx.OnCloseFunc {
 		read, written, combined []byte,
 		meta *ftpx.Meta,
 	) {
-		events.Emit(ctx, &models.Event{
-			Protocol: models.ProtoFTP,
+		events.Emit(ctx, &database.Event{
+			Protocol: database.ProtoFTP,
 			R:        read,
 			W:        written,
 			RW:       combined,
-			Meta: models.Meta{
+			Meta: database.EventsMeta{
 				FTP:    meta,
 				Secure: secure,
 			},

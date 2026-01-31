@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	cardv2 "github.com/nt0xa/sonar/internal/modules/lark/card/v2"
 )
@@ -22,7 +22,7 @@ func (lrk *Lark) Name() string {
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	body := string(n.Event.RW)
 
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		if text := n.Event.Meta.SMTP.Email.Text; text != "" {
 			body = text
 		}
@@ -43,7 +43,7 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	// For SMTP send mail.eml for better preview.
-	if n.Event.Protocol.Category() == models.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 		if data != "" {
 			lrk.docMessage(ctx, n.User.Params.LarkUserID,

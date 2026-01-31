@@ -3,7 +3,6 @@ package httpdb
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"net/http"
 	"strings"
 	"text/template"
@@ -11,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 )
 
 type Routes struct {
@@ -27,7 +25,7 @@ func (rr *Routes) Router(ctx context.Context, host string) (chi.Router, error) {
 
 	// Find payload by domain.
 	payload, err := rr.DB.PayloadsGetBySubdomain(ctx, domain)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -41,7 +39,7 @@ func (rr *Routes) Router(ctx context.Context, host string) (chi.Router, error) {
 	mux := chi.NewMux()
 
 	for _, route := range routes {
-		if route.Method != models.HTTPMethodAny {
+		if route.Method != database.HTTPMethodAny {
 			mux.MethodFunc(route.Method, route.Path, rr.handleFn(route))
 		} else {
 			mux.Handle(route.Path, rr.handleFn(route))
@@ -68,7 +66,7 @@ func Handler(rr *Routes, fallback http.Handler) http.Handler {
 	})
 }
 
-func (rr *Routes) handleFn(route *models.HTTPRoute) http.HandlerFunc {
+func (rr *Routes) handleFn(route *database.HTTPRoute) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		data := &Data{r}

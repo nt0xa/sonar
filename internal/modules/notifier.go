@@ -3,13 +3,13 @@ package modules
 import (
 	"context"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 )
 
 type Notification struct {
-	User    *models.User
-	Payload *models.Payload
-	Event   *models.Event
+	User    *database.UsersFull
+	Payload *database.Payload
+	Event   *database.Event
 }
 
 // Notifier must be implemented by all modules, which are going to notify

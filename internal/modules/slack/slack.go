@@ -9,7 +9,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 
@@ -97,7 +96,7 @@ func (s *Slack) Start() error {
 }
 
 func (s *Slack) processCommand(ctx context.Context, cmd slack.SlashCommand) *string {
-	chatUser, _ := s.db.UsersGetByParam(ctx, models.UserSlackID, cmd.UserID)
+	chatUser, _ := s.db.UsersGetByParam(ctx, database.UserSlackID, cmd.UserID)
 	ctx = actionsdb.SetUser(ctx, chatUser)
 
 	reply := ""

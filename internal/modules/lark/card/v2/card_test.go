@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/lark/card/v2"
 	"github.com/nt0xa/sonar/pkg/geoipx"
@@ -172,17 +172,17 @@ func TestCard(t *testing.T) {
 	receivedAt, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
 
 	card, err := card.Build(&modules.Notification{
-		User:    &models.User{},
-		Payload: &models.Payload{Name: "test"},
-		Event: &models.Event{
-			Protocol: models.Proto{Name: "http"},
+		User:    &database.UsersFull{},
+		Payload: &database.Payload{Name: "test"},
+		Event: &database.Event{
+			Protocol: "http",
 			RW:       []byte("test"),
-			Meta: models.Meta{
+			Meta: database.EventsMeta{
 				GeoIP: &geoipx.Meta{
 					City: "London",
 					Country: geoipx.Country{
-						Name:      "United Kingdom",
-						ISOCode:   "GB",
+						Name:    "United Kingdom",
+						ISOCode: "GB",
 					},
 					ASN: geoipx.ASN{
 						Org:    "Google Inc.",

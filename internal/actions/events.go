@@ -8,7 +8,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/database/models"
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
@@ -28,15 +28,15 @@ type EventsHandler interface {
 }
 
 type Event struct {
-	Index      int64       `json:"index"`
-	UUID       string      `json:"uuid"`
-	Protocol   string      `json:"protocol"`
-	R          string      `json:"r,omitempty"`
-	W          string      `json:"w,omitempty"`
-	RW         string      `json:"rw,omitempty"`
-	Meta       models.Meta `json:"meta"`
-	RemoteAddr string      `json:"remoteAddress"`
-	ReceivedAt time.Time   `json:"receivedAt"`
+	Index      int64               `json:"index"`
+	UUID       string              `json:"uuid"`
+	Protocol   string              `json:"protocol"`
+	R          string              `json:"r,omitempty"`
+	W          string              `json:"w,omitempty"`
+	RW         string              `json:"rw,omitempty"`
+	Meta       database.EventsMeta `json:"meta"`
+	RemoteAddr string              `json:"remoteAddress"`
+	ReceivedAt time.Time           `json:"receivedAt"`
 }
 
 //
@@ -45,10 +45,8 @@ type Event struct {
 
 type EventsListParams struct {
 	PayloadName string `err:"payload" path:"payload" query:"-"`
-	Count       uint   `err:"cound"   query:"count,omitempty"`
-	After       int64  `err:"after"   query:"after,omitempty"`
-	Before      int64  `err:"before"  query:"before,omitempty"`
-	Reverse     bool   `err:"reverse" query:"reverse,omitempty"`
+	Limit       uint   `err:"limit"   query:"limit,omitempty"`
+	Offset      uint   `err:"offset"  query:"offset,omitempty"`
 }
 
 func (p EventsListParams) Validate() error {
@@ -70,10 +68,8 @@ func EventsListCommand(acts *Actions, p *EventsListParams, local bool) (*cobra.C
 	}
 
 	cmd.Flags().StringVarP(&p.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().UintVarP(&p.Count, "count", "c", 10, "Count of events")
-	cmd.Flags().Int64VarP(&p.After, "after", "a", 0, "After ID")
-	cmd.Flags().Int64VarP(&p.Before, "before", "b", 0, "Before ID")
-	cmd.Flags().BoolVarP(&p.Reverse, "reverse", "r", false, "List events in reversed order")
+	cmd.Flags().UintVarP(&p.Limit, "limit", "l", 10, "Limit")
+	cmd.Flags().UintVarP(&p.Offset, "offset", "o", 0, "Offset")
 
 	_ = cmd.RegisterFlagCompletionFunc("payload", completePayloadName(acts))
 

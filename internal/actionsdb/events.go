@@ -2,19 +2,16 @@ package actionsdb
 
 import (
 	"context"
-	"database/sql"
 	"encoding/base64"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/database/models"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
-func Event(m models.Event) actions.Event {
+func Event(m database.Event, index int64) actions.Event {
 	return actions.Event{
-		Index:      m.Index,
-		Protocol:   m.Protocol.String(),
+		Protocol:   m.Protocol,
 		R:          base64.StdEncoding.EncodeToString(m.R),
 		W:          base64.StdEncoding.EncodeToString(m.W),
 		RW:         base64.StdEncoding.EncodeToString(m.RW),
@@ -22,6 +19,7 @@ func Event(m models.Event) actions.Event {
 		RemoteAddr: m.RemoteAddr,
 		ReceivedAt: m.ReceivedAt,
 		UUID:       m.UUID.String(),
+		Index:      index,
 	}
 }
 
@@ -36,18 +34,20 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
-	recs, err := act.db.EventsListByPayloadID(ctx, payload.ID,
-		database.EventsPagination(database.Page{
-			Count:  p.Count,
-			After:  p.After,
-			Before: p.Before,
-		}),
-		database.EventsReverse(p.Reverse),
-	)
+	limit := p.Limit
+	if limit == 0 {
+		limit = 10
+	}
+
+	recs, err := act.db.EventsListByPayloadID(ctx, database.EventsListByPayloadIDParams{
+		PayloadID: payload.ID,
+		Limit:     int64(limit),
+		Offset:    int64(p.Offset),
+	})
 	if err != nil {
 		return nil, errors.Internal(err)
 	}
@@ -55,7 +55,7 @@ func (act *dbactions) EventsList(ctx context.Context, p actions.EventsListParams
 	res := make([]actions.Event, 0)
 
 	for _, r := range recs {
-		res = append(res, Event(*r))
+		res = append(res, Event(r.Event, r.Index))
 	}
 
 	return res, nil
@@ -72,7 +72,7 @@ func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) 
 	}
 
 	payload, err := act.db.PayloadsGetByUserAndName(ctx, u.ID, p.PayloadName)
-	if err == sql.ErrNoRows {
+	if err == database.ErrNoRows {
 		return nil, errors.NotFoundf("payload with name %q not found", p.PayloadName)
 	}
 
@@ -81,5 +81,5 @@ func (act *dbactions) EventsGet(ctx context.Context, p actions.EventsGetParams) 
 		return nil, errors.Internal(err)
 	}
 
-	return &actions.EventsGetResult{Event: Event(*r)}, nil
+	return &actions.EventsGetResult{Event: Event(r.Event, r.Index)}, nil
 }

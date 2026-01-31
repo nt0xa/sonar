@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: events.sql
 
-package database2
+package database
 
 import (
 	"context"
@@ -84,51 +84,51 @@ func (q *Queries) EventsGetByID(ctx context.Context, id int64) (*Event, error) {
 }
 
 const eventsGetByPayloadAndIndex = `-- name: EventsGetByPayloadAndIndex :one
-SELECT id, payload_id, protocol, rw, r, w, meta, remote_addr, received_at, created_at, uuid, index
-FROM (
-  SELECT events.id, events.payload_id, events.protocol, events.rw, events.r, events.w, events.meta, events.remote_addr, events.received_at, events.created_at, events.uuid, ROW_NUMBER() OVER(ORDER BY id ASC) AS index
-  FROM events WHERE payload_id = $1::bigint
-) subq WHERE index = $2::bigint
+WITH numbered AS (
+  SELECT
+    id,
+    ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index
+  FROM events
+)
+SELECT e.id, e.payload_id, e.protocol, e.rw, e.r, e.w, e.meta, e.remote_addr, e.received_at, e.created_at, e.uuid, n.index
+FROM events e
+JOIN numbered n ON n.id = e.id
+WHERE e.payload_id = $1::bigint AND n.index = $2::bigint
 `
 
 type EventsGetByPayloadAndIndexRow struct {
-	ID         int64      `db:"id"`
-	PayloadID  int64      `db:"payload_id"`
-	Protocol   string     `db:"protocol"`
-	RW         []byte     `db:"rw"`
-	R          []byte     `db:"r"`
-	W          []byte     `db:"w"`
-	Meta       EventsMeta `db:"meta"`
-	RemoteAddr string     `db:"remote_addr"`
-	ReceivedAt time.Time  `db:"received_at"`
-	CreatedAt  time.Time  `db:"created_at"`
-	UUID       uuid.UUID  `db:"uuid"`
-	Index      int64      `db:"index"`
+	Event Event `db:"event"`
+	Index int64 `db:"index"`
 }
 
 func (q *Queries) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*EventsGetByPayloadAndIndexRow, error) {
 	row := q.db.QueryRow(ctx, eventsGetByPayloadAndIndex, payloadID, index)
 	var i EventsGetByPayloadAndIndexRow
 	err := row.Scan(
-		&i.ID,
-		&i.PayloadID,
-		&i.Protocol,
-		&i.RW,
-		&i.R,
-		&i.W,
-		&i.Meta,
-		&i.RemoteAddr,
-		&i.ReceivedAt,
-		&i.CreatedAt,
-		&i.UUID,
+		&i.Event.ID,
+		&i.Event.PayloadID,
+		&i.Event.Protocol,
+		&i.Event.RW,
+		&i.Event.R,
+		&i.Event.W,
+		&i.Event.Meta,
+		&i.Event.RemoteAddr,
+		&i.Event.ReceivedAt,
+		&i.Event.CreatedAt,
+		&i.Event.UUID,
 		&i.Index,
 	)
 	return &i, err
 }
 
 const eventsListByPayloadID = `-- name: EventsListByPayloadID :many
-SELECT id, payload_id, protocol, rw, r, w, meta, remote_addr, received_at, created_at, uuid FROM events WHERE payload_id = $1
-ORDER BY id DESC LIMIT $2 OFFSET $3
+SELECT 
+  events.id, events.payload_id, events.protocol, events.rw, events.r, events.w, events.meta, events.remote_addr, events.received_at, events.created_at, events.uuid,
+  ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index
+FROM events WHERE payload_id = $1
+ORDER BY id DESC
+LIMIT $2
+OFFSET $3
 `
 
 type EventsListByPayloadIDParams struct {
@@ -137,27 +137,33 @@ type EventsListByPayloadIDParams struct {
 	Offset    int64 `db:"offset"`
 }
 
-func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*Event, error) {
+type EventsListByPayloadIDRow struct {
+	Event Event `db:"event"`
+	Index int64 `db:"index"`
+}
+
+func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*EventsListByPayloadIDRow, error) {
 	rows, err := q.db.Query(ctx, eventsListByPayloadID, arg.PayloadID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []*Event{}
+	items := []*EventsListByPayloadIDRow{}
 	for rows.Next() {
-		var i Event
+		var i EventsListByPayloadIDRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.PayloadID,
-			&i.Protocol,
-			&i.RW,
-			&i.R,
-			&i.W,
-			&i.Meta,
-			&i.RemoteAddr,
-			&i.ReceivedAt,
-			&i.CreatedAt,
-			&i.UUID,
+			&i.Event.ID,
+			&i.Event.PayloadID,
+			&i.Event.Protocol,
+			&i.Event.RW,
+			&i.Event.R,
+			&i.Event.W,
+			&i.Event.Meta,
+			&i.Event.RemoteAddr,
+			&i.Event.ReceivedAt,
+			&i.Event.CreatedAt,
+			&i.Event.UUID,
+			&i.Index,
 		); err != nil {
 			return nil, err
 		}
