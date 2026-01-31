@@ -3,7 +3,6 @@ package telegram
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -17,10 +16,11 @@ func (tg *Telegram) Name() string {
 }
 
 func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
-	chatID, err := strconv.ParseInt(n.User.Params.TelegramID, 10, 64)
-	if err != nil {
-		return fmt.Errorf("telegram: invalid telegram id: %w", err)
+	if n.User.TelegramID == nil {
+		return fmt.Errorf("user %d has no telegram id", n.User.ID)
 	}
+
+	chatID := *n.User.TelegramID
 
 	header, body, err := tg.tmpl.RenderNotification(n)
 	if err != nil {

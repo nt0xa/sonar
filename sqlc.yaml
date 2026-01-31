@@ -25,6 +25,7 @@ sql:
           - rw
           - ttl
           - dns
+          - api
           - http
           - uuid
         overrides:

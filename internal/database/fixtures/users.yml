@@ -1,12 +1,22 @@
 - id: 1
   name: user1
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+  telegram_id: 31337
+  api_token: 50c862e41d059eeca13adc7b276b46b7
+  lark_id: 8b55131
 
 - id: 2
   name: user2
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+  telegram_id: 31338
+  api_token: 7001f2d819d3d5fb0b1fd75dd38eb34e
+  lark_id: 8b2494d
 
 - id: 3
   name: admin
   is_admin: true
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
+  telegram_id: 1337
+  api_token: a33bfdbfb3c62feb7ea59314dbd17426
+  lark_id: bca2924
+  slack_id: e9ab95

@@ -51,13 +51,13 @@ type HTTPRoute struct {
 //
 
 type HTTPRoutesCreateParams struct {
-	PayloadName string              `err:"payloadName" json:"payloadName"`
-	Method      string              `err:"method"      json:"method"`
-	Path        string              `err:"path"        json:"path"`
-	Code        int                 `err:"code"        json:"code"`
-	Headers     map[string][]string `err:"headers"     json:"headers"`
-	Body        string              `err:"body"        json:"body"`
-	IsDynamic   bool                `err:"isDynamic"   json:"isDynamic"`
+	PayloadName string              `json:"payloadName"`
+	Method      string              `json:"method"`
+	Path        string              `json:"path"`
+	Code        int                 `json:"code"`
+	Headers     map[string][]string `json:"headers"`
+	Body        string              `json:"body"`
+	IsDynamic   bool                `json:"isDynamic"`
 }
 
 func (p HTTPRoutesCreateParams) Validate() error {
@@ -148,14 +148,14 @@ func HTTPRoutesCreateCommand(acts *Actions, p *HTTPRoutesCreateParams, local boo
 //
 
 type HTTPRoutesUpdateParams struct {
-	Payload   string              `err:"payload"     path:"payload"          json:"-"`
-	Index     int64               `err:"index"       path:"index"            json:"-"`
-	Method    *string             `err:"method"      json:"method,omitempty"`
-	Path      *string             `err:"path"        json:"path,omitempty"`
-	Code      *int                `err:"code"        json:"code,omitempty"`
-	Headers   map[string][]string `err:"headers"     json:"headers,omitempty"`
-	Body      *string             `err:"body"        json:"body,omitempty"`
-	IsDynamic *bool               `err:"isDynamic"   json:"isDynamic,omitempty"`
+	Payload   string              `path:"payload"          json:"-"`
+	Index     int64               `path:"index"            json:"-"`
+	Method    *string             `json:"method,omitempty"`
+	Path      *string             `json:"path,omitempty"`
+	Code      *int                `json:"code,omitempty"`
+	Headers   map[string][]string `json:"headers,omitempty"`
+	Body      *string             `json:"body,omitempty"`
+	IsDynamic *bool               `json:"isDynamic,omitempty"`
 }
 
 func (p HTTPRoutesUpdateParams) Validate() error {
@@ -288,8 +288,8 @@ func HTTPRoutesUpdateCommand(acts *Actions, p *HTTPRoutesUpdateParams, local boo
 //
 
 type HTTPRoutesDeleteParams struct {
-	PayloadName string `err:"payload" path:"payload"`
-	Index       int64  `err:"index"   path:"index"`
+	PayloadName string `path:"payload"`
+	Index       int64  `path:"index"`
 }
 
 func (p HTTPRoutesDeleteParams) Validate() error {
@@ -335,8 +335,8 @@ func HTTPRoutesDeleteCommand(acts *Actions, p *HTTPRoutesDeleteParams, local boo
 //
 
 type HTTPRoutesClearParams struct {
-	PayloadName string `err:"payload" path:"payload"`
-	Path        string `err:"path"    query:"path"`
+	PayloadName string `path:"payload"`
+	Path        string `query:"path"`
 }
 
 func (p HTTPRoutesClearParams) Validate() error {
@@ -370,7 +370,7 @@ func HTTPRoutesClearCommand(acts *Actions, p *HTTPRoutesClearParams, local bool)
 //
 
 type HTTPRoutesListParams struct {
-	PayloadName string `err:"payload" path:"payload"`
+	PayloadName string `path:"payload"`
 }
 
 func (p HTTPRoutesListParams) Validate() error {

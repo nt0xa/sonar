@@ -172,7 +172,7 @@ func TestCard(t *testing.T) {
 	receivedAt, _ := time.Parse("2006-01-02T15:04:05Z", "2023-01-01T00:00:00Z")
 
 	card, err := card.Build(&modules.Notification{
-		User:    &database.UsersFull{},
+		User:    &database.User{},
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "http",

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -22,7 +21,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			u, err := api.db.UsersGetByParam(r.Context(), database.UserAPIToken, token)
+			u, err := api.db.UsersGetByAPIToken(r.Context(), token)
 
 			if err != nil {
 				api.handleError(w, r, errors.Unauthorizedf("invalid token"))

@@ -44,12 +44,12 @@ type DNSRecord struct {
 //
 
 type DNSRecordsCreateParams struct {
-	PayloadName string   `err:"payloadName" json:"payloadName"`
-	Name        string   `err:"name"        json:"name"`
-	TTL         int      `err:"ttl"         json:"ttl"`
-	Type        string   `err:"type"        json:"type"`
-	Values      []string `err:"values"      json:"values"`
-	Strategy    string   `err:"strategy"    json:"strategy"`
+	PayloadName string   `json:"payloadName"`
+	Name        string   `json:"name"`
+	TTL         int      `json:"ttl"`
+	Type        string   `json:"type"`
+	Values      []string `json:"values"`
+	Strategy    string   `json:"strategy"`
 }
 
 func (p DNSRecordsCreateParams) Validate() error {
@@ -101,8 +101,8 @@ func DNSRecordsCreateCommand(acts *Actions, p *DNSRecordsCreateParams, local boo
 //
 
 type DNSRecordsDeleteParams struct {
-	PayloadName string `err:"payload" path:"payload"`
-	Index       int64  `err:"index"   path:"index"`
+	PayloadName string `path:"payload"`
+	Index       int64  `path:"index"`
 }
 
 func (p DNSRecordsDeleteParams) Validate() error {
@@ -148,8 +148,8 @@ func DNSRecordsDeleteCommand(acts *Actions, p *DNSRecordsDeleteParams, local boo
 //
 
 type DNSRecordsClearParams struct {
-	PayloadName string `err:"payload" path:"payload" query:"-"`
-	Name        string `err:"name"    query:"name"`
+	PayloadName string `path:"payload" query:"-"`
+	Name        string `query:"name"`
 }
 
 func (p DNSRecordsClearParams) Validate() error {
@@ -184,7 +184,7 @@ func DNSRecordsClearCommand(acts *Actions, p *DNSRecordsClearParams, local bool)
 //
 
 type DNSRecordsListParams struct {
-	PayloadName string `err:"payload" path:"payload"`
+	PayloadName string `path:"payload"`
 }
 
 func (p DNSRecordsListParams) Validate() error {

@@ -96,7 +96,7 @@ func (s *Slack) Start() error {
 }
 
 func (s *Slack) processCommand(ctx context.Context, cmd slack.SlashCommand) *string {
-	chatUser, _ := s.db.UsersGetByParam(ctx, database.UserSlackID, cmd.UserID)
+	chatUser, _ := s.db.UsersGetBySlackID(ctx, cmd.UserID)
 	ctx = actionsdb.SetUser(ctx, chatUser)
 
 	reply := ""

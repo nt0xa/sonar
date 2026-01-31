@@ -33,10 +33,10 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	// if err := db.Migrate(); err != nil {
-	// 	fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
-	// 	os.Exit(1)
-	// }
+	if _, err := database.Migrate(dsn); err != nil {
+		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
+		os.Exit(1)
+	}
 
 	tf, err = testfixtures.New(
 		testfixtures.Database(db.DB()),

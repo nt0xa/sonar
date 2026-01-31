@@ -215,15 +215,13 @@ func TestCmd(t *testing.T) {
 		// Create
 
 		{
-			"users new -a -p telegram.id=1337 -p api.token=token test",
+			"users new -a --telegram 1337 --token token test",
 			"UsersCreate",
 			actions.UsersCreateParams{
-				Name: "test",
-				Params: database.UserParams{
-					TelegramID: "1337",
-					APIToken:   "token",
-				},
-				IsAdmin: true,
+				Name:       "test",
+				TelegramID: ptr[int64](1337),
+				APIToken:   ptr("token"),
+				IsAdmin:    true,
 			},
 			&actions.UsersCreateResult{},
 		},
@@ -262,7 +260,7 @@ func TestCmd(t *testing.T) {
 			actions.EventsListParams{
 				PayloadName: "test",
 				Limit:       5,
-				Offset:       3,
+				Offset:      3,
 			},
 			actions.EventsListResult{},
 		},

@@ -20,6 +20,11 @@ func (lrk *Lark) Name() string {
 }
 
 func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
+	if n.User.LarkID == nil {
+		return fmt.Errorf("user %d has no lark id", n.User.ID)
+	}
+
+	userID := *n.User.LarkID
 	body := string(n.Event.RW)
 
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
@@ -35,9 +40,9 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 			return fmt.Errorf("failed to build card: %w", err)
 		}
 
-		lrk.sendMessage(ctx, n.User.Params.LarkUserID, nil, string(card))
+		lrk.sendMessage(ctx, userID, nil, string(card))
 	} else {
-		lrk.docMessage(ctx, n.User.Params.LarkUserID,
+		lrk.docMessage(ctx, userID,
 			fmt.Sprintf("log-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 			"", []byte(body))
 	}
@@ -46,11 +51,11 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 		if data != "" {
-			lrk.docMessage(ctx, n.User.Params.LarkUserID,
+			lrk.docMessage(ctx, userID,
 				fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 				"", []byte(data))
 
-			lrk.docMessage(ctx, n.User.Params.LarkUserID,
+			lrk.docMessage(ctx, userID,
 				fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
 				"", n.Event.RW)
 		}

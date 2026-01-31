@@ -41,9 +41,9 @@ type Payload struct {
 //
 
 type PayloadsCreateParams struct {
-	Name            string   `err:"name"            json:"name"`
-	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     bool     `err:"storeEvents"     json:"storeEvents"`
+	Name            string   `json:"name"`
+	NotifyProtocols []string `json:"notifyProtocols"`
+	StoreEvents     bool     `json:"storeEvents"`
 }
 
 func (p PayloadsCreateParams) Validate() error {
@@ -89,10 +89,10 @@ func PayloadsCreateCommand(acts *Actions, p *PayloadsCreateParams, local bool) (
 //
 
 type PayloadsUpdateParams struct {
-	Name            string   `err:"name"            json:"-"               path:"name"`
-	NewName         string   `err:"newName"         json:"name"`
-	NotifyProtocols []string `err:"notifyProtocols" json:"notifyProtocols"`
-	StoreEvents     *bool    `err:"storeEvents"     json:"storeEvents"`
+	Name            string   `json:"-"               path:"name"`
+	NewName         string   `json:"name"`
+	NotifyProtocols []string `json:"notifyProtocols"`
+	StoreEvents     *bool    `json:"storeEvents"`
 }
 
 func (p PayloadsUpdateParams) Validate() error {
@@ -146,7 +146,7 @@ func PayloadsUpdateCommand(acts *Actions, p *PayloadsUpdateParams, local bool) (
 //
 
 type PayloadsDeleteParams struct {
-	Name string `err:"name" path:"name"`
+	Name string `path:"name"`
 }
 
 func (p PayloadsDeleteParams) Validate() error {
@@ -182,7 +182,7 @@ func PayloadsDeleteCommand(acts *Actions, p *PayloadsDeleteParams, local bool) (
 //
 
 type PayloadsClearParams struct {
-	Name string `err:"name" query:"name"`
+	Name string `query:"name"`
 }
 
 func (p PayloadsClearParams) Validate() error {
@@ -215,9 +215,9 @@ func PayloadsClearCommand(acts *Actions, p *PayloadsClearParams, local bool) (*c
 //
 
 type PayloadsListParams struct {
-	Name    string `err:"name"    query:"name"`
-	Page    uint   `err:"page"    query:"page"`
-	PerPage uint   `err:"perPage" query:"perPage"`
+	Name    string `query:"name"`
+	Page    uint   `query:"page"`
+	PerPage uint   `query:"perPage"`
 }
 
 func (p PayloadsListParams) Validate() error {
