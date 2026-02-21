@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/http2"
 
 	"github.com/nt0xa/sonar/pkg/httpx"
 )
@@ -53,7 +54,7 @@ func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 
 func TestMain(m *testing.M) {
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 
 	h := http.TimeoutHandler(
 		httpx.BodyReaderHandler(
@@ -112,6 +113,15 @@ func TestMain(m *testing.M) {
 		if err := srv.ListenAndServe(); err != nil {
 			fmt.Fprintf(os.Stderr, "fail to start server: %s", err)
 			os.Exit(1)
+		}
+	}()
+
+	// h2c server: HTTP/2 over cleartext on port 1082.
+	go func() {
+		opts := append(options, httpx.H2C())
+		srv := httpx.New("127.0.0.1:1082", h, opts...)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatal(fmt.Errorf("fail to start h2c server: %w", err))
 		}
 	}()
 
@@ -397,6 +407,93 @@ func TestHTTPX(t *testing.T) {
 
 	if WaitTimeout(&wg, time.Second*5) {
 		t.Errorf("timeout")
+	}
+
+	notifier.AssertExpectations(t)
+}
+
+func TestHTTP2(t *testing.T) {
+	var tests = []struct {
+		name          string
+		url           string
+		secure        bool
+		contains      []string
+		makeTransport func() http.RoundTripper
+	}{
+		{
+			name:     "h2 over TLS",
+			url:      "https://127.0.0.1:1443/h2path?q=h2value",
+			secure:   true,
+			contains: []string{"/h2path", "h2value", "X-Test"},
+			makeTransport: func() http.RoundTripper {
+				return &http2.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				}
+			},
+		},
+		{
+			name:     "h2c cleartext",
+			url:      "http://127.0.0.1:1082/h2cpath?q=h2cvalue",
+			secure:   false,
+			contains: []string{"/h2cpath", "h2cvalue", "X-Test"},
+			makeTransport: func() http.RoundTripper {
+				return &http2.Transport{
+					AllowHTTP: true,
+					DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+						return net.Dial(network, addr)
+					},
+				}
+			},
+		},
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(tests))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := tt.makeTransport()
+
+			notifier.
+				On("Notify",
+					mock.Anything,
+					mock.MatchedBy(func(data string) bool {
+						for _, s := range tt.contains {
+							if !strings.Contains(data, s) {
+								return false
+							}
+						}
+						return true
+					}),
+					tt.secure,
+				).
+				Once().
+				Run(func(args mock.Arguments) {
+					wg.Done()
+				})
+
+			req, err := http.NewRequest(http.MethodGet, tt.url, nil)
+			require.NoError(t, err)
+			req.Header.Set("X-Test", "http2-header")
+
+			client := &http.Client{
+				Timeout:   5 * time.Second,
+				Transport: tr,
+			}
+
+			res, err := client.Do(req)
+			require.NoError(t, err)
+			defer res.Body.Close()
+
+			assert.Equal(t, 200, res.StatusCode)
+			assert.Equal(t, 2, res.ProtoMajor, "expected HTTP/2 response")
+		})
+	}
+
+	if WaitTimeout(&wg, 5*time.Second) {
+		t.Errorf("timeout waiting for HTTP/2 notifications")
 	}
 
 	notifier.AssertExpectations(t)
