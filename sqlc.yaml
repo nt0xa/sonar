@@ -66,15 +66,12 @@ sql:
           - column: events.meta
             go_type:
               type: EventsMeta
-          - column: audit_records.actor
+          - column: audit_records.actor_metadata
             go_type:
-              type: AuditActor
-          - column: audit_records.target
+              type: AuditActorMetadata
+          - column: audit_records.resource
             go_type:
-              type: AuditTarget
-          - column: audit_records.data
-            go_type:
-              type: AuditData
+              type: AuditResource
           - column: http_routes.headers
             go_type:
               type: HTTPHeaders

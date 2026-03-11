@@ -8,17 +8,20 @@ import (
 )
 
 type Inner struct {
-	B string
-	C int
+	B string `audit:"b"`
+	C int    `audit:"c"`
 }
 
 type Outer struct {
-	A string
-	D *Inner
-	E []int
-	F map[string]string
-	G Inner
+	A string            `audit:"a"`
+	D *Inner            `audit:"d"`
+	E []int             `audit:"e"`
+	F map[string]string `audit:"f"`
+	G Inner             `audit:"g"`
 	H []Inner
+	O int    `audit:"o,omitempty"`
+	P string `audit:"p,omitempty"`
+	Q bool   `audit:"q,omitempty"`
 }
 
 // Test for StructToMap
@@ -36,16 +39,19 @@ func TestStructToMap(t *testing.T) {
 				E: []int{1, 2, 3},
 				F: map[string]string{"foo": "bar"},
 				G: Inner{B: "test", C: 42},
+				O: 7,
+				P: "x",
+				Q: true,
 			},
 			expect: map[string]any{
-				"A": "hello",
-				"D": map[string]any{
-					"B": "test",
-					"C": 42,
-				},
-				"E": []any{1, 2, 3},
-				"F": map[string]any{"foo": "bar"},
-				"G": map[string]any{"B": "test", "C": 42},
+				"a": "hello",
+				"d": Inner{B: "test", C: 42},
+				"e": []int{1, 2, 3},
+				"f": map[string]string{"foo": "bar"},
+				"g": Inner{B: "test", C: 42},
+				"o": 7,
+				"p": "x",
+				"q": true,
 			},
 		},
 		{
@@ -57,7 +63,13 @@ func TestStructToMap(t *testing.T) {
 				F: nil,
 				G: Inner{},
 			},
-			expect: map[string]any{},
+			expect: map[string]any{
+				"a": "",
+				"d": Inner{},
+				"e": []int(nil),
+				"f": map[string]string(nil),
+				"g": Inner{},
+			},
 		},
 		{
 			name: "Some fields empty",
@@ -66,7 +78,10 @@ func TestStructToMap(t *testing.T) {
 				E: []int{},
 			},
 			expect: map[string]any{
-				"A": "world",
+				"a": "world",
+				"e": []int{},
+				"f": map[string]string(nil),
+				"g": Inner{},
 			},
 		},
 	}

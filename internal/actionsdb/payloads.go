@@ -50,20 +50,10 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Internal(err)
 	}
 
-	act.writeAudit(ctx, auditOpCreate, newAuditable(
-		database.AuditTarget{
-			Type: auditResourcePayload,
-			ID:   &rec.ID,
-			Key:  rec.Name,
-		},
-		database.AuditData{
-			"subdomain":       rec.Subdomain,
-			"notifyProtocols": rec.NotifyProtocols,
-			"storeEvents":     rec.StoreEvents,
-		},
-	))
+	out := Payload(*rec)
+	act.auditCreate(ctx, out)
 
-	return &actions.PayloadsCreateResult{Payload: Payload(*rec)}, nil
+	return &actions.PayloadsCreateResult{Payload: out}, nil
 }
 
 func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpdateParams) (*actions.PayloadsUpdateResult, errors.Error) {
@@ -110,26 +100,10 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Internal(err)
 	}
 
-	changed := make([]string, 0)
-	if rec.Name != updated.Name {
-		changed = append(changed, "name")
-	}
-	if rec.StoreEvents != updated.StoreEvents {
-		changed = append(changed, "storeEvents")
-	}
-	act.writeAudit(ctx, auditOpUpdate, newAuditable(
-		database.AuditTarget{
-			Type: auditResourcePayload,
-			ID:   &updated.ID,
-			Key:  updated.Name,
-		},
-		database.AuditData{
-			"changedFields":   changed,
-			"notifyProtocols": updated.NotifyProtocols,
-		},
-	))
+	out := Payload(*updated)
+	act.auditUpdate(ctx, out)
 
-	return &actions.PayloadsUpdateResult{Payload: Payload(*updated)}, nil
+	return &actions.PayloadsUpdateResult{Payload: out}, nil
 }
 
 func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDeleteParams) (*actions.PayloadsDeleteResult, errors.Error) {
@@ -154,18 +128,10 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 		return nil, errors.Internal(err)
 	}
 
-	act.writeAudit(ctx, auditOpDelete, newAuditable(
-		database.AuditTarget{
-			Type: auditResourcePayload,
-			ID:   &deleted.ID,
-			Key:  deleted.Name,
-		},
-		database.AuditData{
-			"subdomain": deleted.Subdomain,
-		},
-	))
+	out := Payload(*deleted)
+	act.auditDelete(ctx, out)
 
-	return &actions.PayloadsDeleteResult{Payload: Payload(*deleted)}, nil
+	return &actions.PayloadsDeleteResult{Payload: out}, nil
 }
 
 func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClearParams) (actions.PayloadsClearResult, errors.Error) {
@@ -186,19 +152,10 @@ func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClear
 	res := make([]actions.Payload, 0)
 
 	for _, r := range recs {
-		res = append(res, Payload(*r))
+		out := Payload(*r)
+		res = append(res, out)
+		act.auditDelete(ctx, out)
 	}
-
-	act.writeAudit(ctx, auditOpClear, newAuditable(
-		database.AuditTarget{
-			Type: auditResourcePayload,
-			Key:  p.Name,
-		},
-		database.AuditData{
-			"count":      len(recs),
-			"nameFilter": p.Name,
-		},
-	))
 
 	return res, nil
 }

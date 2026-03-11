@@ -32,11 +32,7 @@ func TestAuditWrite_OnPayloadCreate(t *testing.T) {
 		ActorID:      nil,
 		ResourceType: "payload",
 		Action:       "create",
-		ResourceKey:  "audit-write-test",
 		ActorName:    "",
-		ResourceID:   nil,
-		PayloadID:    nil,
-		PayloadName:  "",
 		FromAt:       nil,
 		ToAt:         nil,
 		PageLimit:    10,
@@ -44,11 +40,11 @@ func TestAuditWrite_OnPayloadCreate(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, recs)
-	assert.Equal(t, "payload", recs[0].Target.Type)
-	assert.Equal(t, "create", string(recs[0].Operation))
-	assert.Equal(t, "audit-write-test", recs[0].Target.Key)
-	require.NotNil(t, recs[0].Actor.ID)
-	assert.EqualValues(t, 1, *recs[0].Actor.ID)
+	assert.Equal(t, "payload", string(recs[0].ResourceType))
+	assert.Equal(t, "create", string(recs[0].Action))
+	assert.Equal(t, "audit-write-test", recs[0].Resource["name"])
+	require.NotNil(t, recs[0].ActorID)
+	assert.EqualValues(t, 1, *recs[0].ActorID)
 }
 
 func TestAuditRecordsListGet_AdminOnly(t *testing.T) {
@@ -67,7 +63,7 @@ func TestAuditRecordsListGet_AdminOnly(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	list, err := actsAudit.AuditRecordsList(adminCtx, actions.AuditRecordsListParams{Limit: 5})
+	list, err := actsAudit.AuditRecordsList(adminCtx, actions.AuditRecordsListParams{PerPage: 5})
 	require.NoError(t, err)
 	require.NotEmpty(t, list)
 
@@ -80,7 +76,7 @@ func TestAuditRecordsListGet_AdminOnly(t *testing.T) {
 	require.NoError(t, err)
 	nonAdminCtx := actionsdb.SetUser(t.Context(), nonAdmin)
 
-	_, err = actsAudit.AuditRecordsList(nonAdminCtx, actions.AuditRecordsListParams{Limit: 5})
+	_, err = actsAudit.AuditRecordsList(nonAdminCtx, actions.AuditRecordsListParams{PerPage: 5})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.ForbiddenError{}, err)
 }

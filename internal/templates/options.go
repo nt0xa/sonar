@@ -72,9 +72,7 @@ func PerTemplate(id string, topts ...TemplateOption) Option {
 			opts.perTemplate[id] = make([]TemplateOption, 0)
 		}
 
-		for _, topt := range topts {
-			opts.perTemplate[id] = append(opts.perTemplate[id], topt)
-		}
+		opts.perTemplate[id] = append(opts.perTemplate[id], topts...)
 	}
 }
 

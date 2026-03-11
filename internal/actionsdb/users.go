@@ -47,22 +47,10 @@ func (act *dbactions) UsersCreate(ctx context.Context, p actions.UsersCreatePara
 		return nil, errors.Internal(err)
 	}
 
-	act.writeAudit(ctx, auditOpCreate, newAuditable(
-		database.AuditTarget{
-			Type: auditResourceUser,
-			ID:   &rec.ID,
-			Key:  rec.Name,
-		},
-		database.AuditData{
-			"isAdmin":     rec.IsAdmin,
-			"hasAPIToken": rec.APIToken != nil,
-			"telegramID":  rec.TelegramID,
-			"larkID":      rec.LarkID,
-			"slackID":     rec.SlackID,
-		},
-	))
+	out := User(*rec)
+	act.auditCreate(ctx, out)
 
-	return &actions.UsersCreateResult{User: User(*rec)}, nil
+	return &actions.UsersCreateResult{User: out}, nil
 }
 
 func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeleteParams) (*actions.UsersDeleteResult, errors.Error) {
@@ -79,16 +67,8 @@ func (act *dbactions) UsersDelete(ctx context.Context, p actions.UsersDeletePara
 		return nil, errors.Internal(err)
 	}
 
-	act.writeAudit(ctx, auditOpDelete, newAuditable(
-		database.AuditTarget{
-			Type: auditResourceUser,
-			ID:   &rec.ID,
-			Key:  rec.Name,
-		},
-		database.AuditData{
-			"isAdmin": rec.IsAdmin,
-		},
-	))
+	out := User(*rec)
+	act.auditDelete(ctx, out)
 
-	return &actions.UsersDeleteResult{User: User(*rec)}, nil
+	return &actions.UsersDeleteResult{User: out}, nil
 }

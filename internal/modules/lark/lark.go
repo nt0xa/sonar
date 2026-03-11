@@ -272,6 +272,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 				ctx = SetMessageID(ctx, *msgID)
 				ctx = actionsdb.SetUser(ctx, user)
+				ctx = actionsdb.SetSource(ctx, "lark")
 
 				text := msg.Text
 
