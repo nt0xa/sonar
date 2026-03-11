@@ -604,6 +604,71 @@ func TestAPI(t *testing.T) {
 		},
 
 		//
+		// Audit records
+		//
+
+		// List
+
+		{
+			method: "GET",
+			path:   "/audit-records",
+			query:  "actorId=1&actorName=user1&resourceType=payload&action=create&page=1&perPage=1&from=2026-01-01T09:00:00Z&to=2026-01-01T10:30:00Z",
+			token:  AdminToken,
+			schema: (actions.AuditRecordsListResult)(nil),
+			result: map[string]matcher{
+				"$":                 length(1),
+				"$[0].id":           equal(1),
+				"$[0].action":       equal("create"),
+				"$[0].resourceType": equal("payload"),
+				"$[0].source":       equal("api"),
+				"$[0].actorId":      equal(1),
+				"$[0].actorName":    equal("user1"),
+				"$[0].resource.name": equal("payload1"),
+			},
+			status: 200,
+		},
+		{
+			method: "GET",
+			path:   "/audit-records",
+			query:  "page=1&perPage=1&from=2026-01-01T00:00:00Z&to=2026-01-02T23:59:59Z",
+			token:  User1Token,
+			schema: &errors.ForbiddenError{},
+			result: map[string]matcher{
+				"$.message": contains("forbidden"),
+			},
+			status: 403,
+		},
+
+		// Get
+
+		{
+			method: "GET",
+			path:   "/audit-records/2",
+			token:  AdminToken,
+			schema: actions.AuditRecordsGetResult{},
+			result: map[string]matcher{
+				"$.id":           equal(2),
+				"$.action":       equal("update"),
+				"$.resourceType": equal("http_route"),
+				"$.source":       equal("telegram"),
+				"$.actorId":      equal(1),
+				"$.actorName":    equal("user1"),
+				"$.resource.path": equal("/x"),
+			},
+			status: 200,
+		},
+		{
+			method: "GET",
+			path:   "/audit-records/2",
+			token:  User1Token,
+			schema: &errors.ForbiddenError{},
+			result: map[string]matcher{
+				"$.message": contains("forbidden"),
+			},
+			status: 403,
+		},
+
+		//
 		// Events
 		//
 

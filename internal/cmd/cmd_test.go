@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/mock"
@@ -353,6 +354,37 @@ func TestCmd(t *testing.T) {
 				Path:        "/test",
 			},
 			actions.HTTPRoutesClearResult{},
+		},
+
+		//
+		// Audit
+		//
+
+		// List
+		{
+			"audit list --actor-id 1 --actor-name user1 --resource-type payload --action create --from 2026-01-02T03:04:05Z --to 2026-01-03T00:00:00Z --page 2 --per-page 25",
+			"AuditRecordsList",
+			actions.AuditRecordsListParams{
+				ActorID:      ptr[int64](1),
+				ActorName:    "user1",
+				ResourceType: "payload",
+				Action:       "create",
+				From:         ptr(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)),
+				To:           ptr(time.Date(2026, 1, 3, 0, 0, 0, 0, time.UTC)),
+				Page:         2,
+				PerPage:      25,
+			},
+			actions.AuditRecordsListResult{},
+		},
+
+		// Get
+		{
+			"audit get 42",
+			"AuditRecordsGet",
+			actions.AuditRecordsGetParams{
+				ID: 42,
+			},
+			&actions.AuditRecordsGetResult{},
 		},
 	}
 
