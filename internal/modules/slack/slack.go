@@ -98,6 +98,7 @@ func (s *Slack) Start() error {
 func (s *Slack) processCommand(ctx context.Context, cmd slack.SlashCommand) *string {
 	chatUser, _ := s.db.UsersGetBySlackID(ctx, cmd.UserID)
 	ctx = actionsdb.SetUser(ctx, chatUser)
+	ctx = actionsdb.SetSource(ctx, "slack")
 
 	reply := ""
 

@@ -110,7 +110,7 @@ func (api *API) Router() http.Handler {
 			})
 		})
 
-		r.Route("/audit_records", func(r chi.Router) {
+		r.Route("/audit-records", func(r chi.Router) {
 			r.Get("/", api.AuditRecordsList)
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", api.AuditRecordsGet)

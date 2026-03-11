@@ -114,6 +114,11 @@ email = "<EMAIL>"
 # If enabled, the OTEL_EXPORTER_OTLP_ENDPOINT must be set.
 enabled = false
 
+[audit]
+# Audit records for create/update/delete actions.
+# Disabled by default.
+enabled = false
+
 [geoip]
 # GeoIP lookup for IP addresses. Disabled by default.
 # Requires GeoLite2 databases: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/

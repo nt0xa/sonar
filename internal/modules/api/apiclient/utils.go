@@ -3,7 +3,9 @@ package apiclient
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
+	"time"
 
 	"github.com/fatih/structs"
 	"github.com/go-resty/resty/v2"
@@ -15,6 +17,15 @@ var encoder = schema.NewEncoder()
 
 func init() {
 	encoder.SetAliasTag("query")
+
+	encoder.RegisterEncoder(&time.Time{}, func(value reflect.Value) string {
+		if value.IsNil() {
+			return ""
+		}
+
+		t := value.Interface().(*time.Time)
+		return t.Format(time.RFC3339)
+	})
 }
 
 func toQuery(src interface{}) url.Values {

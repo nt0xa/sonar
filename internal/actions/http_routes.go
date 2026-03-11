@@ -35,14 +35,14 @@ type HTTPActions interface {
 }
 
 type HTTPRoute struct {
-	Index            int64               `json:"index"`
-	PayloadSubdomain string              `json:"payloadSubdomain"`
-	Method           string              `json:"method"`
-	Path             string              `json:"path"`
-	Code             int                 `json:"code"`
-	Headers          map[string][]string `json:"headers"`
-	Body             string              `json:"body"`
-	IsDynamic        bool                `json:"isDynamic"`
+	Index            int64               `json:"index" audit:"index"`
+	PayloadSubdomain string              `json:"payloadSubdomain" audit:"payload_subdomain"`
+	Method           string              `json:"method" audit:"method"`
+	Path             string              `json:"path" audit:"path"`
+	Code             int                 `json:"code" audit:"code"`
+	Headers          map[string][]string `json:"headers" audit:"headers"`
+	Body             string              `json:"body" audit:"body"`
+	IsDynamic        bool                `json:"isDynamic" audit:"is_dynamic"`
 	CreatedAt        time.Time           `json:"createdAt"`
 }
 

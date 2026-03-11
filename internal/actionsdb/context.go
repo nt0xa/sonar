@@ -10,7 +10,8 @@ import (
 type contextKey string
 
 const (
-	userKey contextKey = "user"
+	userKey   contextKey = "user"
+	sourceKey contextKey = "source"
 )
 
 func SetUser(ctx context.Context, u *database.User) context.Context {
@@ -24,4 +25,17 @@ func GetUser(ctx context.Context) (*database.User, error) {
 	}
 
 	return u, nil
+}
+
+func SetSource(ctx context.Context, s string) context.Context {
+	return context.WithValue(ctx, sourceKey, s)
+}
+
+func GetSource(ctx context.Context) (string, error) {
+	s, ok := ctx.Value(sourceKey).(string)
+	if !ok {
+		return "", fmt.Errorf("no %q key in context", sourceKey)
+	}
+
+	return s, nil
 }

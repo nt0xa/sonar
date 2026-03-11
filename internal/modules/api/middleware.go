@@ -29,6 +29,7 @@ func (api *API) checkAuth() func(http.Handler) http.Handler {
 			}
 
 			ctx := actionsdb.SetUser(r.Context(), u)
+			ctx = actionsdb.SetSource(ctx, "api")
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
