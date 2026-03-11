@@ -8,6 +8,60 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 )
 
+func (c *Command) AuditRecordsGet(onResult func(context.Context, actions.Result) error) *cobra.Command {
+	var params actions.AuditRecordsGetParams
+
+	cmd, prepareFunc := actions.AuditRecordsGetCommand(&c.actions, &params, c.options.allowFileAccess)
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		if err := params.Validate(); err != nil {
+			return err
+		}
+
+		res, err := c.actions.AuditRecordsGet(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		return onResult(cmd.Context(), res)
+	}
+
+	return cmd
+}
+
+func (c *Command) AuditRecordsList(onResult func(context.Context, actions.Result) error) *cobra.Command {
+	var params actions.AuditRecordsListParams
+
+	cmd, prepareFunc := actions.AuditRecordsListCommand(&c.actions, &params, c.options.allowFileAccess)
+
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if prepareFunc != nil {
+			if err := prepareFunc(cmd, args); err != nil {
+				return err
+			}
+		}
+
+		if err := params.Validate(); err != nil {
+			return err
+		}
+
+		res, err := c.actions.AuditRecordsList(cmd.Context(), params)
+		if err != nil {
+			return err
+		}
+
+		return onResult(cmd.Context(), res)
+	}
+
+	return cmd
+}
+
 func (c *Command) DNSRecordsClear(onResult func(context.Context, actions.Result) error) *cobra.Command {
 	var params actions.DNSRecordsClearParams
 

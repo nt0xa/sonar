@@ -7,7 +7,7 @@ import (
 // options represent all template options: default + perTemplate.
 type options struct {
 	defaultOptions templateOptions
-	perTemplate    map[string]templateOptions
+	perTemplate    map[string][]TemplateOption
 }
 
 // get returns template options for the provided template id.
@@ -15,7 +15,11 @@ type options struct {
 func (opt *options) get(id string) templateOptions {
 	opts, ok := opt.perTemplate[id]
 	if ok {
-		return opts
+		combined := opt.defaultOptions
+		for _, opt := range opts {
+			opt(&combined)
+		}
+		return combined
 	}
 	return opt.defaultOptions
 }
@@ -63,14 +67,13 @@ func Default(topts ...TemplateOption) Option {
 // PerTemplate allows to modify options for single templates by their id.
 func PerTemplate(id string, topts ...TemplateOption) Option {
 	return func(opts *options) {
-		op, ok := opts.perTemplate[id]
+		_, ok := opts.perTemplate[id]
 		if !ok {
-			op = defaultTemplateOptions()
-			opts.perTemplate[id] = op
+			opts.perTemplate[id] = make([]TemplateOption, 0)
 		}
 
 		for _, topt := range topts {
-			topt(&op)
+			opts.perTemplate[id] = append(opts.perTemplate[id], topt)
 		}
 	}
 }

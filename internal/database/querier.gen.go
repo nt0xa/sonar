@@ -9,6 +9,9 @@ import (
 )
 
 type Querier interface {
+	AuditRecordsCreate(ctx context.Context, arg AuditRecordsCreateParams) (*AuditRecord, error)
+	AuditRecordsGetByID(ctx context.Context, id int64) (*AuditRecord, error)
+	AuditRecordsList(ctx context.Context, arg AuditRecordsListParams) ([]*AuditRecord, error)
 	DNSRecordsCreate(ctx context.Context, arg DNSRecordsCreateParams) (*DNSRecord, error)
 	DNSRecordsDelete(ctx context.Context, id *int64) error
 	DNSRecordsDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*DNSRecord, error)

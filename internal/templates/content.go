@@ -34,6 +34,9 @@ var templatesMap = map[string]string{
 
 	actions.EventsListResultID: eventsList,
 	actions.EventsGetResultID:  eventsGet,
+
+	actions.AuditRecordsListResultID: auditRecordsList,
+	actions.AuditRecordsGetResultID:  auditRecordsGet,
 }
 
 //
@@ -114,8 +117,6 @@ var event = `
 <bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 
 var eventsGet = event + `
-{{- $protocol := $e.Protocol }}
-
 <pre>
 {{ $e.RW | b64dec }}
 </pre>`
@@ -124,6 +125,22 @@ var eventsList = fmt.Sprintf(`
 {{- range . -}}
 %s
 {{ else }}nothing found{{ end -}}`, event)
+
+//
+// AuditRecords
+//
+
+var auditRecord = `
+{{- $a := . -}}
+<bold>[{{ $a.ID }}]</bold> {{ $a.Action | upper }} {{ $a.ResourceType }} "{{ $a.ResourceKey }}" by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
+
+var auditRecordsList = fmt.Sprintf(`
+{{- range . -}}
+%s
+{{ else }}nothing found{{ end -}}`, auditRecord)
+
+var auditRecordsGet = auditRecord + `
+<pre>{{ .Meta | toPrettyJson }}</pre>`
 
 //
 // Notification
