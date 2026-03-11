@@ -60,6 +60,24 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
+	payloadName := payload.Name
+	act.writeAudit(ctx, auditOpCreate, newAuditable(
+		database.AuditTarget{
+			Type:        auditResourceDNS,
+			ID:          rec.ID,
+			Key:         p.Name,
+			PayloadID:   &payload.ID,
+			PayloadName: payloadName,
+		},
+		database.AuditData{
+			"index":    rec.Index,
+			"type":     rec.Type,
+			"ttl":      rec.TTL,
+			"strategy": rec.Strategy,
+			"values":   rec.Values,
+		},
+	))
+
 	return &actions.DNSRecordsCreateResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
 }
 
@@ -89,6 +107,21 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 	if err := act.db.DNSRecordsDelete(ctx, rec.ID); err != nil {
 		return nil, errors.Internal(err)
 	}
+
+	payloadName := payload.Name
+	act.writeAudit(ctx, auditOpDelete, newAuditable(
+		database.AuditTarget{
+			Type:        auditResourceDNS,
+			ID:          rec.ID,
+			Key:         rec.Name,
+			PayloadID:   &payload.ID,
+			PayloadName: payloadName,
+		},
+		database.AuditData{
+			"index": rec.Index,
+			"type":  rec.Type,
+		},
+	))
 
 	return &actions.DNSRecordsDeleteResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
 }
@@ -124,6 +157,20 @@ func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsC
 	for _, r := range recs {
 		res = append(res, DNSRecord(*r, payload.Subdomain))
 	}
+
+	payloadName := payload.Name
+	act.writeAudit(ctx, auditOpClear, newAuditable(
+		database.AuditTarget{
+			Type:        auditResourceDNS,
+			Key:         p.Name,
+			PayloadID:   &payload.ID,
+			PayloadName: payloadName,
+		},
+		database.AuditData{
+			"count":      len(recs),
+			"nameFilter": p.Name,
+		},
+	))
 
 	return res, nil
 }

@@ -12,6 +12,59 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuditRecordOperationType string
+
+const (
+	AuditRecordOperationTypeCreate AuditRecordOperationType = "create"
+	AuditRecordOperationTypeUpdate AuditRecordOperationType = "update"
+	AuditRecordOperationTypeDelete AuditRecordOperationType = "delete"
+	AuditRecordOperationTypeClear  AuditRecordOperationType = "clear"
+)
+
+func (e *AuditRecordOperationType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuditRecordOperationType(s)
+	case string:
+		*e = AuditRecordOperationType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuditRecordOperationType: %T", src)
+	}
+	return nil
+}
+
+type NullAuditRecordOperationType struct {
+	AuditRecordOperationType AuditRecordOperationType
+	Valid                    bool // Valid is true if AuditRecordOperationType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuditRecordOperationType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuditRecordOperationType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuditRecordOperationType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuditRecordOperationType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuditRecordOperationType), nil
+}
+
+func AllAuditRecordOperationTypeValues() []AuditRecordOperationType {
+	return []AuditRecordOperationType{
+		AuditRecordOperationTypeCreate,
+		AuditRecordOperationTypeUpdate,
+		AuditRecordOperationTypeDelete,
+		AuditRecordOperationTypeClear,
+	}
+}
+
 type DNSRecordType string
 
 const (
@@ -120,6 +173,15 @@ func AllDNSStrategyValues() []DNSStrategy {
 		DNSStrategyRoundRobin,
 		DNSStrategyRebind,
 	}
+}
+
+type AuditRecord struct {
+	ID        int64                    `db:"id"`
+	Operation AuditRecordOperationType `db:"operation"`
+	Actor     AuditActor               `db:"actor"`
+	Target    AuditTarget              `db:"target"`
+	Data      AuditData                `db:"data"`
+	CreatedAt time.Time                `db:"created_at"`
 }
 
 type DNSRecord struct {

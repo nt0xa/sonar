@@ -7,12 +7,46 @@ import (
 	"github.com/nt0xa/sonar/internal/utils/errors"
 )
 
+func (c *Client) AuditRecordsGet(ctx context.Context, params actions.AuditRecordsGetParams) (*actions.AuditRecordsGetResult, errors.Error) {
+	var res *actions.AuditRecordsGetResult
+
+	err := handle(c.client.R().
+		SetPathParams(toPath(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/auditrecords/{id}"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *Client) AuditRecordsList(ctx context.Context, params actions.AuditRecordsListParams) (actions.AuditRecordsListResult, errors.Error) {
+	var res actions.AuditRecordsListResult
+
+	err := handle(c.client.R().
+		SetQueryParamsFromValues(toQuery(params)).
+		SetError(&APIError{}).
+		SetResult(&res).
+		SetContext(ctx).
+		Get("/auditrecords"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {
 	var res actions.DNSRecordsClearResult
 
 	err := handle(c.client.R().
-		SetPathParams(toPath(params)).
 		SetQueryParamsFromValues(toQuery(params)).
+		SetPathParams(toPath(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

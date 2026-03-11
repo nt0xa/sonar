@@ -24,7 +24,7 @@ type Templates struct {
 func New(domain string, opts ...Option) *Templates {
 	options := options{
 		defaultOptions: defaultTemplateOptions(),
-		perTemplate:    make(map[string]templateOptions),
+		perTemplate:    make(map[string][]TemplateOption),
 	}
 
 	for _, opt := range opts {
