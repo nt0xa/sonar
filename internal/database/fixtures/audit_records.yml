@@ -1,0 +1,32 @@
+- id: 1
+  uuid: d725ec53-0add-4f68-a5d2-22007d5f5f6d
+  created_at: "2026-01-01T10:00:00Z"
+  action: create
+  resource_type: payload
+  source: api
+  actor_id: 1
+  actor_name: user1
+  actor_metadata: RAW='{}'::jsonb
+  resource: RAW='{"name":"payload1","subdomain":"c1da9f3d"}'::jsonb
+
+- id: 2
+  uuid: c855cbf8-cb74-4269-9264-56acf4beeb5c
+  created_at: "2026-01-01T11:00:00Z"
+  action: update
+  resource_type: http_route
+  source: telegram
+  actor_id: 1
+  actor_name: user1
+  actor_metadata: RAW='{"telegram_id":31337}'::jsonb
+  resource: RAW='{"path":"/x","method":"GET"}'::jsonb
+
+- id: 3
+  uuid: 6f5ff6bb-c4f3-453f-9c1f-d7c14597e65f
+  created_at: "2026-01-02T09:30:00Z"
+  action: delete
+  resource_type: user
+  source: slack
+  actor_id: 3
+  actor_name: admin
+  actor_metadata: RAW='{"slack_id":"e9ab95"}'::jsonb
+  resource: RAW='{"name":"user2"}'::jsonb
