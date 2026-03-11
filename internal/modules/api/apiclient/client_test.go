@@ -388,6 +388,51 @@ func TestClient(t *testing.T) {
 		},
 
 		//
+		// Audit records
+		//
+
+		// List
+
+		{
+			actions.AuditRecordsListParams{
+				ActorID:      ptr(int64(1)),
+				ActorName:    "user1",
+				ResourceType: "payload",
+				Action:       "create",
+				From:         ptr(time.Date(2026, 1, 1, 9, 0, 0, 0, time.UTC)),
+				To:           ptr(time.Date(2026, 1, 1, 10, 30, 0, 0, time.UTC)),
+				Page:         1,
+				PerPage:      1,
+			},
+			map[string]matcher{
+				"0.ID":           equal(1),
+				"0.Action":       equal("create"),
+				"0.ResourceType": equal("payload"),
+				"0.Source":       equal("api"),
+				"0.ActorID":      equal(int64(1)),
+				"0.ActorName":    equal("user1"),
+			},
+			nil,
+		},
+
+		// Get
+
+		{
+			actions.AuditRecordsGetParams{
+				ID: 2,
+			},
+			map[string]matcher{
+				"ID":           equal(2),
+				"Action":       equal("update"),
+				"ResourceType": equal("http_route"),
+				"Source":       equal("telegram"),
+				"ActorID":      equal(int64(1)),
+				"ActorName":    equal("user1"),
+			},
+			nil,
+		},
+
+		//
 		// Events
 		//
 
@@ -556,6 +601,12 @@ func TestClient(t *testing.T) {
 				res, err = ac.UsersCreate(context.Background(), p)
 			case actions.UsersDeleteParams:
 				res, err = ac.UsersDelete(context.Background(), p)
+
+			// Audit records
+			case actions.AuditRecordsListParams:
+				res, err = ac.AuditRecordsList(context.Background(), p)
+			case actions.AuditRecordsGetParams:
+				res, err = ac.AuditRecordsGet(context.Background(), p)
 
 			// HTTP routes
 			case actions.HTTPRoutesCreateParams:
