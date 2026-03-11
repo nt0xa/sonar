@@ -3,14 +3,14 @@ CREATE TYPE audit_record_resource_type AS ENUM ('payload', 'user', 'dns_record',
 CREATE TYPE audit_record_source_type AS ENUM ('api', 'telegram', 'lark', 'slack');
 
 CREATE TABLE audit_records (
-  id bigint NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  id BIGSERIAL PRIMARY KEY,
   uuid UUID NOT NULL DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   action audit_record_action_type NOT NULL,
   resource_type audit_record_resource_type NOT NULL,
   source audit_record_source_type NOT NULL,
-  actor_id bigint,
-  actor_name text NOT NULL DEFAULT '',
+  actor_id BIGINT,
+  actor_name TEXT NOT NULL DEFAULT '',
   actor_metadata JSONB NOT NULL DEFAULT '{}',
   resource JSONB NOT NULL DEFAULT '{}'
 );
