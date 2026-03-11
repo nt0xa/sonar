@@ -78,7 +78,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	acts := actionsdb.New(db, log, "sonar.test")
+	acts := actionsdb.New(db, log, "sonar.test", false)
 
 	tf, err = testfixtures.New(
 		testfixtures.Database(db.DB()),
@@ -543,7 +543,7 @@ func TestAPI(t *testing.T) {
 			result: map[string]matcher{
 				"$.name":       equal("test"),
 				"$.isAdmin":    equal(false),
-				"$.apiToken":  equal("token"),
+				"$.apiToken":   equal("token"),
 				"$.telegramId": equal(1234),
 				"$.createdAt":  withinDuration(time.Second * 10),
 			},

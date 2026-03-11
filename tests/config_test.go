@@ -35,6 +35,9 @@ ca_insecure = true
 [telemetry]
 enabled = true
 
+[audit]
+enabled = true
+
 [modules]
 enabled = ["api", "telegram", "lark"]
 
@@ -80,6 +83,7 @@ verification_token = "<VERIFICATION_TOKEN>"
 
 	// Telemetry
 	assert.Equal(t, true, cfg.Telemetry.Enabled)
+	assert.Equal(t, true, cfg.Audit.Enabled)
 
 	// Test Modules config
 	assert.ElementsMatch(t, []string{
@@ -129,6 +133,7 @@ func TestConfig_Env(t *testing.T) {
 				"SONAR_MODULES_LARK_ENCRYPT_KEY=<KEY>",
 				"SONAR_MODULES_LARK_VERIFICATION_TOKEN=<VERIFICATION_TOKEN>",
 				"SONAR_TELEMETRY_ENABLED=true",
+				"SONAR_AUDIT_ENABLED=true",
 			}
 		},
 	)
@@ -153,6 +158,7 @@ func TestConfig_Env(t *testing.T) {
 
 	// Telemetry
 	assert.Equal(t, true, cfg.Telemetry.Enabled)
+	assert.Equal(t, true, cfg.Audit.Enabled)
 
 	// Test Modules config
 	assert.ElementsMatch(t, []string{

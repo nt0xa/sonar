@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	acts = actionsdb.New(db, log, "sonar.test")
+	acts = actionsdb.New(db, log, "sonar.test", false)
 
 	tf, err = testfixtures.New(
 		testfixtures.Database(db.DB()),

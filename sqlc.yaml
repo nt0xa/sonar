@@ -66,6 +66,15 @@ sql:
           - column: events.meta
             go_type:
               type: EventsMeta
+          - column: audit_records.actor
+            go_type:
+              type: AuditActor
+          - column: audit_records.target
+            go_type:
+              type: AuditTarget
+          - column: audit_records.data
+            go_type:
+              type: AuditData
           - column: http_routes.headers
             go_type:
               type: HTTPHeaders
@@ -76,4 +85,3 @@ sql:
       - sqlc/db-prepare
     database:
       uri: "${SONAR_DB_DSN}"
-

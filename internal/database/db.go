@@ -133,3 +133,19 @@ type EventsMeta struct {
 }
 
 type HTTPHeaders = map[string][]string
+
+type AuditActor struct {
+	ID   *int64 `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+type AuditTarget struct {
+	Type        string `json:"type"`
+	ID          *int64 `json:"id,omitempty"`
+	Key         string `json:"key,omitempty"`
+	PayloadID   *int64 `json:"payload_id,omitempty"`
+	PayloadName string `json:"payload_name,omitempty"`
+}
+
+type AuditData = map[string]any
+type AuditMeta = AuditData

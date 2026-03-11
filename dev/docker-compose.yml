@@ -51,6 +51,7 @@ services:
       SONAR_MODULES_SLACK_ADMIN: ${SLACK_ADMIN}
       SONAR_MODULES_SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
       SONAR_MODULES_SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      SONAR_AUDIT_ENABLED: true
     command: |
       make watch
     dns:

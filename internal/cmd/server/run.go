@@ -116,6 +116,7 @@ func Run(
 		db,
 		log.With("package", "actions"),
 		cfg.Domain,
+		cfg.Audit.Enabled,
 	)
 
 	//

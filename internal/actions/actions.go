@@ -13,6 +13,7 @@ type Actions interface {
 	ProfileActions
 	EventsActions
 	HTTPActions
+	AuditRecordsActions
 }
 
 type Result interface {

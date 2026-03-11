@@ -11,8 +11,9 @@ type dbactions struct {
 	db     *database.DB
 	log    *slog.Logger
 	domain string
+	audit  bool
 }
 
-func New(db *database.DB, log *slog.Logger, domain string) actions.Actions {
-	return &dbactions{db, log, domain}
+func New(db *database.DB, log *slog.Logger, domain string, auditEnabled bool) actions.Actions {
+	return &dbactions{db: db, log: log, domain: domain, audit: auditEnabled}
 }

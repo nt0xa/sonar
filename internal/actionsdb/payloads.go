@@ -50,6 +50,19 @@ func (act *dbactions) PayloadsCreate(ctx context.Context, p actions.PayloadsCrea
 		return nil, errors.Internal(err)
 	}
 
+	act.writeAudit(ctx, auditOpCreate, newAuditable(
+		database.AuditTarget{
+			Type: auditResourcePayload,
+			ID:   &rec.ID,
+			Key:  rec.Name,
+		},
+		database.AuditData{
+			"subdomain":       rec.Subdomain,
+			"notifyProtocols": rec.NotifyProtocols,
+			"storeEvents":     rec.StoreEvents,
+		},
+	))
+
 	return &actions.PayloadsCreateResult{Payload: Payload(*rec)}, nil
 }
 
@@ -97,6 +110,25 @@ func (act *dbactions) PayloadsUpdate(ctx context.Context, p actions.PayloadsUpda
 		return nil, errors.Internal(err)
 	}
 
+	changed := make([]string, 0)
+	if rec.Name != updated.Name {
+		changed = append(changed, "name")
+	}
+	if rec.StoreEvents != updated.StoreEvents {
+		changed = append(changed, "storeEvents")
+	}
+	act.writeAudit(ctx, auditOpUpdate, newAuditable(
+		database.AuditTarget{
+			Type: auditResourcePayload,
+			ID:   &updated.ID,
+			Key:  updated.Name,
+		},
+		database.AuditData{
+			"changedFields":   changed,
+			"notifyProtocols": updated.NotifyProtocols,
+		},
+	))
+
 	return &actions.PayloadsUpdateResult{Payload: Payload(*updated)}, nil
 }
 
@@ -122,6 +154,17 @@ func (act *dbactions) PayloadsDelete(ctx context.Context, p actions.PayloadsDele
 		return nil, errors.Internal(err)
 	}
 
+	act.writeAudit(ctx, auditOpDelete, newAuditable(
+		database.AuditTarget{
+			Type: auditResourcePayload,
+			ID:   &deleted.ID,
+			Key:  deleted.Name,
+		},
+		database.AuditData{
+			"subdomain": deleted.Subdomain,
+		},
+	))
+
 	return &actions.PayloadsDeleteResult{Payload: Payload(*deleted)}, nil
 }
 
@@ -145,6 +188,17 @@ func (act *dbactions) PayloadsClear(ctx context.Context, p actions.PayloadsClear
 	for _, r := range recs {
 		res = append(res, Payload(*r))
 	}
+
+	act.writeAudit(ctx, auditOpClear, newAuditable(
+		database.AuditTarget{
+			Type: auditResourcePayload,
+			Key:  p.Name,
+		},
+		database.AuditData{
+			"count":      len(recs),
+			"nameFilter": p.Name,
+		},
+	))
 
 	return res, nil
 }

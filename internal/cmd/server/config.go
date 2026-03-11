@@ -89,6 +89,7 @@ type Config struct {
 	IP        string
 	GeoIP     GeoIPConfig
 	DB        DBConfig
+	Audit     AuditConfig
 	DNS       DNSConfig
 	TLS       TLSConfig
 	Telemetry TelemetryConfig
@@ -100,10 +101,21 @@ func (c Config) Validate() error {
 		validation.Field(&c.Domain, validation.Required, is.Domain),
 		validation.Field(&c.IP, validation.Required, is.IP),
 		validation.Field(&c.DB, validation.Required),
+		validation.Field(&c.Audit),
 		validation.Field(&c.GeoIP),
 		validation.Field(&c.DNS),
 		validation.Field(&c.TLS),
 		validation.Field(&c.Modules),
+	)
+}
+
+type AuditConfig struct {
+	Enabled bool
+}
+
+func (c AuditConfig) Validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Enabled),
 	)
 }
 

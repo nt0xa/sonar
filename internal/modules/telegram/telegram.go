@@ -66,10 +66,6 @@ func New(
 			templates.Markup(
 				templates.Bold("<b>", "</b>"),
 				templates.CodeInline("<code>", "</code>"),
-				templates.CodeBlock(
-					`<pre><code class="language-{{ codeLanguage $protocol }}">`,
-					"</code></pre>",
-				),
 			),
 			templates.ExtraFunc("codeLanguage", func(proto string) string {
 				// https://github.com/TelegramMessenger/libprisma#supported-languages
@@ -87,6 +83,14 @@ func New(
 				}
 				return ""
 			}),
+		),
+		templates.PerTemplate(templates.NotificationBodyID,
+			templates.Markup(
+				templates.CodeBlock(
+					`<pre><code class="language-{{ codeLanguage .Event.Protocol }}">`,
+					"</code></pre>",
+				),
+			),
 		),
 	)
 
