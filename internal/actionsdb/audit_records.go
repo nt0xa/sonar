@@ -11,15 +11,14 @@ import (
 func AuditRecord(m database.AuditRecord) actions.AuditRecord {
 	return actions.AuditRecord{
 		ID:           m.ID,
-		ActorID:      m.Actor.ID,
-		ActorName:    m.Actor.Name,
-		ResourceType: m.Target.Type,
-		ResourceID:   m.Target.ID,
-		ResourceKey:  m.Target.Key,
-		Action:       string(m.Operation),
-		PayloadID:    m.Target.PayloadID,
-		PayloadName:  m.Target.PayloadName,
-		Meta:         m.Data,
+		UUID:         m.UUID,
+		Action:       string(m.Action),
+		ResourceType: string(m.ResourceType),
+		Source:       string(m.Source),
+		ActorID:      m.ActorID,
+		ActorName:    m.ActorName,
+		ActorMeta:    m.ActorMetadata,
+		Resource:     m.Resource,
 		CreatedAt:    m.CreatedAt,
 	}
 }
@@ -37,24 +36,24 @@ func (act *dbactions) AuditRecordsList(ctx context.Context, p actions.AuditRecor
 		return nil, errors.Validation(err)
 	}
 
-	limit := p.Limit
-	if limit == 0 {
-		limit = 50
+	perPage := p.PerPage
+	if perPage == 0 {
+		perPage = 50
+	}
+	page := p.Page
+	if page == 0 {
+		page = 1
 	}
 
 	recs, err := act.db.AuditRecordsList(ctx, database.AuditRecordsListParams{
 		ActorID:      p.ActorID,
 		ActorName:    p.ActorName,
 		ResourceType: p.ResourceType,
-		ResourceID:   p.ResourceID,
-		ResourceKey:  p.ResourceKey,
 		Action:       p.Action,
-		PayloadID:    p.PayloadID,
-		PayloadName:  p.PayloadName,
 		FromAt:       p.From,
 		ToAt:         p.To,
-		PageLimit:    int64(limit),
-		PageOffset:   int64(p.Offset),
+		PageLimit:    int64(perPage),
+		PageOffset:   int64((page - 1) * perPage),
 	})
 	if err != nil {
 		return nil, errors.Internal(err)

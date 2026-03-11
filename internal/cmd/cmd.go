@@ -114,16 +114,16 @@ func (c *Command) root(onResult func(context.Context, actions.Result) error) *co
 
 	root.AddCommand(users)
 
-	// AuditRecords
-	audit_records := &cobra.Command{
-		Use:   "audit_records",
+	// Audit
+	audit := &cobra.Command{
+		Use:   "audit",
 		Short: "View audit records",
 	}
 
-	audit_records.AddCommand(c.withAdminCheck(c.AuditRecordsList(onResult)))
-	audit_records.AddCommand(c.withAdminCheck(c.AuditRecordsGet(onResult)))
+	audit.AddCommand(c.withAdminCheck(c.AuditRecordsList(onResult)))
+	audit.AddCommand(c.withAdminCheck(c.AuditRecordsGet(onResult)))
 
-	root.AddCommand(audit_records)
+	root.AddCommand(audit)
 
 	return root
 }

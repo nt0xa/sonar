@@ -6,6 +6,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
 	"github.com/nt0xa/sonar/internal/utils/errors"
@@ -19,7 +20,7 @@ const (
 
 var (
 	auditResourceTypes = []string{"payload", "user", "dns_record", "http_route"}
-	auditActions       = []string{"create", "update", "delete", "clear"}
+	auditActions       = []string{"create", "update", "delete"}
 )
 
 type AuditRecordsActions interface {
@@ -29,16 +30,15 @@ type AuditRecordsActions interface {
 
 type AuditRecord struct {
 	ID           int64          `json:"id"`
+	UUID         uuid.UUID      `json:"uuid"`
+	CreatedAt    time.Time      `json:"createdAt"`
+	Action       string         `json:"action"`
+	ResourceType string         `json:"resourceType"`
+	Source       string         `json:"source"`
 	ActorID      *int64         `json:"actorId,omitempty"`
 	ActorName    string         `json:"actorName,omitempty"`
-	ResourceType string         `json:"resourceType"`
-	ResourceID   *int64         `json:"resourceId,omitempty"`
-	ResourceKey  string         `json:"resourceKey"`
-	Action       string         `json:"action"`
-	PayloadID    *int64         `json:"payloadId,omitempty"`
-	PayloadName  string         `json:"payloadName,omitempty"`
-	Meta         map[string]any `json:"meta"`
-	CreatedAt    time.Time      `json:"createdAt"`
+	ActorMeta    map[string]any `json:"actorMetadata"`
+	Resource     map[string]any `json:"resource"`
 }
 
 //
@@ -46,18 +46,14 @@ type AuditRecord struct {
 //
 
 type AuditRecordsListParams struct {
-	ActorID      *int64     `query:"actorId"`
-	ActorName    string     `query:"actorName"`
-	ResourceType string     `query:"resourceType"`
-	ResourceID   *int64     `query:"resourceId"`
-	ResourceKey  string     `query:"resourceKey"`
-	Action       string     `query:"action"`
-	PayloadID    *int64     `query:"payloadId"`
-	PayloadName  string     `query:"payloadName"`
-	From         *time.Time `query:"from"`
-	To           *time.Time `query:"to"`
-	Limit        uint       `query:"limit"`
-	Offset       uint       `query:"offset"`
+	ActorID      *int64     `query:"actorId,omitempty"`
+	ActorName    string     `query:"actorName,omitempty"`
+	ResourceType string     `query:"resourceType,omitempty"`
+	Action       string     `query:"action,omitempty"`
+	From         *time.Time `query:"from,omitempty"`
+	To           *time.Time `query:"to,omitempty"`
+	Page         uint       `query:"page,omitempty"`
+	PerPage      uint       `query:"perPage,omitempty"`
 }
 
 func (p AuditRecordsListParams) Validate() error {
@@ -84,21 +80,15 @@ func AuditRecordsListCommand(acts *Actions, p *AuditRecordsListParams, local boo
 	}
 
 	var (
-		actorID    int64
-		resourceID int64
-		payloadID  int64
+		actorID int64
 	)
 
 	cmd.Flags().Int64Var(&actorID, "actor-id", 0, "Filter by actor ID")
 	cmd.Flags().StringVar(&p.ActorName, "actor-name", "", "Filter by actor name")
 	cmd.Flags().StringVar(&p.ResourceType, "resource-type", "", "Filter by resource type")
-	cmd.Flags().Int64Var(&resourceID, "resource-id", 0, "Filter by resource ID")
-	cmd.Flags().StringVar(&p.ResourceKey, "resource-key", "", "Filter by resource key")
 	cmd.Flags().StringVar(&p.Action, "action", "", "Filter by action")
-	cmd.Flags().Int64Var(&payloadID, "payload-id", 0, "Filter by payload ID")
-	cmd.Flags().StringVar(&p.PayloadName, "payload-name", "", "Filter by payload name")
-	cmd.Flags().UintVarP(&p.Limit, "limit", "l", 50, "Limit")
-	cmd.Flags().UintVarP(&p.Offset, "offset", "o", 0, "Offset")
+	cmd.Flags().UintVarP(&p.Page, "page", "p", 1, "Page")
+	cmd.Flags().UintVarP(&p.PerPage, "per-page", "s", 50, "Per page")
 
 	var from string
 	var to string
@@ -113,18 +103,6 @@ func AuditRecordsListCommand(acts *Actions, p *AuditRecordsListParams, local boo
 			p.ActorID = &actorID
 		} else {
 			p.ActorID = nil
-		}
-
-		if cmd.Flags().Changed("resource-id") {
-			p.ResourceID = &resourceID
-		} else {
-			p.ResourceID = nil
-		}
-
-		if cmd.Flags().Changed("payload-id") {
-			p.PayloadID = &payloadID
-		} else {
-			p.PayloadID = nil
 		}
 
 		if from != "" {

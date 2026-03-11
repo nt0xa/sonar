@@ -187,6 +187,7 @@ func (tg *Telegram) processUpdate(ctx context.Context, msg *tgbotapi.Message) er
 	// some commands available for unauthorized users (e.g. "/id")
 	chatUser, _ := tg.db.UsersGetByTelegramID(ctx, chat.ID)
 	ctx = actionsdb.SetUser(ctx, chatUser)
+	ctx = actionsdb.SetSource(ctx, "telegram")
 	ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 
 	stdout, stderr, err := tg.cmd.ParseAndExec(ctx, msg.Text,

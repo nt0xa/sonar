@@ -15,7 +15,7 @@ func (c *Client) AuditRecordsGet(ctx context.Context, params actions.AuditRecord
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/auditrecords/{id}"))
+		Get("/audit-records/{id}"))
 
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (c *Client) AuditRecordsList(ctx context.Context, params actions.AuditRecor
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).
-		Get("/auditrecords"))
+		Get("/audit-records"))
 
 	if err != nil {
 		return nil, err
@@ -45,8 +45,8 @@ func (c *Client) DNSRecordsClear(ctx context.Context, params actions.DNSRecordsC
 	var res actions.DNSRecordsClearResult
 
 	err := handle(c.client.R().
-		SetQueryParamsFromValues(toQuery(params)).
 		SetPathParams(toPath(params)).
+		SetQueryParamsFromValues(toQuery(params)).
 		SetError(&APIError{}).
 		SetResult(&res).
 		SetContext(ctx).

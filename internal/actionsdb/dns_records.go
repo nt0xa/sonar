@@ -60,25 +60,10 @@ func (act *dbactions) DNSRecordsCreate(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpCreate, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceDNS,
-			ID:          rec.ID,
-			Key:         p.Name,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"index":    rec.Index,
-			"type":     rec.Type,
-			"ttl":      rec.TTL,
-			"strategy": rec.Strategy,
-			"values":   rec.Values,
-		},
-	))
+	out := DNSRecord(*rec, payload.Subdomain)
+	act.auditCreate(ctx, out)
 
-	return &actions.DNSRecordsCreateResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
+	return &actions.DNSRecordsCreateResult{DNSRecord: out}, nil
 }
 
 func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecordsDeleteParams) (*actions.DNSRecordsDeleteResult, errors.Error) {
@@ -108,22 +93,10 @@ func (act *dbactions) DNSRecordsDelete(ctx context.Context, p actions.DNSRecords
 		return nil, errors.Internal(err)
 	}
 
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpDelete, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceDNS,
-			ID:          rec.ID,
-			Key:         rec.Name,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"index": rec.Index,
-			"type":  rec.Type,
-		},
-	))
+	out := DNSRecord(*rec, payload.Subdomain)
+	act.auditDelete(ctx, out)
 
-	return &actions.DNSRecordsDeleteResult{DNSRecord: DNSRecord(*rec, payload.Subdomain)}, nil
+	return &actions.DNSRecordsDeleteResult{DNSRecord: out}, nil
 }
 
 func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsClearParams) (actions.DNSRecordsClearResult, errors.Error) {
@@ -155,22 +128,10 @@ func (act *dbactions) DNSRecordsClear(ctx context.Context, p actions.DNSRecordsC
 	res := make([]actions.DNSRecord, 0)
 
 	for _, r := range recs {
-		res = append(res, DNSRecord(*r, payload.Subdomain))
+		out := DNSRecord(*r, payload.Subdomain)
+		res = append(res, out)
+		act.auditDelete(ctx, out)
 	}
-
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpClear, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceDNS,
-			Key:         p.Name,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"count":      len(recs),
-			"nameFilter": p.Name,
-		},
-	))
 
 	return res, nil
 }

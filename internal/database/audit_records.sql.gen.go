@@ -12,48 +12,64 @@ import (
 
 const auditRecordsCreate = `-- name: AuditRecordsCreate :one
 INSERT INTO audit_records (
-  operation,
-  actor,
-  target,
-  data
+  action,
+  resource_type,
+  source,
+  actor_id,
+  actor_name,
+  actor_metadata,
+  resource
 )
 VALUES (
   $1,
   $2,
   $3,
-  $4
+  $4,
+  $5,
+  $6,
+  $7
 )
-RETURNING id, operation, actor, target, data, created_at
+RETURNING id, uuid, created_at, action, resource_type, source, actor_id, actor_name, actor_metadata, resource
 `
 
 type AuditRecordsCreateParams struct {
-	Operation AuditRecordOperationType `db:"operation"`
-	Actor     AuditActor               `db:"actor"`
-	Target    AuditTarget              `db:"target"`
-	Data      AuditData                `db:"data"`
+	Action        AuditRecordActionType   `db:"action"`
+	ResourceType  AuditRecordResourceType `db:"resource_type"`
+	Source        AuditRecordSourceType   `db:"source"`
+	ActorID       *int64                  `db:"actor_id"`
+	ActorName     string                  `db:"actor_name"`
+	ActorMetadata AuditActorMetadata      `db:"actor_metadata"`
+	Resource      AuditResource           `db:"resource"`
 }
 
 func (q *Queries) AuditRecordsCreate(ctx context.Context, arg AuditRecordsCreateParams) (*AuditRecord, error) {
 	row := q.db.QueryRow(ctx, auditRecordsCreate,
-		arg.Operation,
-		arg.Actor,
-		arg.Target,
-		arg.Data,
+		arg.Action,
+		arg.ResourceType,
+		arg.Source,
+		arg.ActorID,
+		arg.ActorName,
+		arg.ActorMetadata,
+		arg.Resource,
 	)
 	var i AuditRecord
 	err := row.Scan(
 		&i.ID,
-		&i.Operation,
-		&i.Actor,
-		&i.Target,
-		&i.Data,
+		&i.UUID,
 		&i.CreatedAt,
+		&i.Action,
+		&i.ResourceType,
+		&i.Source,
+		&i.ActorID,
+		&i.ActorName,
+		&i.ActorMetadata,
+		&i.Resource,
 	)
 	return &i, err
 }
 
 const auditRecordsGetByID = `-- name: AuditRecordsGetByID :one
-SELECT id, operation, actor, target, data, created_at FROM audit_records WHERE id = $1
+SELECT id, uuid, created_at, action, resource_type, source, actor_id, actor_name, actor_metadata, resource FROM audit_records WHERE id = $1
 `
 
 func (q *Queries) AuditRecordsGetByID(ctx context.Context, id int64) (*AuditRecord, error) {
@@ -61,42 +77,38 @@ func (q *Queries) AuditRecordsGetByID(ctx context.Context, id int64) (*AuditReco
 	var i AuditRecord
 	err := row.Scan(
 		&i.ID,
-		&i.Operation,
-		&i.Actor,
-		&i.Target,
-		&i.Data,
+		&i.UUID,
 		&i.CreatedAt,
+		&i.Action,
+		&i.ResourceType,
+		&i.Source,
+		&i.ActorID,
+		&i.ActorName,
+		&i.ActorMetadata,
+		&i.Resource,
 	)
 	return &i, err
 }
 
 const auditRecordsList = `-- name: AuditRecordsList :many
-SELECT id, operation, actor, target, data, created_at FROM audit_records
+SELECT id, uuid, created_at, action, resource_type, source, actor_id, actor_name, actor_metadata, resource FROM audit_records
 WHERE
-  ($1::bigint IS NULL OR NULLIF(actor->>'id', '')::bigint = $1::bigint)
-  AND ($2::text = '' OR actor->>'name' = $2::text)
-  AND ($3::text = '' OR target->>'type' = $3::text)
-  AND ($4::bigint IS NULL OR NULLIF(target->>'id', '')::bigint = $4::bigint)
-  AND ($5::text = '' OR target->>'key' = $5::text)
-  AND ($6::text = '' OR operation::text = $6::text)
-  AND ($7::bigint IS NULL OR NULLIF(target->>'payload_id', '')::bigint = $7::bigint)
-  AND ($8::text = '' OR target->>'payload_name' = $8::text)
-  AND ($9::timestamptz IS NULL OR created_at >= $9::timestamptz)
-  AND ($10::timestamptz IS NULL OR created_at <= $10::timestamptz)
+  ($1::bigint IS NULL OR actor_id = $1::bigint)
+  AND ($2::text = '' OR actor_name = $2::text)
+  AND ($3::text = '' OR resource_type::text = $3::text)
+  AND ($4::text = '' OR action::text = $4::text)
+  AND ($5::timestamptz IS NULL OR created_at >= $5::timestamptz)
+  AND ($6::timestamptz IS NULL OR created_at <= $6::timestamptz)
 ORDER BY id DESC
-LIMIT $12
-OFFSET $11
+LIMIT $8
+OFFSET $7
 `
 
 type AuditRecordsListParams struct {
 	ActorID      *int64     `db:"actor_id"`
 	ActorName    string     `db:"actor_name"`
 	ResourceType string     `db:"resource_type"`
-	ResourceID   *int64     `db:"resource_id"`
-	ResourceKey  string     `db:"resource_key"`
 	Action       string     `db:"action"`
-	PayloadID    *int64     `db:"payload_id"`
-	PayloadName  string     `db:"payload_name"`
 	FromAt       *time.Time `db:"from_at"`
 	ToAt         *time.Time `db:"to_at"`
 	PageOffset   int64      `db:"page_offset"`
@@ -108,11 +120,7 @@ func (q *Queries) AuditRecordsList(ctx context.Context, arg AuditRecordsListPara
 		arg.ActorID,
 		arg.ActorName,
 		arg.ResourceType,
-		arg.ResourceID,
-		arg.ResourceKey,
 		arg.Action,
-		arg.PayloadID,
-		arg.PayloadName,
 		arg.FromAt,
 		arg.ToAt,
 		arg.PageOffset,
@@ -127,11 +135,15 @@ func (q *Queries) AuditRecordsList(ctx context.Context, arg AuditRecordsListPara
 		var i AuditRecord
 		if err := rows.Scan(
 			&i.ID,
-			&i.Operation,
-			&i.Actor,
-			&i.Target,
-			&i.Data,
+			&i.UUID,
 			&i.CreatedAt,
+			&i.Action,
+			&i.ResourceType,
+			&i.Source,
+			&i.ActorID,
+			&i.ActorName,
+			&i.ActorMetadata,
+			&i.Resource,
 		); err != nil {
 			return nil, err
 		}

@@ -132,7 +132,7 @@ var eventsList = fmt.Sprintf(`
 
 var auditRecord = `
 {{- $a := . -}}
-<bold>[{{ $a.ID }}]</bold> {{ $a.Action | upper }} {{ $a.ResourceType }} "{{ $a.ResourceKey }}" by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
+<bold>[{{ $a.ID }}]</bold> {{ $a.Action | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
 
 var auditRecordsList = fmt.Sprintf(`
 {{- range . -}}
@@ -140,7 +140,10 @@ var auditRecordsList = fmt.Sprintf(`
 {{ else }}nothing found{{ end -}}`, auditRecord)
 
 var auditRecordsGet = auditRecord + `
-<pre>{{ .Meta | toPrettyJson }}</pre>`
+<pre>actorMetadata:
+{{ .ActorMeta | toPrettyJson }}
+resource:
+{{ .Resource | toPrettyJson }}</pre>`
 
 //
 // Notification

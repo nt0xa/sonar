@@ -2,49 +2,27 @@ package actionsdb
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/utils"
 )
 
-const (
-	auditResourcePayload = "payload"
-	auditResourceUser    = "user"
-	auditResourceDNS     = "dns_record"
-	auditResourceHTTP    = "http_route"
-
-	auditOpCreate = "create"
-	auditOpUpdate = "update"
-	auditOpDelete = "delete"
-	auditOpClear  = "clear"
-)
-
-type Auditable interface {
-	AuditTarget() database.AuditTarget
-	AuditData() database.AuditData
+func (act *dbactions) auditCreate(ctx context.Context, rec any) {
+	act.writeAudit(ctx, database.AuditRecordActionTypeCreate, rec)
 }
 
-type auditableRecord struct {
-	target database.AuditTarget
-	data   database.AuditData
+func (act *dbactions) auditUpdate(ctx context.Context, rec any) {
+	act.writeAudit(ctx, database.AuditRecordActionTypeUpdate, rec)
 }
 
-func (r auditableRecord) AuditTarget() database.AuditTarget {
-	return r.target
+func (act *dbactions) auditDelete(ctx context.Context, rec any) {
+	act.writeAudit(ctx, database.AuditRecordActionTypeDelete, rec)
 }
 
-func (r auditableRecord) AuditData() database.AuditData {
-	if r.data == nil {
-		return database.AuditData{}
-	}
-	return r.data
-}
-
-func newAuditable(target database.AuditTarget, data database.AuditData) Auditable {
-	return auditableRecord{target: target, data: data}
-}
-
-func (act *dbactions) writeAudit(ctx context.Context, operation string, auditable Auditable) {
-	if !act.audit || auditable == nil {
+func (act *dbactions) writeAudit(ctx context.Context, action database.AuditRecordActionType, rec any) {
+	if !act.audit || rec == nil {
 		return
 	}
 
@@ -54,20 +32,66 @@ func (act *dbactions) writeAudit(ctx context.Context, operation string, auditabl
 		return
 	}
 
-	actor := database.AuditActor{
-		ID:   &u.ID,
-		Name: u.Name,
+	resourceType, ok := auditResourceTypeByRecord(rec)
+	if !ok {
+		act.log.Warn("skip audit: unsupported record type", "type", reflect.TypeOf(rec))
+		return
 	}
-	target := auditable.AuditTarget()
-	data := auditable.AuditData()
+
+	source := database.AuditRecordSourceTypeAPI
+	if s, err := GetSource(ctx); err == nil {
+		switch database.AuditRecordSourceType(s) {
+		case database.AuditRecordSourceTypeAPI,
+			database.AuditRecordSourceTypeTelegram,
+			database.AuditRecordSourceTypeLark,
+			database.AuditRecordSourceTypeSlack:
+			source = database.AuditRecordSourceType(s)
+		}
+	}
+
+	actorMeta := database.AuditActorMetadata{}
+	switch source {
+	case database.AuditRecordSourceTypeTelegram:
+		if u.TelegramID != nil {
+			actorMeta["telegram_id"] = *u.TelegramID
+		}
+	case database.AuditRecordSourceTypeLark:
+		if u.LarkID != nil {
+			actorMeta["lark_id"] = *u.LarkID
+		}
+	case database.AuditRecordSourceTypeSlack:
+		if u.SlackID != nil {
+			actorMeta["slack_id"] = *u.SlackID
+		}
+	}
+
+	resource := utils.StructToMap(rec)
 
 	_, err = act.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
-		Operation: database.AuditRecordOperationType(operation),
-		Actor:     actor,
-		Target:    target,
-		Data:      data,
+		Action:        action,
+		ResourceType:  resourceType,
+		Source:        source,
+		ActorID:       &u.ID,
+		ActorName:     u.Name,
+		ActorMetadata: actorMeta,
+		Resource:      resource,
 	})
 	if err != nil {
-		act.log.Warn("failed to write audit record", "err", err, "resource", target.Type, "operation", operation)
+		act.log.Warn("failed to write audit record", "err", err, "resourceType", resourceType, "action", action)
+	}
+}
+
+func auditResourceTypeByRecord(rec any) (database.AuditRecordResourceType, bool) {
+	switch rec.(type) {
+	case actions.Payload, *actions.Payload:
+		return database.AuditRecordResourceTypePayload, true
+	case actions.DNSRecord, *actions.DNSRecord:
+		return database.AuditRecordResourceTypeDNSRecord, true
+	case actions.HTTPRoute, *actions.HTTPRoute:
+		return database.AuditRecordResourceTypeHTTPRoute, true
+	case actions.User, *actions.User:
+		return database.AuditRecordResourceTypeUser, true
+	default:
+		return database.AuditRecordResourceType(""), false
 	}
 }

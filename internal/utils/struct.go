@@ -34,123 +34,86 @@ func StructKeys(s any, tagName string) []string {
 	return keys
 }
 
-// TODO: remove when event meta is coverted to struct
+// StructToMap serializes a struct (or pointer to struct) into a map,
+// including only fields marked with the `audit` tag.
 func StructToMap(input any) map[string]any {
-	out := make(map[string]any)
-	val := reflect.ValueOf(input)
-
-	if val.Kind() == reflect.Ptr {
-		if val.IsNil() {
-			return out
+	v := reflect.ValueOf(input)
+	for v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return map[string]any{}
 		}
-		val = val.Elem()
+		v = v.Elem()
 	}
-	typ := val.Type()
+	if v.Kind() != reflect.Struct {
+		return map[string]any{}
+	}
 
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		typeField := typ.Field(i)
-
-		// Skip unexported fields
-		if typeField.PkgPath != "" {
+	t := v.Type()
+	out := map[string]any{}
+	for i := 0; i < t.NumField(); i++ {
+		sf := t.Field(i)
+		if sf.PkgPath != "" {
 			continue
 		}
 
-		name := typeField.Name
-		tag := typeField.Tag.Get("json")
-		if tag != "" && tag != "-" {
-			name = tag
+		tag, ok := sf.Tag.Lookup("audit")
+		if !ok || tag == "" || tag == "-" {
+			continue
 		}
-
-		if isZero(field) {
+		key, options, _ := strings.Cut(tag, ",")
+		if key == "" || key == "-" {
 			continue
 		}
 
-		switch field.Kind() {
-		case reflect.Struct:
-			m := StructToMap(field.Interface())
-			if len(m) > 0 {
-				out[name] = m
-			}
-		case reflect.Ptr:
-			if !field.IsNil() {
-				if field.Elem().Kind() == reflect.Struct {
-					m := StructToMap(field.Elem().Interface())
-					if len(m) > 0 {
-						out[name] = m
-					}
-				} else if !isZero(field.Elem()) {
-					out[name] = field.Elem().Interface()
-				}
-			}
-		case reflect.Slice, reflect.Array:
-			if field.Len() > 0 {
-				slice := make([]any, 0, field.Len())
-				for j := 0; j < field.Len(); j++ {
-					v := field.Index(j)
-					if v.Kind() == reflect.Struct {
-						m := StructToMap(v.Interface())
-						if len(m) > 0 {
-							slice = append(slice, m)
-						}
-					} else {
-						if !isZero(v) {
-							slice = append(slice, v.Interface())
-						}
-					}
-				}
-				if len(slice) > 0 {
-					out[name] = slice
-				}
-			}
-		case reflect.Map:
-			if field.Len() > 0 {
-				mapVal := make(map[string]any)
-				for _, key := range field.MapKeys() {
-					v := field.MapIndex(key)
-					if v.Kind() == reflect.Struct {
-						m := StructToMap(v.Interface())
-						if len(m) > 0 {
-							mapVal[fmt.Sprint(key.Interface())] = m
-						}
-					} else {
-						if !isZero(v) {
-							mapVal[fmt.Sprint(key.Interface())] = v.Interface()
-						}
-					}
-				}
-				if len(mapVal) > 0 {
-					out[name] = mapVal
-				}
-			}
-		default:
-			out[name] = field.Interface()
+		fv := v.Field(i)
+		if hasTagOption(options, "omitempty") && isEmptyValue(fv) {
+			continue
 		}
+
+		if fv.Kind() == reflect.Pointer {
+			if fv.IsNil() {
+				continue
+			}
+			out[key] = fv.Elem().Interface()
+			continue
+		}
+
+		out[key] = fv.Interface()
 	}
 
 	return out
 }
 
-// isZero checks if a reflect.Value is zero value
-func isZero(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Func, reflect.Map, reflect.Slice, reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	case reflect.Array:
-		for i := 0; i < v.Len(); i++ {
-			if !isZero(v.Index(i)) {
-				return false
-			}
-		}
-		return true
-	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
-			if !isZero(v.Field(i)) {
-				return false
-			}
-		}
-		return true
+func hasTagOption(options string, want string) bool {
+	if options == "" {
+		return false
 	}
-	zero := reflect.Zero(v.Type())
-	return reflect.DeepEqual(v.Interface(), zero.Interface())
+	for _, opt := range strings.Split(options, ",") {
+		if strings.TrimSpace(opt) == want {
+			return true
+		}
+	}
+	return false
+}
+
+// isEmptyValue mirrors encoding/json emptiness checks for omitempty.
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Pointer:
+		return v.IsNil()
+	case reflect.Struct:
+		return v.IsZero()
+	}
+
+	return false
 }

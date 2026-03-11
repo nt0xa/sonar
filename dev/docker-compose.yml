@@ -54,6 +54,8 @@ services:
       SONAR_AUDIT_ENABLED: true
     command: |
       make watch
+    ports:
+      - 31337:31337
     dns:
       - 127.0.0.1 # use sonar server as a DNS
       - 8.8.8.8   # fallback to Google DNS

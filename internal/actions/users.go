@@ -21,12 +21,12 @@ type UsersActions interface {
 }
 
 type User struct {
-	Name       string    `json:"name"`
-	IsAdmin    bool      `json:"isAdmin"`
+	Name       string    `json:"name" audit:"name"`
+	IsAdmin    bool      `json:"isAdmin" audit:"is_admin"`
 	APIToken   *string   `json:"apiToken,omitempty"`
-	TelegramID *int64    `json:"telegramId,omitempty"`
-	LarkID     *string   `json:"larkId,omitempty"`
-	SlackID    *string   `json:"slackId,omitempty"`
+	TelegramID *int64    `json:"telegramId,omitempty" audit:"telegram_id,omitempty"`
+	LarkID     *string   `json:"larkId,omitempty" audit:"lark_id,omitempty"`
+	SlackID    *string   `json:"slackId,omitempty" audit:"slack_id,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
 }
 

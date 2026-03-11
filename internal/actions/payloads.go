@@ -29,10 +29,10 @@ type PayloadsActions interface {
 }
 
 type Payload struct {
-	Subdomain       string    `json:"subdomain"`
-	Name            string    `json:"name"`
-	NotifyProtocols []string  `json:"notifyProtocols"`
-	StoreEvents     bool      `json:"storeEvents"`
+	Subdomain       string    `json:"subdomain" audit:"subdomain"`
+	Name            string    `json:"name" audit:"name"`
+	NotifyProtocols []string  `json:"notifyProtocols" audit:"notify_protocols"`
+	StoreEvents     bool      `json:"storeEvents" audit:"store_events"`
 	CreatedAt       time.Time `json:"createdAt"`
 }
 

@@ -12,56 +12,160 @@ import (
 	"github.com/google/uuid"
 )
 
-type AuditRecordOperationType string
+type AuditRecordActionType string
 
 const (
-	AuditRecordOperationTypeCreate AuditRecordOperationType = "create"
-	AuditRecordOperationTypeUpdate AuditRecordOperationType = "update"
-	AuditRecordOperationTypeDelete AuditRecordOperationType = "delete"
-	AuditRecordOperationTypeClear  AuditRecordOperationType = "clear"
+	AuditRecordActionTypeCreate AuditRecordActionType = "create"
+	AuditRecordActionTypeUpdate AuditRecordActionType = "update"
+	AuditRecordActionTypeDelete AuditRecordActionType = "delete"
 )
 
-func (e *AuditRecordOperationType) Scan(src interface{}) error {
+func (e *AuditRecordActionType) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = AuditRecordOperationType(s)
+		*e = AuditRecordActionType(s)
 	case string:
-		*e = AuditRecordOperationType(s)
+		*e = AuditRecordActionType(s)
 	default:
-		return fmt.Errorf("unsupported scan type for AuditRecordOperationType: %T", src)
+		return fmt.Errorf("unsupported scan type for AuditRecordActionType: %T", src)
 	}
 	return nil
 }
 
-type NullAuditRecordOperationType struct {
-	AuditRecordOperationType AuditRecordOperationType
-	Valid                    bool // Valid is true if AuditRecordOperationType is not NULL
+type NullAuditRecordActionType struct {
+	AuditRecordActionType AuditRecordActionType
+	Valid                 bool // Valid is true if AuditRecordActionType is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullAuditRecordOperationType) Scan(value interface{}) error {
+func (ns *NullAuditRecordActionType) Scan(value interface{}) error {
 	if value == nil {
-		ns.AuditRecordOperationType, ns.Valid = "", false
+		ns.AuditRecordActionType, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.AuditRecordOperationType.Scan(value)
+	return ns.AuditRecordActionType.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullAuditRecordOperationType) Value() (driver.Value, error) {
+func (ns NullAuditRecordActionType) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.AuditRecordOperationType), nil
+	return string(ns.AuditRecordActionType), nil
 }
 
-func AllAuditRecordOperationTypeValues() []AuditRecordOperationType {
-	return []AuditRecordOperationType{
-		AuditRecordOperationTypeCreate,
-		AuditRecordOperationTypeUpdate,
-		AuditRecordOperationTypeDelete,
-		AuditRecordOperationTypeClear,
+func AllAuditRecordActionTypeValues() []AuditRecordActionType {
+	return []AuditRecordActionType{
+		AuditRecordActionTypeCreate,
+		AuditRecordActionTypeUpdate,
+		AuditRecordActionTypeDelete,
+	}
+}
+
+type AuditRecordResourceType string
+
+const (
+	AuditRecordResourceTypePayload   AuditRecordResourceType = "payload"
+	AuditRecordResourceTypeUser      AuditRecordResourceType = "user"
+	AuditRecordResourceTypeDNSRecord AuditRecordResourceType = "dns_record"
+	AuditRecordResourceTypeHTTPRoute AuditRecordResourceType = "http_route"
+)
+
+func (e *AuditRecordResourceType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuditRecordResourceType(s)
+	case string:
+		*e = AuditRecordResourceType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuditRecordResourceType: %T", src)
+	}
+	return nil
+}
+
+type NullAuditRecordResourceType struct {
+	AuditRecordResourceType AuditRecordResourceType
+	Valid                   bool // Valid is true if AuditRecordResourceType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuditRecordResourceType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuditRecordResourceType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuditRecordResourceType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuditRecordResourceType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuditRecordResourceType), nil
+}
+
+func AllAuditRecordResourceTypeValues() []AuditRecordResourceType {
+	return []AuditRecordResourceType{
+		AuditRecordResourceTypePayload,
+		AuditRecordResourceTypeUser,
+		AuditRecordResourceTypeDNSRecord,
+		AuditRecordResourceTypeHTTPRoute,
+	}
+}
+
+type AuditRecordSourceType string
+
+const (
+	AuditRecordSourceTypeAPI      AuditRecordSourceType = "api"
+	AuditRecordSourceTypeTelegram AuditRecordSourceType = "telegram"
+	AuditRecordSourceTypeLark     AuditRecordSourceType = "lark"
+	AuditRecordSourceTypeSlack    AuditRecordSourceType = "slack"
+)
+
+func (e *AuditRecordSourceType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuditRecordSourceType(s)
+	case string:
+		*e = AuditRecordSourceType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuditRecordSourceType: %T", src)
+	}
+	return nil
+}
+
+type NullAuditRecordSourceType struct {
+	AuditRecordSourceType AuditRecordSourceType
+	Valid                 bool // Valid is true if AuditRecordSourceType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuditRecordSourceType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuditRecordSourceType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuditRecordSourceType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuditRecordSourceType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuditRecordSourceType), nil
+}
+
+func AllAuditRecordSourceTypeValues() []AuditRecordSourceType {
+	return []AuditRecordSourceType{
+		AuditRecordSourceTypeAPI,
+		AuditRecordSourceTypeTelegram,
+		AuditRecordSourceTypeLark,
+		AuditRecordSourceTypeSlack,
 	}
 }
 
@@ -176,12 +280,16 @@ func AllDNSStrategyValues() []DNSStrategy {
 }
 
 type AuditRecord struct {
-	ID        int64                    `db:"id"`
-	Operation AuditRecordOperationType `db:"operation"`
-	Actor     AuditActor               `db:"actor"`
-	Target    AuditTarget              `db:"target"`
-	Data      AuditData                `db:"data"`
-	CreatedAt time.Time                `db:"created_at"`
+	ID            int64                   `db:"id"`
+	UUID          uuid.UUID               `db:"uuid"`
+	CreatedAt     time.Time               `db:"created_at"`
+	Action        AuditRecordActionType   `db:"action"`
+	ResourceType  AuditRecordResourceType `db:"resource_type"`
+	Source        AuditRecordSourceType   `db:"source"`
+	ActorID       *int64                  `db:"actor_id"`
+	ActorName     string                  `db:"actor_name"`
+	ActorMetadata AuditActorMetadata      `db:"actor_metadata"`
+	Resource      AuditResource           `db:"resource"`
 }
 
 type DNSRecord struct {

@@ -169,17 +169,18 @@ func contains(items []string, item string) bool {
 // DNSRecords -> dns-records
 // Users -> users
 func resourceName(s string) string {
-	for i := 0; i < len(s); i++ {
-		if s[i] > 'A' && s[i] < 'Z' {
-			continue
+	for i := 1; i < len(s); i++ {
+		if s[i] >= 'A' && s[i] <= 'Z' {
+			// If previous chars were also uppercase (acronym),
+			// split before current char only if next is lowercase
+			if s[i-1] >= 'A' && s[i-1] <= 'Z' {
+				if i+1 < len(s) && s[i+1] >= 'a' && s[i+1] <= 'z' {
+					return strings.ToLower(s[:i]) + "-" + resourceName(s[i:])
+				}
+				continue
+			}
+			return strings.ToLower(s[:i]) + "-" + resourceName(s[i:])
 		}
-
-		if i <= 1 {
-			break
-		}
-
-		return strings.ToLower(s[:i-1] + "-" + s[i-1:])
 	}
-
 	return strings.ToLower(s)
 }

@@ -67,25 +67,10 @@ func (act *dbactions) HTTPRoutesCreate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpCreate, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceHTTP,
-			ID:          &rec.ID,
-			Key:         rec.Method + " " + rec.Path,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"index":     rec.Index,
-			"method":    rec.Method,
-			"path":      rec.Path,
-			"code":      rec.Code,
-			"isDynamic": rec.IsDynamic,
-		},
-	))
+	out := HTTPRoute(*rec, payload.Subdomain)
+	act.auditCreate(ctx, out)
 
-	return &actions.HTTPRoutesCreateResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesCreateResult{HTTPRoute: out}, nil
 }
 
 func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutesUpdateParams) (*actions.HTTPRoutesUpdateResult, errors.Error) {
@@ -160,35 +145,10 @@ func (act *dbactions) HTTPRoutesUpdate(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	changed := make([]string, 0)
-	if rec.Method != updated.Method {
-		changed = append(changed, "method")
-	}
-	if rec.Path != updated.Path {
-		changed = append(changed, "path")
-	}
-	if rec.Code != updated.Code {
-		changed = append(changed, "code")
-	}
-	if rec.IsDynamic != updated.IsDynamic {
-		changed = append(changed, "isDynamic")
-	}
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpUpdate, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceHTTP,
-			ID:          &updated.ID,
-			Key:         updated.Method + " " + updated.Path,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"index":         updated.Index,
-			"changedFields": changed,
-		},
-	))
+	out := HTTPRoute(*updated, payload.Subdomain)
+	act.auditUpdate(ctx, out)
 
-	return &actions.HTTPRoutesUpdateResult{HTTPRoute: HTTPRoute(*updated, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesUpdateResult{HTTPRoute: out}, nil
 }
 
 func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutesDeleteParams) (*actions.HTTPRoutesDeleteResult, errors.Error) {
@@ -218,21 +178,10 @@ func (act *dbactions) HTTPRoutesDelete(ctx context.Context, p actions.HTTPRoutes
 		return nil, errors.Internal(err)
 	}
 
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpDelete, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceHTTP,
-			ID:          &rec.ID,
-			Key:         rec.Method + " " + rec.Path,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"index": rec.Index,
-		},
-	))
+	out := HTTPRoute(*rec, payload.Subdomain)
+	act.auditDelete(ctx, out)
 
-	return &actions.HTTPRoutesDeleteResult{HTTPRoute: HTTPRoute(*rec, payload.Subdomain)}, nil
+	return &actions.HTTPRoutesDeleteResult{HTTPRoute: out}, nil
 }
 
 func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesClearParams) (actions.HTTPRoutesClearResult, errors.Error) {
@@ -264,22 +213,10 @@ func (act *dbactions) HTTPRoutesClear(ctx context.Context, p actions.HTTPRoutesC
 	res := make([]actions.HTTPRoute, 0)
 
 	for _, r := range recs {
-		res = append(res, HTTPRoute(*r, payload.Subdomain))
+		out := HTTPRoute(*r, payload.Subdomain)
+		res = append(res, out)
+		act.auditDelete(ctx, out)
 	}
-
-	payloadName := payload.Name
-	act.writeAudit(ctx, auditOpClear, newAuditable(
-		database.AuditTarget{
-			Type:        auditResourceHTTP,
-			Key:         p.Path,
-			PayloadID:   &payload.ID,
-			PayloadName: payloadName,
-		},
-		database.AuditData{
-			"count":      len(recs),
-			"pathFilter": p.Path,
-		},
-	))
 
 	return res, nil
 }

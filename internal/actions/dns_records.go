@@ -29,13 +29,13 @@ type DNSActions interface {
 }
 
 type DNSRecord struct {
-	Index            int64     `json:"index"`
-	PayloadSubdomain string    `json:"payloadSubdomain"`
-	Name             string    `json:"name"`
-	Type             string    `json:"type"`
-	TTL              int       `json:"ttl"`
-	Values           []string  `json:"values"`
-	Strategy         string    `json:"strategy"`
+	Index            int64     `json:"index" audit:"index"`
+	PayloadSubdomain string    `json:"payloadSubdomain" audit:"payload_subdomain"`
+	Name             string    `json:"name" audit:"name"`
+	Type             string    `json:"type" audit:"type"`
+	TTL              int       `json:"ttl" audit:"ttl"`
+	Values           []string  `json:"values" audit:"values"`
+	Strategy         string    `json:"strategy" audit:"strategy"`
 	CreatedAt        time.Time `json:"createdAt"`
 }
 
