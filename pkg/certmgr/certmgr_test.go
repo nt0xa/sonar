@@ -56,14 +56,14 @@ func TestCertMgr(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
 	caDirURL := os.Getenv("CERTMGR_CA_DIR_URL")
 
 	if caDirURL == "" {
-		t.Fatal("Empty CERTMGR_CA_DIR_URL")
+		t.Skip("Skipping certificate manager test: CERTMGR_CA_DIR_URL not set")
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 
 	options := testOptions
 	options = append(options, certmgr.CADirURL(caDirURL))
