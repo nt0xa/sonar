@@ -313,7 +313,7 @@ func Run(
 	for _, c := range controllers {
 		go func(c Controller) {
 			if err := c.Start(); err != nil {
-				errChan <- fmt.Errorf("failed to start controller %v: %w", c, err)
+				errChan <- fmt.Errorf("failed to start controller %T: %w", c, err)
 			}
 		}(c)
 	}

@@ -317,6 +317,7 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 func (lrk *Lark) startWebsocket(eventHandler *dispatcher.EventDispatcher) error {
 	cli := larkws.NewClient(lrk.cfg.AppID, lrk.cfg.AppSecret,
+		larkws.WithDomain(lark.LarkBaseUrl),
 		larkws.WithEventHandler(eventHandler),
 		larkws.WithLogLevel(larkcore.LogLevelInfo),
 		larkws.WithLogger(newSlogAdapter(lrk.log)),

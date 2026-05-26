@@ -107,7 +107,7 @@ enter:
 .PHONY: watch
 watch:
 	@$(EXEC) air \
-		-build.bin build/server \
+		-build.full_bin build/server \
 		-build.cmd "make build" \
 		-build.exclude_dir docs \
 		-misc.clean_on_exit true
