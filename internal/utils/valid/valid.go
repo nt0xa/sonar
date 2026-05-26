@@ -141,7 +141,7 @@ func (r *OneOfRule) Validate(value interface{}) error {
 	}
 
 	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	val, _ := v.Interface().(string)
