@@ -10,4 +10,4 @@ type AuditRecordsGetInput struct {
 	ID int64
 }
 
-type AuditRecordsGetOutput AuditRecord
+type AuditRecordsGetOutput = AuditRecord

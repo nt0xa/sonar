@@ -17,4 +17,4 @@ type HTTPRoutesUpdateInput struct {
 	IsDynamic *bool
 }
 
-type HTTPRoutesUpdateOutput HTTPRoute
+type HTTPRoutesUpdateOutput = HTTPRoute

@@ -28,4 +28,9 @@ type Service interface {
 
 	AuditRecordsList
 	AuditRecordsGet
+
+	AuthContextByAPIToken
+	AuthContextByTelegramID
+	AuthContextByLarkID
+	AuthContextBySlackID
 }

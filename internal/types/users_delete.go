@@ -10,4 +10,4 @@ type UsersDeleteInput struct {
 	Name string
 }
 
-type UsersDeleteOutput User
+type UsersDeleteOutput = User

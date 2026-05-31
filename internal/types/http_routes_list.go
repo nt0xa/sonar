@@ -10,4 +10,4 @@ type HTTPRoutesListInput struct {
 	PayloadName string
 }
 
-type HTTPRoutesListOutput []HTTPRoute
+type HTTPRoutesListOutput = []HTTPRoute

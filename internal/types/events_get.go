@@ -11,4 +11,4 @@ type EventsGetInput struct {
 	Index       int64
 }
 
-type EventsGetOutput Event
+type EventsGetOutput = Event

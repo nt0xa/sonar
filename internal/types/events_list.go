@@ -12,4 +12,4 @@ type EventsListInput struct {
 	Offset      uint
 }
 
-type EventsListOutput []Event
+type EventsListOutput = []Event

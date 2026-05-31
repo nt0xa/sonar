@@ -11,4 +11,4 @@ type DNSRecordsDeleteInput struct {
 	Index       int64
 }
 
-type DNSRecordsDeleteOutput DNSRecord
+type DNSRecordsDeleteOutput = DNSRecord

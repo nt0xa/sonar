@@ -10,4 +10,4 @@ type DNSRecordsListInput struct {
 	PayloadName string
 }
 
-type DNSRecordsListOutput []DNSRecord
+type DNSRecordsListOutput = []DNSRecord

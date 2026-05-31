@@ -13,4 +13,4 @@ type PayloadsUpdateInput struct {
 	StoreEvents     *bool
 }
 
-type PayloadsUpdateOutput Payload
+type PayloadsUpdateOutput = Payload

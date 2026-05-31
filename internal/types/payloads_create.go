@@ -12,4 +12,4 @@ type PayloadsCreateInput struct {
 	StoreEvents     bool
 }
 
-type PayloadsCreateOutput Payload
+type PayloadsCreateOutput = Payload

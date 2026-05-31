@@ -11,4 +11,4 @@ type DNSRecordsClearInput struct {
 	Name        string
 }
 
-type DNSRecordsClearOutput []DNSRecord
+type DNSRecordsClearOutput = []DNSRecord

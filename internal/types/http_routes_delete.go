@@ -11,4 +11,4 @@ type HTTPRoutesDeleteInput struct {
 	Index       int64
 }
 
-type HTTPRoutesDeleteOutput HTTPRoute
+type HTTPRoutesDeleteOutput = HTTPRoute

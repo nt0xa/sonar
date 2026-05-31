@@ -10,4 +10,4 @@ type PayloadsDeleteInput struct {
 	Name string
 }
 
-type PayloadsDeleteOutput Payload
+type PayloadsDeleteOutput = Payload

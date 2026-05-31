@@ -11,4 +11,4 @@ type HTTPRoutesClearInput struct {
 	Path        string
 }
 
-type HTTPRoutesClearOutput []HTTPRoute
+type HTTPRoutesClearOutput = []HTTPRoute

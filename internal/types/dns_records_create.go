@@ -15,4 +15,4 @@ type DNSRecordsCreateInput struct {
 	Strategy    string
 }
 
-type DNSRecordsCreateOutput DNSRecord
+type DNSRecordsCreateOutput = DNSRecord

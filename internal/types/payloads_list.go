@@ -12,4 +12,4 @@ type PayloadsListInput struct {
 	PerPage uint
 }
 
-type PayloadsListOutput []Payload
+type PayloadsListOutput = []Payload

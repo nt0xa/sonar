@@ -15,4 +15,4 @@ type UsersCreateInput struct {
 	IsAdmin    bool
 }
 
-type UsersCreateOutput User
+type UsersCreateOutput = User

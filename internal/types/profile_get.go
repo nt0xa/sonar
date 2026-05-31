@@ -8,4 +8,4 @@ type ProfileGet interface {
 
 type ProfileGetInput struct{}
 
-type ProfileGetOutput User
+type ProfileGetOutput = User

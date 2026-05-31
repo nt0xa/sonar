@@ -20,4 +20,4 @@ type AuditRecordsListInput struct {
 	PerPage      uint
 }
 
-type AuditRecordsListOutput []AuditRecord
+type AuditRecordsListOutput = []AuditRecord
