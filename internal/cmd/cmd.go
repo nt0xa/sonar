@@ -12,8 +12,6 @@ import (
 	"github.com/nt0xa/sonar/internal/actions"
 )
 
-//go:generate go run ./internal/codegen/*.go -type cmd
-
 func init() {
 	cobra.EnableCommandSorting = false
 	cobra.AddTemplateFuncs(sprig.TxtFuncMap())
