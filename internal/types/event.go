@@ -4,10 +4,15 @@ import (
 	"time"
 )
 
+//go:generate go-enum --ptr --names --values
+
+// ENUM(dns, http, https, smtp, ftp)
+type EventProtocol string
+
 type Event struct {
 	Index      int64
 	UUID       string
-	Protocol   string
+	Protocol   EventProtocol
 	R          string
 	W          string
 	RW         string

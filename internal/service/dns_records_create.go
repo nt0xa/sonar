@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/types"
@@ -31,7 +30,7 @@ func (s *service) DNSRecordsCreate(
 	_, err = s.db.DNSRecordsGetByPayloadNameAndType(ctx, database.DNSRecordsGetByPayloadNameAndTypeParams{
 		PayloadID: p.ID,
 		Name:      in.Name,
-		Type:      database.DNSRecordType(strings.ToUpper(in.Type)),
+		Type:      database.DNSRecordType(in.Type),
 	})
 	if err != nil && !errors.Is(err, database.ErrNoRows) {
 		return nil, err
@@ -45,7 +44,7 @@ func (s *service) DNSRecordsCreate(
 		PayloadID: p.ID,
 		Name:      in.Name,
 		TTL:       in.TTL,
-		Type:      database.DNSRecordType(strings.ToUpper(in.Type)),
+		Type:      database.DNSRecordType(in.Type),
 		Values:    in.Values,
 		Strategy:  database.DNSStrategy(in.Strategy),
 	})

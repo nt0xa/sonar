@@ -12,8 +12,8 @@ type AuditRecordsList interface {
 type AuditRecordsListInput struct {
 	ActorID      *int64
 	ActorName    string
-	ResourceType string
-	Action       string
+	ResourceType AuditResourceType
+	Action       AuditAction
 	From         *time.Time
 	To           *time.Time
 	Page         uint

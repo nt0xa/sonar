@@ -33,11 +33,16 @@ func (s *service) PayloadsCreate(
 		return nil, err
 	}
 
+	notifyProtocols := make([]string, len(in.NotifyProtocols))
+	for i, p := range in.NotifyProtocols {
+		notifyProtocols[i] = string(p)
+	}
+
 	p, err := s.db.PayloadsCreate(ctx, database.PayloadsCreateParams{
 		UserID:          u.ID,
 		Subdomain:       subdomain,
 		Name:            in.Name,
-		NotifyProtocols: in.NotifyProtocols,
+		NotifyProtocols: notifyProtocols,
 		StoreEvents:     in.StoreEvents,
 	})
 	if err != nil {

@@ -39,7 +39,7 @@ func (s *service) HTTPRoutesUpdate(
 
 	method := rec.Method
 	if in.Method != nil {
-		method = *in.Method
+		method = string(*in.Method)
 	}
 
 	path := rec.Path

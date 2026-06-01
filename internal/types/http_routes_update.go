@@ -9,7 +9,7 @@ type HTTPRoutesUpdate interface {
 type HTTPRoutesUpdateInput struct {
 	Payload   string
 	Index     int64
-	Method    *string
+	Method    *HTTPMethod
 	Path      *string
 	Code      *int
 	Headers   map[string][]string

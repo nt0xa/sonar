@@ -11,7 +11,7 @@ func httpRoute(m database.HTTPRoute, payloadSubdomain string) *types.HTTPRoute {
 	return &types.HTTPRoute{
 		Index:            int64(m.Index),
 		PayloadSubdomain: payloadSubdomain,
-		Method:           m.Method,
+		Method:           types.HTTPMethod(m.Method),
 		Path:             m.Path,
 		Code:             m.Code,
 		Headers:          m.Headers,

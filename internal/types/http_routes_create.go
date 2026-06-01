@@ -8,7 +8,7 @@ type HTTPRoutesCreate interface {
 
 type HTTPRoutesCreateInput struct {
 	PayloadName string
-	Method      string
+	Method      HTTPMethod
 	Path        string
 	Code        int
 	Headers     map[string][]string

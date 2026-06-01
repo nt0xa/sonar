@@ -10,9 +10,9 @@ type DNSRecordsCreateInput struct {
 	PayloadName string
 	Name        string
 	TTL         int
-	Type        string
+	Type        DNSRecordType
 	Values      []string
-	Strategy    string
+	Strategy    DNSRecordStrategy
 }
 
 type DNSRecordsCreateOutput = DNSRecord

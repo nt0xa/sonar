@@ -9,7 +9,7 @@ type PayloadsUpdate interface {
 type PayloadsUpdateInput struct {
 	Name            string
 	NewName         string
-	NotifyProtocols []string
+	NotifyProtocols []ProtoCategory
 	StoreEvents     *bool
 }
 

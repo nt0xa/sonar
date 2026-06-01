@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/types"
@@ -31,7 +30,7 @@ func (s *service) HTTPRoutesCreate(
 
 	_, err = s.db.HTTPRoutesGetByPayloadMethodAndPath(ctx, database.HTTPRoutesGetByPayloadMethodAndPathParams{
 		PayloadID: p.ID,
-		Method:    strings.ToUpper(in.Method),
+		Method:    string(in.Method),
 		Path:      in.Path,
 	})
 	if err != nil && !errors.Is(err, database.ErrNoRows) {
@@ -39,7 +38,7 @@ func (s *service) HTTPRoutesCreate(
 	}
 	if err == nil {
 		return nil, fmt.Errorf("%w: http route for payload %q with method %q and path %q already exist",
-			types.ErrConflict, in.PayloadName, strings.ToUpper(in.Method), in.Path)
+			types.ErrConflict, in.PayloadName, in.Method, in.Path)
 	}
 
 	body, err := base64.StdEncoding.DecodeString(in.Body)
@@ -49,7 +48,7 @@ func (s *service) HTTPRoutesCreate(
 
 	rec, err := s.db.HTTPRoutesCreate(ctx, database.HTTPRoutesCreateParams{
 		PayloadID: p.ID,
-		Method:    strings.ToUpper(in.Method),
+		Method:    string(in.Method),
 		Path:      in.Path,
 		Code:      in.Code,
 		Headers:   in.Headers,

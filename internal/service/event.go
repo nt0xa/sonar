@@ -16,7 +16,7 @@ func event(m database.Event, index int64) *types.Event {
 	return &types.Event{
 		Index:      index,
 		UUID:       m.UUID.String(),
-		Protocol:   m.Protocol,
+		Protocol:   types.EventProtocol(m.Protocol),
 		R:          base64.StdEncoding.EncodeToString(m.R),
 		W:          base64.StdEncoding.EncodeToString(m.W),
 		RW:         base64.StdEncoding.EncodeToString(m.RW),

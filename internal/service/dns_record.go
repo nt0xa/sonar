@@ -10,10 +10,10 @@ func dnsRecord(m database.DNSRecord, payloadSubdomain string) *types.DNSRecord {
 		Index:            int64(m.Index),
 		PayloadSubdomain: payloadSubdomain,
 		Name:             m.Name,
-		Type:             string(m.Type),
+		Type:             types.DNSRecordType(m.Type),
 		TTL:              m.TTL,
 		Values:           m.Values,
-		Strategy:         string(m.Strategy),
+		Strategy:         types.DNSRecordStrategy(m.Strategy),
 		CreatedAt:        m.CreatedAt,
 	}
 }
