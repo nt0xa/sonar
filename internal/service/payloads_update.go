@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -16,13 +17,14 @@ func (s *service) PayloadsUpdate(ctx context.Context, in types.PayloadsUpdateInp
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name)
-	if err == database.ErrNoRows {
+	if errors.Is(err, database.ErrNoRows) {
 		return nil, fmt.Errorf("%w: payload with name %q not found", types.ErrNotFound, in.Name)
-	} else if err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 
-	updateParams := database.PayloadsUpdateParams{
+	params := database.PayloadsUpdateParams{
 		ID:              p.ID,
 		UserID:          p.UserID,
 		Subdomain:       p.Subdomain,
@@ -32,14 +34,14 @@ func (s *service) PayloadsUpdate(ctx context.Context, in types.PayloadsUpdateInp
 	}
 
 	if in.NewName != "" {
-		updateParams.Name = in.NewName
+		params.Name = in.NewName
 	}
 
 	if in.StoreEvents != nil {
-		updateParams.StoreEvents = *in.StoreEvents
+		params.StoreEvents = *in.StoreEvents
 	}
 
-	p, err = s.db.PayloadsUpdate(ctx, updateParams)
+	p, err = s.db.PayloadsUpdate(ctx, params)
 	if err != nil {
 		return nil, err
 	}

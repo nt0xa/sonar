@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -19,8 +20,12 @@ func (s *service) PayloadsCreate(
 		return nil, types.ErrUnauthorized
 	}
 
-	if _, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name); err != database.ErrNoRows {
-		return nil, fmt.Errorf("%w: payload with name %q already exist", types.ErrConflict, in.Name)
+	_, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name)
+	if err != nil && !errors.Is(err, database.ErrNoRows) {
+		return nil, err
+	}
+	if err == nil {
+		return nil, fmt.Errorf("%w: payload with name %q already exists", types.ErrConflict, in.Name)
 	}
 
 	subdomain, err := utils.GenerateRandomString(4)

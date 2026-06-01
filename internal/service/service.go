@@ -78,21 +78,6 @@ func (s *service) HTTPRoutesUpdate(context.Context, types.HTTPRoutesUpdateInput)
 	panic("unimplemented")
 }
 
-// PayloadsClear implements [types.Service].
-func (s *service) PayloadsClear(context.Context, types.PayloadsClearInput) (types.PayloadsClearOutput, error) {
-	panic("unimplemented")
-}
-
-// PayloadsDelete implements [types.Service].
-func (s *service) PayloadsDelete(context.Context, types.PayloadsDeleteInput) (*types.PayloadsDeleteOutput, error) {
-	panic("unimplemented")
-}
-
-// PayloadsList implements [types.Service].
-func (s *service) PayloadsList(context.Context, types.PayloadsListInput) (types.PayloadsListOutput, error) {
-	panic("unimplemented")
-}
-
 // ProfileGet implements [types.Service].
 func (s *service) ProfileGet(context.Context, types.ProfileGetInput) (*types.ProfileGetOutput, error) {
 	panic("unimplemented")
