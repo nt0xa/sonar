@@ -1,22 +1,22 @@
 package service
 
 import (
-	"encoding/base64"
-
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/types"
+	"time"
 )
 
-func httpRoute(m database.HTTPRoute, payloadSubdomain string) *types.HTTPRoute {
-	return &types.HTTPRoute{
-		Index:            int64(m.Index),
-		PayloadSubdomain: payloadSubdomain,
-		Method:           types.HTTPMethod(m.Method),
-		Path:             m.Path,
-		Code:             m.Code,
-		Headers:          m.Headers,
-		Body:             base64.StdEncoding.EncodeToString(m.Body),
-		IsDynamic:        m.IsDynamic,
-		CreatedAt:        m.CreatedAt,
-	}
+//go:generate go-enum --ptr --names --values
+
+// ENUM(GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE, ANY)
+type HTTPMethod string
+
+type HTTPRoute struct {
+	Index            int64
+	PayloadSubdomain string
+	Method           HTTPMethod
+	Path             string
+	Code             int
+	Headers          map[string][]string
+	Body             string
+	IsDynamic        bool
+	CreatedAt        time.Time
 }

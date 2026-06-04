@@ -1,31 +1,36 @@
 package service
 
-import (
-	"context"
-	"log/slog"
+type Service interface {
+	PayloadsCreate
+	PayloadsUpdate
+	PayloadsDelete
+	PayloadsClear
+	PayloadsList
 
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/types"
-)
+	UsersCreate
+	UsersDelete
 
-type service struct {
-	db  *database.DB
-	log *slog.Logger
-}
+	ProfileGet
 
-// AuditRecordsGet implements [types.Service].
-func (s *service) AuditRecordsGet(context.Context, types.AuditRecordsGetInput) (*types.AuditRecordsGetOutput, error) {
-	panic("unimplemented")
-}
+	EventsList
+	EventsGet
 
-// AuditRecordsList implements [types.Service].
-func (s *service) AuditRecordsList(context.Context, types.AuditRecordsListInput) (types.AuditRecordsListOutput, error) {
-	panic("unimplemented")
-}
+	DNSRecordsCreate
+	DNSRecordsDelete
+	DNSRecordsClear
+	DNSRecordsList
 
-func New(db *database.DB, log *slog.Logger) types.Service {
-	return &service{
-		db:  db,
-		log: log,
-	}
+	HTTPRoutesCreate
+	HTTPRoutesUpdate
+	HTTPRoutesDelete
+	HTTPRoutesClear
+	HTTPRoutesList
+
+	AuditRecordsList
+	AuditRecordsGet
+
+	AuthContextByAPIToken
+	AuthContextByTelegramID
+	AuthContextByLarkID
+	AuthContextBySlackID
 }

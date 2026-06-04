@@ -1,19 +1,24 @@
 package service
 
 import (
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/types"
+	"time"
 )
 
-func dnsRecord(m database.DNSRecord, payloadSubdomain string) *types.DNSRecord {
-	return &types.DNSRecord{
-		Index:            int64(m.Index),
-		PayloadSubdomain: payloadSubdomain,
-		Name:             m.Name,
-		Type:             types.DNSRecordType(m.Type),
-		TTL:              m.TTL,
-		Values:           m.Values,
-		Strategy:         types.DNSRecordStrategy(m.Strategy),
-		CreatedAt:        m.CreatedAt,
-	}
+//go:generate go-enum --ptr --names --values
+
+// ENUM(A, AAAA, MX, TXT, CNAME, NS, CAA)
+type DNSRecordType string
+
+// ENUM(all, round-robin, rebind)
+type DNSRecordStrategy string
+
+type DNSRecord struct {
+	Index            int64
+	PayloadSubdomain string
+	Name             string
+	Type             DNSRecordType
+	TTL              int
+	Values           []string
+	Strategy         DNSRecordStrategy
+	CreatedAt        time.Time
 }

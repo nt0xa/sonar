@@ -1,151 +1,130 @@
 package service
 
 import (
-	"encoding/base64"
-
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/types"
-	"github.com/nt0xa/sonar/pkg/dnsx"
-	"github.com/nt0xa/sonar/pkg/ftpx"
-	"github.com/nt0xa/sonar/pkg/geoipx"
-	"github.com/nt0xa/sonar/pkg/httpx"
-	"github.com/nt0xa/sonar/pkg/smtpx"
+	"time"
 )
 
-func event(m database.Event, index int64) *types.Event {
-	return &types.Event{
-		Index:      index,
-		UUID:       m.UUID.String(),
-		Protocol:   types.EventProtocol(m.Protocol),
-		R:          base64.StdEncoding.EncodeToString(m.R),
-		W:          base64.StdEncoding.EncodeToString(m.W),
-		RW:         base64.StdEncoding.EncodeToString(m.RW),
-		Meta:       eventMeta(m.Meta),
-		RemoteAddr: m.RemoteAddr,
-		ReceivedAt: m.ReceivedAt,
-	}
+//go:generate go-enum --ptr --names --values
+
+// ENUM(dns, http, https, smtp, ftp)
+type EventProtocol string
+
+type Event struct {
+	Index      int64
+	UUID       string
+	Protocol   EventProtocol
+	R          string
+	W          string
+	RW         string
+	Meta       EventMeta
+	RemoteAddr string
+	ReceivedAt time.Time
 }
 
-func eventMeta(m database.EventsMeta) types.EventMeta {
-	out := types.EventMeta{
-		Secure: m.Secure,
-	}
+type EventMeta struct {
+	DNS  *EventDNSMeta
+	HTTP *EventHTTPMeta
+	SMTP *EventSMTPMeta
+	FTP  *EventFTPMeta
 
-	if m.DNS != nil {
-		out.DNS = eventDNSMeta(*m.DNS)
-	}
-	if m.HTTP != nil {
-		out.HTTP = eventHTTPMeta(*m.HTTP)
-	}
-	if m.SMTP != nil {
-		out.SMTP = eventSMTPMeta(*m.SMTP)
-	}
-	if m.FTP != nil {
-		out.FTP = eventFTPMeta(*m.FTP)
-	}
-	if m.GeoIP != nil {
-		out.GeoIP = eventGeoIPMeta(*m.GeoIP)
-	}
+	Secure bool
 
-	return out
+	GeoIP *EventGeoIPMeta
 }
 
-func eventDNSMeta(m dnsx.Meta) *types.EventDNSMeta {
-	answers := make([]types.EventDNSAnswer, len(m.Answer))
-	for i, a := range m.Answer {
-		answers[i] = types.EventDNSAnswer{
-			Name: a.Name,
-			Type: a.Type,
-			TTL:  a.TTL,
-		}
-	}
-
-	return &types.EventDNSMeta{
-		Question: types.EventDNSQuestion{
-			Name: m.Question.Name,
-			Type: m.Question.Type,
-		},
-		Answer: answers,
-	}
+type EventHTTPRequest struct {
+	Method  string
+	Proto   string
+	URL     string
+	Host    string
+	Headers map[string][]string
+	Body    string
 }
 
-func eventHTTPMeta(m httpx.Meta) *types.EventHTTPMeta {
-	return &types.EventHTTPMeta{
-		Request: types.EventHTTPRequest{
-			Method:  m.Request.Method,
-			Proto:   m.Request.Proto,
-			URL:     m.Request.URL,
-			Host:    m.Request.Host,
-			Headers: m.Request.Headers,
-			Body:    m.Request.Body,
-		},
-		Response: types.EventHTTPResponse{
-			Status:  m.Response.Status,
-			Headers: m.Response.Headers,
-			Body:    m.Response.Body,
-		},
-	}
+type EventHTTPResponse struct {
+	Status  int
+	Headers map[string][]string
+	Body    string
 }
 
-func eventSMTPMeta(m smtpx.Meta) *types.EventSMTPMeta {
-	return &types.EventSMTPMeta{
-		Session: types.EventSMTPData{
-			Helo:     m.Session.Helo,
-			Ehlo:     m.Session.Ehlo,
-			MailFrom: m.Session.MailFrom,
-			RcptTo:   m.Session.RcptTo,
-			Data:     m.Session.Data,
-		},
-		Email: types.EventSMTPEmail{
-			Subject: m.Email.Subject,
-			From:    smtpAddresses(m.Email.From),
-			To:      smtpAddresses(m.Email.To),
-			Cc:      smtpAddresses(m.Email.Cc),
-			Bcc:     smtpAddresses(m.Email.Bcc),
-			Date:    m.Email.Date,
-			Text:    m.Email.Text,
-			HTML:    m.Email.HTML,
-		},
-	}
+type EventHTTPMeta struct {
+	Request  EventHTTPRequest
+	Response EventHTTPResponse
 }
 
-func smtpAddresses(in []smtpx.Address) []types.EventSMTPAddress {
-	out := make([]types.EventSMTPAddress, len(in))
-	for i, a := range in {
-		out[i] = types.EventSMTPAddress{
-			Name:    a.Name,
-			Address: a.Address,
-		}
-	}
-	return out
+type EventDNSQuestion struct {
+	Name string
+	Type string
 }
 
-func eventFTPMeta(m ftpx.Meta) *types.EventFTPMeta {
-	return &types.EventFTPMeta{
-		Session: types.EventFTPData{
-			User: m.Session.User,
-			Pass: m.Session.Pass,
-			Type: m.Session.Type,
-			Pasv: m.Session.Pasv,
-			Epsv: m.Session.Epsv,
-			Port: m.Session.Port,
-			Eprt: m.Session.Eprt,
-			Retr: m.Session.Retr,
-		},
-	}
+type EventDNSAnswer struct {
+	Name string
+	Type string
+	TTL  uint32
 }
 
-func eventGeoIPMeta(m geoipx.Meta) *types.EventGeoIPMeta {
-	return &types.EventGeoIPMeta{
-		City: m.City,
-		Country: types.EventGeoIPCountry{
-			Name:    m.Country.Name,
-			ISOCode: m.Country.ISOCode,
-		},
-		Subdivisions: m.Subdivisions,
-		ASN: types.EventGeoIPASN{
-			Number: m.ASN.Number,
-			Org:    m.ASN.Org,
-		},
-	}
+type EventDNSMeta struct {
+	Question EventDNSQuestion
+	Answer   []EventDNSAnswer
+}
+
+type EventSMTPData struct {
+	Helo     string
+	Ehlo     string
+	MailFrom string
+	RcptTo   []string
+	Data     string
+}
+
+type EventSMTPAddress struct {
+	Name    string
+	Address string
+}
+
+type EventSMTPEmail struct {
+	Subject string
+	From    []EventSMTPAddress
+	To      []EventSMTPAddress
+	Cc      []EventSMTPAddress
+	Bcc     []EventSMTPAddress
+	Date    *time.Time
+	Text    string
+	HTML    string
+}
+
+type EventSMTPMeta struct {
+	Session EventSMTPData
+	Email   EventSMTPEmail
+}
+
+type EventFTPData struct {
+	User string
+	Pass string
+	Type string
+	Pasv string
+	Epsv string
+	Port string
+	Eprt string
+	Retr string
+}
+
+type EventFTPMeta struct {
+	Session EventFTPData
+}
+
+type EventGeoIPCountry struct {
+	Name    string
+	ISOCode string
+}
+
+type EventGeoIPASN struct {
+	Number uint
+	Org    string
+}
+
+type EventGeoIPMeta struct {
+	City         string
+	Country      EventGeoIPCountry
+	Subdivisions []string
+	ASN          EventGeoIPASN
 }
