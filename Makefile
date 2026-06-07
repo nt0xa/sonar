@@ -126,6 +126,8 @@ devtools:
 	@go install github.com/vektra/mockery/v2@latest 
 	@go install github.com/goreleaser/goreleaser/v2@latest
 	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	@go install github.com/abice/go-enum@latest
+
 
 
 #
@@ -161,6 +163,11 @@ lint:
 
 .PHONY: generate
 generate: generate/api generate/cmd generate/client generate/mocks
+
+.PHONY: generate/go
+generate/go:
+	@echo "Running go generate..."
+	@go generate ./...
 
 .PHONY: generate/api
 generate/api:

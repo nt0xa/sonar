@@ -13,9 +13,9 @@ const (
 )
 
 type Error struct {
-	Kind    ErrorKind
-	Message string
-	Fields  map[string]string // field -> problem; validation only
+	Kind     ErrorKind
+	Message  string
+	Problems map[string]string // field -> problem; validation only
 }
 
 func (e Error) Error() string { return e.Message }
@@ -30,6 +30,6 @@ func Conflictf(format string, a ...any) Error {
 	return Error{Kind: ErrorKindConflict, Message: fmt.Sprintf(format, a...)}
 }
 
-func Validation(fields map[string]string) Error {
-	return Error{Kind: ErrorKindValidation, Fields: fields}
+func Validation(problems map[string]string) Error {
+	return Error{Kind: ErrorKindValidation, Problems: problems}
 }
