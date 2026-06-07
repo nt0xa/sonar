@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -15,12 +14,12 @@ func (s *svc) UsersDelete(
 	in service.UsersDeleteInput,
 ) (*service.UsersDeleteOutput, error) {
 	if s.user(ctx) == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	rec, err := s.db.UsersGetByName(ctx, in.Name)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: user with name %q not found", service.ErrNotFound, in.Name)
+		return nil, service.NotFoundf("user with name %q not found", in.Name)
 	}
 	if err != nil {
 		return nil, err

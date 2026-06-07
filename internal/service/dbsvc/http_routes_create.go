@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -17,12 +16,12 @@ func (s *svc) HTTPRoutesCreate(
 ) (*service.HTTPRoutesCreateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.PayloadName)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: payload with name %q not found", service.ErrNotFound, in.PayloadName)
+		return nil, service.NotFoundf("payload with name %q not found", in.PayloadName)
 	}
 	if err != nil {
 		return nil, err
@@ -37,13 +36,13 @@ func (s *svc) HTTPRoutesCreate(
 		return nil, err
 	}
 	if err == nil {
-		return nil, fmt.Errorf("%w: http route for payload %q with method %q and path %q already exist",
-			service.ErrConflict, in.PayloadName, in.Method, in.Path)
+		return nil, service.Conflictf("http route for payload %q with method %q and path %q already exist",
+			in.PayloadName, in.Method, in.Path)
 	}
 
 	body, err := base64.StdEncoding.DecodeString(in.Body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: body: invalid base64 data", service.ErrValidation)
+		return nil, service.Validation(map[string]string{"body": "invalid base64 data"})
 	}
 
 	rec, err := s.db.HTTPRoutesCreate(ctx, database.HTTPRoutesCreateParams{

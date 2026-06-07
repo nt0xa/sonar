@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -16,12 +15,12 @@ func (s *svc) DNSRecordsCreate(
 ) (*service.DNSRecordsCreateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.PayloadName)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: payload with name %q not found", service.ErrNotFound, in.PayloadName)
+		return nil, service.NotFoundf("payload with name %q not found", in.PayloadName)
 	}
 	if err != nil {
 		return nil, err
@@ -36,8 +35,8 @@ func (s *svc) DNSRecordsCreate(
 		return nil, err
 	}
 	if err == nil {
-		return nil, fmt.Errorf("%w: dns records for payload %q with name %q and type %q already exist",
-			service.ErrConflict, in.PayloadName, in.Name, in.Type)
+		return nil, service.Conflictf("dns records for payload %q with name %q and type %q already exist",
+			in.PayloadName, in.Name, in.Type)
 	}
 
 	rec, err := s.db.DNSRecordsCreate(ctx, database.DNSRecordsCreateParams{

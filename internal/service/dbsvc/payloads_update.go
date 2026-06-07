@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -13,12 +12,12 @@ import (
 func (s *svc) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: payload with name %q not found", service.ErrNotFound, in.Name)
+		return nil, service.NotFoundf("payload with name %q not found", in.Name)
 	}
 	if err != nil {
 		return nil, err

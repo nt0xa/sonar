@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -17,7 +16,7 @@ func (s *svc) PayloadsCreate(
 ) (*service.PayloadsCreateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	_, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name)
@@ -25,7 +24,7 @@ func (s *svc) PayloadsCreate(
 		return nil, err
 	}
 	if err == nil {
-		return nil, fmt.Errorf("%w: payload with name %q already exists", service.ErrConflict, in.Name)
+		return nil, service.Conflictf("payload with name %q already exists", in.Name)
 	}
 
 	subdomain, err := utils.GenerateRandomString(4)

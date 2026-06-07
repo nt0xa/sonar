@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -16,7 +15,7 @@ func (s *svc) UsersCreate(
 ) (*service.UsersCreateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	_, err := s.db.UsersGetByName(ctx, in.Name)
@@ -24,7 +23,7 @@ func (s *svc) UsersCreate(
 		return nil, err
 	}
 	if err == nil {
-		return nil, fmt.Errorf("%w: user with name %q already exists", service.ErrConflict, in.Name)
+		return nil, service.Conflictf("user with name %q already exists", in.Name)
 	}
 
 	created, err := s.db.UsersCreate(ctx, database.UsersCreateParams{

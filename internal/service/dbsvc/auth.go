@@ -8,14 +8,14 @@ import (
 )
 
 // authContext looks up a user with get and, if found, returns a context with
-// that user attached. Any lookup error is reported as [service.ErrUnauthorized].
+// that user attached. Any lookup error is reported as [service.Unauthorized].
 func (s *svc) authContext(
 	ctx context.Context,
 	get func(context.Context) (*database.User, error),
 ) (context.Context, error) {
 	u, err := get(ctx)
 	if err != nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	return setUser(ctx, *u), nil

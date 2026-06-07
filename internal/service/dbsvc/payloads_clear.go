@@ -13,7 +13,7 @@ func (s *svc) PayloadsClear(
 ) (service.PayloadsClearOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	payloads, err := s.db.PayloadsDeleteByNamePart(ctx, u.ID, in.Name)

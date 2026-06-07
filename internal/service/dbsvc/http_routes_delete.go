@@ -3,7 +3,6 @@ package dbsvc
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -16,12 +15,12 @@ func (s *svc) HTTPRoutesDelete(
 ) (*service.HTTPRoutesDeleteOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.PayloadName)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: payload with name %q not found", service.ErrNotFound, in.PayloadName)
+		return nil, service.NotFoundf("payload with name %q not found", in.PayloadName)
 	}
 	if err != nil {
 		return nil, err
@@ -29,8 +28,8 @@ func (s *svc) HTTPRoutesDelete(
 
 	rec, err := s.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, p.ID, int(in.Index))
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: http route for payload %q with index %d not found",
-			service.ErrNotFound, in.PayloadName, in.Index)
+		return nil, service.NotFoundf("http route for payload %q with index %d not found",
+			in.PayloadName, in.Index)
 	}
 	if err != nil {
 		return nil, err

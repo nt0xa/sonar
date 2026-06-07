@@ -77,3 +77,26 @@ func ParseProtoCategory(name string) (ProtoCategory, error) {
 func (x ProtoCategory) Ptr() *ProtoCategory {
 	return &x
 }
+
+// MarshalText implements the text marshaller method.
+func (x ProtoCategory) MarshalText() ([]byte, error) {
+	return []byte(string(x)), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *ProtoCategory) UnmarshalText(text []byte) error {
+	tmp, err := ParseProtoCategory(string(text))
+	if err != nil {
+		return err
+	}
+	*x = tmp
+	return nil
+}
+
+// AppendText appends the textual representation of itself to the end of b
+// (allocating a larger slice if necessary) and returns the updated slice.
+//
+// Implementations must not retain b, nor mutate any bytes within b[:len(b)].
+func (x *ProtoCategory) AppendText(b []byte) ([]byte, error) {
+	return append(b, x.String()...), nil
+}

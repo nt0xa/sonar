@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -17,12 +16,12 @@ func (s *svc) HTTPRoutesUpdate(
 ) (*service.HTTPRoutesUpdateOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Payload)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: payload with name %q not found", service.ErrNotFound, in.Payload)
+		return nil, service.NotFoundf("payload with name %q not found", in.Payload)
 	}
 	if err != nil {
 		return nil, err
@@ -30,8 +29,8 @@ func (s *svc) HTTPRoutesUpdate(
 
 	rec, err := s.db.HTTPRoutesGetByPayloadIDAndIndex(ctx, p.ID, int(in.Index))
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, fmt.Errorf("%w: http route for payload %q with index %d not found",
-			service.ErrNotFound, in.Payload, in.Index)
+		return nil, service.NotFoundf("http route for payload %q with index %d not found",
+			in.Payload, in.Index)
 	}
 	if err != nil {
 		return nil, err
@@ -61,7 +60,7 @@ func (s *svc) HTTPRoutesUpdate(
 	if in.Body != nil {
 		body, err = base64.StdEncoding.DecodeString(*in.Body)
 		if err != nil {
-			return nil, fmt.Errorf("%w: body: invalid base64 data", service.ErrValidation)
+			return nil, service.Validation(map[string]string{"body": "invalid base64 data"})
 		}
 	}
 

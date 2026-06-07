@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-//go:generate go-enum --ptr --names --values
+//go:generate go-enum --ptr --names --values --marshal
 
 // ENUM(dns, http, smtp, ftp)
 type ProtoCategory string

@@ -15,7 +15,7 @@ func (s *svc) PayloadsList(
 ) (service.PayloadsListOutput, error) {
 	u := s.user(ctx)
 	if u == nil {
-		return nil, service.ErrUnauthorized
+		return nil, service.Unauthorized()
 	}
 
 	perPage := cmp.Or(in.PerPage, 10)
