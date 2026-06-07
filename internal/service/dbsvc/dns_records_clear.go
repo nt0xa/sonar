@@ -13,6 +13,10 @@ func (s *svc) DNSRecordsClear(
 	ctx context.Context,
 	in service.DNSRecordsClearInput,
 ) (service.DNSRecordsClearOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

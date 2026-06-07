@@ -14,6 +14,10 @@ func (s *svc) HTTPRoutesCreate(
 	ctx context.Context,
 	in service.HTTPRoutesCreateInput,
 ) (*service.HTTPRoutesCreateOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

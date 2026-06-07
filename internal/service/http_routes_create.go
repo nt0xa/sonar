@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	v "github.com/nt0xa/sonar/pkg/valid"
+)
 
 type HTTPRoutesCreate interface {
 	HTTPRoutesCreate(context.Context, HTTPRoutesCreateInput) (*HTTPRoutesCreateOutput, error)
@@ -14,6 +18,15 @@ type HTTPRoutesCreateInput struct {
 	Headers     map[string][]string
 	Body        string
 	IsDynamic   bool
+}
+
+func (in HTTPRoutesCreateInput) Validate() v.Problems {
+	return v.Struct(&in,
+		v.String(&in.PayloadName, v.Required),
+		v.String(&in.Method, v.Required, v.In(HTTPMethodValues()...)),
+		v.String(&in.Path, v.Required, v.Match(httpPathRegexp, `path must start with "/"`)),
+		v.Int(&in.Code, v.Required),
+	)
 }
 
 type HTTPRoutesCreateOutput = HTTPRoute

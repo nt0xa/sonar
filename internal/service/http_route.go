@@ -1,6 +1,7 @@
 package service
 
 import (
+	"regexp"
 	"time"
 )
 
@@ -8,6 +9,8 @@ import (
 
 // ENUM(GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE, ANY)
 type HTTPMethod string
+
+var httpPathRegexp = regexp.MustCompile("^/.*")
 
 type HTTPRoute struct {
 	Index            int64

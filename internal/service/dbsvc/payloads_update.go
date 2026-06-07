@@ -10,6 +10,10 @@ import (
 
 // PayloadsUpdate implements [service.Service].
 func (s *svc) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

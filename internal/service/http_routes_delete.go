@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	v "github.com/nt0xa/sonar/pkg/valid"
+)
 
 type HTTPRoutesDelete interface {
 	HTTPRoutesDelete(context.Context, HTTPRoutesDeleteInput) (*HTTPRoutesDeleteOutput, error)
@@ -9,6 +13,13 @@ type HTTPRoutesDelete interface {
 type HTTPRoutesDeleteInput struct {
 	PayloadName string
 	Index       int64
+}
+
+func (in HTTPRoutesDeleteInput) Validate() v.Problems {
+	return v.Struct(&in,
+		v.String(&in.PayloadName, v.Required),
+		v.Int(&in.Index, v.Required),
+	)
 }
 
 type HTTPRoutesDeleteOutput = HTTPRoute

@@ -13,6 +13,10 @@ func (s *svc) UsersDelete(
 	ctx context.Context,
 	in service.UsersDeleteInput,
 ) (*service.UsersDeleteOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	if s.user(ctx) == nil {
 		return nil, service.Unauthorized()
 	}

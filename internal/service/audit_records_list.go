@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"time"
+
+	v "github.com/nt0xa/sonar/pkg/valid"
 )
 
 type AuditRecordsList interface {
@@ -18,6 +20,13 @@ type AuditRecordsListInput struct {
 	To           *time.Time
 	Page         uint
 	PerPage      uint
+}
+
+func (in AuditRecordsListInput) Validate() v.Problems {
+	return v.Struct(&in,
+		v.String(&in.ResourceType, v.Optional, v.In(AuditResourceTypeValues()...)),
+		v.String(&in.Action, v.Optional, v.In(AuditActionValues()...)),
+	)
 }
 
 type AuditRecordsListOutput = []AuditRecord

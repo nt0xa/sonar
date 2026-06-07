@@ -13,6 +13,10 @@ func (s *svc) HTTPRoutesList(
 	ctx context.Context,
 	in service.HTTPRoutesListInput,
 ) (service.HTTPRoutesListOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

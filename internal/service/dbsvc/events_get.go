@@ -13,6 +13,10 @@ func (s *svc) EventsGet(
 	ctx context.Context,
 	in service.EventsGetInput,
 ) (*service.EventsGetOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

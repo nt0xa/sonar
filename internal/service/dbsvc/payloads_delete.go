@@ -13,6 +13,10 @@ func (s *svc) PayloadsDelete(
 	ctx context.Context,
 	in service.PayloadsDeleteInput,
 ) (*service.PayloadsDeleteOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

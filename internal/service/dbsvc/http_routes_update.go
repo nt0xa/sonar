@@ -14,6 +14,10 @@ func (s *svc) HTTPRoutesUpdate(
 	ctx context.Context,
 	in service.HTTPRoutesUpdateInput,
 ) (*service.HTTPRoutesUpdateOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

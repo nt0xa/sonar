@@ -14,6 +14,10 @@ func (s *svc) EventsList(
 	ctx context.Context,
 	in service.EventsListInput,
 ) (service.EventsListOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()

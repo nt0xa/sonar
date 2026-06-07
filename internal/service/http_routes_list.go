@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	v "github.com/nt0xa/sonar/pkg/valid"
+)
 
 type HTTPRoutesList interface {
 	HTTPRoutesList(context.Context, HTTPRoutesListInput) (HTTPRoutesListOutput, error)
@@ -8,6 +12,12 @@ type HTTPRoutesList interface {
 
 type HTTPRoutesListInput struct {
 	PayloadName string
+}
+
+func (in HTTPRoutesListInput) Validate() v.Problems {
+	return v.Struct(&in,
+		v.String(&in.PayloadName, v.Required),
+	)
 }
 
 type HTTPRoutesListOutput = []HTTPRoute

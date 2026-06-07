@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	v "github.com/nt0xa/sonar/pkg/valid"
+)
 
 type DNSRecordsClear interface {
 	DNSRecordsClear(context.Context, DNSRecordsClearInput) (DNSRecordsClearOutput, error)
@@ -9,6 +13,12 @@ type DNSRecordsClear interface {
 type DNSRecordsClearInput struct {
 	PayloadName string
 	Name        string
+}
+
+func (in DNSRecordsClearInput) Validate() v.Problems {
+	return v.Struct(&in,
+		v.String(&in.PayloadName, v.Required),
+	)
 }
 
 type DNSRecordsClearOutput = []DNSRecord

@@ -13,6 +13,10 @@ func (s *svc) HTTPRoutesDelete(
 	ctx context.Context,
 	in service.HTTPRoutesDeleteInput,
 ) (*service.HTTPRoutesDeleteOutput, error) {
+	if p := in.Validate(); p != nil {
+		return nil, service.Validation(p)
+	}
+
 	u := s.user(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()
