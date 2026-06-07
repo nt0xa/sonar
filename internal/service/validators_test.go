@@ -44,7 +44,7 @@ func TestDNSRecordsCreateInput_Validate(t *testing.T) {
 		in.PayloadName = ""
 		in.Values = []string{"not-an-ip"}
 		got := in.Validate()
-		if got["payloadName"] != "cannot be blank" {
+		if got["payloadName"] != "is required" {
 			t.Errorf("payloadName: got %q", got["payloadName"])
 		}
 		if got["values"] != "element #0: must be a valid IPv4 address" {

@@ -20,12 +20,12 @@ type DNSRecordsCreateInput struct {
 }
 
 func (in DNSRecordsCreateInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.String(&in.PayloadName, v.Required),
-		v.String(&in.Name, v.Required, v.By(subdomain)),
-		v.String(&in.Type, v.Required, v.In(DNSRecordTypeValues()...)),
-		v.StringSlice(&in.Values, v.Required, v.Each(dnsValueRule(in.Type))),
-		v.String(&in.Strategy, v.Required, v.In(DNSRecordStrategyValues()...)),
+	return v.Struct(
+		v.String("payloadName", in.PayloadName).Required(),
+		v.String("name", in.Name).Required().Custom(subdomain),
+		v.String("type", in.Type).Required().In(DNSRecordTypeValues()...),
+		v.StringSlice("values", in.Values).Required().Each().Custom(dnsValueRule(in.Type)),
+		v.String("strategy", in.Strategy).Required().In(DNSRecordStrategyValues()...),
 	)
 }
 

@@ -1,14 +1,14 @@
 package valid_test
 
 import (
+	"errors"
+	"math"
 	"regexp"
 	"testing"
 
 	v "github.com/nt0xa/sonar/pkg/valid"
 )
 
-// color is a ~string type with a value list, used to verify that the generic
-// field/rule constructors accept named string types.
 type color string
 
 const (
@@ -18,51 +18,30 @@ const (
 
 func colorValues() []color { return []color{colorRed, colorBlue} }
 
-type sample struct {
-	PayloadName string
-	Name        string
-	Color       color
-	Tags        []string
-	Nums        []int
-	Count       int
-	ID          int64  // lowerCamel -> "id"
-	APIToken    string `json:"token"` // tag override
-	OptPath     *string
-}
-
 var pathRe = regexp.MustCompile("^/.*")
 
-func (s sample) validate() v.Problems {
-	return v.Struct(&s,
-		v.String(&s.PayloadName, v.Required),
-		v.String(&s.Name, v.Required, v.MinLength(3)),
-		v.String(&s.Color, v.Required, v.In(colorValues()...)),
-		v.StringSlice(&s.Tags, v.Required, v.Each(v.Required)),
-		v.Slice(&s.Nums, v.MinItems(1), v.MaxItems(3)),
-		v.Int(&s.Count, v.Required, v.Max(100)),
-		v.Int(&s.ID, v.Required),
-		v.String(&s.APIToken, v.Required),
-		v.OptionalStringPtr(&s.OptPath, v.Match(pathRe, `must start with "/"`)),
-	)
-}
-
-func valid() sample {
-	p := "/ok"
-	return sample{
-		PayloadName: "p",
-		Name:        "abc",
-		Color:       colorBlue,
-		Tags:        []string{"a"},
-		Nums:        []int{1, 2},
-		Count:       10,
-		ID:          1,
-		APIToken:    "t",
-		OptPath:     &p,
+func notFoo(s string) error {
+	if s == "foo" {
+		return errors.New("must not be foo")
 	}
+	return nil
 }
 
 func TestStruct_Valid(t *testing.T) {
-	if got := valid().validate(); got != nil {
+	path := "/ok"
+	got := v.Struct(
+		v.String("name", "abc").Required().MinLength(2),
+		v.String("color", colorRed).In(colorValues()...),
+		v.StringSlice("tags", []string{"a", "b"}).Required().Each().Custom(notFoo),
+		v.NumberSlice("ports", []int{80, 443}).MaxItems(100).Each().Min(1).Max(65535),
+		v.Number("count", 10).Required().Min(1).Max(100),
+		v.OptionalString("path", &path).Match(pathRe, "bad path"),
+		v.OptionalString("missing", (*string)(nil)).In("x"),
+	)
+	if !got.Ok() {
+		t.Fatalf("expected ok, got %v", got)
+	}
+	if got != nil {
 		t.Fatalf("expected nil, got %v", got)
 	}
 }
@@ -70,29 +49,33 @@ func TestStruct_Valid(t *testing.T) {
 func TestStruct_Problems(t *testing.T) {
 	tests := []struct {
 		name    string
-		mutate  func(*sample)
+		field   v.Field
 		wantKey string
 		wantMsg string
 	}{
-		{"required string", func(s *sample) { s.PayloadName = "" }, "payloadName", "cannot be blank"},
-		{"min length", func(s *sample) { s.Name = "ab" }, "name", "must be at least 3 characters"},
-		{"in (enum)", func(s *sample) { s.Color = "green" }, "color", "must be one of: red, blue"},
-		{"required slice", func(s *sample) { s.Tags = nil }, "tags", "cannot be blank"},
-		{"each element", func(s *sample) { s.Tags = []string{""} }, "tags", "element #0: cannot be blank"},
-		{"min items", func(s *sample) { s.Nums = nil }, "nums", "must contain at least 1 items"},
-		{"max items", func(s *sample) { s.Nums = []int{1, 2, 3, 4} }, "nums", "must contain no more than 3 items"},
-		{"required number", func(s *sample) { s.Count = 0 }, "count", "cannot be blank"},
-		{"max", func(s *sample) { s.Count = 101 }, "count", "must be no greater than 100"},
-		{"acronym field name", func(s *sample) { s.ID = 0 }, "id", "cannot be blank"},
-		{"json tag override", func(s *sample) { s.APIToken = "" }, "token", "cannot be blank"},
-		{"optional ptr match", func(s *sample) { *s.OptPath = "bad" }, "optPath", `must start with "/"`},
+		{"required string", v.String("name", "").Required(), "name", "is required"},
+		{"min length", v.String("name", "a").MinLength(3), "name", "must be at least 3 characters"},
+		{"max length", v.String("name", "abcd").MaxLength(3), "name", "must be at most 3 characters"},
+		{"not blank", v.String("name", "  ").NotBlank(), "name", "must not be blank"},
+		{"in", v.String("color", color("green")).In(colorValues()...), "color", "must be one of: red, blue"},
+		{"match", v.String("path", "x").Match(pathRe, "bad path"), "path", "bad path"},
+		{"custom", v.String("x", "foo").Custom(notFoo), "x", "must not be foo"},
+		{"required number", v.Number("index", 0).Required(), "index", "is required"},
+		{"min", v.Number("n", 5).Min(10), "n", "must be >= 10"},
+		{"max", v.Number("n", 200).Max(100), "n", "must be <= 100"},
+		{"required slice", v.StringSlice("tags", []string(nil)).Required(), "tags", "is required"},
+		{"min items", v.StringSlice("tags", []string{"a"}).MinItems(2), "tags", "must contain at least 2 items"},
+		{"max items", v.StringSlice("tags", []string{"a", "b"}).MaxItems(1), "tags", "must contain no more than 1 items"},
+		{"each element", v.StringSlice("tags", []string{"ok", "foo"}).Each().Custom(notFoo), "tags", "element #1: must not be foo"},
+		{"each in", v.StringSlice("colors", []color{colorRed, "x"}).Each().In(colorValues()...), "colors", "element #1: must be one of: red, blue"},
+		{"number slice min", v.NumberSlice("ports", []int{0, 5}).Each().Min(1), "ports", "element #0: must be >= 1"},
+		{"slice len before each", v.NumberSlice("ports", []int{1, 2, 3}).MaxItems(2).Each().Min(1), "ports", "must contain no more than 2 items"},
+		{"optional ptr", v.OptionalString("path", ptr("x")).Match(pathRe, "bad path"), "path", "bad path"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := valid()
-			tt.mutate(&s)
-			got := s.validate()
+			got := v.Struct(tt.field)
 			if got[tt.wantKey] != tt.wantMsg {
 				t.Fatalf("key %q: got %q, want %q (all: %v)", tt.wantKey, got[tt.wantKey], tt.wantMsg, got)
 			}
@@ -100,54 +83,33 @@ func TestStruct_Problems(t *testing.T) {
 	}
 }
 
-func TestOptionalStringPtr_NilSkips(t *testing.T) {
-	s := valid()
-	s.OptPath = nil // invalid match rule must be skipped when nil
-	if got := s.validate(); got != nil {
-		t.Fatalf("expected nil for nil pointer, got %v", got)
+func TestNumber_NoCoercion(t *testing.T) {
+	// A large uint64 must compare correctly (no int64 widening) and a float must
+	// use float comparison.
+	big := uint64(math.MaxUint64)
+	if got := v.Struct(v.Number("u", big).Required().Min(uint64(1))); !got.Ok() {
+		t.Fatalf("large uint64 should pass Min(1), got %v", got)
+	}
+	if got := v.Struct(v.Number("f", 1.5).Max(1.0)); got["f"] != "must be <= 1" {
+		t.Fatalf("float max: got %v", got)
 	}
 }
 
-func TestOptional_SkipsWhenEmpty(t *testing.T) {
-	type opt struct{ Kind string }
-
-	o := opt{Kind: ""}
-	problems := v.Struct(&o, v.String(&o.Kind, v.Optional, v.In("a", "b")))
-	if problems != nil {
-		t.Fatalf("optional empty should pass, got %v", problems)
+func TestStruct_FirstProblemPerFieldWins(t *testing.T) {
+	// Within a field, the first failing rule wins.
+	got := v.Struct(v.String("name", "").Required().MinLength(5))
+	if got["name"] != "is required" {
+		t.Fatalf("got %q, want first rule's message", got["name"])
 	}
 
-	o.Kind = "x"
-	problems = v.Struct(&o, v.String(&o.Kind, v.Optional, v.In("a", "b")))
-	if problems["kind"] == "" {
-		t.Fatalf("optional non-empty invalid should fail, got %v", problems)
-	}
-}
-
-func TestStruct_PanicsOnMisuse(t *testing.T) {
-	type s struct{ Name string }
-
-	cases := []struct {
-		name string
-		fn   func()
-	}{
-		{"non-pointer", func() { v.Struct(s{}) }},
-		{"nil pointer", func() { v.Struct((*s)(nil)) }},
-		{"pointer to non-struct", func() { n := 0; v.Struct(&n) }},
-		{"foreign field pointer", func() {
-			var a, b s
-			b.Name = "" // make the rule fail so fieldName is consulted
-			v.Struct(&a, v.String(&b.Name, v.Required))
-		}},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer func() {
-				if recover() == nil {
-					t.Fatalf("expected panic")
-				}
-			}()
-			tc.fn()
-		})
+	// Across fields, the first occurrence of a name is kept.
+	got = v.Struct(
+		v.String("name", "").Required(),
+		v.String("name", "a").MinLength(5),
+	)
+	if got["name"] != "is required" {
+		t.Fatalf("got %q, want first field's message", got["name"])
 	}
 }
+
+func ptr[T any](v T) *T { return &v }

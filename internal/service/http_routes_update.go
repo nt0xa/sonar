@@ -22,10 +22,10 @@ type HTTPRoutesUpdateInput struct {
 }
 
 func (in HTTPRoutesUpdateInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.String(&in.Payload, v.Required),
-		v.OptionalStringPtr(&in.Method, v.In(HTTPMethodValues()...)),
-		v.OptionalStringPtr(&in.Path, v.Match(httpPathRegexp, `path must start with "/"`)),
+	return v.Struct(
+		v.String("payload", in.Payload).Required(),
+		v.OptionalString("method", in.Method).In(HTTPMethodValues()...),
+		v.OptionalString("path", in.Path).Match(httpPathRegexp, `path must start with "/"`),
 	)
 }
 

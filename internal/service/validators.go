@@ -73,20 +73,29 @@ func ip6(s string) error {
 	return nil
 }
 
+// notEmpty reports whether s is non-empty (used for record types without a
+// dedicated value format, e.g. TXT/NS).
+func notEmpty(s string) error {
+	if s == "" {
+		return errors.New("is required")
+	}
+	return nil
+}
+
 // dnsValueRule returns the per-value validation rule for a DNS record type.
-func dnsValueRule(t DNSRecordType) v.StringRule {
+func dnsValueRule(t DNSRecordType) v.Rule[string] {
 	switch t {
 	case DNSRecordTypeA:
-		return v.By(ip4)
+		return ip4
 	case DNSRecordTypeAAAA:
-		return v.By(ip6)
+		return ip6
 	case DNSRecordTypeMX:
-		return v.By(mx)
+		return mx
 	case DNSRecordTypeCNAME:
-		return v.By(fqdn)
+		return fqdn
 	case DNSRecordTypeCAA:
-		return v.By(caa)
+		return caa
 	default:
-		return v.Required
+		return notEmpty
 	}
 }

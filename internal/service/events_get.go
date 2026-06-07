@@ -16,9 +16,9 @@ type EventsGetInput struct {
 }
 
 func (in EventsGetInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.String(&in.PayloadName, v.Required),
-		v.Int(&in.Index, v.Required),
+	return v.Struct(
+		v.String("payloadName", in.PayloadName).Required(),
+		v.Number("index", in.Index).Required(),
 	)
 }
 

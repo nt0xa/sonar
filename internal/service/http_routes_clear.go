@@ -16,8 +16,8 @@ type HTTPRoutesClearInput struct {
 }
 
 func (in HTTPRoutesClearInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.String(&in.PayloadName, v.Required),
+	return v.Struct(
+		v.String("payloadName", in.PayloadName).Required(),
 	)
 }
 

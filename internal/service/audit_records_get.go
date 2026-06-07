@@ -15,8 +15,8 @@ type AuditRecordsGetInput struct {
 }
 
 func (in AuditRecordsGetInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.Int(&in.ID, v.Required),
+	return v.Struct(
+		v.Number("id", in.ID).Required(),
 	)
 }
 

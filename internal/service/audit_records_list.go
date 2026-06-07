@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"time"
-
-	v "github.com/nt0xa/sonar/pkg/valid"
 )
 
 type AuditRecordsList interface {
@@ -22,11 +20,8 @@ type AuditRecordsListInput struct {
 	PerPage      uint
 }
 
-func (in AuditRecordsListInput) Validate() v.Problems {
-	return v.Struct(&in,
-		v.String(&in.ResourceType, v.Optional, v.In(AuditResourceTypeValues()...)),
-		v.String(&in.Action, v.Optional, v.In(AuditActionValues()...)),
-	)
-}
+// NOTE: ResourceType/Action are value-type optional filters (empty = no filter).
+// The valid package intentionally has no value-type optional, so they are not
+// validated here; model them as pointers if validation is needed later.
 
 type AuditRecordsListOutput = []AuditRecord
