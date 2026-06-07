@@ -1,20 +1,23 @@
-// Package valid provides declarative, type-safe struct validation with a fluent
-// builder API:
+// Package valid provides declarative, type-safe struct validation. A field is a
+// name, a value, and a list of rules; a rule is just `func(T) error`, so any
+// custom validator is a first-class rule with no wrapper:
 //
 //	func (in CreateInput) Validate() valid.Problems {
-//		return valid.Struct(
-//			valid.String("name", in.Name).Required().MinLength(3),
-//			valid.Number("ttl", in.TTL).Max(100),
-//			valid.StringSlice("values", in.Values).Required().Each(isIPv4),
+//		return valid.Validate(
+//			valid.String("name", in.Name, valid.Required, valid.MinLength(3)),
+//			valid.String("host", in.Host, valid.Required, isSubdomain), // isSubdomain: func(string) error
+//			valid.Number("ttl", in.TTL, valid.Required, valid.Max(100)),
+//			valid.Slice("values", in.Values, valid.NotEmpty, valid.Each(isIPv4)),
 //		)
 //	}
 //
-// Each field carries its own json-style name (passed explicitly, no reflection)
-// and an ordered list of rules. Type safety comes from per-type field builders:
-// string rules live on String/OptionalString, numeric rules on Number, and
-// per-element rules on StringSlice — so a numeric rule cannot be attached to a
-// string field, and Each cannot be attached to a non-string slice.
+// Type safety comes from the per-type constructors: String only accepts
+// Rule[~string], Number only Rule[number], Slice only Rule[[]T] — so a string
+// rule cannot be attached to a number field, and Each([]T)'s element rules are
+// keyed to the element type.
 package valid
+
+import "errors"
 
 // Field is a single validated struct field. Struct collects the problem reported
 // by each field.
@@ -35,10 +38,10 @@ type Problems map[string]string
 // Ok reports whether there are no problems.
 func (p Problems) Ok() bool { return len(p) == 0 }
 
-// Struct validates the given fields and returns a map of field name -> problem.
+// Validate runs the given fields and returns a map of field name -> problem.
 // Within a field the first failing rule wins; if two fields share a name the
 // first is kept. It returns nil when everything is valid.
-func Struct(fields ...Field) Problems {
+func Validate(fields ...Field) Problems {
 	problems := Problems{}
 
 	for _, field := range fields {
@@ -57,7 +60,7 @@ func Struct(fields ...Field) Problems {
 	return problems
 }
 
-// field is the shared implementation for all typed field builders: a name, a
+// field is the shared implementation for all typed constructors: a name, a
 // value, and an ordered list of rules.
 type field[T any] struct {
 	name  string
@@ -65,16 +68,8 @@ type field[T any] struct {
 	rules []Rule[T]
 }
 
-func newField[T any](name string, value T) field[T] {
-	return field[T]{name: name, value: value}
-}
-
-func (f field[T]) withRule(rule Rule[T]) field[T] {
-	rules := make([]Rule[T], 0, len(f.rules)+1)
-	rules = append(rules, f.rules...)
-	rules = append(rules, rule)
-
-	return field[T]{name: f.name, value: f.value, rules: rules}
+func newField[T any](name string, value T, rules []Rule[T]) field[T] {
+	return field[T]{name: name, value: value, rules: rules}
 }
 
 func (f field[T]) Validate() (string, error) {
@@ -83,6 +78,15 @@ func (f field[T]) Validate() (string, error) {
 			return f.name, err
 		}
 	}
-
 	return f.name, nil
+}
+
+// Required asserts a comparable value is not its zero value (empty string, zero
+// number, zero-value enum). For slices use NotEmpty.
+func Required[T comparable](v T) error {
+	var zero T
+	if v == zero {
+		return errors.New("is required")
+	}
+	return nil
 }

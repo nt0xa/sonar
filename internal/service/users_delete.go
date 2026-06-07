@@ -15,8 +15,8 @@ type UsersDeleteInput struct {
 }
 
 func (in UsersDeleteInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("name", in.Name).Required(),
+	return v.Validate(
+		v.String("name", in.Name, v.Required),
 	)
 }
 

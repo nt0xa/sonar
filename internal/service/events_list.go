@@ -17,8 +17,8 @@ type EventsListInput struct {
 }
 
 func (in EventsListInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("payloadName", in.PayloadName).Required(),
+	return v.Validate(
+		v.String("payloadName", in.PayloadName, v.Required),
 	)
 }
 

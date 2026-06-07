@@ -20,8 +20,8 @@ type UsersCreateInput struct {
 }
 
 func (in UsersCreateInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("name", in.Name).Required(),
+	return v.Validate(
+		v.String("name", in.Name, v.Required),
 	)
 }
 

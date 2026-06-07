@@ -21,11 +21,11 @@ type HTTPRoutesCreateInput struct {
 }
 
 func (in HTTPRoutesCreateInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("payloadName", in.PayloadName).Required(),
-		v.String("method", in.Method).Required().In(HTTPMethodValues()...),
-		v.String("path", in.Path).Required().Match(httpPathRegexp, `path must start with "/"`),
-		v.Number("code", in.Code).Required(),
+	return v.Validate(
+		v.String("payloadName", in.PayloadName, v.Required),
+		v.String("method", in.Method, v.Required, v.In(HTTPMethodValues()...)),
+		v.String("path", in.Path, v.Required, v.Match(httpPathRegexp, `path must start with "/"`)),
+		v.Number("code", in.Code, v.Required),
 	)
 }
 

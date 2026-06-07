@@ -18,9 +18,9 @@ type PayloadsUpdateInput struct {
 }
 
 func (in PayloadsUpdateInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("name", in.Name).Required(),
-		v.StringSlice("notifyProtocols", in.NotifyProtocols).Each().In(ProtoCategoryValues()...),
+	return v.Validate(
+		v.String("name", in.Name, v.Required),
+		v.Slice("notifyProtocols", in.NotifyProtocols, v.Each(v.In(ProtoCategoryValues()...))),
 	)
 }
 

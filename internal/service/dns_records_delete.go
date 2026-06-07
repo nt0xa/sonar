@@ -16,9 +16,9 @@ type DNSRecordsDeleteInput struct {
 }
 
 func (in DNSRecordsDeleteInput) Validate() v.Problems {
-	return v.Struct(
-		v.String("payloadName", in.PayloadName).Required(),
-		v.Number("index", in.Index).Required(),
+	return v.Validate(
+		v.String("payloadName", in.PayloadName, v.Required),
+		v.Number("index", in.Index, v.Required),
 	)
 }
 
