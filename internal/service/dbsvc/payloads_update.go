@@ -9,7 +9,7 @@ import (
 )
 
 // PayloadsUpdate implements [service.Service].
-func (s *svc) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error) {
+func (s *Service) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error) {
 	if p := in.Validate(); p != nil {
 		return nil, service.Validation(p)
 	}

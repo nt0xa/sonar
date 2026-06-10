@@ -9,7 +9,7 @@ import (
 )
 
 // PayloadsList implements [service.Service].
-func (s *svc) PayloadsList(
+func (s *Service) PayloadsList(
 	ctx context.Context,
 	in service.PayloadsListInput,
 ) (service.PayloadsListOutput, error) {

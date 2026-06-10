@@ -9,7 +9,7 @@ import (
 )
 
 // UsersCreate implements [service.Service].
-func (s *svc) UsersCreate(
+func (s *Service) UsersCreate(
 	ctx context.Context,
 	in service.UsersCreateInput,
 ) (*service.UsersCreateOutput, error) {

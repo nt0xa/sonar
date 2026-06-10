@@ -8,11 +8,11 @@ import (
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-// UsersDelete implements [service.Service].
-func (s *Service) UsersDelete(
+// AuditRecordsGet implements [service.Service].
+func (s *Service) AuditRecordsGet(
 	ctx context.Context,
-	in service.UsersDeleteInput,
-) (*service.UsersDeleteOutput, error) {
+	in service.AuditRecordsGetInput,
+) (*service.AuditRecordsGetOutput, error) {
 	if p := in.Validate(); p != nil {
 		return nil, service.Validation(p)
 	}
@@ -21,17 +21,13 @@ func (s *Service) UsersDelete(
 		return nil, service.Unauthorized()
 	}
 
-	rec, err := s.db.UsersGetByName(ctx, in.Name)
+	rec, err := s.db.AuditRecordsGetByID(ctx, in.ID)
 	if errors.Is(err, database.ErrNoRows) {
-		return nil, service.NotFoundf("user with name %q not found", in.Name)
+		return nil, service.NotFoundf("audit record with id %d not found", in.ID)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.db.UsersDelete(ctx, rec.ID); err != nil {
-		return nil, err
-	}
-
-	return user(*rec), nil
+	return auditRecord(*rec), nil
 }

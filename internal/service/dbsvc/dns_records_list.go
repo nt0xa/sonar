@@ -9,7 +9,7 @@ import (
 )
 
 // DNSRecordsList implements [service.Service].
-func (s *svc) DNSRecordsList(
+func (s *Service) DNSRecordsList(
 	ctx context.Context,
 	in service.DNSRecordsListInput,
 ) (service.DNSRecordsListOutput, error) {

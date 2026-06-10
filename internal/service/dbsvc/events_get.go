@@ -9,7 +9,7 @@ import (
 )
 
 // EventsGet implements [service.Service].
-func (s *svc) EventsGet(
+func (s *Service) EventsGet(
 	ctx context.Context,
 	in service.EventsGetInput,
 ) (*service.EventsGetOutput, error) {

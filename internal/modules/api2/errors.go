@@ -13,7 +13,9 @@ type httpError struct {
 	Problems map[string]string `json:"problems,omitempty"`
 }
 
-func (e httpError) Error() string { return e.Message }
+func (e httpError) Error() string {
+	return e.Message
+}
 
 func (api *API) handleError(w http.ResponseWriter, r *http.Request, err error) {
 	e := api.toHTTPError(r, err)

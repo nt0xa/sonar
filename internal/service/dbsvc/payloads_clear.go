@@ -7,7 +7,7 @@ import (
 )
 
 // PayloadsClear implements [service.Service].
-func (s *svc) PayloadsClear(
+func (s *Service) PayloadsClear(
 	ctx context.Context,
 	in service.PayloadsClearInput,
 ) (service.PayloadsClearOutput, error) {

@@ -10,7 +10,7 @@ import (
 )
 
 // HTTPRoutesUpdate implements [service.Service].
-func (s *svc) HTTPRoutesUpdate(
+func (s *Service) HTTPRoutesUpdate(
 	ctx context.Context,
 	in service.HTTPRoutesUpdateInput,
 ) (*service.HTTPRoutesUpdateOutput, error) {

@@ -10,7 +10,7 @@ import (
 )
 
 // HTTPRoutesCreate implements [service.Service].
-func (s *svc) HTTPRoutesCreate(
+func (s *Service) HTTPRoutesCreate(
 	ctx context.Context,
 	in service.HTTPRoutesCreateInput,
 ) (*service.HTTPRoutesCreateOutput, error) {

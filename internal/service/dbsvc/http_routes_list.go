@@ -9,7 +9,7 @@ import (
 )
 
 // HTTPRoutesList implements [service.Service].
-func (s *svc) HTTPRoutesList(
+func (s *Service) HTTPRoutesList(
 	ctx context.Context,
 	in service.HTTPRoutesListInput,
 ) (service.HTTPRoutesListOutput, error) {

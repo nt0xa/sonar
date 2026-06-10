@@ -9,7 +9,7 @@ import (
 )
 
 // HTTPRoutesClear implements [service.Service].
-func (s *svc) HTTPRoutesClear(
+func (s *Service) HTTPRoutesClear(
 	ctx context.Context,
 	in service.HTTPRoutesClearInput,
 ) (service.HTTPRoutesClearOutput, error) {

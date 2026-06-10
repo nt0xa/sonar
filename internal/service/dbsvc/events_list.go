@@ -10,7 +10,7 @@ import (
 )
 
 // EventsList implements [service.Service].
-func (s *svc) EventsList(
+func (s *Service) EventsList(
 	ctx context.Context,
 	in service.EventsListInput,
 ) (service.EventsListOutput, error) {

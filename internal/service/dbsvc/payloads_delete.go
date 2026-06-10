@@ -9,7 +9,7 @@ import (
 )
 
 // PayloadsDelete implements [service.Service].
-func (s *svc) PayloadsDelete(
+func (s *Service) PayloadsDelete(
 	ctx context.Context,
 	in service.PayloadsDeleteInput,
 ) (*service.PayloadsDeleteOutput, error) {

@@ -9,7 +9,7 @@ import (
 )
 
 // DNSRecordsClear implements [service.Service].
-func (s *svc) DNSRecordsClear(
+func (s *Service) DNSRecordsClear(
 	ctx context.Context,
 	in service.DNSRecordsClearInput,
 ) (service.DNSRecordsClearOutput, error) {

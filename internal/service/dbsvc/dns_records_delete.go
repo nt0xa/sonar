@@ -9,7 +9,7 @@ import (
 )
 
 // DNSRecordsDelete implements [service.Service].
-func (s *svc) DNSRecordsDelete(
+func (s *Service) DNSRecordsDelete(
 	ctx context.Context,
 	in service.DNSRecordsDeleteInput,
 ) (*service.DNSRecordsDeleteOutput, error) {

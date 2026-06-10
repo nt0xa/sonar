@@ -7,7 +7,7 @@ import (
 )
 
 // ProfileGet implements [service.Service].
-func (s *svc) ProfileGet(
+func (s *Service) ProfileGet(
 	ctx context.Context,
 ) (*service.ProfileGetOutput, error) {
 	u := getUser(ctx)

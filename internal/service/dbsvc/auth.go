@@ -9,7 +9,7 @@ import (
 
 // authContext looks up a user with get and, if found, returns a context with
 // that user attached. Any lookup error is reported as [service.Unauthorized].
-func (s *svc) authContext(
+func (s *Service) authContext(
 	ctx context.Context,
 	get func(context.Context) (*database.User, error),
 ) (context.Context, error) {
@@ -22,28 +22,28 @@ func (s *svc) authContext(
 }
 
 // AuthContextByAPIToken implements [service.Service].
-func (s *svc) AuthContextByAPIToken(ctx context.Context, token string) (context.Context, error) {
+func (s *Service) AuthContextByAPIToken(ctx context.Context, token string) (context.Context, error) {
 	return s.authContext(ctx, func(ctx context.Context) (*database.User, error) {
 		return s.db.UsersGetByAPIToken(ctx, token)
 	})
 }
 
 // AuthContextByLarkID implements [service.Service].
-func (s *svc) AuthContextByLarkID(ctx context.Context, id string) (context.Context, error) {
+func (s *Service) AuthContextByLarkID(ctx context.Context, id string) (context.Context, error) {
 	return s.authContext(ctx, func(ctx context.Context) (*database.User, error) {
 		return s.db.UsersGetByLarkID(ctx, id)
 	})
 }
 
 // AuthContextBySlackID implements [service.Service].
-func (s *svc) AuthContextBySlackID(ctx context.Context, id string) (context.Context, error) {
+func (s *Service) AuthContextBySlackID(ctx context.Context, id string) (context.Context, error) {
 	return s.authContext(ctx, func(ctx context.Context) (*database.User, error) {
 		return s.db.UsersGetBySlackID(ctx, id)
 	})
 }
 
 // AuthContextByTelegramID implements [service.Service].
-func (s *svc) AuthContextByTelegramID(ctx context.Context, id int64) (context.Context, error) {
+func (s *Service) AuthContextByTelegramID(ctx context.Context, id int64) (context.Context, error) {
 	return s.authContext(ctx, func(ctx context.Context) (*database.User, error) {
 		return s.db.UsersGetByTelegramID(ctx, id)
 	})

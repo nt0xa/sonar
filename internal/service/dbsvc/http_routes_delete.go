@@ -9,7 +9,7 @@ import (
 )
 
 // HTTPRoutesDelete implements [service.Service].
-func (s *svc) HTTPRoutesDelete(
+func (s *Service) HTTPRoutesDelete(
 	ctx context.Context,
 	in service.HTTPRoutesDeleteInput,
 ) (*service.HTTPRoutesDeleteOutput, error) {

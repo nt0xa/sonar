@@ -10,7 +10,7 @@ import (
 )
 
 // PayloadsCreate implements [service.Service].
-func (s *svc) PayloadsCreate(
+func (s *Service) PayloadsCreate(
 	ctx context.Context,
 	in service.PayloadsCreateInput,
 ) (*service.PayloadsCreateOutput, error) {

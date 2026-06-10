@@ -15,6 +15,7 @@ var (
 	dnsNamePattern  = `[a-z0-9]{1}([a-z0-9-]*[a-z0-9]{1})?`
 	subdomainRegexp = regexp.MustCompile(fmt.Sprintf(`^(\*|%[1]s)(\.%[1]s)*$`, dnsNamePattern))
 	fqdnRegexp      = regexp.MustCompile(fmt.Sprintf(`^(%s\.)+$`, dnsNamePattern))
+	httpPathRegexp  = regexp.MustCompile("^/.*")
 )
 
 // subdomain reports whether s is a valid subdomain (wildcards allowed).
