@@ -17,7 +17,7 @@ func (s *svc) PayloadsDelete(
 		return nil, service.Validation(p)
 	}
 
-	u := s.user(ctx)
+	u := getUser(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()
 	}

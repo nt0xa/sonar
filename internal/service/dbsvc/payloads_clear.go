@@ -11,7 +11,7 @@ func (s *svc) PayloadsClear(
 	ctx context.Context,
 	in service.PayloadsClearInput,
 ) (service.PayloadsClearOutput, error) {
-	u := s.user(ctx)
+	u := getUser(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()
 	}

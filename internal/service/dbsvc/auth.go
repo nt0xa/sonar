@@ -48,7 +48,3 @@ func (s *svc) AuthContextByTelegramID(ctx context.Context, id int64) (context.Co
 		return s.db.UsersGetByTelegramID(ctx, id)
 	})
 }
-
-func (s *svc) user(ctx context.Context) *database.User {
-	return getUser(ctx)
-}

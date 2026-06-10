@@ -14,7 +14,7 @@ func (s *svc) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput
 		return nil, service.Validation(p)
 	}
 
-	u := s.user(ctx)
+	u := getUser(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()
 	}

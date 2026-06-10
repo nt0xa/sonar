@@ -17,7 +17,7 @@ func (s *svc) UsersDelete(
 		return nil, service.Validation(p)
 	}
 
-	if s.user(ctx) == nil {
+	if getUser(ctx) == nil {
 		return nil, service.Unauthorized()
 	}
 

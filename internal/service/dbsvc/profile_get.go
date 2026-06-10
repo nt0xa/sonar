@@ -10,7 +10,7 @@ import (
 func (s *svc) ProfileGet(
 	ctx context.Context,
 ) (*service.ProfileGetOutput, error) {
-	u := s.user(ctx)
+	u := getUser(ctx)
 	if u == nil {
 		return nil, service.Unauthorized()
 	}
