@@ -17,12 +17,12 @@ func (s *Service) DNSRecordsCreate(
 		return nil, service.Validation(p)
 	}
 
-	u := getUser(ctx)
-	if u == nil {
+	id, ok := service.GetUserID(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	p, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.PayloadName)
+	p, err := s.db.PayloadsGetByUserAndName(ctx, id, in.PayloadName)
 	if errors.Is(err, database.ErrNoRows) {
 		return nil, service.NotFoundf("payload with name %q not found", in.PayloadName)
 	}

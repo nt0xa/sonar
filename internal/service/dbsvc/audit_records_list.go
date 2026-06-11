@@ -13,7 +13,7 @@ func (s *Service) AuditRecordsList(
 	ctx context.Context,
 	in service.AuditRecordsListInput,
 ) (service.AuditRecordsListOutput, error) {
-	if getUser(ctx) == nil {
+	if _, ok := service.GetUserID(ctx); !ok {
 		return nil, service.Unauthorized()
 	}
 

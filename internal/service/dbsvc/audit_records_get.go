@@ -17,7 +17,7 @@ func (s *Service) AuditRecordsGet(
 		return nil, service.Validation(p)
 	}
 
-	if getUser(ctx) == nil {
+	if _, ok := service.GetUserID(ctx); !ok {
 		return nil, service.Unauthorized()
 	}
 

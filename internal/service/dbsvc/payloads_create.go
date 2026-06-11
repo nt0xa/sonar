@@ -18,12 +18,12 @@ func (s *Service) PayloadsCreate(
 		return nil, service.Validation(p)
 	}
 
-	u := getUser(ctx)
-	if u == nil {
+	id, ok := service.GetUserID(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	_, err := s.db.PayloadsGetByUserAndName(ctx, u.ID, in.Name)
+	_, err := s.db.PayloadsGetByUserAndName(ctx, id, in.Name)
 	if err != nil && !errors.Is(err, database.ErrNoRows) {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *Service) PayloadsCreate(
 	}
 
 	p, err := s.db.PayloadsCreate(ctx, database.PayloadsCreateParams{
-		UserID:          u.ID,
+		UserID:          id,
 		Subdomain:       subdomain,
 		Name:            in.Name,
 		NotifyProtocols: notifyProtocols,

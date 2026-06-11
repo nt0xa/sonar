@@ -17,8 +17,8 @@ func (s *Service) UsersCreate(
 		return nil, service.Validation(p)
 	}
 
-	u := getUser(ctx)
-	if u == nil {
+	id, ok := service.GetUserID(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
 	}
 
@@ -33,7 +33,7 @@ func (s *Service) UsersCreate(
 	created, err := s.db.UsersCreate(ctx, database.UsersCreateParams{
 		Name:       in.Name,
 		IsAdmin:    in.IsAdmin,
-		CreatedBy:  &u.ID,
+		CreatedBy:  &id,
 		APIToken:   in.APIToken,
 		TelegramID: in.TelegramID,
 		LarkID:     in.LarkID,

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -82,7 +83,7 @@ type AuditRecord struct {
 	ActorID      *int64            `json:"actorId,omitempty"`
 	ActorName    string            `json:"actorName,omitempty"`
 	ActorMeta    map[string]any    `json:"actorMetadata"`
-	Resource     map[string]any    `json:"resource"`
+	Resource     json.RawMessage   `json:"resource"`
 }
 
 type Event struct {

@@ -10,9 +10,14 @@ import (
 func (s *Service) ProfileGet(
 	ctx context.Context,
 ) (*service.ProfileGetOutput, error) {
-	u := getUser(ctx)
-	if u == nil {
+	id, ok := service.GetUserID(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
+	}
+
+	u, err := s.db.UsersGetByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
 	return user(*u), nil

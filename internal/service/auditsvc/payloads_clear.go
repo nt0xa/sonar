@@ -1,8 +1,9 @@
-package dbsvc
+package auditsvc
 
 import (
 	"context"
 
+	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
@@ -11,20 +12,18 @@ func (s *Service) PayloadsClear(
 	ctx context.Context,
 	in service.PayloadsClearInput,
 ) (service.PayloadsClearOutput, error) {
-	id, ok := service.GetUserID(ctx)
-	if !ok {
-		return nil, service.Unauthorized()
-	}
-
-	payloads, err := s.db.PayloadsDeleteByNamePart(ctx, id, in.Name)
+	out, err := s.Service.PayloadsClear(ctx, in)
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 
-	out := make([]service.Payload, len(payloads))
-
-	for i, p := range payloads {
-		out[i] = *payload(*p)
+	for _, p := range out {
+		s.writeAudit(
+			ctx,
+			database.AuditRecordActionTypeDelete,
+			database.AuditRecordResourceTypePayload,
+			p,
+		)
 	}
 
 	return out, nil
