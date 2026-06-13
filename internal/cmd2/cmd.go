@@ -22,29 +22,53 @@ func New(svc service.Service) *Command {
 }
 
 // Root assembles the command tree and returns the cmdx node. Callers may grab
-// .Cobra() to attach persistent flags / pre-run hooks before executing.
+// .Cobra() to attach persistent flags / pre-run hooks before executing. The whole
+// tree lives here; each leaf references a build method (see the per-resource files)
+// that wires its flags and returns its run closure.
 func (c *Command) Root() *cmdx.Command {
 	// authWrapper is the base wrapper: every command requires authentication and
 	// gets the resolved profile stashed in context (see auth.go).
 	root := cmdx.New("sonar", "CLI to control sonar server", c.authWrapper)
 
-	// Payloads live at the top level ("main" group).
-	c.addPayloads(root)
+	// Payloads + profile live at the top level ("main" group).
+	root.Cmd("new", "Create a new payload", c.payloadsCreate)
+	root.Cmd("list", "List payloads", c.payloadsList)
+	root.Cmd("mod", "Modify existing payload", c.payloadsUpdate)
+	root.Cmd("del", "Delete payload", c.payloadsDelete)
+	root.Cmd("clr", "Delete multiple payloads", c.payloadsClear)
+	root.Cmd("profile", "Get current user info", c.profileGet)
 
-	root.Group("dns", "Manage DNS records", c.addDNS)
-	root.Group("events", "View events", c.addEvents)
-	root.Group("http", "Manage HTTP routes", c.addHTTP)
+	root.Group("dns", "Manage DNS records", func(g *cmdx.Command) {
+		g.Cmd("new", "Create new DNS records", c.dnsRecordsCreate)
+		g.Cmd("del", "Delete DNS record", c.dnsRecordsDelete)
+		g.Cmd("list", "List DNS records", c.dnsRecordsList)
+		g.Cmd("clr", "Delete multiple DNS records", c.dnsRecordsClear)
+	})
 
-	c.addProfile(root)
+	root.Group("events", "View events", func(g *cmdx.Command) {
+		g.Cmd("list", "List payload events", c.eventsList)
+		g.Cmd("get", "Get payload event by INDEX", c.eventsGet)
+	})
+
+	root.Group("http", "Manage HTTP routes", func(g *cmdx.Command) {
+		g.Cmd("new", "Create new HTTP route", c.httpRoutesCreate)
+		g.Cmd("mod", "Update HTTP route", c.httpRoutesUpdate)
+		g.Cmd("del", "Delete HTTP route", c.httpRoutesDelete)
+		g.Cmd("list", "List HTTP routes", c.httpRoutesList)
+		g.Cmd("clr", "Delete multiple HTTP routes", c.httpRoutesClear)
+	})
 
 	// Admin-only groups stack adminWrapper on top of authWrapper.
 	root.Group("users", "Manage users", func(g *cmdx.Command) {
 		g.Wrap(c.adminWrapper)
-		c.addUsers(g)
+		g.Cmd("new", "Create new user", c.usersCreate)
+		g.Cmd("del", "Delete user", c.usersDelete)
 	})
+
 	root.Group("audit", "View audit records", func(g *cmdx.Command) {
 		g.Wrap(c.adminWrapper)
-		c.addAudit(g)
+		g.Cmd("list", "List audit records", c.auditRecordsList)
+		g.Cmd("get", "Get audit record by ID", c.auditRecordsGet)
 	})
 
 	return root

@@ -10,162 +10,120 @@ import (
 	"github.com/nt0xa/sonar/pkg/cmdx"
 )
 
-func (c *Command) addDNS(g *cmdx.Command) {
-	create := &dnsRecordsCreate{c: c}
-	g.Add("new", "Create new DNS records", create.run, create.flags)
+func (c *Command) dnsRecordsCreate(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.DNSRecordsCreateInput
 
-	del := &dnsRecordsDelete{c: c}
-	g.Add("del", "Delete DNS record", del.run, del.flags)
-
-	list := &dnsRecordsList{c: c}
-	g.Add("list", "List DNS records", list.run, list.flags)
-
-	clear := &dnsRecordsClear{c: c}
-	g.Add("clr", "Delete multiple DNS records", clear.run, clear.flags)
-}
-
-//
-// Create
-//
-
-type dnsRecordsCreate struct {
-	c  *Command
-	in service.DNSRecordsCreateInput
-}
-
-func (x *dnsRecordsCreate) flags(cmd *cobra.Command) {
 	cmd.Use = "new VALUES..."
 	cmd.Args = cobra.MinimumNArgs(1)
 
-	x.in.Type = service.DNSRecordTypeA
-	x.in.Strategy = service.DNSRecordStrategyAll
+	in.Type = service.DNSRecordTypeA
+	in.Strategy = service.DNSRecordStrategyAll
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().StringVarP(&x.in.Name, "name", "n", "", "Subdomain")
-	cmd.Flags().IntVarP(&x.in.TTL, "ttl", "l", 60, "Record TTL (in seconds)")
-	cmd.Flags().VarP(&x.in.Type, "type", "t",
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.Name, "name", "n", "", "Subdomain")
+	cmd.Flags().IntVarP(&in.TTL, "ttl", "l", 60, "Record TTL (in seconds)")
+	cmd.Flags().VarP(&in.Type, "type", "t",
 		fmt.Sprintf("Record type (one of %s)", strings.Join(service.DNSRecordTypeNames(), ", ")))
-	cmd.Flags().VarP(&x.in.Strategy, "strategy", "s",
+	cmd.Flags().VarP(&in.Strategy, "strategy", "s",
 		fmt.Sprintf("Strategy for multiple records (one of %s)", strings.Join(service.DNSRecordStrategyNames(), ", ")))
 
 	_ = cmd.MarkFlagRequired("name")
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("type", completeOne(service.DNSRecordTypeNames()))
 	_ = cmd.RegisterFlagCompletionFunc("strategy", completeOne(service.DNSRecordStrategyNames()))
-}
 
-func (x *dnsRecordsCreate) run(cmd *cobra.Command, args []string) error {
-	x.in.Values = args
+	return func(cmd *cobra.Command, args []string) error {
+		in.Values = args
 
-	if err := validate(x.in); err != nil {
-		return err
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.DNSRecordsCreate(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.DNSRecordsCreate(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }
 
-//
-// Delete
-//
+func (c *Command) dnsRecordsDelete(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.DNSRecordsDeleteInput
 
-type dnsRecordsDelete struct {
-	c  *Command
-	in service.DNSRecordsDeleteInput
-}
-
-func (x *dnsRecordsDelete) flags(cmd *cobra.Command) {
 	cmd.Use = "del INDEX"
 	cmd.Args = cobra.ExactArgs(1)
-	cmd.ValidArgsFunction = x.c.completeDNSRecord
+	cmd.ValidArgsFunction = c.completeDNSRecord
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
+
+	return func(cmd *cobra.Command, args []string) error {
+		i, err := parseIndex(args[0])
+		if err != nil {
+			return err
+		}
+		in.Index = i
+
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.DNSRecordsDelete(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
+	}
 }
 
-func (x *dnsRecordsDelete) run(cmd *cobra.Command, args []string) error {
-	i, err := parseIndex(args[0])
-	if err != nil {
-		return err
-	}
-	x.in.Index = i
+func (c *Command) dnsRecordsList(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.DNSRecordsListInput
 
-	if err := validate(x.in); err != nil {
-		return err
-	}
-
-	out, err := x.c.svc.DNSRecordsDelete(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
-}
-
-//
-// List
-//
-
-type dnsRecordsList struct {
-	c  *Command
-	in service.DNSRecordsListInput
-}
-
-func (x *dnsRecordsList) flags(cmd *cobra.Command) {
 	cmd.Use = "list"
 	cmd.Args = cobra.NoArgs
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
-}
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
-func (x *dnsRecordsList) run(cmd *cobra.Command, args []string) error {
-	if err := validate(x.in); err != nil {
-		return err
+	return func(cmd *cobra.Command, args []string) error {
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.DNSRecordsList(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.DNSRecordsList(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }
 
-//
-// Clear
-//
+func (c *Command) dnsRecordsClear(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.DNSRecordsClearInput
 
-type dnsRecordsClear struct {
-	c  *Command
-	in service.DNSRecordsClearInput
-}
-
-func (x *dnsRecordsClear) flags(cmd *cobra.Command) {
 	cmd.Use = "clr"
 	cmd.Args = cobra.NoArgs
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().StringVarP(&x.in.Name, "name", "n", "", "Subdomain")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.Name, "name", "n", "", "Subdomain")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
-}
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
-func (x *dnsRecordsClear) run(cmd *cobra.Command, args []string) error {
-	if err := validate(x.in); err != nil {
-		return err
+	return func(cmd *cobra.Command, args []string) error {
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.DNSRecordsClear(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.DNSRecordsClear(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }

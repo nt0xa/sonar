@@ -11,260 +11,212 @@ import (
 	"github.com/nt0xa/sonar/pkg/cmdx"
 )
 
-func (c *Command) addHTTP(g *cmdx.Command) {
-	create := &httpRoutesCreate{c: c}
-	g.Add("new", "Create new HTTP route", create.run, create.flags)
+func (c *Command) httpRoutesCreate(cmd *cobra.Command) cmdx.RunFunc {
+	var (
+		in      service.HTTPRoutesCreateInput
+		headers []string
+		file    bool
+	)
 
-	update := &httpRoutesUpdate{c: c}
-	g.Add("mod", "Update HTTP route", update.run, update.flags)
-
-	del := &httpRoutesDelete{c: c}
-	g.Add("del", "Delete HTTP route", del.run, del.flags)
-
-	list := &httpRoutesList{c: c}
-	g.Add("list", "List HTTP routes", list.run, list.flags)
-
-	clear := &httpRoutesClear{c: c}
-	g.Add("clr", "Delete multiple HTTP routes", clear.run, clear.flags)
-}
-
-//
-// Create
-//
-
-type httpRoutesCreate struct {
-	c       *Command
-	in      service.HTTPRoutesCreateInput
-	headers []string
-	file    bool
-}
-
-func (x *httpRoutesCreate) flags(cmd *cobra.Command) {
 	cmd.Use = "new BODY"
 	cmd.Args = cobra.ExactArgs(1)
 
-	x.in.Method = service.HTTPMethodGET
+	in.Method = service.HTTPMethodGET
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().VarP(&x.in.Method, "method", "m",
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().VarP(&in.Method, "method", "m",
 		fmt.Sprintf("Request method (one of %s)", strings.Join(service.HTTPMethodNames(), ", ")))
-	cmd.Flags().StringVarP(&x.in.Path, "path", "P", "/", "Request path")
-	cmd.Flags().StringArrayVarP(&x.headers, "header", "H", []string{}, "Response header")
-	cmd.Flags().IntVarP(&x.in.Code, "code", "c", 200, "Response status code")
-	cmd.Flags().BoolVarP(&x.in.IsDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
-	cmd.Flags().BoolVarP(&x.file, "file", "f", false, "Treat BODY as path to file")
+	cmd.Flags().StringVarP(&in.Path, "path", "P", "/", "Request path")
+	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
+	cmd.Flags().IntVarP(&in.Code, "code", "c", 200, "Response status code")
+	cmd.Flags().BoolVarP(&in.IsDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
+	cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))
+
+	return func(cmd *cobra.Command, args []string) error {
+		hdrs, err := parseHeaders(headers)
+		if err != nil {
+			return err
+		}
+		in.Headers = hdrs
+
+		body, err := readBody(args[0], file)
+		if err != nil {
+			return err
+		}
+		in.Body = base64.StdEncoding.EncodeToString(body)
+
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.HTTPRoutesCreate(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
+	}
 }
 
-func (x *httpRoutesCreate) run(cmd *cobra.Command, args []string) error {
-	headers, err := parseHeaders(x.headers)
-	if err != nil {
-		return err
-	}
-	x.in.Headers = headers
+func (c *Command) httpRoutesUpdate(cmd *cobra.Command) cmdx.RunFunc {
+	var (
+		in service.HTTPRoutesUpdateInput
 
-	body, err := readBody(args[0], x.file)
-	if err != nil {
-		return err
-	}
-	x.in.Body = base64.StdEncoding.EncodeToString(body)
+		method    service.HTTPMethod
+		path      string
+		code      int
+		isDynamic bool
+		body      string
+		headers   []string
+		file      bool
+	)
 
-	if err := validate(x.in); err != nil {
-		return err
-	}
-
-	out, err := x.c.svc.HTTPRoutesCreate(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
-}
-
-//
-// Update
-//
-
-type httpRoutesUpdate struct {
-	c  *Command
-	in service.HTTPRoutesUpdateInput
-
-	method    service.HTTPMethod
-	path      string
-	code      int
-	isDynamic bool
-	body      string
-	headers   []string
-	file      bool
-}
-
-func (x *httpRoutesUpdate) flags(cmd *cobra.Command) {
 	cmd.Use = "mod INDEX"
 	cmd.Args = cobra.ExactArgs(1)
-	cmd.ValidArgsFunction = x.c.completeHTTPRoute
+	cmd.ValidArgsFunction = c.completeHTTPRoute
 
-	x.method = service.HTTPMethodGET
+	method = service.HTTPMethodGET
 
-	cmd.Flags().StringVarP(&x.in.Payload, "payload", "p", "", "Payload name")
-	cmd.Flags().VarP(&x.method, "method", "m",
+	cmd.Flags().StringVarP(&in.Payload, "payload", "p", "", "Payload name")
+	cmd.Flags().VarP(&method, "method", "m",
 		fmt.Sprintf("Request method (one of %s)", strings.Join(service.HTTPMethodNames(), ", ")))
-	cmd.Flags().StringVarP(&x.path, "path", "P", "/", "Request path")
-	cmd.Flags().StringArrayVarP(&x.headers, "header", "H", []string{}, "Response header")
-	cmd.Flags().IntVarP(&x.code, "code", "c", 200, "Response status code")
-	cmd.Flags().BoolVarP(&x.isDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
-	cmd.Flags().StringVarP(&x.body, "body", "b", "", "Response body")
-	cmd.Flags().BoolVarP(&x.file, "file", "f", false, "Treat BODY as path to file")
+	cmd.Flags().StringVarP(&path, "path", "P", "/", "Request path")
+	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
+	cmd.Flags().IntVarP(&code, "code", "c", 200, "Response status code")
+	cmd.Flags().BoolVarP(&isDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
+	cmd.Flags().StringVarP(&body, "body", "b", "", "Response body")
+	cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))
-}
 
-func (x *httpRoutesUpdate) run(cmd *cobra.Command, args []string) error {
-	i, err := parseIndex(args[0])
-	if err != nil {
-		return err
-	}
-	x.in.Index = i
-
-	if cmd.Flags().Changed("method") {
-		x.in.Method = &x.method
-	}
-	if cmd.Flags().Changed("path") {
-		x.in.Path = &x.path
-	}
-	if cmd.Flags().Changed("header") {
-		headers, err := parseHeaders(x.headers)
+	return func(cmd *cobra.Command, args []string) error {
+		i, err := parseIndex(args[0])
 		if err != nil {
 			return err
 		}
-		x.in.Headers = headers
-	}
-	if cmd.Flags().Changed("code") {
-		x.in.Code = &x.code
-	}
-	if cmd.Flags().Changed("dynamic") {
-		x.in.IsDynamic = &x.isDynamic
-	}
-	if cmd.Flags().Changed("body") {
-		body, err := readBody(x.body, x.file)
+		in.Index = i
+
+		if cmd.Flags().Changed("method") {
+			in.Method = &method
+		}
+		if cmd.Flags().Changed("path") {
+			in.Path = &path
+		}
+		if cmd.Flags().Changed("header") {
+			hdrs, err := parseHeaders(headers)
+			if err != nil {
+				return err
+			}
+			in.Headers = hdrs
+		}
+		if cmd.Flags().Changed("code") {
+			in.Code = &code
+		}
+		if cmd.Flags().Changed("dynamic") {
+			in.IsDynamic = &isDynamic
+		}
+		if cmd.Flags().Changed("body") {
+			b, err := readBody(body, file)
+			if err != nil {
+				return err
+			}
+			s := base64.StdEncoding.EncodeToString(b)
+			in.Body = &s
+		}
+
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.HTTPRoutesUpdate(cmd.Context(), in)
 		if err != nil {
 			return err
 		}
-		s := base64.StdEncoding.EncodeToString(body)
-		x.in.Body = &s
-	}
 
-	if err := validate(x.in); err != nil {
-		return err
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.HTTPRoutesUpdate(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }
 
-//
-// Delete
-//
+func (c *Command) httpRoutesDelete(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.HTTPRoutesDeleteInput
 
-type httpRoutesDelete struct {
-	c  *Command
-	in service.HTTPRoutesDeleteInput
-}
-
-func (x *httpRoutesDelete) flags(cmd *cobra.Command) {
 	cmd.Use = "del INDEX"
 	cmd.Args = cobra.ExactArgs(1)
-	cmd.ValidArgsFunction = x.c.completeHTTPRoute
+	cmd.ValidArgsFunction = c.completeHTTPRoute
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
+
+	return func(cmd *cobra.Command, args []string) error {
+		i, err := parseIndex(args[0])
+		if err != nil {
+			return err
+		}
+		in.Index = i
+
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.HTTPRoutesDelete(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
+	}
 }
 
-func (x *httpRoutesDelete) run(cmd *cobra.Command, args []string) error {
-	i, err := parseIndex(args[0])
-	if err != nil {
-		return err
-	}
-	x.in.Index = i
+func (c *Command) httpRoutesList(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.HTTPRoutesListInput
 
-	if err := validate(x.in); err != nil {
-		return err
-	}
-
-	out, err := x.c.svc.HTTPRoutesDelete(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
-}
-
-//
-// List
-//
-
-type httpRoutesList struct {
-	c  *Command
-	in service.HTTPRoutesListInput
-}
-
-func (x *httpRoutesList) flags(cmd *cobra.Command) {
 	cmd.Use = "list"
 	cmd.Args = cobra.NoArgs
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
-}
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
-func (x *httpRoutesList) run(cmd *cobra.Command, args []string) error {
-	if err := validate(x.in); err != nil {
-		return err
+	return func(cmd *cobra.Command, args []string) error {
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.HTTPRoutesList(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.HTTPRoutesList(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }
 
-//
-// Clear
-//
+func (c *Command) httpRoutesClear(cmd *cobra.Command) cmdx.RunFunc {
+	var in service.HTTPRoutesClearInput
 
-type httpRoutesClear struct {
-	c  *Command
-	in service.HTTPRoutesClearInput
-}
-
-func (x *httpRoutesClear) flags(cmd *cobra.Command) {
 	cmd.Use = "clr"
 	cmd.Args = cobra.NoArgs
 
-	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().StringVarP(&x.in.Path, "path", "P", "", "Path")
+	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
+	cmd.Flags().StringVarP(&in.Path, "path", "P", "", "Path")
 
-	_ = cmd.RegisterFlagCompletionFunc("payload", x.c.completePayloadName)
-}
+	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
-func (x *httpRoutesClear) run(cmd *cobra.Command, args []string) error {
-	if err := validate(x.in); err != nil {
-		return err
+	return func(cmd *cobra.Command, args []string) error {
+		if err := validate(in); err != nil {
+			return err
+		}
+
+		out, err := c.svc.HTTPRoutesClear(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
 	}
-
-	out, err := x.c.svc.HTTPRoutesClear(cmd.Context(), x.in)
-	if err != nil {
-		return err
-	}
-
-	return setResult(cmd.Context(), out)
 }

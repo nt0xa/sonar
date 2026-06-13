@@ -60,6 +60,19 @@ func (c *Command) AddCommand(sub *cobra.Command) {
 	c.cmd.AddCommand(sub)
 }
 
+// Build configures a leaf command (flags, args, completions) and returns its
+// RunFunc, which may close over flag variables declared inside the builder.
+type Build func(cmd *cobra.Command) RunFunc
+
+// Cmd registers a leaf command whose flag wiring and run logic are defined
+// together in build: declare and bind flag vars, then return the closure that
+// uses them. Wrappers and group tagging are applied via AddCommand.
+func (c *Command) Cmd(name, short string, build Build) {
+	sub := &cobra.Command{Use: name, Short: short}
+	sub.RunE = build(sub)
+	c.AddCommand(sub)
+}
+
 // Add is sugar: build a leaf from name/short/run (+opts for flags/args) and
 // register it through AddCommand.
 func (c *Command) Add(name, short string, run RunFunc, opts ...func(*cobra.Command)) {
