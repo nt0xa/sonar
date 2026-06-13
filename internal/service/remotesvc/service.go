@@ -39,8 +39,8 @@ func New(baseURL, token string, client *http.Client) *Service {
 var _ service.Service = (*Service)(nil)
 
 // do sends an HTTP request to path (which must already include any query
-// string), JSON-encoding body when it is non-nil, and decodes a 200 response
-// into out (when out is non-nil). Any non-200 response is converted into a
+// string), JSON-encoding body when it is non-nil, and decodes a 2xx response
+// into out (when out is non-nil). Any non-2xx response is converted into a
 // [service.Error].
 func (s *Service) do(ctx context.Context, method, path string, body, out any) error {
 	var rdr io.Reader
@@ -68,7 +68,7 @@ func (s *Service) do(ctx context.Context, method, path string, body, out any) er
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return decodeError(resp)
 	}
 

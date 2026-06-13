@@ -25,5 +25,5 @@ func (api *API) PayloadsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.encodeJSON(w, http.StatusOK, p)
+	api.encodeJSON(w, http.StatusCreated, p)
 }

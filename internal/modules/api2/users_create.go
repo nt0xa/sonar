@@ -28,5 +28,5 @@ func (api *API) UsersCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.encodeJSON(w, http.StatusOK, u)
+	api.encodeJSON(w, http.StatusCreated, u)
 }

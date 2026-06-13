@@ -28,5 +28,5 @@ func (api *API) DNSRecordsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.encodeJSON(w, http.StatusOK, rec)
+	api.encodeJSON(w, http.StatusCreated, rec)
 }

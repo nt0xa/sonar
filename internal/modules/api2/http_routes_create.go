@@ -29,5 +29,5 @@ func (api *API) HTTPRoutesCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.encodeJSON(w, http.StatusOK, route)
+	api.encodeJSON(w, http.StatusCreated, route)
 }
