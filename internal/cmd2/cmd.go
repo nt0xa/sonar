@@ -1,10 +1,10 @@
-// Package cmd3 builds the sonar client CLI command tree on top of
+// Package cmd2 builds the sonar client CLI command tree on top of
 // [service.Service] using spf13/cobra directly — no cmdx. Per-command flag /
 // argument / validation wiring lives in this package next to the commands
 // themselves via the closure pattern: a build func that configures the command
 // and returns its run. Authorization (incl. admin-only commands) is enforced by
 // the service layer, not here.
-package cmd3
+package cmd2
 
 import (
 	"bytes"

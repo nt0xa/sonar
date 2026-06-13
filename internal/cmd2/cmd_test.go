@@ -1,4 +1,4 @@
-package cmd3_test
+package cmd2_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nt0xa/sonar/internal/cmd3"
+	"github.com/nt0xa/sonar/internal/cmd2"
 	"github.com/nt0xa/sonar/internal/service"
 	service_mock "github.com/nt0xa/sonar/internal/service/mock"
 )
@@ -186,7 +186,7 @@ func TestCmd(t *testing.T) {
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			res, err := cmd3.New(svc).Exec(context.Background(), args)
+			res, err := cmd2.New(svc).Exec(context.Background(), args)
 			require.NoError(t, err)
 			require.Equal(t, tt.result, res)
 
@@ -200,7 +200,7 @@ func TestProfileGet(t *testing.T) {
 	user := &service.User{Name: "me", IsAdmin: true}
 	svc.On("ProfileGet", mock.Anything).Return(user, nil)
 
-	res, err := cmd3.New(svc).Exec(context.Background(), []string{"profile"})
+	res, err := cmd2.New(svc).Exec(context.Background(), []string{"profile"})
 	require.NoError(t, err)
 	require.Equal(t, user, res)
 }
@@ -211,7 +211,7 @@ func TestAllowFileAccess(t *testing.T) {
 	t.Run("disabled", func(t *testing.T) {
 		svc := &service_mock.ServerService{}
 
-		_, err := cmd3.New(svc).Exec(context.Background(),
+		_, err := cmd2.New(svc).Exec(context.Background(),
 			[]string{"http", "new", "body", "-p", "test", "-f"})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "flag")
@@ -231,7 +231,7 @@ func TestAllowFileAccess(t *testing.T) {
 			})).
 			Return(&service.HTTPRoute{Index: 1}, nil)
 
-		_, err := cmd3.New(svc, cmd3.AllowFileAccess(true)).Exec(context.Background(),
+		_, err := cmd2.New(svc, cmd2.AllowFileAccess(true)).Exec(context.Background(),
 			[]string{"http", "new", f, "-p", "test", "-f"})
 		require.NoError(t, err)
 
@@ -246,7 +246,7 @@ func TestParseAndExec(t *testing.T) {
 		Return(out, nil)
 
 	// Leading "/" is stripped, as messengers send.
-	res, err := cmd3.New(svc).ParseAndExec(context.Background(), "/dns list -p test")
+	res, err := cmd2.New(svc).ParseAndExec(context.Background(), "/dns list -p test")
 	require.NoError(t, err)
 	require.Equal(t, out, res)
 
@@ -257,7 +257,7 @@ func TestHelpReturnsText(t *testing.T) {
 	svc := &service_mock.ServerService{}
 
 	// --help produces no leaf result, so Exec returns the captured cobra text.
-	res, err := cmd3.New(svc).Exec(context.Background(), []string{"--help"})
+	res, err := cmd2.New(svc).Exec(context.Background(), []string{"--help"})
 	require.NoError(t, err)
 
 	s, ok := res.(string)
@@ -268,7 +268,7 @@ func TestHelpReturnsText(t *testing.T) {
 func TestDefaultMessengersPreExec(t *testing.T) {
 	svc := &service_mock.ServerService{}
 
-	res, err := cmd3.New(svc, cmd3.PreExec(cmd3.DefaultMessengersPreExec)).
+	res, err := cmd2.New(svc, cmd2.PreExec(cmd2.DefaultMessengersPreExec)).
 		Exec(context.Background(), []string{"--help"})
 	require.NoError(t, err)
 
