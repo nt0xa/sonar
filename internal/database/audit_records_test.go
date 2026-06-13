@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -26,11 +27,7 @@ func TestAuditRecordsCreate_Success(t *testing.T) {
 		ActorMetadata: database.AuditActorMetadata{
 			"lark_id": "8b2494d",
 		},
-		Resource: database.AuditResource{
-			"name":  "a",
-			"type":  "A",
-			"value": "127.0.0.1",
-		},
+		Resource: database.AuditResource(`{"name":"a","type":"A","value":"127.0.0.1"}`),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, rec)
@@ -44,7 +41,10 @@ func TestAuditRecordsCreate_Success(t *testing.T) {
 	assert.EqualValues(t, 2, *rec.ActorID)
 	assert.Equal(t, "user2", rec.ActorName)
 	assert.EqualValues(t, "8b2494d", rec.ActorMetadata["lark_id"])
-	assert.EqualValues(t, "a", rec.Resource["name"])
+
+	var resource map[string]any
+	require.NoError(t, json.Unmarshal(rec.Resource, &resource))
+	assert.EqualValues(t, "a", resource["name"])
 }
 
 func TestAuditRecordsGetByID_Success(t *testing.T) {
@@ -61,7 +61,9 @@ func TestAuditRecordsGetByID_Success(t *testing.T) {
 	require.NotNil(t, rec.ActorID)
 	assert.EqualValues(t, 1, *rec.ActorID)
 	assert.Equal(t, "user1", rec.ActorName)
-	assert.EqualValues(t, "payload1", rec.Resource["name"])
+	var resource map[string]any
+	require.NoError(t, json.Unmarshal(rec.Resource, &resource))
+	assert.EqualValues(t, "payload1", resource["name"])
 }
 
 func TestAuditRecordsGetByID_NotExist(t *testing.T) {

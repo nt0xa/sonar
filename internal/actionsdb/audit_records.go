@@ -2,6 +2,7 @@ package actionsdb
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
@@ -9,6 +10,11 @@ import (
 )
 
 func AuditRecord(m database.AuditRecord) actions.AuditRecord {
+	var resource map[string]any
+	if len(m.Resource) > 0 {
+		_ = json.Unmarshal(m.Resource, &resource)
+	}
+
 	return actions.AuditRecord{
 		ID:           m.ID,
 		UUID:         m.UUID,
@@ -18,7 +24,7 @@ func AuditRecord(m database.AuditRecord) actions.AuditRecord {
 		ActorID:      m.ActorID,
 		ActorName:    m.ActorName,
 		ActorMeta:    m.ActorMetadata,
-		Resource:     m.Resource,
+		Resource:     resource,
 		CreatedAt:    m.CreatedAt,
 	}
 }

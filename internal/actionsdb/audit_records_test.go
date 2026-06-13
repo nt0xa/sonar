@@ -1,6 +1,7 @@
 package actionsdb_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,9 @@ func TestAuditWrite_OnPayloadCreate(t *testing.T) {
 	require.NotEmpty(t, recs)
 	assert.Equal(t, "payload", string(recs[0].ResourceType))
 	assert.Equal(t, "create", string(recs[0].Action))
-	assert.Equal(t, "audit-write-test", recs[0].Resource["name"])
+	var resource map[string]any
+	require.NoError(t, json.Unmarshal(recs[0].Resource, &resource))
+	assert.Equal(t, "audit-write-test", resource["name"])
 	require.NotNil(t, recs[0].ActorID)
 	assert.EqualValues(t, 1, *recs[0].ActorID)
 }

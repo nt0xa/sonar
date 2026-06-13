@@ -2,11 +2,11 @@ package actionsdb
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 
 	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/utils"
 )
 
 func (act *dbactions) auditCreate(ctx context.Context, rec any) {
@@ -65,7 +65,11 @@ func (act *dbactions) writeAudit(ctx context.Context, action database.AuditRecor
 		}
 	}
 
-	resource := utils.StructToMap(rec)
+	resource, err := json.Marshal(rec)
+	if err != nil {
+		act.log.Warn("failed to marshal audit resource", "err", err, "type", reflect.TypeOf(rec))
+		return
+	}
 
 	_, err = act.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
 		Action:        action,
@@ -74,7 +78,7 @@ func (act *dbactions) writeAudit(ctx context.Context, action database.AuditRecor
 		ActorID:       &u.ID,
 		ActorName:     u.Name,
 		ActorMetadata: actorMeta,
-		Resource:      resource,
+		Resource:      database.AuditResource(resource),
 	})
 	if err != nil {
 		act.log.Warn("failed to write audit record", "err", err, "resourceType", resourceType, "action", action)
