@@ -5,20 +5,35 @@
 package cmd2
 
 import (
+	"bytes"
 	"context"
+	"strings"
+
+	"github.com/google/shlex"
+	"github.com/spf13/cobra"
 
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/pkg/cmdx"
 )
 
+func init() {
+	// Keep commands in registration order in help output.
+	cobra.EnableCommandSorting = false
+}
+
 // Command builds the client command tree against a service.Service.
 type Command struct {
-	svc service.Service
+	svc  service.Service
+	opts options
 }
 
 // New returns a Command backed by svc.
-func New(svc service.Service) *Command {
-	return &Command{svc: svc}
+func New(svc service.Service, opts ...Option) *Command {
+	o := defaultOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return &Command{svc: svc, opts: o}
 }
 
 // Root assembles the command tree and returns the cmdx node. Callers may grab
@@ -74,13 +89,23 @@ func (c *Command) Root() *cmdx.Command {
 	return root
 }
 
-// Exec builds the tree, installs a result sink in ctx, runs args, and returns the
-// single result produced by the invoked leaf (nil for help/completion).
+// Exec builds the tree, applies the PreExec hook, installs a result sink in ctx, and runs
+// args. The result is either the typed service output from the invoked leaf or, when no leaf
+// produced data (help/usage/completion), the raw text cobra wrote. Execution errors are
+// returned separately.
 func (c *Command) Exec(ctx context.Context, args []string) (any, error) {
 	sink := &resultSink{}
 	ctx = withSink(ctx, sink)
 
 	root := c.Root().Cobra()
+	if c.opts.preExec != nil {
+		c.opts.preExec(root)
+	}
+
+	// Capture cobra's stdout/stderr (help/usage/completion text) into one buffer.
+	var buf bytes.Buffer
+	root.SetOut(&buf)
+	root.SetErr(&buf)
 	root.SetArgs(args)
 
 	// Errors are returned from Exec, not printed by cobra.
@@ -91,5 +116,15 @@ func (c *Command) Exec(ctx context.Context, args []string) (any, error) {
 		return nil, err
 	}
 
-	return sink.out, nil
+	if sink.out != nil {
+		return sink.out, nil
+	}
+
+	return buf.String(), nil
+}
+
+// ParseAndExec splits s into args (stripping a leading "/", as messengers send) and runs it.
+func (c *Command) ParseAndExec(ctx context.Context, s string) (any, error) {
+	args, _ := shlex.Split(strings.TrimLeft(s, "/"))
+	return c.Exec(ctx, args)
 }

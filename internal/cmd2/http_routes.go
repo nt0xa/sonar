@@ -30,7 +30,9 @@ func (c *Command) httpRoutesCreate(cmd *cobra.Command) cmdx.RunFunc {
 	cmd.Flags().StringArrayVarP(&headers, "header", "H", []string{}, "Response header")
 	cmd.Flags().IntVarP(&in.Code, "code", "c", 200, "Response status code")
 	cmd.Flags().BoolVarP(&in.IsDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
-	cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
+	if c.opts.allowFileAccess {
+		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
+	}
 
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))
@@ -88,7 +90,9 @@ func (c *Command) httpRoutesUpdate(cmd *cobra.Command) cmdx.RunFunc {
 	cmd.Flags().IntVarP(&code, "code", "c", 200, "Response status code")
 	cmd.Flags().BoolVarP(&isDynamic, "dynamic", "d", false, "Interpret body and headers as templates")
 	cmd.Flags().StringVarP(&body, "body", "b", "", "Response body")
-	cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
+	if c.opts.allowFileAccess {
+		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
+	}
 
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))

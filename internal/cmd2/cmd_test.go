@@ -3,6 +3,8 @@ package cmd2_test
 import (
 	"context"
 	"encoding/base64"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/shlex"
@@ -223,4 +225,66 @@ func TestAdminCheck(t *testing.T) {
 	require.Equal(t, service.ErrorKindForbidden, svcErr.Kind)
 
 	svc.AssertNotCalled(t, "UsersDelete", mock.Anything, mock.Anything)
+}
+
+func TestAllowFileAccess(t *testing.T) {
+	// Without AllowFileAccess the --file flag is not registered, so -f is rejected
+	// before any service call (avoids a local file read via messengers).
+	t.Run("disabled", func(t *testing.T) {
+		svc := &service_mock.ServerService{}
+
+		_, err := cmd2.New(svc).Exec(context.Background(),
+			[]string{"http", "new", "body", "-p", "test", "-f"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "flag")
+
+		svc.AssertNotCalled(t, "HTTPRoutesCreate", mock.Anything, mock.Anything)
+	})
+
+	// With AllowFileAccess the --file flag reads the body from the named file.
+	t.Run("enabled", func(t *testing.T) {
+		f := filepath.Join(t.TempDir(), "body.txt")
+		require.NoError(t, os.WriteFile(f, []byte("filebody"), 0o600))
+
+		svc := &service_mock.ServerService{}
+		svc.On("ProfileGet", mock.Anything).Return(&service.User{IsAdmin: true}, nil)
+		svc.On("HTTPRoutesCreate", mock.Anything,
+			mock.MatchedBy(func(in service.HTTPRoutesCreateInput) bool {
+				return in.Body == b64("filebody")
+			})).
+			Return(&service.HTTPRoute{Index: 1}, nil)
+
+		_, err := cmd2.New(svc, cmd2.AllowFileAccess(true)).Exec(context.Background(),
+			[]string{"http", "new", f, "-p", "test", "-f"})
+		require.NoError(t, err)
+
+		svc.AssertCalled(t, "HTTPRoutesCreate", mock.Anything, mock.Anything)
+	})
+}
+
+func TestParseAndExec(t *testing.T) {
+	svc := &service_mock.ServerService{}
+	svc.On("ProfileGet", mock.Anything).Return(&service.User{IsAdmin: true}, nil)
+	out := []service.DNSRecord{{Index: 1}}
+	svc.On("DNSRecordsList", mock.Anything, service.DNSRecordsListInput{PayloadName: "test"}).
+		Return(out, nil)
+
+	// Leading "/" is stripped, as messengers send.
+	res, err := cmd2.New(svc).ParseAndExec(context.Background(), "/dns list -p test")
+	require.NoError(t, err)
+	require.Equal(t, out, res)
+
+	svc.AssertCalled(t, "DNSRecordsList", mock.Anything, service.DNSRecordsListInput{PayloadName: "test"})
+}
+
+func TestHelpReturnsText(t *testing.T) {
+	svc := &service_mock.ServerService{}
+
+	// --help produces no leaf result, so Exec returns the captured cobra text.
+	res, err := cmd2.New(svc).Exec(context.Background(), []string{"--help"})
+	require.NoError(t, err)
+
+	s, ok := res.(string)
+	require.True(t, ok)
+	require.Contains(t, s, "Usage")
 }
