@@ -35,8 +35,8 @@ func (x *auditRecordsList) flags(cmd *cobra.Command) {
 
 	cmd.Flags().Int64Var(&x.actorID, "actor-id", 0, "Filter by actor ID")
 	cmd.Flags().StringVar(&x.in.ActorName, "actor-name", "", "Filter by actor name")
-	cmd.Flags().Var(auditResourceTypeValue{&x.in.ResourceType}, "resource-type", "Filter by resource type")
-	cmd.Flags().Var(auditActionValue{&x.in.Action}, "action", "Filter by action")
+	cmd.Flags().Var(&x.in.ResourceType, "resource-type", "Filter by resource type")
+	cmd.Flags().Var(&x.in.Action, "action", "Filter by action")
 	cmd.Flags().UintVarP(&x.in.Page, "page", "p", 1, "Page")
 	cmd.Flags().UintVarP(&x.in.PerPage, "per-page", "s", 50, "Per page")
 	cmd.Flags().StringVar(&x.from, "from", "", "Filter from time (RFC3339)")

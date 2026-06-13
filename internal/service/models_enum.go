@@ -73,6 +73,23 @@ func (x AuditAction) Ptr() *AuditAction {
 	return &x
 }
 
+// Set implements the Golang flag.Value interface func.
+func (x *AuditAction) Set(val string) error {
+	v, err := ParseAuditAction(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *AuditAction) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *AuditAction) Type() string {
+	return "AuditAction"
+}
+
 const (
 	// AuditResourceTypePayload is a AuditResourceType of type payload.
 	AuditResourceTypePayload AuditResourceType = "payload"
@@ -139,6 +156,23 @@ func ParseAuditResourceType(name string) (AuditResourceType, error) {
 
 func (x AuditResourceType) Ptr() *AuditResourceType {
 	return &x
+}
+
+// Set implements the Golang flag.Value interface func.
+func (x *AuditResourceType) Set(val string) error {
+	v, err := ParseAuditResourceType(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *AuditResourceType) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *AuditResourceType) Type() string {
+	return "AuditResourceType"
 }
 
 const (
@@ -209,6 +243,23 @@ func (x AuditSource) Ptr() *AuditSource {
 	return &x
 }
 
+// Set implements the Golang flag.Value interface func.
+func (x *AuditSource) Set(val string) error {
+	v, err := ParseAuditSource(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *AuditSource) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *AuditSource) Type() string {
+	return "AuditSource"
+}
+
 const (
 	// DNSRecordStrategyAll is a DNSRecordStrategy of type all.
 	DNSRecordStrategyAll DNSRecordStrategy = "all"
@@ -270,6 +321,23 @@ func ParseDNSRecordStrategy(name string) (DNSRecordStrategy, error) {
 
 func (x DNSRecordStrategy) Ptr() *DNSRecordStrategy {
 	return &x
+}
+
+// Set implements the Golang flag.Value interface func.
+func (x *DNSRecordStrategy) Set(val string) error {
+	v, err := ParseDNSRecordStrategy(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *DNSRecordStrategy) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *DNSRecordStrategy) Type() string {
+	return "DNSRecordStrategy"
 }
 
 const (
@@ -355,6 +423,23 @@ func (x DNSRecordType) Ptr() *DNSRecordType {
 	return &x
 }
 
+// Set implements the Golang flag.Value interface func.
+func (x *DNSRecordType) Set(val string) error {
+	v, err := ParseDNSRecordType(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *DNSRecordType) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *DNSRecordType) Type() string {
+	return "DNSRecordType"
+}
+
 const (
 	// EventProtocolDns is a EventProtocol of type dns.
 	EventProtocolDns EventProtocol = "dns"
@@ -426,6 +511,23 @@ func ParseEventProtocol(name string) (EventProtocol, error) {
 
 func (x EventProtocol) Ptr() *EventProtocol {
 	return &x
+}
+
+// Set implements the Golang flag.Value interface func.
+func (x *EventProtocol) Set(val string) error {
+	v, err := ParseEventProtocol(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *EventProtocol) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *EventProtocol) Type() string {
+	return "EventProtocol"
 }
 
 const (
@@ -526,6 +628,23 @@ func (x HTTPMethod) Ptr() *HTTPMethod {
 	return &x
 }
 
+// Set implements the Golang flag.Value interface func.
+func (x *HTTPMethod) Set(val string) error {
+	v, err := ParseHTTPMethod(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *HTTPMethod) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *HTTPMethod) Type() string {
+	return "HTTPMethod"
+}
+
 const (
 	// ProtoCategoryDns is a ProtoCategory of type dns.
 	ProtoCategoryDns ProtoCategory = "dns"
@@ -592,4 +711,21 @@ func ParseProtoCategory(name string) (ProtoCategory, error) {
 
 func (x ProtoCategory) Ptr() *ProtoCategory {
 	return &x
+}
+
+// Set implements the Golang flag.Value interface func.
+func (x *ProtoCategory) Set(val string) error {
+	v, err := ParseProtoCategory(val)
+	*x = v
+	return err
+}
+
+// Get implements the Golang flag.Getter interface func.
+func (x *ProtoCategory) Get() interface{} {
+	return *x
+}
+
+// Type implements the github.com/spf13/pFlag Value interface.
+func (x *ProtoCategory) Type() string {
+	return "ProtoCategory"
 }

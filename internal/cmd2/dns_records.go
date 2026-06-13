@@ -43,9 +43,9 @@ func (x *dnsRecordsCreate) flags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&x.in.Name, "name", "n", "", "Subdomain")
 	cmd.Flags().IntVarP(&x.in.TTL, "ttl", "l", 60, "Record TTL (in seconds)")
-	cmd.Flags().VarP(dnsTypeValue{&x.in.Type}, "type", "t",
+	cmd.Flags().VarP(&x.in.Type, "type", "t",
 		fmt.Sprintf("Record type (one of %s)", strings.Join(service.DNSRecordTypeNames(), ", ")))
-	cmd.Flags().VarP(dnsStrategyValue{&x.in.Strategy}, "strategy", "s",
+	cmd.Flags().VarP(&x.in.Strategy, "strategy", "s",
 		fmt.Sprintf("Strategy for multiple records (one of %s)", strings.Join(service.DNSRecordStrategyNames(), ", ")))
 
 	_ = cmd.MarkFlagRequired("name")

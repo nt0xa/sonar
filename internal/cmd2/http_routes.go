@@ -46,7 +46,7 @@ func (x *httpRoutesCreate) flags(cmd *cobra.Command) {
 	x.in.Method = service.HTTPMethodGET
 
 	cmd.Flags().StringVarP(&x.in.PayloadName, "payload", "p", "", "Payload name")
-	cmd.Flags().VarP(httpMethodValue{&x.in.Method}, "method", "m",
+	cmd.Flags().VarP(&x.in.Method, "method", "m",
 		fmt.Sprintf("Request method (one of %s)", strings.Join(service.HTTPMethodNames(), ", ")))
 	cmd.Flags().StringVarP(&x.in.Path, "path", "P", "/", "Request path")
 	cmd.Flags().StringArrayVarP(&x.headers, "header", "H", []string{}, "Response header")
@@ -108,7 +108,7 @@ func (x *httpRoutesUpdate) flags(cmd *cobra.Command) {
 	x.method = service.HTTPMethodGET
 
 	cmd.Flags().StringVarP(&x.in.Payload, "payload", "p", "", "Payload name")
-	cmd.Flags().VarP(httpMethodValue{&x.method}, "method", "m",
+	cmd.Flags().VarP(&x.method, "method", "m",
 		fmt.Sprintf("Request method (one of %s)", strings.Join(service.HTTPMethodNames(), ", ")))
 	cmd.Flags().StringVarP(&x.path, "path", "P", "/", "Request path")
 	cmd.Flags().StringArrayVarP(&x.headers, "header", "H", []string{}, "Response header")
