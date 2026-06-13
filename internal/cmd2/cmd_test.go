@@ -288,3 +288,19 @@ func TestHelpReturnsText(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, s, "Usage")
 }
+
+func TestDefaultMessengersPreExec(t *testing.T) {
+	svc := &service_mock.ServerService{}
+
+	res, err := cmd2.New(svc, cmd2.PreExec(cmd2.DefaultMessengersPreExec)).
+		Exec(context.Background(), []string{"--help"})
+	require.NoError(t, err)
+
+	s, ok := res.(string)
+	require.True(t, ok)
+	// Slash styling applied (the derived templates matched cobra's defaults).
+	require.Contains(t, s, "/dns")
+	require.NotContains(t, s, "sonar dns")
+	// Default completion command dropped.
+	require.NotContains(t, s, "completion")
+}
