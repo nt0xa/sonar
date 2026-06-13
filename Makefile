@@ -195,6 +195,11 @@ generate/mocks:
 		--output internal/actions/mock \
 		--outpkg actions_mock \
 		--name Actions
+	@$(EXEC) mockery \
+		--dir internal/service \
+		--output internal/service/mock \
+		--outpkg service_mock \
+		--name ServerService
 
 .PHONY: generate/db
 generate/db:
