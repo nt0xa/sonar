@@ -18,7 +18,7 @@ import (
 var (
 	tf  *testfixtures.Loader
 	db  *database.DB
-	svc service.Service
+	svc service.ServerService
 	log = slog.New(slog.DiscardHandler)
 )
 

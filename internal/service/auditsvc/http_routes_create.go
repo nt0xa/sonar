@@ -12,7 +12,7 @@ func (s *Service) HTTPRoutesCreate(
 	ctx context.Context,
 	in service.HTTPRoutesCreateInput,
 ) (*service.HTTPRoutesCreateOutput, error) {
-	out, err := s.Service.HTTPRoutesCreate(ctx, in)
+	out, err := s.ServerService.HTTPRoutesCreate(ctx, in)
 	if err != nil {
 		return out, err
 	}

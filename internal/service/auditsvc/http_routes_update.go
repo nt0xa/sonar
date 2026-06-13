@@ -12,7 +12,7 @@ func (s *Service) HTTPRoutesUpdate(
 	ctx context.Context,
 	in service.HTTPRoutesUpdateInput,
 ) (*service.HTTPRoutesUpdateOutput, error) {
-	out, err := s.Service.HTTPRoutesUpdate(ctx, in)
+	out, err := s.ServerService.HTTPRoutesUpdate(ctx, in)
 	if err != nil {
 		return out, err
 	}

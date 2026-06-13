@@ -3,17 +3,12 @@ package api2
 import (
 	"net/http"
 
+	"github.com/nt0xa/sonar/internal/modules/api2/apimodels"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-type PayloadsUpdateRequest struct {
-	Name            string                  `json:"name"`
-	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols"`
-	StoreEvents     *bool                   `json:"storeEvents"`
-}
-
 func (api *API) PayloadsUpdate(w http.ResponseWriter, r *http.Request) {
-	var req PayloadsUpdateRequest
+	var req apimodels.PayloadsUpdateRequest
 
 	if err := api.decodeJSON(r, &req); err != nil {
 		api.handleError(w, r, err)

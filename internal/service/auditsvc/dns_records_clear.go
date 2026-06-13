@@ -12,7 +12,7 @@ func (s *Service) DNSRecordsClear(
 	ctx context.Context,
 	in service.DNSRecordsClearInput,
 ) (service.DNSRecordsClearOutput, error) {
-	out, err := s.Service.DNSRecordsClear(ctx, in)
+	out, err := s.ServerService.DNSRecordsClear(ctx, in)
 	if err != nil {
 		return out, err
 	}

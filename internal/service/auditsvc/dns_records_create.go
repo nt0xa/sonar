@@ -12,7 +12,7 @@ func (s *Service) DNSRecordsCreate(
 	ctx context.Context,
 	in service.DNSRecordsCreateInput,
 ) (*service.DNSRecordsCreateOutput, error) {
-	out, err := s.Service.DNSRecordsCreate(ctx, in)
+	out, err := s.ServerService.DNSRecordsCreate(ctx, in)
 	if err != nil {
 		return out, err
 	}

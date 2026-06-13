@@ -18,7 +18,10 @@ func (s *Service) authContext(
 		return nil, service.Unauthorized()
 	}
 
-	return service.SetUserID(ctx, u.ID), nil
+	ctx = service.SetUserID(ctx, u.ID)
+	ctx = service.SetUserIsAdmin(ctx, u.IsAdmin)
+
+	return ctx, nil
 }
 
 // AuthContextByAPIToken implements [service.Service].

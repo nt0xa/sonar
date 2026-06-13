@@ -3,20 +3,12 @@ package api2
 import (
 	"net/http"
 
+	"github.com/nt0xa/sonar/internal/modules/api2/apimodels"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-type HTTPRoutesUpdateRequest struct {
-	Method    *service.HTTPMethod `json:"method"`
-	Path      *string             `json:"path"`
-	Code      *int                `json:"code"`
-	Headers   map[string][]string `json:"headers"`
-	Body      *string             `json:"body"`
-	IsDynamic *bool               `json:"isDynamic"`
-}
-
 func (api *API) HTTPRoutesUpdate(w http.ResponseWriter, r *http.Request) {
-	var req HTTPRoutesUpdateRequest
+	var req apimodels.HTTPRoutesUpdateRequest
 
 	if err := api.decodeJSON(r, &req); err != nil {
 		api.handleError(w, r, err)

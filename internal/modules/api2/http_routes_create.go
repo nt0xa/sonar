@@ -3,21 +3,12 @@ package api2
 import (
 	"net/http"
 
+	"github.com/nt0xa/sonar/internal/modules/api2/apimodels"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-type HTTPRoutesCreateRequest struct {
-	PayloadName string              `json:"payloadName"`
-	Method      service.HTTPMethod  `json:"method"`
-	Path        string              `json:"path"`
-	Code        int                 `json:"code"`
-	Headers     map[string][]string `json:"headers"`
-	Body        string              `json:"body"`
-	IsDynamic   bool                `json:"isDynamic"`
-}
-
 func (api *API) HTTPRoutesCreate(w http.ResponseWriter, r *http.Request) {
-	var req HTTPRoutesCreateRequest
+	var req apimodels.HTTPRoutesCreateRequest
 
 	if err := api.decodeJSON(r, &req); err != nil {
 		api.handleError(w, r, err)

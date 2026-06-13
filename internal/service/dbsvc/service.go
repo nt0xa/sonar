@@ -12,7 +12,9 @@ type Service struct {
 	log *slog.Logger
 }
 
-func New(db *database.DB, log *slog.Logger) service.Service {
+var _ service.ServerService = (*Service)(nil)
+
+func New(db *database.DB, log *slog.Logger) service.ServerService {
 	return &Service{
 		db:  db,
 		log: log,

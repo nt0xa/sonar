@@ -9,6 +9,8 @@ import (
 func (api *API) Handler() http.Handler {
 	r := webx.NewRouter()
 
+	r.Use(api.checkAuth)
+
 	r.Get("/profile", api.ProfileGet)
 
 	r.Route("/payloads", func(r *webx.Router) {
@@ -51,23 +53,23 @@ func (api *API) Handler() http.Handler {
 		})
 	})
 
-	// r.Group(func(r *webx.Router) {
-	// 	r.Use(api.checkIsAdmin)
-	//
-	// 	r.Route("/users", func(r *webx.Router) {
-	// 		r.Post("/", api.UsersCreate)
-	// 		r.Route("/{name}", func(r *webx.Router) {
-	// 			r.Delete("/", api.UsersDelete)
-	// 		})
-	// 	})
-	//
-	// 	r.Route("/audit-records", func(r *webx.Router) {
-	// 		r.Get("/", api.AuditRecordsList)
-	// 		r.Route("/{id}", func(r *webx.Router) {
-	// 			r.Get("/", api.AuditRecordsGet)
-	// 		})
-	// 	})
-	// })
+	r.Group(func(r *webx.Router) {
+		r.Use(api.checkIsAdmin)
+
+		r.Route("/users", func(r *webx.Router) {
+			r.Post("/", api.UsersCreate)
+			r.Route("/{name}", func(r *webx.Router) {
+				r.Delete("/", api.UsersDelete)
+			})
+		})
+
+		r.Route("/audit-records", func(r *webx.Router) {
+			r.Get("/", api.AuditRecordsList)
+			r.Route("/{id}", func(r *webx.Router) {
+				r.Get("/", api.AuditRecordsGet)
+			})
+		})
+	})
 
 	return r
 }

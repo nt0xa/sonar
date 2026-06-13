@@ -10,18 +10,21 @@ import (
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-// Service decorates another [service.Service] and writes an audit record after
-// each successful mutating operation.
+// Service decorates another [service.ServerService] and writes an audit record
+// after each successful mutating operation. Non-mutating methods (including the
+// AuthContext* identity resolvers) pass through to the embedded service.
 type Service struct {
-	service.Service
+	service.ServerService
 	db  *database.DB
 	log *slog.Logger
 	wg  sync.WaitGroup
 }
 
-func New(svc service.Service, db *database.DB, log *slog.Logger) service.Service {
-	return &Service{Service: svc, db: db, log: log}
+func New(svc service.ServerService, db *database.DB, log *slog.Logger) service.ServerService {
+	return &Service{ServerService: svc, db: db, log: log}
 }
+
+var _ service.ServerService = (*Service)(nil)
 
 // Wait blocks until all in-flight background audit writes have finished. It is
 // intended for graceful shutdown and for deterministic tests.

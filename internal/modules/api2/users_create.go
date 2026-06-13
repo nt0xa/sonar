@@ -3,20 +3,12 @@ package api2
 import (
 	"net/http"
 
+	"github.com/nt0xa/sonar/internal/modules/api2/apimodels"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
-type UsersCreateRequest struct {
-	Name       string  `json:"name"`
-	APIToken   *string `json:"apiToken"`
-	TelegramID *int64  `json:"telegramId"`
-	LarkID     *string `json:"larkId"`
-	SlackID    *string `json:"slackId"`
-	IsAdmin    bool    `json:"isAdmin"`
-}
-
 func (api *API) UsersCreate(w http.ResponseWriter, r *http.Request) {
-	var req UsersCreateRequest
+	var req apimodels.UsersCreateRequest
 
 	if err := api.decodeJSON(r, &req); err != nil {
 		api.handleError(w, r, err)

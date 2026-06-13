@@ -12,7 +12,7 @@ func (s *Service) UsersCreate(
 	ctx context.Context,
 	in service.UsersCreateInput,
 ) (*service.UsersCreateOutput, error) {
-	out, err := s.Service.UsersCreate(ctx, in)
+	out, err := s.ServerService.UsersCreate(ctx, in)
 	if err != nil {
 		return out, err
 	}

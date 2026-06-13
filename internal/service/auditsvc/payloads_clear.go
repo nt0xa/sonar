@@ -12,7 +12,7 @@ func (s *Service) PayloadsClear(
 	ctx context.Context,
 	in service.PayloadsClearInput,
 ) (service.PayloadsClearOutput, error) {
-	out, err := s.Service.PayloadsClear(ctx, in)
+	out, err := s.ServerService.PayloadsClear(ctx, in)
 	if err != nil {
 		return out, err
 	}

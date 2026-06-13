@@ -9,17 +9,20 @@ import (
 type API struct {
 	cfg *Config
 	log *slog.Logger
-	svc service.Service
+
+	// ServerService (not plain Service) because the auth middleware needs the
+	// AuthContext* identity resolvers.
+	svc service.ServerService
 }
 
 func New(
 	cfg *Config,
 	log *slog.Logger,
-	svc service.Service,
+	svc service.ServerService,
 ) (*API, error) {
 	return &API{
-		cfg:     cfg,
-		log:     log,
+		cfg: cfg,
+		log: log,
 		svc: svc,
 	}, nil
 }

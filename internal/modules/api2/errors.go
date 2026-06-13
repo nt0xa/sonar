@@ -34,12 +34,16 @@ func (api *API) toHTTPError(r *http.Request, err error) httpError {
 	}
 
 	switch se.Kind {
+	case service.ErrorKindBadRequest:
+		return httpError{Status: http.StatusBadRequest, Message: se.Message}
 	case service.ErrorKindNotFound:
 		return httpError{Status: http.StatusNotFound, Message: se.Message}
 	case service.ErrorKindConflict:
 		return httpError{Status: http.StatusConflict, Message: se.Message}
 	case service.ErrorKindUnauthorized:
 		return httpError{Status: http.StatusUnauthorized, Message: se.Message}
+	case service.ErrorKindForbidden:
+		return httpError{Status: http.StatusForbidden, Message: se.Message}
 	case service.ErrorKindValidation:
 		return httpError{Status: http.StatusUnprocessableEntity, Message: "validation failed", Problems: se.Problems}
 	default:

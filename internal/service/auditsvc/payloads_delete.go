@@ -12,7 +12,7 @@ func (s *Service) PayloadsDelete(
 	ctx context.Context,
 	in service.PayloadsDeleteInput,
 ) (*service.PayloadsDeleteOutput, error) {
-	out, err := s.Service.PayloadsDelete(ctx, in)
+	out, err := s.ServerService.PayloadsDelete(ctx, in)
 	if err != nil {
 		return out, err
 	}

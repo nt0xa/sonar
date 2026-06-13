@@ -12,7 +12,7 @@ func (s *Service) DNSRecordsDelete(
 	ctx context.Context,
 	in service.DNSRecordsDeleteInput,
 ) (*service.DNSRecordsDeleteOutput, error) {
-	out, err := s.Service.DNSRecordsDelete(ctx, in)
+	out, err := s.ServerService.DNSRecordsDelete(ctx, in)
 	if err != nil {
 		return out, err
 	}

@@ -12,7 +12,7 @@ func (s *Service) HTTPRoutesClear(
 	ctx context.Context,
 	in service.HTTPRoutesClearInput,
 ) (service.HTTPRoutesClearOutput, error) {
-	out, err := s.Service.HTTPRoutesClear(ctx, in)
+	out, err := s.ServerService.HTTPRoutesClear(ctx, in)
 	if err != nil {
 		return out, err
 	}

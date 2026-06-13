@@ -12,7 +12,7 @@ func (s *Service) HTTPRoutesDelete(
 	ctx context.Context,
 	in service.HTTPRoutesDeleteInput,
 ) (*service.HTTPRoutesDeleteOutput, error) {
-	out, err := s.Service.HTTPRoutesDelete(ctx, in)
+	out, err := s.ServerService.HTTPRoutesDelete(ctx, in)
 	if err != nil {
 		return out, err
 	}

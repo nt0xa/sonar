@@ -12,7 +12,7 @@ func (s *Service) UsersDelete(
 	ctx context.Context,
 	in service.UsersDeleteInput,
 ) (*service.UsersDeleteOutput, error) {
-	out, err := s.Service.UsersDelete(ctx, in)
+	out, err := s.ServerService.UsersDelete(ctx, in)
 	if err != nil {
 		return out, err
 	}

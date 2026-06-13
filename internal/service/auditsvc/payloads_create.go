@@ -12,7 +12,7 @@ func (s *Service) PayloadsCreate(
 	ctx context.Context,
 	in service.PayloadsCreateInput,
 ) (*service.PayloadsCreateOutput, error) {
-	out, err := s.Service.PayloadsCreate(ctx, in)
+	out, err := s.ServerService.PayloadsCreate(ctx, in)
 	if err != nil {
 		return out, err
 	}
