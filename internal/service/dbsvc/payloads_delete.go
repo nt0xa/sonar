@@ -17,12 +17,12 @@ func (s *Service) PayloadsDelete(
 		return nil, service.Validation(p)
 	}
 
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	p, err := s.db.PayloadsGetByUserAndName(ctx, id, in.Name)
+	p, err := s.db.PayloadsGetByUserAndName(ctx, c.UserID, in.Name)
 	if errors.Is(err, database.ErrNoRows) {
 		return nil, service.NotFoundf("payload with name %q not found", in.Name)
 	}

@@ -17,8 +17,12 @@ func (s *Service) UsersDelete(
 		return nil, service.Validation(p)
 	}
 
-	if _, ok := service.GetUserID(ctx); !ok {
+	c, ok := service.CallerFrom(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
+	}
+	if !c.IsAdmin {
+		return nil, service.Forbiddenf("admin only")
 	}
 
 	rec, err := s.db.UsersGetByName(ctx, in.Name)

@@ -13,8 +13,12 @@ func (s *Service) AuditRecordsList(
 	ctx context.Context,
 	in service.AuditRecordsListInput,
 ) (service.AuditRecordsListOutput, error) {
-	if _, ok := service.GetUserID(ctx); !ok {
+	c, ok := service.CallerFrom(ctx)
+	if !ok {
 		return nil, service.Unauthorized()
+	}
+	if !c.IsAdmin {
+		return nil, service.Forbiddenf("admin only")
 	}
 
 	perPage := cmp.Or(in.PerPage, 10)

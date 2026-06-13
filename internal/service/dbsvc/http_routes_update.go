@@ -18,12 +18,12 @@ func (s *Service) HTTPRoutesUpdate(
 		return nil, service.Validation(p)
 	}
 
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	p, err := s.db.PayloadsGetByUserAndName(ctx, id, in.Payload)
+	p, err := s.db.PayloadsGetByUserAndName(ctx, c.UserID, in.Payload)
 	if errors.Is(err, database.ErrNoRows) {
 		return nil, service.NotFoundf("payload with name %q not found", in.Payload)
 	}

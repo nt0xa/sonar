@@ -17,9 +17,12 @@ func (s *Service) UsersCreate(
 		return nil, service.Validation(p)
 	}
 
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
+	}
+	if !c.IsAdmin {
+		return nil, service.Forbiddenf("admin only")
 	}
 
 	_, err := s.db.UsersGetByName(ctx, in.Name)
@@ -33,7 +36,7 @@ func (s *Service) UsersCreate(
 	created, err := s.db.UsersCreate(ctx, database.UsersCreateParams{
 		Name:       in.Name,
 		IsAdmin:    in.IsAdmin,
-		CreatedBy:  &id,
+		CreatedBy:  &c.UserID,
 		APIToken:   in.APIToken,
 		TelegramID: in.TelegramID,
 		LarkID:     in.LarkID,

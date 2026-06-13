@@ -11,12 +11,12 @@ func (s *Service) PayloadsClear(
 	ctx context.Context,
 	in service.PayloadsClearInput,
 ) (service.PayloadsClearOutput, error) {
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	payloads, err := s.db.PayloadsDeleteByNamePart(ctx, id, in.Name)
+	payloads, err := s.db.PayloadsDeleteByNamePart(ctx, c.UserID, in.Name)
 	if err != nil {
 		return nil, err
 	}

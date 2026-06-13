@@ -42,15 +42,10 @@ func (s *Service) writeAudit(
 	resourceType database.AuditRecordResourceType,
 	resource any,
 ) {
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		s.log.Warn("skip audit: no actor in context", "resourceType", resourceType, "action", action)
 		return
-	}
-
-	source := database.AuditRecordSourceTypeAPI
-	if src, ok := service.GetSource(ctx); ok {
-		source = database.AuditRecordSourceType(src)
 	}
 
 	ctx = context.WithoutCancel(ctx)
@@ -65,19 +60,13 @@ func (s *Service) writeAudit(
 			return
 		}
 
-		u, err := s.db.UsersGetByID(ctx, id)
-		if err != nil {
-			s.log.Warn("skip audit: failed to resolve actor", "err", err, "actorId", id)
-			return
-		}
-
 		_, err = s.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
 			Action:        action,
 			ResourceType:  resourceType,
-			Source:        source,
-			ActorID:       &u.ID,
-			ActorName:     u.Name,
-			ActorMetadata: actorMetadata(source, u),
+			Source:        database.AuditRecordSourceType(c.Source),
+			ActorID:       &c.UserID,
+			ActorName:     c.UserName,
+			ActorMetadata: actorMetadata(c),
 			Resource:      raw,
 		})
 		if err != nil {
@@ -87,21 +76,21 @@ func (s *Service) writeAudit(
 }
 
 // actorMetadata returns source-specific identifiers for the actor.
-func actorMetadata(source database.AuditRecordSourceType, u *database.User) database.AuditActorMetadata {
+func actorMetadata(c service.Caller) database.AuditActorMetadata {
 	meta := database.AuditActorMetadata{}
 
-	switch source {
-	case database.AuditRecordSourceTypeTelegram:
-		if u.TelegramID != nil {
-			meta["telegramId"] = *u.TelegramID
+	switch c.Source {
+	case service.AuditSourceTelegram:
+		if c.TelegramID != nil {
+			meta["telegramId"] = *c.TelegramID
 		}
-	case database.AuditRecordSourceTypeLark:
-		if u.LarkID != nil {
-			meta["larkId"] = *u.LarkID
+	case service.AuditSourceLark:
+		if c.LarkID != nil {
+			meta["larkId"] = *c.LarkID
 		}
-	case database.AuditRecordSourceTypeSlack:
-		if u.SlackID != nil {
-			meta["slackId"] = *u.SlackID
+	case service.AuditSourceSlack:
+		if c.SlackID != nil {
+			meta["slackId"] = *c.SlackID
 		}
 	}
 

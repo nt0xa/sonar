@@ -13,7 +13,7 @@ func (s *Service) PayloadsList(
 	ctx context.Context,
 	in service.PayloadsListInput,
 ) (service.PayloadsListOutput, error) {
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
 	}
@@ -22,7 +22,7 @@ func (s *Service) PayloadsList(
 	page := cmp.Or(in.Page, 1)
 
 	payloads, err := s.db.PayloadsFindByUserAndName(ctx, database.PayloadsFindByUserAndNameParams{
-		UserID: id,
+		UserID: c.UserID,
 		Name:   in.Name,
 		Limit:  int64(perPage),
 		Offset: int64((page - 1) * perPage),

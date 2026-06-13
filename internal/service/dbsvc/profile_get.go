@@ -10,12 +10,12 @@ import (
 func (s *Service) ProfileGet(
 	ctx context.Context,
 ) (*service.ProfileGetOutput, error) {
-	id, ok := service.GetUserID(ctx)
+	c, ok := service.CallerFrom(ctx)
 	if !ok {
 		return nil, service.Unauthorized()
 	}
 
-	u, err := s.db.UsersGetByID(ctx, id)
+	u, err := s.db.UsersGetByID(ctx, c.UserID)
 	if err != nil {
 		return nil, err
 	}

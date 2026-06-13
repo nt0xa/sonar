@@ -27,7 +27,7 @@ func (api *API) checkAuth(next http.Handler) http.Handler {
 
 func (api *API) checkIsAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isAdmin := service.GetUserIsAdmin(r.Context()); !isAdmin {
+		if c, ok := service.CallerFrom(r.Context()); !ok || !c.IsAdmin {
 			api.handleError(w, r, httpError{Status: 403, Message: "Admin only"})
 			return
 		}
