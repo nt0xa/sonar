@@ -2,74 +2,43 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/nt0xa/sonar/pkg/webx"
 )
 
 func (api *API) Handler() http.Handler {
-	r := webx.NewRouter()
+	mux := http.NewServeMux()
 
-	r.Use(api.checkAuth)
+	mux.HandleFunc("GET /profile", api.ProfileGet)
 
-	r.Get("/profile", api.ProfileGet)
+	mux.HandleFunc("GET /payloads", api.PayloadsList)
+	mux.HandleFunc("POST /payloads", api.PayloadsCreate)
+	mux.HandleFunc("DELETE /payloads", api.PayloadsClear)
+	mux.HandleFunc("DELETE /payloads/{name}", api.PayloadsDelete)
+	mux.HandleFunc("PATCH /payloads/{name}", api.PayloadsUpdate)
 
-	r.Route("/payloads", func(r *webx.Router) {
-		r.Get("/", api.PayloadsList)
-		r.Post("/", api.PayloadsCreate)
-		r.Delete("/", api.PayloadsClear)
-		r.Route("/{name}", func(r *webx.Router) {
-			r.Delete("/", api.PayloadsDelete)
-			r.Patch("/", api.PayloadsUpdate)
-		})
-	})
+	mux.HandleFunc("POST /dns-records", api.DNSRecordsCreate)
+	mux.HandleFunc("GET /dns-records/{payload}", api.DNSRecordsList)
+	mux.HandleFunc("DELETE /dns-records/{payload}", api.DNSRecordsClear)
+	mux.HandleFunc("DELETE /dns-records/{payload}/{index}", api.DNSRecordsDelete)
 
-	r.Route("/dns-records", func(r *webx.Router) {
-		r.Post("/", api.DNSRecordsCreate)
-		r.Route("/{payload}", func(r *webx.Router) {
-			r.Get("/", api.DNSRecordsList)
-			r.Delete("/", api.DNSRecordsClear)
-			r.Route("/{index}", func(r *webx.Router) {
-				r.Delete("/", api.DNSRecordsDelete)
-			})
-		})
-	})
+	mux.HandleFunc("POST /http-routes", api.HTTPRoutesCreate)
+	mux.HandleFunc("GET /http-routes/{payload}", api.HTTPRoutesList)
+	mux.HandleFunc("DELETE /http-routes/{payload}", api.HTTPRoutesClear)
+	mux.HandleFunc("DELETE /http-routes/{payload}/{index}", api.HTTPRoutesDelete)
+	mux.HandleFunc("PATCH /http-routes/{payload}/{index}", api.HTTPRoutesUpdate)
 
-	r.Route("/http-routes", func(r *webx.Router) {
-		r.Post("/", api.HTTPRoutesCreate)
-		r.Route("/{payload}", func(r *webx.Router) {
-			r.Get("/", api.HTTPRoutesList)
-			r.Delete("/", api.HTTPRoutesClear)
-			r.Route("/{index}", func(r *webx.Router) {
-				r.Delete("/", api.HTTPRoutesDelete)
-				r.Patch("/", api.HTTPRoutesUpdate)
-			})
-		})
-	})
+	mux.HandleFunc("GET /events/{payload}", api.EventsList)
+	mux.HandleFunc("GET /events/{payload}/{index}", api.EventsGet)
 
-	r.Route("/events", func(r *webx.Router) {
-		r.Route("/{payload}", func(r *webx.Router) {
-			r.Get("/", api.EventsList)
-			r.Get("/{index}", api.EventsGet)
-		})
-	})
+	// Admin-only routes.
+	admin := func(h http.HandlerFunc) http.Handler {
+		return api.checkIsAdmin(h)
+	}
 
-	r.Group(func(r *webx.Router) {
-		r.Use(api.checkIsAdmin)
+	mux.Handle("POST /users", admin(api.UsersCreate))
+	mux.Handle("DELETE /users/{name}", admin(api.UsersDelete))
 
-		r.Route("/users", func(r *webx.Router) {
-			r.Post("/", api.UsersCreate)
-			r.Route("/{name}", func(r *webx.Router) {
-				r.Delete("/", api.UsersDelete)
-			})
-		})
+	mux.Handle("GET /audit-records", admin(api.AuditRecordsList))
+	mux.Handle("GET /audit-records/{id}", admin(api.AuditRecordsGet))
 
-		r.Route("/audit-records", func(r *webx.Router) {
-			r.Get("/", api.AuditRecordsList)
-			r.Route("/{id}", func(r *webx.Router) {
-				r.Get("/", api.AuditRecordsGet)
-			})
-		})
-	})
-
-	return r
+	return api.checkAuth(mux)
 }
