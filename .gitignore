@@ -19,6 +19,7 @@ tls/
 
 # Dev
 .idea/
+.claude/settings.local.json
 
 # Completions
 /completions/

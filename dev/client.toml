@@ -1,6 +1,7 @@
 [context]
 server = "test"
 
+[servers]
 [servers.test]
 insecure = true
 token = "00112233445566778899aabbccddeeff"
