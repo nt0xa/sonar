@@ -126,6 +126,8 @@ devtools:
 	@go install github.com/vektra/mockery/v2@latest 
 	@go install github.com/goreleaser/goreleaser/v2@latest
 	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	@go install github.com/abice/go-enum@latest
+
 
 
 #
@@ -160,34 +162,21 @@ lint:
 #
 
 .PHONY: generate
-generate: generate/api generate/cmd generate/client generate/mocks
+generate: generate/mocks
 
-.PHONY: generate/api
-generate/api:
-	@echo "Generating API..."
-	@$(EXEC) go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
-	@$(MAKE) fmt
-
-.PHONY: generate/cmd
-generate/cmd:
-	@echo "Generating CLI..."
-	@$(EXEC) go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
-	@$(MAKE) fmt
-
-.PHONY: generate/client
-generate/client:
-	@echo "Generating API client..."
-	@$(EXEC) go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
-	@$(MAKE) fmt
+.PHONY: generate/go
+generate/go:
+	@echo "Running go generate..."
+	@go generate ./...
 
 .PHONY: generate/mocks
 generate/mocks:
 	@echo "Generating mocks..."
 	@$(EXEC) mockery \
-		--dir internal/actions \
-		--output internal/actions/mock \
-		--outpkg actions_mock \
-		--name Actions
+		--dir internal/service \
+		--output internal/service/mock \
+		--outpkg service_mock \
+		--name ServerService
 
 .PHONY: generate/db
 generate/db:

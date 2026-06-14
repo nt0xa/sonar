@@ -2,420 +2,281 @@ package cmd_test
 
 import (
 	"context"
-	"strings"
+	"encoding/base64"
+	"os"
+	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/google/shlex"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	actions_mock "github.com/nt0xa/sonar/internal/actions/mock"
 	"github.com/nt0xa/sonar/internal/cmd"
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/utils/pointer"
+	"github.com/nt0xa/sonar/internal/service"
+	service_mock "github.com/nt0xa/sonar/internal/service/mock"
 )
 
-var (
-	ctx = context.Background()
-)
-
-type ResultMock struct {
-	mock.Mock
-}
-
-func (m *ResultMock) OnResult(ctx context.Context, res actions.Result) error {
-	m.Called(res)
-	return nil
-}
-
-func prepare() (*cmd.Command, *actions_mock.Actions, *ResultMock) {
-	actions := &actions_mock.Actions{}
-	res := &ResultMock{}
-
-	c := cmd.New(actions)
-
-	return c, actions, res
-}
-
-func ptr[T any](v T) *T {
-	return &v
-}
+func b64(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
 
 func TestCmd(t *testing.T) {
 	tests := []struct {
 		cmdline string
-		action  string
-		params  any
+		method  string
+		input   any
 		result  any
 	}{
-
-		//
 		// Payloads
-		//
-
-		// Create
-
 		{
 			"new test -p dns,http -e",
 			"PayloadsCreate",
-			actions.PayloadsCreateParams{
-				Name: "test",
-				NotifyProtocols: []string{
-					database.ProtoCategoryDNS,
-					database.ProtoCategoryHTTP,
-				},
-				StoreEvents: true,
+			service.PayloadsCreateInput{
+				Name:            "test",
+				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategoryHttp},
+				StoreEvents:     true,
 			},
-			&actions.PayloadsCreateResult{},
+			&service.PayloadsCreateOutput{Name: "test"},
 		},
-
-		// List
-
 		{
-			"list substr -p 1 -s 10",
+			"list foo -p 2 -s 20",
 			"PayloadsList",
-			actions.PayloadsListParams{
-				Name:    "substr",
-				Page:    1,
-				PerPage: 10,
-			},
-			actions.PayloadsListResult{},
+			service.PayloadsListInput{Name: "foo", Page: 2, PerPage: 20},
+			service.PayloadsListOutput{{Name: "foo"}},
 		},
-
-		// Update
-
 		{
-			"mod -n new -p dns old -e=false",
+			"mod old -n new -e",
 			"PayloadsUpdate",
-			actions.PayloadsUpdateParams{
-				Name:            "old",
-				NewName:         "new",
-				NotifyProtocols: []string{database.ProtoCategoryDNS},
-				StoreEvents:     pointer.Bool(false),
-			},
-			&actions.PayloadsUpdateResult{},
+			service.PayloadsUpdateInput{Name: "old", NewName: "new", StoreEvents: new(true)},
+			&service.PayloadsUpdateOutput{Name: "new"},
 		},
-
-		// Delete
-
 		{
-			"del test",
+			"del foo",
 			"PayloadsDelete",
-			actions.PayloadsDeleteParams{
-				Name: "test",
-			},
-			&actions.PayloadsDeleteResult{},
+			service.PayloadsDeleteInput{Name: "foo"},
+			&service.PayloadsDeleteOutput{Name: "foo"},
 		},
-
-		// Clear
-
 		{
-			"clr",
+			"clr foo",
 			"PayloadsClear",
-			actions.PayloadsClearParams{
-				Name: "",
-			},
-			actions.PayloadsClearResult{},
-		},
-		{
-			"clr test",
-			"PayloadsClear",
-			actions.PayloadsClearParams{
-				Name: "test",
-			},
-			actions.PayloadsClearResult{},
+			service.PayloadsClearInput{Name: "foo"},
+			service.PayloadsClearOutput{{Name: "foo"}},
 		},
 
-		//
-		// DNS
-		//
-
-		// Create
-
+		// DNS records
 		{
-			"dns new -p payload -n name 192.168.1.1",
+			"dns new 1.1.1.1 -p test -n www",
 			"DNSRecordsCreate",
-			actions.DNSRecordsCreateParams{
-				PayloadName: "payload",
-				Name:        "name",
+			service.DNSRecordsCreateInput{
+				PayloadName: "test",
+				Name:        "www",
 				TTL:         60,
-				Type:        string(database.DNSRecordTypeA),
-				Values:      []string{"192.168.1.1"},
-				Strategy:    string(database.DNSStrategyAll),
+				Type:        service.DNSRecordTypeA,
+				Values:      []string{"1.1.1.1"},
+				Strategy:    service.DNSRecordStrategyAll,
 			},
-			&actions.DNSRecordsCreateResult{},
+			&service.DNSRecordsCreateOutput{Index: 1},
 		},
 		{
-			`dns new -p payload -n name -t mx -l 120 -s round-robin "10 mx.example.com."`,
-			"DNSRecordsCreate",
-			actions.DNSRecordsCreateParams{
-				PayloadName: "payload",
-				Name:        "name",
-				TTL:         120,
-				Type:        strings.ToLower(string(database.DNSRecordTypeMX)),
-				Values:      []string{"10 mx.example.com."},
-				Strategy:    string(database.DNSStrategyRoundRobin),
-			},
-			&actions.DNSRecordsCreateResult{},
-		},
-		{
-			`dns new -p payload -n name -t a -l 100 -s rebind 1.1.1.1 2.2.2.2 3.3.3.3`,
-			"DNSRecordsCreate",
-			actions.DNSRecordsCreateParams{
-				PayloadName: "payload",
-				Name:        "name",
-				TTL:         100,
-				Type:        strings.ToLower(string(database.DNSRecordTypeA)),
-				Values:      []string{"1.1.1.1", "2.2.2.2", "3.3.3.3"},
-				Strategy:    string(database.DNSStrategyRebind),
-			},
-			&actions.DNSRecordsCreateResult{},
-		},
-
-		// List
-
-		{
-			"dns list -p payload",
-			"DNSRecordsList",
-			actions.DNSRecordsListParams{
-				PayloadName: "payload",
-			},
-			actions.DNSRecordsListResult{},
-		},
-
-		// Delete
-
-		{
-			"dns del -p payload 1",
+			"dns del 1 -p test",
 			"DNSRecordsDelete",
-			actions.DNSRecordsDeleteParams{
-				PayloadName: "payload",
-				Index:       1,
-			},
-			&actions.DNSRecordsDeleteResult{},
+			service.DNSRecordsDeleteInput{PayloadName: "test", Index: 1},
+			&service.DNSRecordsDeleteOutput{Index: 1},
 		},
-
-		// Clear
-
 		{
-			"dns clr -p payload1 -n test",
+			"dns list -p test",
+			"DNSRecordsList",
+			service.DNSRecordsListInput{PayloadName: "test"},
+			service.DNSRecordsListOutput{{Index: 1}},
+		},
+		{
+			"dns clr -p test -n www",
 			"DNSRecordsClear",
-			actions.DNSRecordsClearParams{
-				PayloadName: "payload1",
-				Name:        "test",
-			},
-			actions.DNSRecordsClearResult{},
+			service.DNSRecordsClearInput{PayloadName: "test", Name: "www"},
+			service.DNSRecordsClearOutput{{Index: 1}},
 		},
 
-		//
-		// Users
-		//
-
-		// Create
-
+		// HTTP routes
 		{
-			"users new -a --telegram 1337 --token token test",
-			"UsersCreate",
-			actions.UsersCreateParams{
-				Name:       "test",
-				TelegramID: ptr[int64](1337),
-				APIToken:   ptr("token"),
-				IsAdmin:    true,
-			},
-			&actions.UsersCreateResult{},
-		},
-
-		// Delete
-
-		{
-			"users del test",
-			"UsersDelete",
-			actions.UsersDeleteParams{
-				Name: "test",
-			},
-			&actions.UsersDeleteResult{},
-		},
-
-		//
-		// User
-		//
-
-		{
-			"profile",
-			"ProfileGet",
-			nil,
-			&actions.ProfileGetResult{},
-		},
-
-		//
-		// Events
-		//
-
-		// List
-
-		{
-			"events list -p test -l 5 -o 3",
-			"EventsList",
-			actions.EventsListParams{
-				PayloadName: "test",
-				Limit:       5,
-				Offset:      3,
-			},
-			actions.EventsListResult{},
-		},
-
-		// Get
-
-		{
-			"events get -p test 5",
-			"EventsGet",
-			actions.EventsGetParams{
-				PayloadName: "test",
-				Index:       5,
-			},
-			&actions.EventsGetResult{},
-		},
-
-		//
-		// HTTP
-		//
-
-		// Create
-
-		{
-			"http -p payload new -m POST -P /test -c 201 -H 'Content-Type: application/json' -d test",
+			"http new body -p test -m POST -P /x -c 201",
 			"HTTPRoutesCreate",
-			actions.HTTPRoutesCreateParams{
-				PayloadName: "payload",
-				Method:      "POST",
-				Path:        "/test",
+			service.HTTPRoutesCreateInput{
+				PayloadName: "test",
+				Method:      service.HTTPMethodPOST,
+				Path:        "/x",
 				Code:        201,
-				Headers: map[string][]string{
-					"Content-Type": {"application/json"},
-				},
-				Body:      "dGVzdA==",
-				IsDynamic: true,
+				Headers:     map[string][]string{},
+				Body:        b64("body"),
+				IsDynamic:   false,
 			},
-			&actions.HTTPRoutesCreateResult{},
+			&service.HTTPRoutesCreateOutput{Index: 1},
 		},
-
-		// Update
-
 		{
-			"http -p payload mod 1 -m POST -P /test -c 201 -H 'Content-Type: application/json' -d -b test",
+			"http mod 1 -p test -c 404",
 			"HTTPRoutesUpdate",
-			actions.HTTPRoutesUpdateParams{
-				Payload: "payload",
-				Index:   1,
-				Method:  ptr("POST"),
-				Path:    ptr("/test"),
-				Code:    ptr(201),
-				Headers: map[string][]string{
-					"Content-Type": {"application/json"},
-				},
-				Body:      ptr("dGVzdA=="),
-				IsDynamic: ptr(true),
-			},
-			&actions.HTTPRoutesUpdateResult{},
+			service.HTTPRoutesUpdateInput{Payload: "test", Index: 1, Code: new(404)},
+			&service.HTTPRoutesUpdateOutput{Index: 1},
 		},
-
-		// List
-
 		{
-			"http list -p payload",
-			"HTTPRoutesList",
-			actions.HTTPRoutesListParams{
-				PayloadName: "payload",
-			},
-			actions.HTTPRoutesListResult{},
-		},
-
-		// Delete
-
-		{
-			"http del -p payload 1",
+			"http del 1 -p test",
 			"HTTPRoutesDelete",
-			actions.HTTPRoutesDeleteParams{
-				PayloadName: "payload",
-				Index:       1,
-			},
-			&actions.HTTPRoutesDeleteResult{},
+			service.HTTPRoutesDeleteInput{PayloadName: "test", Index: 1},
+			&service.HTTPRoutesDeleteOutput{Index: 1},
 		},
-
-		// Clear
-
 		{
-			"http clr -p payload1 -P /test",
+			"http list -p test",
+			"HTTPRoutesList",
+			service.HTTPRoutesListInput{PayloadName: "test"},
+			service.HTTPRoutesListOutput{{Index: 1}},
+		},
+		{
+			"http clr -p test -P /x",
 			"HTTPRoutesClear",
-			actions.HTTPRoutesClearParams{
-				PayloadName: "payload1",
-				Path:        "/test",
-			},
-			actions.HTTPRoutesClearResult{},
+			service.HTTPRoutesClearInput{PayloadName: "test", Path: "/x"},
+			service.HTTPRoutesClearOutput{{Index: 1}},
 		},
 
-		//
-		// Audit
-		//
-
-		// List
+		// Events
 		{
-			"audit list --actor-id 1 --actor-name user1 --resource-type payload --action create --from 2026-01-02T03:04:05Z --to 2026-01-03T00:00:00Z --page 2 --per-page 25",
+			"events list -p test -l 5 -o 2",
+			"EventsList",
+			service.EventsListInput{PayloadName: "test", Limit: 5, Offset: 2},
+			service.EventsListOutput{{Index: 1}},
+		},
+		{
+			"events get 3 -p test",
+			"EventsGet",
+			service.EventsGetInput{PayloadName: "test", Index: 3},
+			&service.EventsGetOutput{Index: 3},
+		},
+
+		// Users (admin)
+		{
+			"users new bob -a --token tok",
+			"UsersCreate",
+			service.UsersCreateInput{Name: "bob", IsAdmin: true, APIToken: new("tok")},
+			&service.UsersCreateOutput{Name: "bob"},
+		},
+		{
+			"users del bob",
+			"UsersDelete",
+			service.UsersDeleteInput{Name: "bob"},
+			&service.UsersDeleteOutput{Name: "bob"},
+		},
+
+		// Audit (admin)
+		{
+			"audit list --action create",
 			"AuditRecordsList",
-			actions.AuditRecordsListParams{
-				ActorID:      ptr[int64](1),
-				ActorName:    "user1",
-				ResourceType: "payload",
-				Action:       "create",
-				From:         ptr(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)),
-				To:           ptr(time.Date(2026, 1, 3, 0, 0, 0, 0, time.UTC)),
-				Page:         2,
-				PerPage:      25,
-			},
-			actions.AuditRecordsListResult{},
+			service.AuditRecordsListInput{Action: service.AuditActionCreate, Page: 1, PerPage: 50},
+			service.AuditRecordsListOutput{{ID: 1}},
 		},
-
-		// Get
 		{
-			"audit get 42",
+			"audit get 7",
 			"AuditRecordsGet",
-			actions.AuditRecordsGetParams{
-				ID: 42,
-			},
-			&actions.AuditRecordsGetResult{},
+			service.AuditRecordsGetInput{ID: 7},
+			&service.AuditRecordsGetOutput{ID: 7},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.action, func(t *testing.T) {
-			c, acts, res := prepare()
-
-			if tt.params != nil {
-				acts.
-					On(tt.action, ctx, tt.params).
-					Return(tt.result, nil)
-			} else {
-				acts.
-					On(tt.action, ctx).
-					Return(tt.result, nil)
-			}
-
-			acts.On("ProfileGet", ctx).
-				Return(&actions.ProfileGetResult{User: actions.User{IsAdmin: true}}, nil)
-
-			res.On("OnResult", tt.result)
+		t.Run(tt.cmdline, func(t *testing.T) {
+			svc := &service_mock.ServerService{}
+			svc.On(tt.method, mock.Anything, tt.input).
+				Return(tt.result, nil)
 
 			args, err := shlex.Split(tt.cmdline)
 			require.NoError(t, err)
 
-			_, _, err = c.Exec(ctx, args, res.OnResult)
+			res, err := cmd.New(svc).Exec(context.Background(), args)
 			require.NoError(t, err)
+			require.Equal(t, tt.result, res)
 
-			acts.AssertExpectations(t)
-			res.AssertExpectations(t)
+			svc.AssertCalled(t, tt.method, mock.Anything, tt.input)
 		})
 	}
+}
 
+func TestProfileGet(t *testing.T) {
+	svc := &service_mock.ServerService{}
+	user := &service.ProfileGetOutput{Name: "me", IsAdmin: true}
+	svc.On("ProfileGet", mock.Anything).Return(user, nil)
+
+	res, err := cmd.New(svc).Exec(context.Background(), []string{"profile"})
+	require.NoError(t, err)
+	require.Equal(t, user, res)
+}
+
+func TestAllowFileAccess(t *testing.T) {
+	// Without AllowFileAccess the --file flag is not registered, so -f is rejected
+	// before any service call (avoids a local file read via messengers).
+	t.Run("disabled", func(t *testing.T) {
+		svc := &service_mock.ServerService{}
+
+		_, err := cmd.New(svc).Exec(context.Background(),
+			[]string{"http", "new", "body", "-p", "test", "-f"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "flag")
+
+		svc.AssertNotCalled(t, "HTTPRoutesCreate", mock.Anything, mock.Anything)
+	})
+
+	// With AllowFileAccess the --file flag reads the body from the named file.
+	t.Run("enabled", func(t *testing.T) {
+		f := filepath.Join(t.TempDir(), "body.txt")
+		require.NoError(t, os.WriteFile(f, []byte("filebody"), 0o600))
+
+		svc := &service_mock.ServerService{}
+		svc.On("HTTPRoutesCreate", mock.Anything,
+			mock.MatchedBy(func(in service.HTTPRoutesCreateInput) bool {
+				return in.Body == b64("filebody")
+			})).
+			Return(&service.HTTPRoutesCreateOutput{Index: 1}, nil)
+
+		_, err := cmd.New(svc, cmd.AllowFileAccess(true)).Exec(context.Background(),
+			[]string{"http", "new", f, "-p", "test", "-f"})
+		require.NoError(t, err)
+
+		svc.AssertCalled(t, "HTTPRoutesCreate", mock.Anything, mock.Anything)
+	})
+}
+
+func TestParseAndExec(t *testing.T) {
+	svc := &service_mock.ServerService{}
+	out := service.DNSRecordsListOutput{{Index: 1}}
+	svc.On("DNSRecordsList", mock.Anything, service.DNSRecordsListInput{PayloadName: "test"}).
+		Return(out, nil)
+
+	// Leading "/" is stripped, as messengers send.
+	res, err := cmd.New(svc).ParseAndExec(context.Background(), "/dns list -p test")
+	require.NoError(t, err)
+	require.Equal(t, out, res)
+
+	svc.AssertCalled(t, "DNSRecordsList", mock.Anything, service.DNSRecordsListInput{PayloadName: "test"})
+}
+
+func TestHelpReturnsText(t *testing.T) {
+	svc := &service_mock.ServerService{}
+
+	// --help produces no leaf result, so Exec returns the captured cobra text.
+	res, err := cmd.New(svc).Exec(context.Background(), []string{"--help"})
+	require.NoError(t, err)
+
+	s, ok := res.(string)
+	require.True(t, ok)
+	require.Contains(t, s, "Usage")
+}
+
+func TestDefaultMessengersPreExec(t *testing.T) {
+	svc := &service_mock.ServerService{}
+
+	res, err := cmd.New(svc, cmd.PreExec(cmd.DefaultMessengersPreExec)).
+		Exec(context.Background(), []string{"--help"})
+	require.NoError(t, err)
+
+	s, ok := res.(string)
+	require.True(t, ok)
+	// Slash styling applied (the derived templates matched cobra's defaults).
+	require.Contains(t, s, "/dns")
+	require.NotContains(t, s, "sonar dns")
+	// Default completion command dropped.
+	require.NotContains(t, s, "completion")
 }

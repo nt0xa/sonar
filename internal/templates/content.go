@@ -2,53 +2,18 @@ package templates
 
 import (
 	"fmt"
-
-	"github.com/nt0xa/sonar/internal/actions"
 )
-
-var templatesMap = map[string]string{
-	NotificationHeaderID: notificationHeader,
-	NotificationBodyID:   notificationBody,
-
-	actions.ProfileGetResultID: profileGet,
-
-	actions.PayloadsListResultID:   payloadsList,
-	actions.PayloadsCreateResultID: payloadsCreate,
-	actions.PayloadsUpdateResultID: payloadsUpdate,
-	actions.PayloadsDeleteResultID: payloadsDelete,
-	actions.PayloadsClearResultID:  payloadsClear,
-
-	actions.DNSRecordsListResultID:   dnsRecordsList,
-	actions.DNSRecordsCreateResultID: dnsRecordsCreate,
-	actions.DNSRecordsDeleteResultID: dnsRecordsDelete,
-	actions.DNSRecordsClearResultID:  dnsRecordsClear,
-
-	actions.HTTPRoutesListResultID:   httpRoutesList,
-	actions.HTTPRoutesCreateResultID: httpRoutesCreate,
-	actions.HTTPRoutesUpdateResultID: httpRoutesUpdate,
-	actions.HTTPRoutesDeleteResultID: httpRoutesDelete,
-	actions.HTTPRoutesClearResultID:  httpRoutesClear,
-
-	actions.UsersCreateResultID: usersCreate,
-	actions.UsersDeleteResultID: usersDelete,
-
-	actions.EventsListResultID: eventsList,
-	actions.EventsGetResultID:  eventsGet,
-
-	actions.AuditRecordsListResultID: auditRecordsList,
-	actions.AuditRecordsGetResultID:  auditRecordsGet,
-}
 
 //
 // Profile
 //
 
 var profileGet = `<bold>Name:</bold> <code>{{ .Name }}</code>
-{{ if .Params.TelegramID }}<bold>Telegram ID:</bold> <code>{{ .Params.TelegramID }}</code>
+{{ if .TelegramID }}<bold>Telegram ID:</bold> <code>{{ .TelegramID }}</code>
 {{ end -}}
-{{ if .Params.LarkUserID }}<bold>Lark ID:</bold> <code>{{ .Params.LarkUserID }}</code>
+{{ if .LarkID }}<bold>Lark ID:</bold> <code>{{ .LarkID }}</code>
 {{ end -}}
-<bold>API token:</bold> <code>{{ .Params.APIToken }}</code>
+<bold>API token:</bold> <code>{{ .APIToken }}</code>
 <bold>Admin:</bold> <code>{{ .IsAdmin }}</code>`
 
 //
@@ -61,8 +26,6 @@ var payload = `
 
 var payloadsList = fmt.Sprintf(`{{ range . }}%s
 {{ else }}nothing found{{ end }}`, payload)
-var payloadsCreate = payload
-var payloadsUpdate = payload
 var payloadsDelete = `payload "{{ .Name }}" deleted`
 var payloadsClear = `{{ len . }} payloads deleted`
 
@@ -80,7 +43,6 @@ var dnsRecordsList = fmt.Sprintf(`
 {{- range . -}}
 %s
 {{ else }}nothing found{{ end }}`, dnsRecord)
-var dnsRecordsCreate = dnsRecord
 var dnsRecordsDelete = `dns record deleted`
 var dnsRecordsClear = `{{ len . }} dns records deleted`
 
@@ -96,8 +58,6 @@ var httpRoutesList = fmt.Sprintf(`
 {{- range . -}}
 %s
 {{ else }}nothing found{{ end }}`, httpRoute)
-var httpRoutesCreate = httpRoute
-var httpRoutesUpdate = httpRoute
 var httpRoutesDelete = "http route deleted"
 var httpRoutesClear = `{{ len . }} http routes deleted`
 
@@ -114,7 +74,7 @@ var usersDelete = `user "{{ .Name }}" deleted`
 
 var event = `
 {{- $e := . -}}
-<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
+<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | toString | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 
 var eventsGet = event + `
 <pre>
@@ -132,7 +92,7 @@ var eventsList = fmt.Sprintf(`
 
 var auditRecord = `
 {{- $a := . -}}
-<bold>[{{ $a.ID }}]</bold> {{ $a.Action | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
+<bold>[{{ $a.ID }}]</bold> {{ $a.Action | toString | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
 
 var auditRecordsList = fmt.Sprintf(`
 {{- range . -}}
