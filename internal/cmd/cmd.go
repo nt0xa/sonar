@@ -128,10 +128,14 @@ func (c *Command) Exec(ctx context.Context, args []string) (any, error) {
 		c.opts.preExec(root)
 	}
 
-	// Capture cobra's stdout/stderr (help/usage/completion text) into one buffer.
-	var buf bytes.Buffer
-	root.SetOut(&buf)
-	root.SetErr(&buf)
+	// Capture cobra's stdout (help text, shell-completion candidates + directive)
+	// into outBuf. Keep stderr separate and discard it: with errors and usage
+	// silenced below, cobra only writes shell-completion debug ("Completion ended
+	// with directive: ...") there, which must not leak into the stdout the
+	// completion shell parses.
+	var outBuf, errBuf bytes.Buffer
+	root.SetOut(&outBuf)
+	root.SetErr(&errBuf)
 	root.SetArgs(args)
 
 	// Errors are returned from Exec, not printed by cobra.
@@ -146,7 +150,7 @@ func (c *Command) Exec(ctx context.Context, args []string) (any, error) {
 		return sink.out, nil
 	}
 
-	return buf.String(), nil
+	return outBuf.String(), nil
 }
 
 // ParseAndExec splits s into args (stripping a leading "/", as messengers send) and runs it.
