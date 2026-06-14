@@ -1,8 +1,12 @@
 FROM golang:latest
 ENV PATH="/app/build:${PATH}"
 RUN apt-get update && apt-get install -y \
-  docker-cli \
+  bash-completion \
   bind9-host \
+  dnsutils \
+  net-tools \
+  iproute2 \
+  iputils-ping \
   curl \
   swaks \
   ncftp \

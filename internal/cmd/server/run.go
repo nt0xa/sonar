@@ -15,9 +15,10 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/service/auditsvc"
+	"github.com/nt0xa/sonar/internal/service/dbsvc"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/geoipx"
@@ -109,15 +110,14 @@ func Run(
 	}
 
 	//
-	// Actions
+	// Service
 	//
 
-	actions := actionsdb.New(
-		db,
-		log.With("package", "actions"),
-		cfg.Domain,
-		cfg.Audit.Enabled,
-	)
+	svc := dbsvc.New(db, log.With("package", "dbsvc"))
+
+	if cfg.Audit.Enabled {
+		svc = auditsvc.New(svc, db, log.With("package", "auditsvc"))
+	}
 
 	//
 	// GeoIP
@@ -298,11 +298,10 @@ func Run(
 
 	controllers, notifiers, err := Modules(
 		&cfg.Modules,
-		db,
 		log,
 		tel,
 		tlsConfig,
-		actions,
+		svc,
 		cfg.Domain,
 	)
 	if err != nil {

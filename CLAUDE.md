@@ -2,6 +2,65 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Behavior
+
+### Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+### Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+
 ## Project Overview
 
 Sonar is a security researcher's tool for finding and exploiting vulnerabilities that require out-of-band interactions. Written in Go, it provides both a server and CLI client for capturing and managing interactions across multiple protocols (DNS, HTTP, SMTP, FTP).
@@ -70,12 +129,13 @@ make lint              # Run golangci-lint
 
 ### Code Generation
 ```bash
-make generate                # Generate all (API, CLI, client, mocks)
-make generate/api            # Generate API endpoints from actions
-make generate/cmd            # Generate CLI commands from actions
-make generate/client         # Generate API client from actions
-make generate/mocks          # Generate test mocks with mockery
+make generate                # Generate all (mocks)
+make generate/mocks          # Generate test mocks with mockery (service.ServerService)
+make generate/db             # Generate database access code with sqlc
 ```
+
+The API, CLI, and API client are hand-written (no codegen). Enum types in
+`internal/service/models.go` are generated via `go-enum` (`go generate ./...`).
 
 ### Database Migrations
 ```bash
@@ -112,7 +172,7 @@ Protocol Handlers → Event Channel → Worker Pool → [DB Storage, Notifiers, 
 
 **`/code/cmd/`** - Entry points
 - `server/main.go` - Server binary
-- `client/main.go` - CLI client binary
+- `client/main.go` - CLI client binary (builds the `internal/cmd` tree over a `remotesvc` client)
 
 **`/code/internal/database/`** - Data persistence layer
 - `models/` - Domain models (User, Payload, Event, DNSRecord, HTTPRoute)
@@ -120,19 +180,24 @@ Protocol Handlers → Event Channel → Worker Pool → [DB Storage, Notifiers, 
 - `db.go` - Database initialization, migration runner, connection pooling
 - `fixtures/` - YAML test fixtures loaded via testfixtures library
 
-**`/code/internal/actions/`** - Business logic interface
-- Defines `Actions` interface with all operations (CreatePayload, GetEvents, etc.)
-- Implemented by `actionsdb` (database-backed) and `apiclient` (remote API)
-- Allows client and server to share same abstraction
+**`/code/internal/service/`** - Business logic interface
+- Defines `Service` (business operations) and `ServerService` (`Service` plus identity resolvers: `AuthContextBy*`, `LarkProvisionUser`)
+- Per-operation `Input`/`Output` types (`Output` types are distinct named types, used for template dispatch)
+- Uses standard Go `error` (`service.Error`) and validation via `pkg/valid`
+- Subpackages:
+  - `dbsvc/` - DB-backed implementation of `ServerService` (PostgreSQL)
+  - `remotesvc/` - client implementation of `Service` over the HTTP API (stdlib only)
+  - `auditsvc/` - decorator wrapping `ServerService` to write audit records
+  - `mock/` - generated `ServerService` mock for tests
+- Lets client (remote) and server (DB) share the same abstraction
 
-**`/code/internal/actionsdb/`** - Database implementation of Actions
-- Direct PostgreSQL operations via sqlx
-- Handles CRUD for payloads, DNS records, HTTP routes, events, users
-- Integration tests verify database layer behavior
+**`/code/internal/cmd/`** - CLI command tree
+- Builds the cobra command tree over `service.Service` (hand-written, closure-per-command)
+- `server/` - server entrypoint package (config, module wiring, protocol handler setup)
 
 **`/code/internal/modules/`** - Pluggable features
-- `api/` - REST API server (chi router, bearer auth, JSON responses)
-- `telegram/`, `slack/`, `lark/` - Notification integrations
+- `api/` - REST API server (custom `webx` router, bearer auth, JSON) over `service.ServerService`; `apimodels/` holds the request DTOs shared with `remotesvc`
+- `telegram/`, `slack/`, `lark/` - Notification integrations; each builds an `internal/cmd` tree over `service.ServerService` and depends only on the service (not the DB)
 - Each module implements `modules.Notifier` interface
 - Modules receive events and decide whether to notify based on criteria
 
@@ -141,20 +206,15 @@ Protocol Handlers → Event Channel → Worker Pool → [DB Storage, Notifiers, 
 - `httpx/` - HTTP/HTTPS server with middleware
 - `smtpx/` - SMTP server
 - `ftpx/` - FTP server
+- `webx/` - HTTP router used by the API module
+- `valid/` - validation helpers used by the service layer
 - `certmgr/` - TLS certificate management (Let's Encrypt integration)
 - `geoipx/` - GeoIP lookups for events
 - `telemetry/` - OpenTelemetry setup (traces, metrics, logs)
 
-**`/code/internal/codegen/`** - Code generator
-- Reads action definitions and generates three outputs:
-  1. API endpoints (`internal/modules/api/generated.go`)
-  2. CLI commands (`internal/cmd/generated.go`)
-  3. API client (`internal/modules/api/apiclient/generated.go`)
-- Keeps API/CLI/client synchronized automatically
-
 ### Critical Patterns
 
-**Dependency Injection**: Components receive dependencies in constructors. Use interfaces (`actions.Actions`, `modules.Notifier`) to enable testing with mocks.
+**Dependency Injection**: Components receive dependencies in constructors. Use interfaces (`service.Service`, `service.ServerService`, `modules.Notifier`) to enable testing with mocks.
 
 **Configuration Management**:
 - Multi-source loading: defaults → TOML file → environment variables
@@ -162,9 +222,8 @@ Protocol Handlers → Event Channel → Worker Pool → [DB Storage, Notifiers, 
 - CLI client config: `~/.config/sonar/config.toml` (XDG standard)
 
 **Error Handling**:
-- Custom error types in `internal/utils/errors/`
-- `BaseError` includes message, details, HTTP status code
-- Validation errors track field-level issues using ozzo-validation
+- The service layer returns standard Go `error`; `service.Error` carries a kind (bad request, unauthorized, not found, conflict, validation, internal) that the API maps to HTTP status codes and `remotesvc` reconstructs from responses
+- Validation errors track field-level issues via `pkg/valid` (`service.Validation`)
 
 **Event Processing**:
 - Buffered channel decouples protocol handlers from processing
@@ -175,21 +234,24 @@ Protocol Handlers → Event Channel → Worker Pool → [DB Storage, Notifiers, 
 - Database layer supports observers that listen for entity changes
 - Notifiers register as observers to react to new events/payloads
 
-### Code Generation Workflow
+### Adding/Modifying an Operation
 
-When modifying actions:
-1. Edit `internal/actions/actions.go` interface
-2. Implement changes in `internal/actionsdb/`
-3. Run `make generate` to regenerate API/CLI/client
-4. Generated code automatically creates matching endpoints, commands, and client methods
+The API, CLI, and client are hand-written and must be kept in sync manually:
+1. Add the method (+ `Input`/`Output` types) to the `Service`/`ServerService` interface in `internal/service/`
+2. Implement it in `internal/service/dbsvc/` and `internal/service/remotesvc/`
+3. Run `make generate/mocks` to refresh the `ServerService` mock
+4. Add an HTTP handler + route in `internal/modules/api/` (and a request DTO in `apimodels/` if needed)
+5. Add a CLI command in `internal/cmd/`
+6. Add a render template for the new `Output` type in `internal/templates/` (type switch in `RenderResult`)
 
 ### Testing Strategy
 
 **Unit Tests**: Co-located `*_test.go` files using testify assertions
 
 **Integration Tests**:
-- API tests in `internal/modules/api/api_test.go` use httpexpect for fluent HTTP assertions
-- Database tests use testfixtures to load YAML fixtures before each test
+- API tests in `internal/modules/api/api_test.go` run handlers against the `ServerService` mock via `httptest`
+- `remotesvc` tests exercise the client against a mock-backed API server (`httptest`)
+- Database-backed tests (e.g. `internal/service/auditsvc`) use testfixtures to load YAML fixtures
 - Require PostgreSQL connection (set `SONAR_DB_DSN`)
 
 **Test Fixtures**:
@@ -205,7 +267,7 @@ When modifying actions:
 **Running Single Tests**:
 ```bash
 # Run specific test
-go test ./internal/actionsdb -run TestPayloadCreate -v
+go test ./internal/cmd -run TestCmd -v
 
 # Run specific package
 go test ./internal/modules/api -v
@@ -256,8 +318,8 @@ Each protocol handler (`dnsx`, `httpx`, `smtpx`, `ftpx`) follows this pattern:
 
 1. **PostgreSQL as single source of truth** - All state persisted to database
 2. **Worker pool for event processing** - Prevents resource exhaustion under load
-3. **Interface-based design** - Actions interface abstracts DB vs API client
-4. **Generated code synchronization** - API, CLI, and client stay in sync via codegen
+3. **Interface-based design** - `service.Service`/`ServerService` abstracts DB-backed (`dbsvc`) vs remote (`remotesvc`) implementations
+4. **Hand-written API/CLI/client** - kept in sync manually against the service interface (no codegen)
 5. **Multi-notifier support** - Events can trigger multiple channels (Telegram + Slack + Lark)
 6. **Let's Encrypt integration** - Production-ready TLS with auto-renewal
 7. **OpenTelemetry observability** - Structured logging, distributed traces, metrics
@@ -265,12 +327,13 @@ Each protocol handler (`dnsx`, `httpx`, `smtpx`, `ftpx`) follows this pattern:
 
 ## Common Workflows
 
-### Adding a New Action
-1. Add method to `internal/actions/actions.go` interface
-2. Implement in `internal/actionsdb/` with database operations
-3. Add tests in `internal/actionsdb/*_test.go`
-4. Run `make generate` to create API endpoint, CLI command, and client method
-5. Add API tests in `internal/modules/api/api_test.go`
+### Adding a New Operation
+1. Add the method (+ `Input`/`Output` types) to `Service`/`ServerService` in `internal/service/`
+2. Implement it in `internal/service/dbsvc/` (and `internal/service/remotesvc/` for the client)
+3. Run `make generate/mocks` to refresh the `ServerService` mock
+4. Add the HTTP handler + route in `internal/modules/api/` (request DTO in `apimodels/` if needed)
+5. Add the CLI command in `internal/cmd/` and a render template in `internal/templates/`
+6. Add API tests in `internal/modules/api/api_test.go`
 
 ### Adding a New Protocol Handler
 1. Create package in `pkg/` (e.g., `pkg/ldapx/`)

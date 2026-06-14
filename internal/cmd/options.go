@@ -1,9 +1,6 @@
 package cmd
 
-import (
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 var defaultOptions = options{
 	allowFileAccess: false,
@@ -12,24 +9,21 @@ var defaultOptions = options{
 
 type options struct {
 	allowFileAccess bool
-	preExec         func(actions *actions.Actions, cmd *cobra.Command)
+	preExec         func(root *cobra.Command)
 }
 
+// Option configures a Command.
 type Option func(*options)
 
-// AllowFileAccess enables arguments in some commands that use local files.
-// Must be for use in CLI application only, not messengers.
-// Otherwise there will be local file read vulnerability.
+// AllowFileAccess enables flags that read local files (e.g. http --file). For use in
+// the CLI application only — must stay false for messengers, otherwise there is a local
+// file read vulnerability.
 func AllowFileAccess(b bool) Option {
-	return func(opts *options) {
-		opts.allowFileAccess = b
-	}
+	return func(o *options) { o.allowFileAccess = b }
 }
 
-// PreExec is called after Root command is created.
-// Should be used to add specific subcommands or flags (e.g. "--json" for CLI).
-func PreExec(f func(actions *actions.Actions, cmd *cobra.Command)) Option {
-	return func(opts *options) {
-		opts.preExec = f
-	}
+// PreExec runs against the cobra root after the tree is built. Use it to add
+// subcommands/flags, set help/usage templates, or set PersistentPreRunE.
+func PreExec(f func(root *cobra.Command)) Option {
+	return func(o *options) { o.preExec = f }
 }

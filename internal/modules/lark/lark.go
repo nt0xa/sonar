@@ -26,35 +26,31 @@ import (
 
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
-	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Lark struct {
-	db      *database.DB
-	log     *slog.Logger
-	tel     telemetry.Telemetry
-	cfg     *Config
-	cmd     *cmd.Command
-	actions actions.Actions
-	client  *lark.Client
-	tls     *tls.Config
-	tmpl    *templates.Templates
+	log    *slog.Logger
+	tel    telemetry.Telemetry
+	cfg    *Config
+	cmd    *cmd.Command
+	svc    service.ServerService
+	client *lark.Client
+	tls    *tls.Config
+	tmpl   *templates.Templates
 
 	domain string
 }
 
 func New(
 	cfg *Config,
-	db *database.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
 	tlsConfig *tls.Config,
-	acts actions.Actions,
+	svc service.ServerService,
 	domain string,
 ) (*Lark, error) {
 
@@ -109,19 +105,18 @@ func New(
 	)
 
 	lrk := &Lark{
-		client:  client,
-		db:      db,
-		log:     log,
-		tel:     tel,
-		cfg:     cfg,
-		domain:  domain,
-		actions: acts,
-		tls:     tlsConfig,
-		tmpl:    tmpl,
+		client: client,
+		log:    log,
+		tel:    tel,
+		cfg:    cfg,
+		domain: domain,
+		svc:    svc,
+		tls:    tlsConfig,
+		tmpl:   tmpl,
 	}
 
 	lrk.cmd = cmd.New(
-		acts,
+		svc,
 		cmd.PreExec(cmd.DefaultMessengersPreExec),
 	)
 
@@ -234,29 +229,25 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				user, err := lrk.db.UsersGetByLarkID(ctx, *userID)
-				if err != nil {
-					lrk.log.Error("Failed to get user",
+				// Lark is self-service: provision a user on first contact, then
+				// resolve the authenticated context.
+				if err := lrk.svc.LarkProvisionUser(ctx, *userID); err != nil {
+					lrk.log.Error("Failed to provision user",
 						"user_id", *userID,
 						"err", err)
+					lrk.message(ctx, *userID, msgID, "internal error")
 					return nil
 				}
 
-				if user == nil {
-					// Create user if not exists
-					var err error
-					user, err = lrk.db.UsersCreate(ctx, database.UsersCreateParams{
-						Name:   fmt.Sprintf("user-%s", *userID),
-						LarkID: userID,
-					})
-					if err != nil {
-						lrk.log.Error("Failed to create user",
-							"err", err,
-						)
-						lrk.message(ctx, *userID, msgID, "internal error")
-						return nil
-					}
+				authCtx, err := lrk.svc.AuthContextByLarkID(ctx, *userID)
+				if err != nil {
+					lrk.log.Error("Failed to authenticate user",
+						"user_id", *userID,
+						"err", err)
+					lrk.message(ctx, *userID, msgID, "internal error")
+					return nil
 				}
+				ctx = authCtx
 
 				type TextMessage struct {
 					Text string `json:"text"`
@@ -271,8 +262,6 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 				}
 
 				ctx = SetMessageID(ctx, *msgID)
-				ctx = actionsdb.SetUser(ctx, user)
-				ctx = actionsdb.SetSource(ctx, "lark")
 
 				text := msg.Text
 
@@ -285,29 +274,25 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 
 				text = strings.TrimSpace(text)
 
-				stdout, stderr, err := lrk.cmd.ParseAndExec(ctx, text,
-					func(ctx context.Context, res actions.Result) error {
-						s, err := lrk.tmpl.RenderResult(res)
-						if err != nil {
-							return err
-						}
-
-						lrk.message(ctx, "", msgID, s)
-
-						return nil
-					},
-				)
+				res, err := lrk.cmd.ParseAndExec(ctx, text)
 				if err != nil {
 					lrk.message(ctx, "", msgID, err.Error())
 					return nil
 				}
 
-				if stdout != "" {
-					lrk.message(ctx, "", msgID, stdout)
-				}
-
-				if stderr != "" {
-					lrk.message(ctx, "", msgID, stderr)
+				switch v := res.(type) {
+				case string:
+					// Help/usage text produced by cobra (no leaf result).
+					if v != "" {
+						lrk.message(ctx, "", msgID, v)
+					}
+				default:
+					s, err := lrk.tmpl.RenderResult(v)
+					if err != nil {
+						lrk.message(ctx, "", msgID, err.Error())
+						return nil
+					}
+					lrk.message(ctx, "", msgID, s)
 				}
 
 				return nil

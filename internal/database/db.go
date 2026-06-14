@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -135,4 +136,4 @@ type EventsMeta struct {
 type HTTPHeaders = map[string][]string
 
 type AuditActorMetadata = map[string]any
-type AuditResource = map[string]any
+type AuditResource = json.RawMessage

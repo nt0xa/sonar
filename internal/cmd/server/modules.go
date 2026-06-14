@@ -7,13 +7,12 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/lark"
 	"github.com/nt0xa/sonar/internal/modules/slack"
 	"github.com/nt0xa/sonar/internal/modules/telegram"
+	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
@@ -57,11 +56,10 @@ func (c ModulesConfig) Validate() error {
 
 func Modules(
 	cfg *ModulesConfig,
-	db *database.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
 	tls *tls.Config,
-	actions actions.Actions,
+	svc service.ServerService,
 	domain string,
 ) ([]Controller, []modules.Notifier, error) {
 
@@ -79,16 +77,16 @@ func Modules(
 		switch name {
 
 		case "telegram":
-			m, err = telegram.New(&cfg.Telegram, db, log.With("package", "telegram"), tel, actions, domain)
+			m, err = telegram.New(&cfg.Telegram, log.With("package", "telegram"), tel, svc, domain)
 
 		case "api":
-			m, err = api.New(&cfg.API, db, log.With("package", "api"), tel, tls, actions)
+			m, err = api.New(&cfg.API, log.With("package", "api"), tls, svc)
 
 		case "lark":
-			m, err = lark.New(&cfg.Lark, db, log.With("package", "lark"), tel, tls, actions, domain)
+			m, err = lark.New(&cfg.Lark, log.With("package", "lark"), tel, tls, svc, domain)
 
 		case "slack":
-			m, err = slack.New(&cfg.Slack, db, log.With("package", "slack"), tel, actions, domain)
+			m, err = slack.New(&cfg.Slack, log.With("package", "slack"), tel, svc, domain)
 
 		}
 

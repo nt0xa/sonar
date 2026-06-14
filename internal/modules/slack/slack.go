@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
-	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 
@@ -17,23 +15,21 @@ import (
 )
 
 type Slack struct {
-	client  *slack.Client
-	db      *database.DB
-	tel     telemetry.Telemetry
-	log     *slog.Logger
-	cmd     *cmd.Command
-	actions actions.Actions
-	tmpl    *templates.Templates
+	client *slack.Client
+	tel    telemetry.Telemetry
+	log    *slog.Logger
+	cmd    *cmd.Command
+	svc    service.ServerService
+	tmpl   *templates.Templates
 
 	domain string
 }
 
 func New(
 	cfg *Config,
-	db *database.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
-	actions actions.Actions,
+	svc service.ServerService,
 	domain string,
 ) (*Slack, error) {
 	client := slack.New(
@@ -57,14 +53,13 @@ func New(
 	)
 
 	s := &Slack{
-		client:  client,
-		db:      db,
-		tel:     tel,
-		log:     log,
-		cmd:     cmd.New(actions),
-		actions: actions,
-		tmpl:    tmpl,
-		domain:  domain,
+		client: client,
+		tel:    tel,
+		log:    log,
+		cmd:    cmd.New(svc),
+		svc:    svc,
+		tmpl:   tmpl,
+		domain: domain,
 	}
 
 	return s, nil
@@ -96,33 +91,31 @@ func (s *Slack) Start() error {
 }
 
 func (s *Slack) processCommand(ctx context.Context, cmd slack.SlashCommand) *string {
-	chatUser, _ := s.db.UsersGetBySlackID(ctx, cmd.UserID)
-	ctx = actionsdb.SetUser(ctx, chatUser)
-	ctx = actionsdb.SetSource(ctx, "slack")
+	// Ignore the error: an unauthenticated user keeps the original context and
+	// service commands then fail with a clean "unauthorized".
+	if authCtx, err := s.svc.AuthContextBySlackID(ctx, cmd.UserID); err == nil {
+		ctx = authCtx
+	}
 
 	reply := ""
 
-	stdout, stderr, err := s.cmd.ParseAndExec(ctx, cmd.Command+" "+cmd.Text,
-		func(ctx context.Context, res actions.Result) error {
-			content, err := s.tmpl.RenderResult(res)
-			if err != nil {
-				return err
-			}
-			reply = content
-			return nil
-		},
-	)
-
+	res, err := s.cmd.ParseAndExec(ctx, cmd.Command+" "+cmd.Text)
 	if err != nil {
 		reply = err.Error()
+		return &reply
 	}
 
-	if stdout != "" {
-		reply = stdout
-	}
-
-	if stderr != "" {
-		reply = stderr
+	switch v := res.(type) {
+	case string:
+		// Help/usage text produced by cobra (no leaf result).
+		reply = v
+	default:
+		content, err := s.tmpl.RenderResult(v)
+		if err != nil {
+			reply = err.Error()
+		} else {
+			reply = content
+		}
 	}
 
 	return &reply

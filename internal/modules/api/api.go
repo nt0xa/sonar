@@ -6,117 +6,39 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/pkg/telemetry"
+	"github.com/nt0xa/sonar/internal/service"
 )
 
 type API struct {
-	cfg     *Config
-	db      *database.DB
-	tel     telemetry.Telemetry
-	log     *slog.Logger
-	tls     *tls.Config
-	actions actions.Actions
+	cfg *Config
+	log *slog.Logger
+	tls *tls.Config
+
+	// ServerService (not plain Service) because the auth middleware needs the
+	// AuthContext* identity resolvers.
+	svc service.ServerService
 }
 
 func New(
 	cfg *Config,
-	db *database.DB,
 	log *slog.Logger,
-	tel telemetry.Telemetry,
 	tls *tls.Config,
-	actions actions.Actions,
+	svc service.ServerService,
 ) (*API, error) {
-
 	return &API{
-		cfg:     cfg,
-		db:      db,
-		tel:     tel,
-		log:     log,
-		tls:     tls,
-		actions: actions,
+		cfg: cfg,
+		log: log,
+		tls: tls,
+		svc: svc,
 	}, nil
 }
 
 func (api *API) Start() error {
 	srv := http.Server{
 		Addr:      fmt.Sprintf(":%d", api.cfg.Port),
-		Handler:   api.Router(),
+		Handler:   api.Handler(),
 		TLSConfig: api.tls,
 	}
 
 	return srv.ListenAndServeTLS("", "")
-}
-
-func (api *API) Router() http.Handler {
-
-	r := chi.NewRouter()
-
-	r.Use(api.telemetry)
-	r.Use(api.checkAuth())
-
-	r.Get("/profile", api.ProfileGet)
-
-	r.Route("/payloads", func(r chi.Router) {
-		r.Get("/", api.PayloadsList)
-		r.Post("/", api.PayloadsCreate)
-		r.Delete("/", api.PayloadsClear)
-		r.Route("/{name}", func(r chi.Router) {
-			r.Delete("/", api.PayloadsDelete)
-			r.Patch("/", api.PayloadsUpdate)
-		})
-	})
-
-	r.Route("/dns-records", func(r chi.Router) {
-		r.Post("/", api.DNSRecordsCreate)
-		r.Route("/{payload}", func(r chi.Router) {
-			r.Get("/", api.DNSRecordsList)
-			r.Delete("/", api.DNSRecordsClear)
-			r.Route("/{index}", func(r chi.Router) {
-				r.Delete("/", api.DNSRecordsDelete)
-			})
-		})
-	})
-
-	r.Route("/http-routes", func(r chi.Router) {
-		r.Post("/", api.HTTPRoutesCreate)
-		r.Route("/{payload}", func(r chi.Router) {
-			r.Get("/", api.HTTPRoutesList)
-			r.Delete("/", api.HTTPRoutesClear)
-			r.Route("/{index}", func(r chi.Router) {
-				r.Delete("/", api.HTTPRoutesDelete)
-				r.Patch("/", api.HTTPRoutesUpdate)
-			})
-		})
-	})
-
-	r.Route("/events", func(r chi.Router) {
-		r.Route("/{payload}", func(r chi.Router) {
-			r.Get("/", api.EventsList)
-			r.Get("/{index}", api.EventsGet)
-		})
-	})
-
-	r.Group(func(r chi.Router) {
-		r.Use(api.checkIsAdmin)
-
-		r.Route("/users", func(r chi.Router) {
-			r.Post("/", api.UsersCreate)
-			r.Route("/{name}", func(r chi.Router) {
-				r.Delete("/", api.UsersDelete)
-			})
-		})
-
-		r.Route("/audit-records", func(r chi.Router) {
-			r.Get("/", api.AuditRecordsList)
-			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", api.AuditRecordsGet)
-			})
-		})
-	})
-
-	return r
 }
