@@ -33,6 +33,7 @@ func (c *Command) httpRoutesCreate(cmd *cobra.Command) runFunc {
 		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 	}
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))
 
@@ -93,6 +94,7 @@ func (c *Command) httpRoutesUpdate(cmd *cobra.Command) runFunc {
 		cmd.Flags().BoolVarP(&file, "file", "f", false, "Treat BODY as path to file")
 	}
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("method", completeOne(service.HTTPMethodNames()))
 
@@ -153,6 +155,7 @@ func (c *Command) httpRoutesDelete(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
@@ -183,6 +186,7 @@ func (c *Command) httpRoutesList(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
@@ -208,6 +212,7 @@ func (c *Command) httpRoutesClear(cmd *cobra.Command) runFunc {
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&in.Path, "path", "P", "", "Path")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {

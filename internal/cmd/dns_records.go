@@ -27,6 +27,7 @@ func (c *Command) dnsRecordsCreate(cmd *cobra.Command) runFunc {
 		fmt.Sprintf("Strategy for multiple records (one of %s)", strings.Join(service.DNSRecordStrategyNames(), ", ")))
 
 	_ = cmd.MarkFlagRequired("name")
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 	_ = cmd.RegisterFlagCompletionFunc("type", completeOne(service.DNSRecordTypeNames()))
 	_ = cmd.RegisterFlagCompletionFunc("strategy", completeOne(service.DNSRecordStrategyNames()))
@@ -56,6 +57,7 @@ func (c *Command) dnsRecordsDelete(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
@@ -86,6 +88,7 @@ func (c *Command) dnsRecordsList(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
@@ -111,6 +114,7 @@ func (c *Command) dnsRecordsClear(cmd *cobra.Command) runFunc {
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().StringVarP(&in.Name, "name", "n", "", "Subdomain")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {

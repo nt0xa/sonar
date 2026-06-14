@@ -16,6 +16,7 @@ func (c *Command) eventsList(cmd *cobra.Command) runFunc {
 	cmd.Flags().UintVarP(&in.Limit, "limit", "l", 10, "Limit")
 	cmd.Flags().UintVarP(&in.Offset, "offset", "o", 0, "Offset")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
@@ -40,6 +41,7 @@ func (c *Command) eventsGet(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 
+	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
