@@ -69,6 +69,9 @@ func (c *Command) payloadsUpdate(cmd *cobra.Command) runFunc {
 	cmd.ValidArgsFunction = c.completePayloadName
 
 	cmd.Flags().StringVarP(&in.NewName, "name", "n", "", "Payload name")
+	// Unset (-p omitted) leaves in.NotifyProtocols nil, which the service treats
+	// as "unchanged"; --events needs an explicit Changed check since its bool
+	// zero value is meaningful.
 	cmd.Flags().VarP(&protoSlice{p: &in.NotifyProtocols}, "protocols", "p", "Protocols to notify")
 	cmd.Flags().BoolVarP(&storeEvents, "events", "e", false, "Store events in database")
 

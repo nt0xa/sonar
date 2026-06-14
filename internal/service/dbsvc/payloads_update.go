@@ -27,22 +27,25 @@ func (s *Service) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateI
 		return nil, err
 	}
 
-	notifyProtocols := make([]string, len(in.NotifyProtocols))
-	for i, np := range in.NotifyProtocols {
-		notifyProtocols[i] = string(np)
-	}
-
 	params := database.PayloadsUpdateParams{
 		ID:              p.ID,
 		UserID:          p.UserID,
 		Subdomain:       p.Subdomain,
 		Name:            p.Name,
-		NotifyProtocols: notifyProtocols,
+		NotifyProtocols: p.NotifyProtocols,
 		StoreEvents:     p.StoreEvents,
 	}
 
 	if in.NewName != "" {
 		params.Name = in.NewName
+	}
+
+	if in.NotifyProtocols != nil {
+		notifyProtocols := make([]string, len(in.NotifyProtocols))
+		for i, np := range in.NotifyProtocols {
+			notifyProtocols[i] = string(np)
+		}
+		params.NotifyProtocols = notifyProtocols
 	}
 
 	if in.StoreEvents != nil {

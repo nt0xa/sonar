@@ -11,8 +11,10 @@ type PayloadsUpdate interface {
 }
 
 type PayloadsUpdateInput struct {
-	Name            string
-	NewName         string
+	Name    string
+	NewName string
+	// Partial update: a nil NotifyProtocols (slice) or StoreEvents (bool needs a
+	// pointer since false is meaningful) leaves the existing setting unchanged.
 	NotifyProtocols []ProtoCategory
 	StoreEvents     *bool
 }

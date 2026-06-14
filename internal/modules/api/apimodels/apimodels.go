@@ -13,7 +13,7 @@ type PayloadsCreateRequest struct {
 
 type PayloadsUpdateRequest struct {
 	Name            string                  `json:"name"`
-	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols"`
+	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols,omitempty"`
 	StoreEvents     *bool                   `json:"storeEvents"`
 }
 
