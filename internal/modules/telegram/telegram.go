@@ -16,7 +16,6 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/templates"
-	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
@@ -117,7 +116,7 @@ func (tg *Telegram) preExec(root *cobra.Command) {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mi, err := getMsgInfo(cmd.Context())
 			if err != nil {
-				return errors.Internal(err)
+				return err
 			}
 
 			tg.htmlMessage(cmd.Context(), mi.chatID, &mi.msgID, fmt.Sprintf("<code>%d</code>", mi.chatID))
