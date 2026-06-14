@@ -1,3 +1,9 @@
+// Package cmd builds the sonar client CLI command tree on top of
+// [service.Service] using spf13/cobra directly — no cmdx. Per-command flag /
+// argument / validation wiring lives in this package next to the commands
+// themselves via the closure pattern: a build func that configures the command
+// and returns its run. Authorization (incl. admin-only commands) is enforced by
+// the service layer, not here.
 package cmd
 
 import (
@@ -5,165 +11,146 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 
-	"github.com/nt0xa/sonar/internal/actions"
+	"github.com/nt0xa/sonar/internal/service"
 )
 
 func init() {
+	// Keep commands in registration order in help output.
 	cobra.EnableCommandSorting = false
-	cobra.AddTemplateFuncs(sprig.TxtFuncMap())
 }
 
+// runFunc is cobra's RunE signature.
+type runFunc = func(cmd *cobra.Command, args []string) error
+
+// mainGroup is the display group top-level commands are tagged into.
+const mainGroup = "main"
+
+// Command builds the client command tree against a service.Service.
 type Command struct {
-	actions actions.Actions
-	options options
+	svc  service.Service
+	opts options
 }
 
-func New(a actions.Actions, opts ...Option) *Command {
-	options := defaultOptions
-
+// New returns a Command backed by svc.
+func New(svc service.Service, opts ...Option) *Command {
+	o := defaultOptions
 	for _, opt := range opts {
-		opt(&options)
+		opt(&o)
 	}
-
-	return &Command{
-		actions: a,
-		options: options,
-	}
+	return &Command{svc: svc, opts: o}
 }
 
-func (c *Command) root(onResult func(context.Context, actions.Result) error) *cobra.Command {
-	var root = &cobra.Command{
-		Use:   "sonar",
-		Short: "CLI to control sonar server",
-	}
+// command builds a runnable command from build, which wires the command's flags
+// and returns its run closure.
+func command(name, short string, build func(cmd *cobra.Command) runFunc) *cobra.Command {
+	cmd := &cobra.Command{Use: name, Short: short}
+	cmd.RunE = build(cmd)
+	return cmd
+}
 
-	root.AddGroup(
-		&cobra.Group{
-			ID:    "main",
-			Title: "Main commands",
-		},
-	)
+// Root assembles the command tree. The whole tree lives here; each leaf
+// references a build method (see the per-resource files) that wires its flags
+// and returns its run closure.
+func (c *Command) Root() *cobra.Command {
+	root := &cobra.Command{Use: "sonar", Short: "CLI to control sonar server"}
+	root.AddGroup(&cobra.Group{ID: mainGroup, Title: "Main commands"})
 
-	// Main payloads commands
+	// Payloads are the primary commands ("main" group); the rest are grouped into
+	// containers (or left ungrouped) and show under cobra's "Additional Commands".
 	for _, cmd := range []*cobra.Command{
-		c.PayloadsCreate(onResult),
-		c.PayloadsList(onResult),
-		c.PayloadsUpdate(onResult),
-		c.PayloadsDelete(onResult),
-		c.PayloadsClear(onResult),
+		command("new", "Create a new payload", c.payloadsCreate),
+		command("list", "List payloads", c.payloadsList),
+		command("mod", "Modify existing payload", c.payloadsUpdate),
+		command("del", "Delete payload", c.payloadsDelete),
+		command("clr", "Delete multiple payloads", c.payloadsClear),
+		command("profile", "Get current user info", c.profileGet),
 	} {
-		cmd.GroupID = "main"
-		root.AddCommand(c.withAuthCheck(cmd))
+		cmd.GroupID = mainGroup
+		root.AddCommand(cmd)
 	}
 
-	// DNS
-	dns := &cobra.Command{
-		Use:   "dns",
-		Short: "Manage DNS records",
-	}
-
-	dns.AddCommand(c.withAuthCheck(c.DNSRecordsCreate(onResult)))
-	dns.AddCommand(c.withAuthCheck(c.DNSRecordsDelete(onResult)))
-	dns.AddCommand(c.withAuthCheck(c.DNSRecordsList(onResult)))
-	dns.AddCommand(c.withAuthCheck(c.DNSRecordsClear(onResult)))
-
+	dns := &cobra.Command{Use: "dns", Short: "Manage DNS records"}
+	dns.AddCommand(
+		command("new", "Create new DNS records", c.dnsRecordsCreate),
+		command("del", "Delete DNS record", c.dnsRecordsDelete),
+		command("list", "List DNS records", c.dnsRecordsList),
+		command("clr", "Delete multiple DNS records", c.dnsRecordsClear),
+	)
 	root.AddCommand(dns)
 
-	// Events
-	events := &cobra.Command{
-		Use:   "events",
-		Short: "View events",
-	}
-
-	events.AddCommand(c.withAuthCheck(c.EventsList(onResult)))
-	events.AddCommand(c.withAuthCheck(c.EventsGet(onResult)))
-
+	events := &cobra.Command{Use: "events", Short: "View events"}
+	events.AddCommand(
+		command("list", "List payload events", c.eventsList),
+		command("get", "Get payload event by INDEX", c.eventsGet),
+	)
 	root.AddCommand(events)
 
-	// HTTP
-	http := c.withAuthCheck(&cobra.Command{
-		Use:   "http",
-		Short: "Manage HTTP routes",
-	})
-
-	http.AddCommand(c.withAuthCheck(c.HTTPRoutesCreate(onResult)))
-	http.AddCommand(c.withAuthCheck(c.HTTPRoutesUpdate(onResult)))
-	http.AddCommand(c.withAuthCheck(c.HTTPRoutesDelete(onResult)))
-	http.AddCommand(c.withAuthCheck(c.HTTPRoutesList(onResult)))
-	http.AddCommand(c.withAuthCheck(c.HTTPRoutesClear(onResult)))
-
+	http := &cobra.Command{Use: "http", Short: "Manage HTTP routes"}
+	http.AddCommand(
+		command("new", "Create new HTTP route", c.httpRoutesCreate),
+		command("mod", "Update HTTP route", c.httpRoutesUpdate),
+		command("del", "Delete HTTP route", c.httpRoutesDelete),
+		command("list", "List HTTP routes", c.httpRoutesList),
+		command("clr", "Delete multiple HTTP routes", c.httpRoutesClear),
+	)
 	root.AddCommand(http)
 
-	// Profile
-	root.AddCommand(c.withAuthCheck(c.ProfileGet(onResult)))
-
-	// Users
-	users := &cobra.Command{
-		Use:   "users",
-		Short: "Manage users",
-	}
-
-	users.AddCommand(c.withAdminCheck(c.UsersCreate(onResult)))
-	users.AddCommand(c.withAdminCheck(c.UsersDelete(onResult)))
-
+	users := &cobra.Command{Use: "users", Short: "Manage users"}
+	users.AddCommand(
+		command("new", "Create new user", c.usersCreate),
+		command("del", "Delete user", c.usersDelete),
+	)
 	root.AddCommand(users)
 
-	// Audit
-	audit := &cobra.Command{
-		Use:   "audit",
-		Short: "View audit records",
-	}
-
-	audit.AddCommand(c.withAdminCheck(c.AuditRecordsList(onResult)))
-	audit.AddCommand(c.withAdminCheck(c.AuditRecordsGet(onResult)))
-
+	audit := &cobra.Command{Use: "audit", Short: "View audit records"}
+	audit.AddCommand(
+		command("list", "List audit records", c.auditRecordsList),
+		command("get", "Get audit record by ID", c.auditRecordsGet),
+	)
 	root.AddCommand(audit)
 
 	return root
 }
 
-func (c *Command) Exec(
-	ctx context.Context,
-	args []string,
-	onResult func(context.Context, actions.Result) error,
-) (string, string, error) {
-	cmd := c.root(onResult)
+// Exec builds the tree, applies the PreExec hook, installs a result sink in ctx, and runs
+// args. The result is either the typed service output from the invoked leaf or, when no leaf
+// produced data (help/usage/completion), the raw text cobra wrote. Execution errors are
+// returned separately.
+func (c *Command) Exec(ctx context.Context, args []string) (any, error) {
+	sink := &resultSink{}
+	ctx = withSink(ctx, sink)
 
-	if c.options.preExec != nil {
-		c.options.preExec(&c.actions, cmd)
+	root := c.Root()
+	if c.opts.preExec != nil {
+		c.opts.preExec(root)
 	}
 
-	cmd.SetArgs(args)
+	// Capture cobra's stdout/stderr (help/usage/completion text) into one buffer.
+	var buf bytes.Buffer
+	root.SetOut(&buf)
+	root.SetErr(&buf)
+	root.SetArgs(args)
 
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	cmd.SetOut(stdout)
-	cmd.SetErr(stderr)
+	// Errors are returned from Exec, not printed by cobra.
+	root.SilenceErrors = true
+	root.SilenceUsage = true
 
-	// Disable print to error output.
-	// Use result of cmd.ExecuteContext instead.
-	cmd.SilenceErrors = true
-
-	// Disable "Run 'sonar --help' for usage." messages.
-	cmd.SilenceUsage = true
-
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		return "", "", err
+	if err := root.ExecuteContext(ctx); err != nil {
+		return nil, err
 	}
 
-	return stdout.String(), stderr.String(), nil
+	if sink.out != nil {
+		return sink.out, nil
+	}
+
+	return buf.String(), nil
 }
 
-// TODO: change api, having result callback, stdout and stderr is confusing.
-func (c *Command) ParseAndExec(
-	ctx context.Context,
-	s string,
-	onResult func(context.Context, actions.Result) error,
-) (string, string, error) {
+// ParseAndExec splits s into args (stripping a leading "/", as messengers send) and runs it.
+func (c *Command) ParseAndExec(ctx context.Context, s string) (any, error) {
 	args, _ := shlex.Split(strings.TrimLeft(s, "/"))
-	return c.Exec(ctx, args, onResult)
+	return c.Exec(ctx, args)
 }

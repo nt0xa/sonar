@@ -33,5 +33,5 @@ func (s *Service) AuditRecordsGet(
 		return nil, err
 	}
 
-	return auditRecord(*rec), nil
+	return (*service.AuditRecordsGetOutput)(auditRecord(*rec)), nil
 }

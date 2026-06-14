@@ -20,4 +20,4 @@ func (in UsersDeleteInput) Validate() v.Problems {
 	)
 }
 
-type UsersDeleteOutput = User
+type UsersDeleteOutput User

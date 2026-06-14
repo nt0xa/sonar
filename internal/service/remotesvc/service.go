@@ -1,4 +1,4 @@
-// Package remotesvc implements [service.Service] by talking to an api2 server over
+// Package remotesvc implements [service.Service] by talking to an api server over
 // HTTP. It is the client-side mirror of dbsvc: callers use the same
 // service.Service abstraction whether running locally against the database or
 // remotely against the API. It depends only on the Go standard library.
@@ -81,14 +81,14 @@ func (s *Service) do(ctx context.Context, method, path string, body, out any) er
 	return nil
 }
 
-// errorResponse mirrors api2's error body shape.
+// errorResponse mirrors api's error body shape.
 type errorResponse struct {
 	Message  string            `json:"message"`
 	Problems map[string]string `json:"problems,omitempty"`
 }
 
-// decodeError reconstructs a [service.Error] from a non-200 api2 response. The
-// body is api2's {"message", "problems"} shape; the status code determines the
+// decodeError reconstructs a [service.Error] from a non-200 api response. The
+// body is api's {"message", "problems"} shape; the status code determines the
 // error kind.
 func decodeError(resp *http.Response) error {
 	var body errorResponse

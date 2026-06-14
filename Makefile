@@ -162,39 +162,16 @@ lint:
 #
 
 .PHONY: generate
-generate: generate/api generate/cmd generate/client generate/mocks
+generate: generate/mocks
 
 .PHONY: generate/go
 generate/go:
 	@echo "Running go generate..."
 	@go generate ./...
 
-.PHONY: generate/api
-generate/api:
-	@echo "Generating API..."
-	@$(EXEC) go run ./internal/codegen/*.go -type api > internal/modules/api/generated.go
-	@$(MAKE) fmt
-
-.PHONY: generate/cmd
-generate/cmd:
-	@echo "Generating CLI..."
-	@$(EXEC) go run ./internal/codegen/*.go -type cmd > internal/cmd/generated.go
-	@$(MAKE) fmt
-
-.PHONY: generate/client
-generate/client:
-	@echo "Generating API client..."
-	@$(EXEC) go run ./internal/codegen/*.go -type apiclient > internal/modules/api/apiclient/generated.go
-	@$(MAKE) fmt
-
 .PHONY: generate/mocks
 generate/mocks:
 	@echo "Generating mocks..."
-	@$(EXEC) mockery \
-		--dir internal/actions \
-		--output internal/actions/mock \
-		--outpkg actions_mock \
-		--name Actions
 	@$(EXEC) mockery \
 		--dir internal/service \
 		--output internal/service/mock \

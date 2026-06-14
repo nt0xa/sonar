@@ -55,5 +55,5 @@ func (s *Service) DNSRecordsCreate(
 		return nil, err
 	}
 
-	return dnsRecord(*rec, p.Subdomain), nil
+	return (*service.DNSRecordsCreateOutput)(dnsRecord(*rec, p.Subdomain)), nil
 }

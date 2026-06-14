@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"reflect"
 	"slices"
@@ -17,11 +19,19 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/exp/maps"
 
-	"github.com/nt0xa/sonar/internal/actions"
 	"github.com/nt0xa/sonar/internal/cmd"
-	"github.com/nt0xa/sonar/internal/modules/api/apiclient"
+	"github.com/nt0xa/sonar/internal/service"
+	"github.com/nt0xa/sonar/internal/service/remotesvc"
 	"github.com/nt0xa/sonar/internal/templates"
 )
+
+// lazyService lets the command tree be built before the config (and thus the
+// remote service URL/token) is known: the embedded service.Service is nil at
+// construction and set in PersistentPreRunE once config is loaded. Method
+// promotion reads the embedded value at call time.
+type lazyService struct {
+	service.Service
+}
 
 func init() {
 	validation.ErrorTag = "err"
@@ -34,12 +44,14 @@ func main() {
 		jsonOutput bool
 	)
 
+	svc := &lazyService{}
+
 	c := cmd.New(
-		nil,
+		svc,
 		cmd.AllowFileAccess(true),
-		cmd.PreExec(func(acts *actions.Actions, root *cobra.Command) {
+		cmd.PreExec(func(root *cobra.Command) {
 			root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-				// Skip config & actions initialization for "help" and "completion" commands.
+				// Skip config & service initialization for "help" and "completion" commands.
 				if isHelpOrCompletion(cmd.CommandPath()) {
 					return nil
 				}
@@ -49,9 +61,11 @@ func main() {
 					return err
 				}
 
-				if err := initActions(acts, cfg); err != nil {
+				s, err := newService(cfg)
+				if err != nil {
 					return err
 				}
+				svc.Service = s
 
 				return nil
 			}
@@ -63,30 +77,26 @@ func main() {
 		}),
 	)
 
-	stdout, stderr, err := c.Exec(context.Background(), os.Args[1:], func(ctx context.Context, res actions.Result) error {
+	res, err := c.Exec(context.Background(), os.Args[1:])
+	cobra.CheckErr(err)
+
+	switch v := res.(type) {
+	case string:
+		// Help/usage/completion text produced by cobra (no leaf result).
+		_, _ = fmt.Fprint(os.Stdout, v)
+	default:
 		if jsonOutput {
-			return json.NewEncoder(os.Stdout).Encode(res)
+			cobra.CheckErr(json.NewEncoder(os.Stdout).Encode(v))
+			return
 		}
 		tmpl := templates.New(cfg.Server().BaseURL().Hostname(),
 			templates.Default(
 				templates.HTMLEscape(false),
 				templates.Markup(templates.Bold("<bold>", "</>"))),
 		)
-		s, err := tmpl.RenderResult(res)
-		if err != nil {
-			return err
-		}
+		s, err := tmpl.RenderResult(v)
+		cobra.CheckErr(err)
 		color.Fprint(os.Stdout, s)
-		return nil
-	})
-	cobra.CheckErr(err)
-
-	if stdout != "" {
-		_, _ = fmt.Fprint(os.Stdout, stdout)
-	}
-
-	if stderr != "" {
-		_, _ = fmt.Fprint(os.Stderr, stderr)
 	}
 }
 
@@ -172,13 +182,21 @@ func initConfig(cfgFile string, cfg *Config) error {
 	return nil
 }
 
-func initActions(acts *actions.Actions, cfg Config) error {
+func newService(cfg Config) (service.Service, error) {
 	srv := cfg.Server()
 	if srv == nil {
-		return errors.New("server must be set")
+		return nil, errors.New("server must be set")
 	}
-	*acts = apiclient.New(srv.URL, srv.Token, srv.Insecure, srv.Proxy)
-	return nil
+
+	transport := &http.Transport{}
+	if srv.Insecure {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	if u := srv.ProxyURL(); u != nil {
+		transport.Proxy = http.ProxyURL(u)
+	}
+
+	return remotesvc.New(srv.URL, srv.Token, &http.Client{Transport: transport}), nil
 }
 
 func findFlagValue(f string, args []string) string {

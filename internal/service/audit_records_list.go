@@ -24,4 +24,4 @@ type AuditRecordsListInput struct {
 // The valid package intentionally has no value-type optional, so they are not
 // validated here; model them as pointers if validation is needed later.
 
-type AuditRecordsListOutput = []AuditRecord
+type AuditRecordsListOutput []AuditRecord

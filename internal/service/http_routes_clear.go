@@ -21,4 +21,4 @@ func (in HTTPRoutesClearInput) Validate() v.Problems {
 	)
 }
 
-type HTTPRoutesClearOutput = []HTTPRoute
+type HTTPRoutesClearOutput []HTTPRoute

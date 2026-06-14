@@ -22,4 +22,4 @@ func (in DNSRecordsDeleteInput) Validate() v.Problems {
 	)
 }
 
-type DNSRecordsDeleteOutput = DNSRecord
+type DNSRecordsDeleteOutput DNSRecord

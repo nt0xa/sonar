@@ -21,7 +21,7 @@ func (s *Service) UsersCreate(
 		ctx,
 		database.AuditRecordActionTypeCreate,
 		database.AuditRecordResourceTypeUser,
-		maskAPIToken(out),
+		maskAPIToken((*service.User)(out)),
 	)
 
 	return out, nil

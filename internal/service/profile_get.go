@@ -6,4 +6,4 @@ type ProfileGet interface {
 	ProfileGet(context.Context) (*ProfileGetOutput, error)
 }
 
-type ProfileGetOutput = User
+type ProfileGetOutput User

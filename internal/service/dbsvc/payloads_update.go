@@ -54,5 +54,5 @@ func (s *Service) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateI
 		return nil, err
 	}
 
-	return payload(*p), nil
+	return (*service.PayloadsUpdateOutput)(payload(*p)), nil
 }

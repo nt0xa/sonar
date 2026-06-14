@@ -87,5 +87,5 @@ func (s *Service) HTTPRoutesUpdate(
 		return nil, err
 	}
 
-	return httpRoute(*updated, p.Subdomain), nil
+	return (*service.HTTPRoutesUpdateOutput)(httpRoute(*updated, p.Subdomain)), nil
 }

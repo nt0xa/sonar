@@ -2,6 +2,8 @@ package dbsvc
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -43,6 +45,27 @@ func (s *Service) AuthContextByLarkID(ctx context.Context, id string) (context.C
 	return s.authContext(ctx, service.AuditSourceLark, func(ctx context.Context) (*database.User, error) {
 		return s.db.UsersGetByLarkID(ctx, id)
 	})
+}
+
+// LarkProvisionUser implements [service.ServerService].
+func (s *Service) LarkProvisionUser(ctx context.Context, id string) error {
+	_, err := s.db.UsersGetByLarkID(ctx, id)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, database.ErrNoRows) {
+		return err
+	}
+
+	larkID := id
+	if _, err := s.db.UsersCreate(ctx, database.UsersCreateParams{
+		Name:   fmt.Sprintf("user-%s", id),
+		LarkID: &larkID,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // AuthContextBySlackID implements [service.Service].

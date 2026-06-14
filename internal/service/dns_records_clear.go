@@ -21,4 +21,4 @@ func (in DNSRecordsClearInput) Validate() v.Problems {
 	)
 }
 
-type DNSRecordsClearOutput = []DNSRecord
+type DNSRecordsClearOutput []DNSRecord

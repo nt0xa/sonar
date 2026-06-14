@@ -1,973 +1,588 @@
 package api_test
 
 import (
-	"flag"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"os"
-	"regexp"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/gavv/httpexpect/v2"
-	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/actionsdb"
-	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules/api"
-	"github.com/nt0xa/sonar/internal/utils/errors"
-	"github.com/nt0xa/sonar/pkg/telemetry"
+	"github.com/nt0xa/sonar/internal/service"
+	service_mock "github.com/nt0xa/sonar/internal/service/mock"
 )
-
-// Flags
-var (
-	verbose bool
-	proxy   string
-)
-
-var _ = func() bool {
-	testing.Init()
-	return true
-}()
-
-func init() {
-	flag.BoolVar(&verbose, "test.verbose", false, "Enables verbose HTTP printing.")
-	flag.StringVar(&proxy, "test.proxy", "", "Enables verbose HTTP proxy.")
-	flag.Parse()
-}
 
 const (
-	AdminToken = "a33bfdbfb3c62feb7ea59314dbd17426"
-	User1Token = "50c862e41d059eeca13adc7b276b46b7"
-	User2Token = "7001f2d819d3d5fb0b1fd75dd38eb34e"
+	AdminToken = "admin-token"
+	User1Token = "user1-token"
 )
 
-var (
-	tf  *testfixtures.Loader
-	db  *database.DB
-	srv *httptest.Server
-	log = slog.New(slog.DiscardHandler)
-	tel = telemetry.NewNoop()
-)
-
-func TestMain(m *testing.M) {
-	var (
-		dsn string
-		err error
-	)
-
-	if dsn = os.Getenv("SONAR_DB_DSN"); dsn == "" {
-		fmt.Fprintln(os.Stderr, "empty SONAR_DB_DSN")
-		os.Exit(1)
-	}
-
-	db, err = database.NewWithDSN(dsn)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fail to init database: %v\n", err)
-		os.Exit(1)
-	}
-
-	if _, err := database.Migrate(dsn); err != nil {
-		fmt.Fprintf(os.Stderr, "fail to apply database migrations: %v\n", err)
-		os.Exit(1)
-	}
-
-	acts := actionsdb.New(db, log, "sonar.test", false)
-
-	tf, err = testfixtures.New(
-		testfixtures.Database(db.DB()),
-		testfixtures.Dialect("postgres"),
-		testfixtures.Directory("../../database/fixtures"),
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fail to load fixtures: %v", err)
-		os.Exit(1)
-	}
-
-	api, err := api.New(&api.Config{Admin: AdminToken}, db, log, tel, nil, acts)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fail to create api server: %v", err)
-		os.Exit(1)
-	}
-
-	srv = httptest.NewServer(api.Router())
-
-	os.Exit(m.Run())
-}
-
-func setup(t *testing.T) {
-	err := tf.Load()
+// mustTime parses an RFC3339 timestamp the same way the handlers do, so the
+// *time.Time in an expected input matches what AuditRecordsList received.
+func mustTime(t *testing.T, s string) *time.Time {
+	t.Helper()
+	v, err := time.Parse(time.RFC3339, s)
 	require.NoError(t, err)
+	return &v
 }
 
-func teardown(t *testing.T) {}
-
-//
-// Matchers
-//
-
-type matcher func(*testing.T, any)
-
-func regex(re *regexp.Regexp) matcher {
-	return func(t *testing.T, value any) {
-		assert.Regexp(t, re, value)
-	}
+// registerAuth wires the auth boundary: each known token resolves to a caller
+// (admin or regular), an unknown token errors. Marked Maybe() so cases that
+// don't authenticate (missing token) don't fail.
+func registerAuth(svc *service_mock.ServerService) {
+	adminCtx := service.WithCaller(context.Background(), service.Caller{
+		UserID: 1, UserName: "admin", IsAdmin: true, Source: service.AuditSourceApi,
+	})
+	userCtx := service.WithCaller(context.Background(), service.Caller{
+		UserID: 2, UserName: "user1", IsAdmin: false, Source: service.AuditSourceApi,
+	})
+	svc.On("AuthContextByAPIToken", mock.Anything, AdminToken).Return(adminCtx, nil).Maybe()
+	svc.On("AuthContextByAPIToken", mock.Anything, User1Token).Return(userCtx, nil).Maybe()
+	svc.On("AuthContextByAPIToken", mock.Anything, "invalid").Return(nil, service.Unauthorized()).Maybe()
 }
 
-func withinDuration(d time.Duration) matcher {
-	return func(t *testing.T, value any) {
-		ts, ok := value.(string)
-		assert.True(t, ok, "expected value %+v to be string", value)
-		tt, err := time.Parse(time.RFC3339, ts)
-		require.NoError(t, err)
-		assert.WithinDuration(t, time.Now(), tt, d)
-	}
-}
+type testCase struct {
+	name   string
+	method string
+	path   string
+	query  string
+	token  string
+	body   string
 
-func equal(expected any) matcher {
-	return func(t *testing.T, value any) {
-		assert.EqualValues(t, expected, value)
-	}
-}
+	// Expected service call. Empty svcMethod means no service call is expected
+	// (auth/admin/decode/param failures short-circuit before the service).
+	svcMethod  string
+	svcNoInput bool // method takes only context (ProfileGet)
+	svcInput   any
+	svcResult  any
+	svcErr     error
 
-func contains(s any) matcher {
-	return func(t *testing.T, value any) {
-		require.NotNil(t, value)
-		assert.Contains(t, value, s)
-	}
+	status       int
+	wantBody     any               // expected result body, compared via JSON round-trip
+	wantMsg      string            // substring expected in the error "message"
+	wantProblems map[string]string // expected "problems" for validation errors
 }
-
-func notEmpty() matcher {
-	return func(t *testing.T, value any) {
-		assert.NotEmpty(t, value)
-	}
-}
-
-func length(l int) matcher {
-	return func(t *testing.T, value any) {
-		assert.Len(t, value, l)
-	}
-}
-
-//
-// Tests
-//
 
 func TestAPI(t *testing.T) {
-	tests := []struct {
-		method string
-		path   string
-		query  string
-		token  string
-		json   string
-		schema any
-		result map[string]matcher
-		status int
-	}{
-
+	tests := []testCase{
 		//
 		// Payloads
 		//
-
-		// Create
-
 		{
-			method: "POST",
-			path:   "/payloads",
-			token:  User1Token,
-			json:   `{"name": "test", "notifyProtocols": ["dns", "smtp"], "storeEvents": true}`,
-			schema: actions.PayloadsCreateResult{},
-			result: map[string]matcher{
-				"$.subdomain": regex(regexp.MustCompile("^[a-f0-9]{8}$")),
-				"$.name":      equal("test"),
-				"$.notifyProtocols": equal(
-					[]any{
-						database.ProtoCategoryDNS,
-						database.ProtoCategorySMTP,
-					},
-				),
-				"$.storeEvents": equal(true),
-				"$.createdAt":   withinDuration(time.Second * 10),
+			name:      "payloads create",
+			method:    "POST",
+			path:      "/payloads",
+			token:     User1Token,
+			body:      `{"name":"test","notifyProtocols":["dns","smtp"],"storeEvents":true}`,
+			svcMethod: "PayloadsCreate",
+			svcInput: service.PayloadsCreateInput{
+				Name:            "test",
+				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
+				StoreEvents:     true,
 			},
-			status: 201,
+			svcResult: &service.PayloadsCreateOutput{
+				Name:            "test",
+				Subdomain:       "abcd1234",
+				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
+				StoreEvents:     true,
+			},
+			status:   http.StatusCreated,
+			wantBody: &service.Payload{Name: "test", Subdomain: "abcd1234", NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp}, StoreEvents: true},
 		},
 		{
-			method: "POST",
-			path:   "/payloads",
-			token:  User1Token,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BaseError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
+			name:      "payloads list",
+			method:    "GET",
+			path:      "/payloads",
+			query:     "name=foo&page=2&perPage=20",
+			token:     User1Token,
+			svcMethod: "PayloadsList",
+			svcInput:  service.PayloadsListInput{Name: "foo", Page: 2, PerPage: 20},
+			svcResult: service.PayloadsListOutput{{Name: "foo"}},
+			status:    http.StatusOK,
+			wantBody:  []service.Payload{{Name: "foo"}},
 		},
 		{
-			method: "POST",
-			path:   "/payloads",
-			token:  User1Token,
-			json:   `{"name": ""}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message":     contains("validation"),
-				"$.errors.name": notEmpty(),
+			name:      "payloads update",
+			method:    "PATCH",
+			path:      "/payloads/payload1",
+			token:     User1Token,
+			body:      `{"name":"new","notifyProtocols":["smtp"],"storeEvents":false}`,
+			svcMethod: "PayloadsUpdate",
+			svcInput: service.PayloadsUpdateInput{
+				Name:            "payload1",
+				NewName:         "new",
+				NotifyProtocols: []service.ProtoCategory{service.ProtoCategorySmtp},
+				StoreEvents:     new(false),
 			},
-			status: 400,
+			svcResult: &service.PayloadsUpdateOutput{Name: "new"},
+			status:    http.StatusOK,
+			wantBody:  &service.Payload{Name: "new"},
 		},
 		{
-			method: "POST",
-			path:   "/payloads",
-			token:  User1Token,
-			json:   `{"name": "payload1"}`,
-			schema: &errors.ConflictError{},
-			result: map[string]matcher{
-				"$.message": contains("conflict"),
-			},
-			status: 409,
-		},
-
-		// List
-
-		{
-			method: "GET",
-			path:   "/payloads",
-			token:  User1Token,
-			schema: (actions.PayloadsListResult)(nil),
-			result: map[string]matcher{
-				"$[0].name": equal("test4"),
-				"$[1].name": equal("test3"),
-			},
-			status: 200,
+			name:      "payloads delete",
+			method:    "DELETE",
+			path:      "/payloads/payload1",
+			token:     User1Token,
+			svcMethod: "PayloadsDelete",
+			svcInput:  service.PayloadsDeleteInput{Name: "payload1"},
+			svcResult: &service.PayloadsDeleteOutput{Name: "payload1"},
+			status:    http.StatusOK,
+			wantBody:  &service.Payload{Name: "payload1"},
 		},
 		{
-			method: "GET",
-			path:   "/payloads",
-			query:  "name=payload4",
-			token:  User1Token,
-			schema: (actions.PayloadsListResult)(nil),
-			result: map[string]matcher{
-				"$[0].name": equal("payload4"),
-			},
-			status: 200,
-		},
-
-		// Update
-
-		{
-			method: "PATCH",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": false}`,
-			schema: actions.PayloadsUpdateResult{},
-			result: map[string]matcher{
-				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]any{database.ProtoCategorySMTP}),
-				"$.storeEvents":     equal(false),
-			},
-			status: 200,
-		},
-		{
-			method: "PATCH",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["smtp"], "storeEvents": null}`,
-			schema: actions.PayloadsUpdateResult{},
-			result: map[string]matcher{
-				"$.name":            equal("test"),
-				"$.notifyProtocols": equal([]any{database.ProtoCategorySMTP}),
-				"$.storeEvents":     equal(true), // Must not be changed
-			},
-			status: 200,
-		},
-		{
-			method: "PATCH",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BadFormatError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
-		},
-		{
-			method: "PATCH",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["invalid"]}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message":                contains("validation"),
-				"$.errors.notifyProtocols": notEmpty(),
-			},
-			status: 400,
-		},
-		{
-			method: "PATCH",
-			path:   "/payloads/invalid",
-			token:  User1Token,
-			json:   `{"name":"test", "notifyProtocols": ["smtp"]}`,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Delete
-
-		{
-			method: "DELETE",
-			path:   "/payloads/payload1",
-			token:  User1Token,
-			schema: actions.PayloadsDeleteResult{},
-			status: 200,
-		},
-		{
-			method: "DELETE",
-			path:   "/payloads/invalid",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Clear
-		{
-			method: "DELETE",
-			path:   "/payloads",
-			token:  User1Token,
-			schema: (actions.PayloadsClearResult)(nil),
-			result: map[string]matcher{
-				"$[0].name": equal("payload1"),
-				"$[1].name": equal("payload4"),
-			},
-			status: 200,
+			name:      "payloads clear",
+			method:    "DELETE",
+			path:      "/payloads",
+			query:     "name=foo",
+			token:     User1Token,
+			svcMethod: "PayloadsClear",
+			svcInput:  service.PayloadsClearInput{Name: "foo"},
+			svcResult: service.PayloadsClearOutput{{Name: "foo"}},
+			status:    http.StatusOK,
+			wantBody:  []service.Payload{{Name: "foo"}},
 		},
 
 		//
 		// DNS records
 		//
-
-		// Create
-
 		{
-			method: "POST",
-			path:   "/dns-records",
-			token:  User1Token,
-			json:   `{"payloadName": "payload1", "name": "test", "type": "a", "ttl": 100, "values": ["127.0.0.1"], "strategy": "all"}`,
-			schema: actions.DNSRecordsCreateResult{},
-			result: map[string]matcher{
-				"$.name":      equal("test"),
-				"$.type":      equal("A"),
-				"$.ttl":       equal(100),
-				"$.strategy":  equal("all"),
-				"$.values":    equal([]any{"127.0.0.1"}),
-				"$.createdAt": withinDuration(time.Second * 10),
+			name:      "dns records create",
+			method:    "POST",
+			path:      "/dns-records",
+			token:     User1Token,
+			body:      `{"payloadName":"payload1","name":"test","type":"A","ttl":100,"values":["127.0.0.1"],"strategy":"all"}`,
+			svcMethod: "DNSRecordsCreate",
+			svcInput: service.DNSRecordsCreateInput{
+				PayloadName: "payload1",
+				Name:        "test",
+				TTL:         100,
+				Type:        service.DNSRecordTypeA,
+				Values:      []string{"127.0.0.1"},
+				Strategy:    service.DNSRecordStrategyAll,
 			},
-			status: 201,
+			svcResult: &service.DNSRecordsCreateOutput{Index: 1, Name: "test", Type: service.DNSRecordTypeA},
+			status:    http.StatusCreated,
+			wantBody:  &service.DNSRecord{Index: 1, Name: "test", Type: service.DNSRecordTypeA},
 		},
 		{
-			method: "POST",
-			path:   "/dns-records",
-			token:  User1Token,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BadFormatError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
+			name:      "dns records list",
+			method:    "GET",
+			path:      "/dns-records/payload1",
+			token:     User1Token,
+			svcMethod: "DNSRecordsList",
+			svcInput:  service.DNSRecordsListInput{PayloadName: "payload1"},
+			svcResult: service.DNSRecordsListOutput{{Index: 1, Name: "test-a"}},
+			status:    http.StatusOK,
+			wantBody:  []service.DNSRecord{{Index: 1, Name: "test-a"}},
 		},
 		{
-			method: "POST",
-			path:   "/dns-records",
-			token:  User1Token,
-			json:   `{"payloadName": "payload1", "name": ""}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("validation"),
-			},
-			status: 400,
+			name:      "dns records delete",
+			method:    "DELETE",
+			path:      "/dns-records/payload1/1",
+			token:     User1Token,
+			svcMethod: "DNSRecordsDelete",
+			svcInput:  service.DNSRecordsDeleteInput{PayloadName: "payload1", Index: 1},
+			svcResult: &service.DNSRecordsDeleteOutput{Index: 1, Name: "test-a"},
+			status:    http.StatusOK,
+			wantBody:  &service.DNSRecord{Index: 1, Name: "test-a"},
 		},
 		{
-			method: "POST",
-			path:   "/dns-records",
-			token:  User1Token,
-			json:   `{"payloadName": "payload1", "name": "test-a", "type": "a", "ttl": 100, "strategy": "all", "values": ["127.0.0.1"]}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("conflict"),
-			},
-			status: 409,
-		},
-
-		// List
-
-		{
-			method: "GET",
-			path:   "/dns-records/payload1",
-			token:  User1Token,
-			schema: (actions.DNSRecordsListResult)(nil),
-			result: map[string]matcher{
-				"$":         length(9),
-				"$[0].name": equal("test-a"),
-				"$[1].name": equal("test-aaaa"),
-			},
-			status: 200,
-		},
-		{
-			method: "GET",
-			path:   "/dns-records/not-exist",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Delete
-
-		{
-			method: "DELETE",
-			path:   "/dns-records/payload1/1",
-			token:  User1Token,
-			schema: actions.DNSRecordsDeleteResult{},
-			result: map[string]matcher{
-				"$.name": equal("test-a"),
-			},
-			status: 200,
-		},
-		{
-			method: "DELETE",
-			path:   "/dns-records/not-exist/1",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-		{
-			method: "DELETE",
-			path:   "/dns-records/payload1/1337",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Clear
-
-		{
-			method: "DELETE",
-			path:   "/dns-records/payload1/",
-			token:  User1Token,
-			schema: actions.DNSRecordsClearResult{},
-			status: 200,
-			result: map[string]matcher{
-				"$[0].name": equal("test-a"),
-				"$[1].name": equal("test-aaaa"),
-			},
-		},
-		{
-			method: "DELETE",
-			path:   "/dns-records/not-exist/",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		//
-		// User
-		//
-
-		{
-			method: "GET",
-			path:   "/profile",
-			token:  User1Token,
-			schema: actions.ProfileGetResult{},
-			result: map[string]matcher{
-				"$.name": equal("user1"),
-			},
-			status: 200,
-		},
-		{
-			method: "GET",
-			path:   "/user",
-			schema: &errors.BaseError{},
-			result: map[string]matcher{
-				"$.message": contains("unauthorized"),
-			},
-			status: 401,
-		},
-		{
-			method: "GET",
-			path:   "/user",
-			token:  "invalid",
-			schema: &errors.BaseError{},
-			result: map[string]matcher{
-				"$.message": contains("unauthorized"),
-			},
-			status: 401,
-		},
-
-		//
-		// Users
-		//
-
-		// Create
-
-		{
-			method: "POST",
-			path:   "/users",
-			token:  AdminToken,
-			json:   `{"name": "test", "apiToken": "token", "telegramId": 1234}`,
-			schema: actions.UsersCreateResult{},
-			result: map[string]matcher{
-				"$.name":       equal("test"),
-				"$.isAdmin":    equal(false),
-				"$.apiToken":   equal("token"),
-				"$.telegramId": equal(1234),
-				"$.createdAt":  withinDuration(time.Second * 10),
-			},
-			status: 201,
-		},
-		{
-			method: "POST",
-			path:   "/users",
-			token:  AdminToken,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BadFormatError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
-		},
-		{
-			method: "POST",
-			path:   "/users",
-			token:  AdminToken,
-			json:   `{"name": "user1", "apiToken": "token", "telegramId": 1234}`,
-			schema: &errors.ConflictError{},
-			result: map[string]matcher{
-				"$.message": contains("conflict"),
-			},
-			status: 409,
-		},
-		{
-			method: "POST",
-			path:   "/users",
-			token:  User1Token,
-			schema: &errors.ForbiddenError{},
-			result: map[string]matcher{
-				"$.message": contains("forbidden"),
-			},
-			status: 403,
-		},
-
-		// Delete
-
-		{
-			method: "DELETE",
-			path:   "/users/user1",
-			token:  AdminToken,
-			schema: actions.UsersCreateResult{},
-			status: 200,
-		},
-		{
-			method: "DELETE",
-			path:   "/users/not-exist",
-			token:  AdminToken,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		//
-		// Audit records
-		//
-
-		// List
-
-		{
-			method: "GET",
-			path:   "/audit-records",
-			query:  "actorId=1&actorName=user1&resourceType=payload&action=create&page=1&perPage=1&from=2026-01-01T09:00:00Z&to=2026-01-01T10:30:00Z",
-			token:  AdminToken,
-			schema: (actions.AuditRecordsListResult)(nil),
-			result: map[string]matcher{
-				"$":                 length(1),
-				"$[0].id":           equal(1),
-				"$[0].action":       equal("create"),
-				"$[0].resourceType": equal("payload"),
-				"$[0].source":       equal("api"),
-				"$[0].actorId":      equal(1),
-				"$[0].actorName":    equal("user1"),
-				"$[0].resource.name": equal("payload1"),
-			},
-			status: 200,
-		},
-		{
-			method: "GET",
-			path:   "/audit-records",
-			query:  "page=1&perPage=1&from=2026-01-01T00:00:00Z&to=2026-01-02T23:59:59Z",
-			token:  User1Token,
-			schema: &errors.ForbiddenError{},
-			result: map[string]matcher{
-				"$.message": contains("forbidden"),
-			},
-			status: 403,
-		},
-
-		// Get
-
-		{
-			method: "GET",
-			path:   "/audit-records/2",
-			token:  AdminToken,
-			schema: actions.AuditRecordsGetResult{},
-			result: map[string]matcher{
-				"$.id":           equal(2),
-				"$.action":       equal("update"),
-				"$.resourceType": equal("http_route"),
-				"$.source":       equal("telegram"),
-				"$.actorId":      equal(1),
-				"$.actorName":    equal("user1"),
-				"$.resource.path": equal("/x"),
-			},
-			status: 200,
-		},
-		{
-			method: "GET",
-			path:   "/audit-records/2",
-			token:  User1Token,
-			schema: &errors.ForbiddenError{},
-			result: map[string]matcher{
-				"$.message": contains("forbidden"),
-			},
-			status: 403,
-		},
-
-		//
-		// Events
-		//
-
-		// List
-
-		{
-			method: "GET",
-			path:   "/events/payload1",
-			token:  User1Token,
-			schema: (actions.EventsListResult)(nil),
-			result: map[string]matcher{
-				"$":             length(10),
-				"$[0].protocol": equal("http"),
-				"$[9].protocol": equal("dns"),
-			},
-			status: 200,
-		},
-
-		// Get
-
-		{
-			method: "GET",
-			path:   "/events/payload1/2",
-			token:  User1Token,
-			schema: actions.EventsGetResult{},
-			result: map[string]matcher{
-				"$.protocol": equal("http"),
-			},
-			status: 200,
+			name:      "dns records clear",
+			method:    "DELETE",
+			path:      "/dns-records/payload1",
+			query:     "name=www",
+			token:     User1Token,
+			svcMethod: "DNSRecordsClear",
+			svcInput:  service.DNSRecordsClearInput{PayloadName: "payload1", Name: "www"},
+			svcResult: service.DNSRecordsClearOutput{{Index: 1}},
+			status:    http.StatusOK,
+			wantBody:  []service.DNSRecord{{Index: 1}},
 		},
 
 		//
 		// HTTP routes
 		//
-
-		// Create
-
 		{
+			name:      "http routes create",
+			method:    "POST",
+			path:      "/http-routes",
+			token:     User1Token,
+			body:      `{"payloadName":"payload1","method":"GET","path":"/test","code":200,"headers":{"Test":["test"]},"body":"dGVzdA==","isDynamic":true}`,
+			svcMethod: "HTTPRoutesCreate",
+			svcInput: service.HTTPRoutesCreateInput{
+				PayloadName: "payload1",
+				Method:      service.HTTPMethodGET,
+				Path:        "/test",
+				Code:        200,
+				Headers:     map[string][]string{"Test": {"test"}},
+				Body:        "dGVzdA==",
+				IsDynamic:   true,
+			},
+			svcResult: &service.HTTPRoutesCreateOutput{Index: 1, Method: service.HTTPMethodGET, Path: "/test", Code: 200},
+			status:    http.StatusCreated,
+			wantBody:  &service.HTTPRoute{Index: 1, Method: service.HTTPMethodGET, Path: "/test", Code: 200},
+		},
+		{
+			name:      "http routes update",
+			method:    "PATCH",
+			path:      "/http-routes/payload1/1",
+			token:     User1Token,
+			body:      `{"method":"POST","path":"/test2","code":301,"headers":{"X":["x"]},"body":"MTIzNAo=","isDynamic":false}`,
+			svcMethod: "HTTPRoutesUpdate",
+			svcInput: service.HTTPRoutesUpdateInput{
+				Payload:   "payload1",
+				Index:     1,
+				Method:    new(service.HTTPMethodPOST),
+				Path:      new("/test2"),
+				Code:      new(301),
+				Headers:   map[string][]string{"X": {"x"}},
+				Body:      new("MTIzNAo="),
+				IsDynamic: new(false),
+			},
+			svcResult: &service.HTTPRoutesUpdateOutput{Index: 1, Method: service.HTTPMethodPOST, Path: "/test2", Code: 301},
+			status:    http.StatusOK,
+			wantBody:  &service.HTTPRoute{Index: 1, Method: service.HTTPMethodPOST, Path: "/test2", Code: 301},
+		},
+		{
+			name:      "http routes list",
+			method:    "GET",
+			path:      "/http-routes/payload1",
+			token:     User1Token,
+			svcMethod: "HTTPRoutesList",
+			svcInput:  service.HTTPRoutesListInput{PayloadName: "payload1"},
+			svcResult: service.HTTPRoutesListOutput{{Index: 1, Path: "/get"}},
+			status:    http.StatusOK,
+			wantBody:  []service.HTTPRoute{{Index: 1, Path: "/get"}},
+		},
+		{
+			name:      "http routes delete",
+			method:    "DELETE",
+			path:      "/http-routes/payload1/1",
+			token:     User1Token,
+			svcMethod: "HTTPRoutesDelete",
+			svcInput:  service.HTTPRoutesDeleteInput{PayloadName: "payload1", Index: 1},
+			svcResult: &service.HTTPRoutesDeleteOutput{Index: 1, Path: "/get"},
+			status:    http.StatusOK,
+			wantBody:  &service.HTTPRoute{Index: 1, Path: "/get"},
+		},
+		{
+			name:      "http routes clear",
+			method:    "DELETE",
+			path:      "/http-routes/payload1",
+			query:     "path=/x",
+			token:     User1Token,
+			svcMethod: "HTTPRoutesClear",
+			svcInput:  service.HTTPRoutesClearInput{PayloadName: "payload1", Path: "/x"},
+			svcResult: service.HTTPRoutesClearOutput{{Index: 1}},
+			status:    http.StatusOK,
+			wantBody:  []service.HTTPRoute{{Index: 1}},
+		},
+
+		//
+		// Events
+		//
+		{
+			name:      "events list",
+			method:    "GET",
+			path:      "/events/payload1",
+			query:     "limit=5&offset=2",
+			token:     User1Token,
+			svcMethod: "EventsList",
+			svcInput:  service.EventsListInput{PayloadName: "payload1", Limit: 5, Offset: 2},
+			svcResult: service.EventsListOutput{{Index: 1, Protocol: service.EventProtocolHttp}},
+			status:    http.StatusOK,
+			wantBody:  []service.Event{{Index: 1, Protocol: service.EventProtocolHttp}},
+		},
+		{
+			name:      "events get",
+			method:    "GET",
+			path:      "/events/payload1/2",
+			token:     User1Token,
+			svcMethod: "EventsGet",
+			svcInput:  service.EventsGetInput{PayloadName: "payload1", Index: 2},
+			svcResult: &service.EventsGetOutput{Index: 2, Protocol: service.EventProtocolHttp},
+			status:    http.StatusOK,
+			wantBody:  &service.Event{Index: 2, Protocol: service.EventProtocolHttp},
+		},
+
+		//
+		// Profile
+		//
+		{
+			name:       "profile get",
+			method:     "GET",
+			path:       "/profile",
+			token:      User1Token,
+			svcMethod:  "ProfileGet",
+			svcNoInput: true,
+			svcResult:  &service.ProfileGetOutput{Name: "user1"},
+			status:     http.StatusOK,
+			wantBody:   &service.User{Name: "user1"},
+		},
+
+		//
+		// Users (admin only)
+		//
+		{
+			name:      "users create",
+			method:    "POST",
+			path:      "/users",
+			token:     AdminToken,
+			body:      `{"name":"test","apiToken":"token","telegramId":1234}`,
+			svcMethod: "UsersCreate",
+			svcInput: service.UsersCreateInput{
+				Name:       "test",
+				APIToken:   new("token"),
+				TelegramID: new(int64(1234)),
+			},
+			svcResult: &service.UsersCreateOutput{Name: "test"},
+			status:    http.StatusCreated,
+			wantBody:  &service.User{Name: "test"},
+		},
+		{
+			name:      "users delete",
+			method:    "DELETE",
+			path:      "/users/user1",
+			token:     AdminToken,
+			svcMethod: "UsersDelete",
+			svcInput:  service.UsersDeleteInput{Name: "user1"},
+			svcResult: &service.UsersDeleteOutput{Name: "user1"},
+			status:    http.StatusOK,
+			wantBody:  &service.User{Name: "user1"},
+		},
+
+		//
+		// Audit records (admin only)
+		//
+		{
+			name:      "audit records list",
+			method:    "GET",
+			path:      "/audit-records",
+			query:     "actorId=1&actorName=user1&resourceType=payload&action=create&page=1&perPage=1&from=2026-01-01T09:00:00Z&to=2026-01-01T10:30:00Z",
+			token:     AdminToken,
+			svcMethod: "AuditRecordsList",
+			svcInput: service.AuditRecordsListInput{
+				ActorID:      new(int64(1)),
+				ActorName:    "user1",
+				ResourceType: service.AuditResourceTypePayload,
+				Action:       service.AuditActionCreate,
+				From:         mustTime(t, "2026-01-01T09:00:00Z"),
+				To:           mustTime(t, "2026-01-01T10:30:00Z"),
+				Page:         1,
+				PerPage:      1,
+			},
+			svcResult: service.AuditRecordsListOutput{{ID: 1, Action: service.AuditActionCreate}},
+			status:    http.StatusOK,
+			wantBody:  []service.AuditRecord{{ID: 1, Action: service.AuditActionCreate}},
+		},
+		{
+			name:      "audit records get",
+			method:    "GET",
+			path:      "/audit-records/2",
+			token:     AdminToken,
+			svcMethod: "AuditRecordsGet",
+			svcInput:  service.AuditRecordsGetInput{ID: 2},
+			svcResult: &service.AuditRecordsGetOutput{ID: 2, Action: service.AuditActionUpdate},
+			status:    http.StatusOK,
+			wantBody:  &service.AuditRecord{ID: 2, Action: service.AuditActionUpdate},
+		},
+
+		//
+		// Error matrix (each mapped kind once)
+		//
+		{
+			name:   "bad json body",
 			method: "POST",
-			path:   "/http-routes",
+			path:   "/payloads",
 			token:  User1Token,
-			json: `{
-				"payloadName": "payload1",
-				"method": "GET",
-				"path": "/test",
-				"code": 200,
-				"headers": {"Test":["test"]},
-				"body": "dGVzdA==",
-				"isDynamic": true
-			}`,
-			schema: actions.HTTPRoutesCreateResult{},
-			result: map[string]matcher{
-				"$.method":    equal("GET"),
-				"$.path":      equal("/test"),
-				"$.code":      equal(200),
-				"$.headers":   equal(map[string]any{"Test": []any{"test"}}),
-				"$.body":      equal("dGVzdA=="),
-				"$.isDynamic": equal(true),
-				"$.createdAt": withinDuration(time.Second * 10),
-			},
-			status: 201,
+			body:   `{`,
+			status: http.StatusBadRequest,
 		},
 		{
-			method: "POST",
-			path:   "/http-routes",
-			token:  User1Token,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BadFormatError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
+			name:    "bad path param",
+			method:  "DELETE",
+			path:    "/dns-records/payload1/abc",
+			token:   User1Token,
+			status:  http.StatusBadRequest,
+			wantMsg: "integer",
 		},
 		{
-			method: "POST",
-			path:   "/http-routes",
-			token:  User1Token,
-			json:   `{"payloadName": "payload1", "path": ""}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("validation"),
-			},
-			status: 400,
+			name:    "missing token",
+			method:  "GET",
+			path:    "/profile",
+			status:  http.StatusUnauthorized,
+			wantMsg: "Missing token",
 		},
 		{
-			method: "POST",
-			path:   "/http-routes",
-			token:  User1Token,
-			json:   `{"payloadName": "payload1", "method": "GET", "path": "/get", "code": 200}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("conflict"),
-			},
-			status: 409,
-		},
-
-		// Update
-
-		{
-			method: "PATCH",
-			path:   "/http-routes/payload1/1",
-			token:  User1Token,
-			json: `{
-				"method": "POST",
-				"path": "/test2",
-				"code": 301,
-				"headers": {"X":["x"]},
-				"body": "MTIzNAo=",
-				"isDynamic": false
-			}`,
-			schema: actions.HTTPRoutesUpdateResult{},
-			result: map[string]matcher{
-				"$.method":    equal("POST"),
-				"$.path":      equal("/test2"),
-				"$.code":      equal(301),
-				"$.headers":   equal(map[string]any{"X": []any{"x"}}),
-				"$.body":      equal("MTIzNAo="),
-				"$.isDynamic": equal(false),
-			},
-			status: 200,
+			name:    "invalid token",
+			method:  "GET",
+			path:    "/profile",
+			token:   "invalid",
+			status:  http.StatusUnauthorized,
+			wantMsg: "Invalid token",
 		},
 		{
-			method: "PATCH",
-			path:   "/http-routes/payload1/1",
-			token:  User1Token,
-			json:   `{"invalid": 1}`,
-			schema: &errors.BadFormatError{},
-			result: map[string]matcher{
-				"$.message": contains("format"),
-				"$.details": contains("json"),
-			},
-			status: 400,
+			name:    "forbidden non-admin",
+			method:  "POST",
+			path:    "/users",
+			token:   User1Token,
+			body:    `{"name":"x"}`,
+			status:  http.StatusForbidden,
+			wantMsg: "Admin only",
 		},
 		{
-			method: "PATCH",
-			path:   "/http-routes/payload1/1",
-			token:  User1Token,
-			json:   `{"method": "X"}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("validation"),
-			},
-			status: 400,
+			name:      "not found",
+			method:    "DELETE",
+			path:      "/payloads/nope",
+			token:     User1Token,
+			svcMethod: "PayloadsDelete",
+			svcInput:  service.PayloadsDeleteInput{Name: "nope"},
+			svcErr:    service.NotFoundf("payload not found"),
+			status:    http.StatusNotFound,
+			wantMsg:   "not found",
 		},
 		{
-			method: "PATCH",
-			path:   "/http-routes/payload1/1337",
-			token:  User1Token,
-			json: `{
-				"method": "POST",
-				"path": "/test2",
-				"code": 301,
-				"headers": {"X":["x"]},
-				"body": "MTIzNAo=",
-				"isDynamic": false
-			}`,
-			schema: &errors.ValidationError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// List
-
-		{
-			method: "GET",
-			path:   "/http-routes/payload1",
-			token:  User1Token,
-			schema: (actions.HTTPRoutesListResult)(nil),
-			result: map[string]matcher{
-				"$":         length(5),
-				"$[0].path": equal("/get"),
-				"$[1].path": equal("/post"),
-			},
-			status: 200,
+			name:      "conflict",
+			method:    "POST",
+			path:      "/payloads",
+			token:     User1Token,
+			body:      `{"name":"payload1"}`,
+			svcMethod: "PayloadsCreate",
+			svcInput:  service.PayloadsCreateInput{Name: "payload1"},
+			svcErr:    service.Conflictf("payload already exists"),
+			status:    http.StatusConflict,
+			wantMsg:   "already exists",
 		},
 		{
-			method: "GET",
-			path:   "/http-routes/not-exist",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Delete
-
-		{
-			method: "DELETE",
-			path:   "/http-routes/payload1/1",
-			token:  User1Token,
-			schema: actions.HTTPRoutesDeleteResult{},
-			result: map[string]matcher{
-				"$.path": equal("/get"),
-			},
-			status: 200,
+			name:         "validation",
+			method:       "POST",
+			path:         "/payloads",
+			token:        User1Token,
+			body:         `{"name":""}`,
+			svcMethod:    "PayloadsCreate",
+			svcInput:     service.PayloadsCreateInput{Name: ""},
+			svcErr:       service.Validation(map[string]string{"name": "cannot be blank"}),
+			status:       http.StatusUnprocessableEntity,
+			wantMsg:      "validation failed",
+			wantProblems: map[string]string{"name": "cannot be blank"},
 		},
 		{
-			method: "DELETE",
-			path:   "/http-routes/not-exist/1",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-		{
-			method: "DELETE",
-			path:   "/http-routes/payload1/1337",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
-		},
-
-		// Clear
-
-		{
-			method: "DELETE",
-			path:   "/http-routes/payload1/",
-			token:  User1Token,
-			schema: actions.HTTPRoutesClearResult{},
-			status: 200,
-			result: map[string]matcher{
-				"$[0].path": equal("/get"),
-				"$[1].path": equal("/post"),
-			},
-		},
-		{
-			method: "DELETE",
-			path:   "/http-routes/not-exist/",
-			token:  User1Token,
-			schema: &errors.NotFoundError{},
-			result: map[string]matcher{
-				"$.message": contains("not found"),
-			},
-			status: 404,
+			name:      "internal error",
+			method:    "GET",
+			path:      "/payloads",
+			token:     User1Token,
+			svcMethod: "PayloadsList",
+			svcInput:  service.PayloadsListInput{},
+			svcErr:    fmt.Errorf("boom"),
+			status:    http.StatusInternalServerError,
+			wantMsg:   "internal error",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%s%s/%d", tt.method, tt.path, tt.status), func(t *testing.T) {
-			setup(t)
-			defer teardown(t)
+		t.Run(tt.name, func(t *testing.T) {
+			svc := &service_mock.ServerService{}
+			registerAuth(svc)
 
-			printers := make([]httpexpect.Printer, 0)
-
-			if verbose {
-				printers = append(printers, httpexpect.NewCurlPrinter(t))
-				printers = append(printers, httpexpect.NewDebugPrinter(t, true))
+			if tt.svcMethod != "" {
+				args := []any{mock.Anything}
+				if !tt.svcNoInput {
+					args = append(args, tt.svcInput)
+				}
+				svc.On(tt.svcMethod, args...).Return(tt.svcResult, tt.svcErr)
 			}
 
-			cfg := httpexpect.Config{
-				BaseURL:  srv.URL,
-				Reporter: httpexpect.NewAssertReporter(t),
-				Printers: printers,
+			api, err := api.New(&api.Config{Admin: AdminToken}, slog.New(slog.DiscardHandler), nil, svc)
+			require.NoError(t, err)
+
+			srv := httptest.NewServer(api.Handler())
+			defer srv.Close()
+
+			resp := doRequest(t, srv, tt)
+			defer resp.Body.Close()
+
+			require.Equal(t, tt.status, resp.StatusCode)
+
+			raw, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			if tt.wantBody != nil {
+				assertJSONEqual(t, tt.wantBody, raw)
 			}
 
-			if proxy != "" {
-				proxyUrl, _ := url.Parse(proxy)
-				cfg.Client = &http.Client{
-					Transport: &http.Transport{
-						Proxy: http.ProxyURL(proxyUrl),
-					},
+			if tt.wantMsg != "" || tt.wantProblems != nil {
+				var e struct {
+					Message  string            `json:"message"`
+					Problems map[string]string `json:"problems"`
+				}
+				require.NoError(t, json.Unmarshal(raw, &e))
+				if tt.wantMsg != "" {
+					require.Contains(t, e.Message, tt.wantMsg)
+				}
+				if tt.wantProblems != nil {
+					require.Equal(t, tt.wantProblems, e.Problems)
 				}
 			}
-			e := httpexpect.WithConfig(cfg)
 
-			req := e.Request(tt.method, tt.path)
-
-			if tt.token != "" {
-				req = req.WithHeader("Authorization", fmt.Sprintf("Bearer %s", tt.token))
-			}
-
-			if tt.json != "" {
-				req = req.
-					WithText(tt.json).
-					WithHeader("Content-Type", "application/json; charset=utf-8")
-			}
-
-			if tt.query != "" {
-				req = req.WithQueryString(tt.query)
-			}
-
-			res := req.
-				Expect().
-				Status(tt.status).
-				JSON()
-
-			for path, matcher := range tt.result {
-				matcher(t, res.Path(path).Raw())
+			if tt.svcMethod != "" {
+				args := []any{mock.Anything}
+				if !tt.svcNoInput {
+					args = append(args, tt.svcInput)
+				}
+				svc.AssertCalled(t, tt.svcMethod, args...)
 			}
 		})
 	}
+}
+
+func doRequest(t *testing.T, srv *httptest.Server, tt testCase) *http.Response {
+	t.Helper()
+
+	var body io.Reader
+	if tt.body != "" {
+		body = strings.NewReader(tt.body)
+	}
+
+	url := srv.URL + tt.path
+	if tt.query != "" {
+		url += "?" + tt.query
+	}
+
+	req, err := http.NewRequest(tt.method, url, body)
+	require.NoError(t, err)
+
+	if tt.token != "" {
+		req.Header.Set("Authorization", "Bearer "+tt.token)
+	}
+	if tt.body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	resp, err := srv.Client().Do(req)
+	require.NoError(t, err)
+
+	return resp
+}
+
+// assertJSONEqual compares want (re-encoded to JSON) with the raw response body
+// at the structural level, ignoring field ordering and formatting.
+func assertJSONEqual(t *testing.T, want any, raw []byte) {
+	t.Helper()
+
+	wantJSON, err := json.Marshal(want)
+	require.NoError(t, err)
+
+	var wantAny, gotAny any
+	require.NoError(t, json.Unmarshal(wantJSON, &wantAny))
+	require.NoError(t, json.Unmarshal(raw, &gotAny))
+
+	require.Equal(t, wantAny, gotAny)
 }

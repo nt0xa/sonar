@@ -20,5 +20,5 @@ func (s *Service) ProfileGet(
 		return nil, err
 	}
 
-	return user(*u), nil
+	return (*service.ProfileGetOutput)(user(*u)), nil
 }

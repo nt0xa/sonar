@@ -15,23 +15,23 @@ type ServerService struct {
 }
 
 // AuditRecordsGet provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) AuditRecordsGet(_a0 context.Context, _a1 service.AuditRecordsGetInput) (*service.AuditRecord, error) {
+func (_m *ServerService) AuditRecordsGet(_a0 context.Context, _a1 service.AuditRecordsGetInput) (*service.AuditRecordsGetOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AuditRecordsGet")
 	}
 
-	var r0 *service.AuditRecord
+	var r0 *service.AuditRecordsGetOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsGetInput) (*service.AuditRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsGetInput) (*service.AuditRecordsGetOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsGetInput) *service.AuditRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsGetInput) *service.AuditRecordsGetOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.AuditRecord)
+			r0 = ret.Get(0).(*service.AuditRecordsGetOutput)
 		}
 	}
 
@@ -45,23 +45,23 @@ func (_m *ServerService) AuditRecordsGet(_a0 context.Context, _a1 service.AuditR
 }
 
 // AuditRecordsList provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) AuditRecordsList(_a0 context.Context, _a1 service.AuditRecordsListInput) ([]service.AuditRecord, error) {
+func (_m *ServerService) AuditRecordsList(_a0 context.Context, _a1 service.AuditRecordsListInput) (service.AuditRecordsListOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AuditRecordsList")
 	}
 
-	var r0 []service.AuditRecord
+	var r0 service.AuditRecordsListOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsListInput) ([]service.AuditRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsListInput) (service.AuditRecordsListOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsListInput) []service.AuditRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.AuditRecordsListInput) service.AuditRecordsListOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.AuditRecord)
+			r0 = ret.Get(0).(service.AuditRecordsListOutput)
 		}
 	}
 
@@ -195,23 +195,23 @@ func (_m *ServerService) AuthContextByTelegramID(_a0 context.Context, _a1 int64)
 }
 
 // DNSRecordsClear provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) DNSRecordsClear(_a0 context.Context, _a1 service.DNSRecordsClearInput) ([]service.DNSRecord, error) {
+func (_m *ServerService) DNSRecordsClear(_a0 context.Context, _a1 service.DNSRecordsClearInput) (service.DNSRecordsClearOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DNSRecordsClear")
 	}
 
-	var r0 []service.DNSRecord
+	var r0 service.DNSRecordsClearOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsClearInput) ([]service.DNSRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsClearInput) (service.DNSRecordsClearOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsClearInput) []service.DNSRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsClearInput) service.DNSRecordsClearOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.DNSRecord)
+			r0 = ret.Get(0).(service.DNSRecordsClearOutput)
 		}
 	}
 
@@ -225,23 +225,23 @@ func (_m *ServerService) DNSRecordsClear(_a0 context.Context, _a1 service.DNSRec
 }
 
 // DNSRecordsCreate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) DNSRecordsCreate(_a0 context.Context, _a1 service.DNSRecordsCreateInput) (*service.DNSRecord, error) {
+func (_m *ServerService) DNSRecordsCreate(_a0 context.Context, _a1 service.DNSRecordsCreateInput) (*service.DNSRecordsCreateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DNSRecordsCreate")
 	}
 
-	var r0 *service.DNSRecord
+	var r0 *service.DNSRecordsCreateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsCreateInput) (*service.DNSRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsCreateInput) (*service.DNSRecordsCreateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsCreateInput) *service.DNSRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsCreateInput) *service.DNSRecordsCreateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.DNSRecord)
+			r0 = ret.Get(0).(*service.DNSRecordsCreateOutput)
 		}
 	}
 
@@ -255,23 +255,23 @@ func (_m *ServerService) DNSRecordsCreate(_a0 context.Context, _a1 service.DNSRe
 }
 
 // DNSRecordsDelete provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) DNSRecordsDelete(_a0 context.Context, _a1 service.DNSRecordsDeleteInput) (*service.DNSRecord, error) {
+func (_m *ServerService) DNSRecordsDelete(_a0 context.Context, _a1 service.DNSRecordsDeleteInput) (*service.DNSRecordsDeleteOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DNSRecordsDelete")
 	}
 
-	var r0 *service.DNSRecord
+	var r0 *service.DNSRecordsDeleteOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsDeleteInput) (*service.DNSRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsDeleteInput) (*service.DNSRecordsDeleteOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsDeleteInput) *service.DNSRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsDeleteInput) *service.DNSRecordsDeleteOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.DNSRecord)
+			r0 = ret.Get(0).(*service.DNSRecordsDeleteOutput)
 		}
 	}
 
@@ -285,23 +285,23 @@ func (_m *ServerService) DNSRecordsDelete(_a0 context.Context, _a1 service.DNSRe
 }
 
 // DNSRecordsList provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) DNSRecordsList(_a0 context.Context, _a1 service.DNSRecordsListInput) ([]service.DNSRecord, error) {
+func (_m *ServerService) DNSRecordsList(_a0 context.Context, _a1 service.DNSRecordsListInput) (service.DNSRecordsListOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DNSRecordsList")
 	}
 
-	var r0 []service.DNSRecord
+	var r0 service.DNSRecordsListOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsListInput) ([]service.DNSRecord, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsListInput) (service.DNSRecordsListOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsListInput) []service.DNSRecord); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.DNSRecordsListInput) service.DNSRecordsListOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.DNSRecord)
+			r0 = ret.Get(0).(service.DNSRecordsListOutput)
 		}
 	}
 
@@ -315,23 +315,23 @@ func (_m *ServerService) DNSRecordsList(_a0 context.Context, _a1 service.DNSReco
 }
 
 // EventsGet provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) EventsGet(_a0 context.Context, _a1 service.EventsGetInput) (*service.Event, error) {
+func (_m *ServerService) EventsGet(_a0 context.Context, _a1 service.EventsGetInput) (*service.EventsGetOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EventsGet")
 	}
 
-	var r0 *service.Event
+	var r0 *service.EventsGetOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.EventsGetInput) (*service.Event, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.EventsGetInput) (*service.EventsGetOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.EventsGetInput) *service.Event); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.EventsGetInput) *service.EventsGetOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.Event)
+			r0 = ret.Get(0).(*service.EventsGetOutput)
 		}
 	}
 
@@ -345,23 +345,23 @@ func (_m *ServerService) EventsGet(_a0 context.Context, _a1 service.EventsGetInp
 }
 
 // EventsList provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) EventsList(_a0 context.Context, _a1 service.EventsListInput) ([]service.Event, error) {
+func (_m *ServerService) EventsList(_a0 context.Context, _a1 service.EventsListInput) (service.EventsListOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EventsList")
 	}
 
-	var r0 []service.Event
+	var r0 service.EventsListOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.EventsListInput) ([]service.Event, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.EventsListInput) (service.EventsListOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.EventsListInput) []service.Event); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.EventsListInput) service.EventsListOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.Event)
+			r0 = ret.Get(0).(service.EventsListOutput)
 		}
 	}
 
@@ -375,23 +375,23 @@ func (_m *ServerService) EventsList(_a0 context.Context, _a1 service.EventsListI
 }
 
 // HTTPRoutesClear provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) HTTPRoutesClear(_a0 context.Context, _a1 service.HTTPRoutesClearInput) ([]service.HTTPRoute, error) {
+func (_m *ServerService) HTTPRoutesClear(_a0 context.Context, _a1 service.HTTPRoutesClearInput) (service.HTTPRoutesClearOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HTTPRoutesClear")
 	}
 
-	var r0 []service.HTTPRoute
+	var r0 service.HTTPRoutesClearOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesClearInput) ([]service.HTTPRoute, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesClearInput) (service.HTTPRoutesClearOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesClearInput) []service.HTTPRoute); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesClearInput) service.HTTPRoutesClearOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.HTTPRoute)
+			r0 = ret.Get(0).(service.HTTPRoutesClearOutput)
 		}
 	}
 
@@ -405,23 +405,23 @@ func (_m *ServerService) HTTPRoutesClear(_a0 context.Context, _a1 service.HTTPRo
 }
 
 // HTTPRoutesCreate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) HTTPRoutesCreate(_a0 context.Context, _a1 service.HTTPRoutesCreateInput) (*service.HTTPRoute, error) {
+func (_m *ServerService) HTTPRoutesCreate(_a0 context.Context, _a1 service.HTTPRoutesCreateInput) (*service.HTTPRoutesCreateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HTTPRoutesCreate")
 	}
 
-	var r0 *service.HTTPRoute
+	var r0 *service.HTTPRoutesCreateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesCreateInput) (*service.HTTPRoute, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesCreateInput) (*service.HTTPRoutesCreateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesCreateInput) *service.HTTPRoute); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesCreateInput) *service.HTTPRoutesCreateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.HTTPRoute)
+			r0 = ret.Get(0).(*service.HTTPRoutesCreateOutput)
 		}
 	}
 
@@ -435,23 +435,23 @@ func (_m *ServerService) HTTPRoutesCreate(_a0 context.Context, _a1 service.HTTPR
 }
 
 // HTTPRoutesDelete provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) HTTPRoutesDelete(_a0 context.Context, _a1 service.HTTPRoutesDeleteInput) (*service.HTTPRoute, error) {
+func (_m *ServerService) HTTPRoutesDelete(_a0 context.Context, _a1 service.HTTPRoutesDeleteInput) (*service.HTTPRoutesDeleteOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HTTPRoutesDelete")
 	}
 
-	var r0 *service.HTTPRoute
+	var r0 *service.HTTPRoutesDeleteOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesDeleteInput) (*service.HTTPRoute, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesDeleteInput) (*service.HTTPRoutesDeleteOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesDeleteInput) *service.HTTPRoute); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesDeleteInput) *service.HTTPRoutesDeleteOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.HTTPRoute)
+			r0 = ret.Get(0).(*service.HTTPRoutesDeleteOutput)
 		}
 	}
 
@@ -465,23 +465,23 @@ func (_m *ServerService) HTTPRoutesDelete(_a0 context.Context, _a1 service.HTTPR
 }
 
 // HTTPRoutesList provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) HTTPRoutesList(_a0 context.Context, _a1 service.HTTPRoutesListInput) ([]service.HTTPRoute, error) {
+func (_m *ServerService) HTTPRoutesList(_a0 context.Context, _a1 service.HTTPRoutesListInput) (service.HTTPRoutesListOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HTTPRoutesList")
 	}
 
-	var r0 []service.HTTPRoute
+	var r0 service.HTTPRoutesListOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesListInput) ([]service.HTTPRoute, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesListInput) (service.HTTPRoutesListOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesListInput) []service.HTTPRoute); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesListInput) service.HTTPRoutesListOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.HTTPRoute)
+			r0 = ret.Get(0).(service.HTTPRoutesListOutput)
 		}
 	}
 
@@ -495,23 +495,23 @@ func (_m *ServerService) HTTPRoutesList(_a0 context.Context, _a1 service.HTTPRou
 }
 
 // HTTPRoutesUpdate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) HTTPRoutesUpdate(_a0 context.Context, _a1 service.HTTPRoutesUpdateInput) (*service.HTTPRoute, error) {
+func (_m *ServerService) HTTPRoutesUpdate(_a0 context.Context, _a1 service.HTTPRoutesUpdateInput) (*service.HTTPRoutesUpdateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HTTPRoutesUpdate")
 	}
 
-	var r0 *service.HTTPRoute
+	var r0 *service.HTTPRoutesUpdateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesUpdateInput) (*service.HTTPRoute, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesUpdateInput) (*service.HTTPRoutesUpdateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesUpdateInput) *service.HTTPRoute); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.HTTPRoutesUpdateInput) *service.HTTPRoutesUpdateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.HTTPRoute)
+			r0 = ret.Get(0).(*service.HTTPRoutesUpdateOutput)
 		}
 	}
 
@@ -524,24 +524,42 @@ func (_m *ServerService) HTTPRoutesUpdate(_a0 context.Context, _a1 service.HTTPR
 	return r0, r1
 }
 
+// LarkProvisionUser provides a mock function with given fields: _a0, _a1
+func (_m *ServerService) LarkProvisionUser(_a0 context.Context, _a1 string) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LarkProvisionUser")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // PayloadsClear provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) PayloadsClear(_a0 context.Context, _a1 service.PayloadsClearInput) ([]service.Payload, error) {
+func (_m *ServerService) PayloadsClear(_a0 context.Context, _a1 service.PayloadsClearInput) (service.PayloadsClearOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayloadsClear")
 	}
 
-	var r0 []service.Payload
+	var r0 service.PayloadsClearOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsClearInput) ([]service.Payload, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsClearInput) (service.PayloadsClearOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsClearInput) []service.Payload); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsClearInput) service.PayloadsClearOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.Payload)
+			r0 = ret.Get(0).(service.PayloadsClearOutput)
 		}
 	}
 
@@ -555,23 +573,23 @@ func (_m *ServerService) PayloadsClear(_a0 context.Context, _a1 service.Payloads
 }
 
 // PayloadsCreate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) PayloadsCreate(_a0 context.Context, _a1 service.PayloadsCreateInput) (*service.Payload, error) {
+func (_m *ServerService) PayloadsCreate(_a0 context.Context, _a1 service.PayloadsCreateInput) (*service.PayloadsCreateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayloadsCreate")
 	}
 
-	var r0 *service.Payload
+	var r0 *service.PayloadsCreateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsCreateInput) (*service.Payload, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsCreateInput) (*service.PayloadsCreateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsCreateInput) *service.Payload); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsCreateInput) *service.PayloadsCreateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.Payload)
+			r0 = ret.Get(0).(*service.PayloadsCreateOutput)
 		}
 	}
 
@@ -585,23 +603,23 @@ func (_m *ServerService) PayloadsCreate(_a0 context.Context, _a1 service.Payload
 }
 
 // PayloadsDelete provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) PayloadsDelete(_a0 context.Context, _a1 service.PayloadsDeleteInput) (*service.Payload, error) {
+func (_m *ServerService) PayloadsDelete(_a0 context.Context, _a1 service.PayloadsDeleteInput) (*service.PayloadsDeleteOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayloadsDelete")
 	}
 
-	var r0 *service.Payload
+	var r0 *service.PayloadsDeleteOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsDeleteInput) (*service.Payload, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsDeleteInput) (*service.PayloadsDeleteOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsDeleteInput) *service.Payload); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsDeleteInput) *service.PayloadsDeleteOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.Payload)
+			r0 = ret.Get(0).(*service.PayloadsDeleteOutput)
 		}
 	}
 
@@ -615,23 +633,23 @@ func (_m *ServerService) PayloadsDelete(_a0 context.Context, _a1 service.Payload
 }
 
 // PayloadsList provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) PayloadsList(_a0 context.Context, _a1 service.PayloadsListInput) ([]service.Payload, error) {
+func (_m *ServerService) PayloadsList(_a0 context.Context, _a1 service.PayloadsListInput) (service.PayloadsListOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayloadsList")
 	}
 
-	var r0 []service.Payload
+	var r0 service.PayloadsListOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsListInput) ([]service.Payload, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsListInput) (service.PayloadsListOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsListInput) []service.Payload); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsListInput) service.PayloadsListOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.Payload)
+			r0 = ret.Get(0).(service.PayloadsListOutput)
 		}
 	}
 
@@ -645,23 +663,23 @@ func (_m *ServerService) PayloadsList(_a0 context.Context, _a1 service.PayloadsL
 }
 
 // PayloadsUpdate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) PayloadsUpdate(_a0 context.Context, _a1 service.PayloadsUpdateInput) (*service.Payload, error) {
+func (_m *ServerService) PayloadsUpdate(_a0 context.Context, _a1 service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayloadsUpdate")
 	}
 
-	var r0 *service.Payload
+	var r0 *service.PayloadsUpdateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsUpdateInput) (*service.Payload, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsUpdateInput) (*service.PayloadsUpdateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsUpdateInput) *service.Payload); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.PayloadsUpdateInput) *service.PayloadsUpdateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.Payload)
+			r0 = ret.Get(0).(*service.PayloadsUpdateOutput)
 		}
 	}
 
@@ -675,23 +693,23 @@ func (_m *ServerService) PayloadsUpdate(_a0 context.Context, _a1 service.Payload
 }
 
 // ProfileGet provides a mock function with given fields: _a0
-func (_m *ServerService) ProfileGet(_a0 context.Context) (*service.User, error) {
+func (_m *ServerService) ProfileGet(_a0 context.Context) (*service.ProfileGetOutput, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ProfileGet")
 	}
 
-	var r0 *service.User
+	var r0 *service.ProfileGetOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*service.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*service.ProfileGetOutput, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *service.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *service.ProfileGetOutput); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.User)
+			r0 = ret.Get(0).(*service.ProfileGetOutput)
 		}
 	}
 
@@ -705,23 +723,23 @@ func (_m *ServerService) ProfileGet(_a0 context.Context) (*service.User, error) 
 }
 
 // UsersCreate provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) UsersCreate(_a0 context.Context, _a1 service.UsersCreateInput) (*service.User, error) {
+func (_m *ServerService) UsersCreate(_a0 context.Context, _a1 service.UsersCreateInput) (*service.UsersCreateOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UsersCreate")
 	}
 
-	var r0 *service.User
+	var r0 *service.UsersCreateOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.UsersCreateInput) (*service.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.UsersCreateInput) (*service.UsersCreateOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.UsersCreateInput) *service.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.UsersCreateInput) *service.UsersCreateOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.User)
+			r0 = ret.Get(0).(*service.UsersCreateOutput)
 		}
 	}
 
@@ -735,23 +753,23 @@ func (_m *ServerService) UsersCreate(_a0 context.Context, _a1 service.UsersCreat
 }
 
 // UsersDelete provides a mock function with given fields: _a0, _a1
-func (_m *ServerService) UsersDelete(_a0 context.Context, _a1 service.UsersDeleteInput) (*service.User, error) {
+func (_m *ServerService) UsersDelete(_a0 context.Context, _a1 service.UsersDeleteInput) (*service.UsersDeleteOutput, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UsersDelete")
 	}
 
-	var r0 *service.User
+	var r0 *service.UsersDeleteOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.UsersDeleteInput) (*service.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.UsersDeleteInput) (*service.UsersDeleteOutput, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.UsersDeleteInput) *service.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.UsersDeleteInput) *service.UsersDeleteOutput); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.User)
+			r0 = ret.Get(0).(*service.UsersDeleteOutput)
 		}
 	}
 

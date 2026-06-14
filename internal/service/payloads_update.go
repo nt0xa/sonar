@@ -24,4 +24,4 @@ func (in PayloadsUpdateInput) Validate() v.Problems {
 	)
 }
 
-type PayloadsUpdateOutput = Payload
+type PayloadsUpdateOutput Payload

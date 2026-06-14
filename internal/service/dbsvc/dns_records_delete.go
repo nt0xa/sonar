@@ -43,5 +43,5 @@ func (s *Service) DNSRecordsDelete(
 		return nil, err
 	}
 
-	return dnsRecord(*rec, p.Subdomain), nil
+	return (*service.DNSRecordsDeleteOutput)(dnsRecord(*rec, p.Subdomain)), nil
 }

@@ -29,4 +29,4 @@ func (in HTTPRoutesCreateInput) Validate() v.Problems {
 	)
 }
 
-type HTTPRoutesCreateOutput = HTTPRoute
+type HTTPRoutesCreateOutput HTTPRoute

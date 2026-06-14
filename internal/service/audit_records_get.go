@@ -20,4 +20,4 @@ func (in AuditRecordsGetInput) Validate() v.Problems {
 	)
 }
 
-type AuditRecordsGetOutput = AuditRecord
+type AuditRecordsGetOutput AuditRecord

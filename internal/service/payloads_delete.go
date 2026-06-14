@@ -20,4 +20,4 @@ func (in PayloadsDeleteInput) Validate() v.Problems {
 	)
 }
 
-type PayloadsDeleteOutput = Payload
+type PayloadsDeleteOutput Payload

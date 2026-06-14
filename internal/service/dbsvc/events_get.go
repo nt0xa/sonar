@@ -39,5 +39,5 @@ func (s *Service) EventsGet(
 		return nil, err
 	}
 
-	return event(r.Event, r.Index), nil
+	return (*service.EventsGetOutput)(event(r.Event, r.Index)), nil
 }

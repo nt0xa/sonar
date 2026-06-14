@@ -29,4 +29,4 @@ func (in DNSRecordsCreateInput) Validate() v.Problems {
 	)
 }
 
-type DNSRecordsCreateOutput = DNSRecord
+type DNSRecordsCreateOutput DNSRecord

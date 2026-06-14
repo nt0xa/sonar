@@ -22,4 +22,4 @@ func (in EventsListInput) Validate() v.Problems {
 	)
 }
 
-type EventsListOutput = []Event
+type EventsListOutput []Event

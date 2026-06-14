@@ -25,4 +25,4 @@ func (in UsersCreateInput) Validate() v.Problems {
 	)
 }
 
-type UsersCreateOutput = User
+type UsersCreateOutput User

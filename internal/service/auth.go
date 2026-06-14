@@ -18,6 +18,14 @@ type AuthContextByLarkID interface {
 	AuthContextByLarkID(context.Context, string) (context.Context, error)
 }
 
+// LarkProvisionUser ensures a user exists for the given Lark ID, creating one on
+// first contact. Lark is self-service: unlike the other messengers, a previously
+// unknown Lark user is provisioned rather than rejected. Callers run it before
+// AuthContextByLarkID, which stays lookup-only.
+type LarkProvisionUser interface {
+	LarkProvisionUser(context.Context, string) error
+}
+
 // ServerService is the full server-side service: the business operations of
 // [Service] plus the ability to resolve a caller's identity into an
 // authenticated context. It is implemented by DB-backed services (dbsvc and
@@ -30,4 +38,5 @@ type ServerService interface {
 	AuthContextByTelegramID
 	AuthContextBySlackID
 	AuthContextByLarkID
+	LarkProvisionUser
 }

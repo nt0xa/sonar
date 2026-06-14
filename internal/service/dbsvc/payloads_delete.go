@@ -35,5 +35,5 @@ func (s *Service) PayloadsDelete(
 		return nil, err
 	}
 
-	return payload(*p), nil
+	return (*service.PayloadsDeleteOutput)(payload(*p)), nil
 }

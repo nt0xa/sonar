@@ -62,5 +62,5 @@ func (s *Service) HTTPRoutesCreate(
 		return nil, err
 	}
 
-	return httpRoute(*rec, p.Subdomain), nil
+	return (*service.HTTPRoutesCreateOutput)(httpRoute(*rec, p.Subdomain)), nil
 }

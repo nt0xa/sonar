@@ -20,4 +20,4 @@ func (in DNSRecordsListInput) Validate() v.Problems {
 	)
 }
 
-type DNSRecordsListOutput = []DNSRecord
+type DNSRecordsListOutput []DNSRecord

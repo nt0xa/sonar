@@ -37,5 +37,5 @@ func (s *Service) UsersDelete(
 		return nil, err
 	}
 
-	return user(*rec), nil
+	return (*service.UsersDeleteOutput)(user(*rec)), nil
 }

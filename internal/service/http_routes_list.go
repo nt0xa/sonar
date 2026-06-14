@@ -20,4 +20,4 @@ func (in HTTPRoutesListInput) Validate() v.Problems {
 	)
 }
 
-type HTTPRoutesListOutput = []HTTPRoute
+type HTTPRoutesListOutput []HTTPRoute

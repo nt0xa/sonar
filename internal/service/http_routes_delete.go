@@ -22,4 +22,4 @@ func (in HTTPRoutesDeleteInput) Validate() v.Problems {
 	)
 }
 
-type HTTPRoutesDeleteOutput = HTTPRoute
+type HTTPRoutesDeleteOutput HTTPRoute

@@ -10,4 +10,4 @@ type PayloadsClearInput struct {
 	Name string
 }
 
-type PayloadsClearOutput = []Payload
+type PayloadsClearOutput []Payload

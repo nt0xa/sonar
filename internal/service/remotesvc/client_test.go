@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nt0xa/sonar/internal/modules/api2"
+	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/service"
 	service_mock "github.com/nt0xa/sonar/internal/service/mock"
 	"github.com/nt0xa/sonar/internal/service/remotesvc"
 )
 
 // These tests exercise the full client->server->mock round-trip: the real
-// remotesvc client talks over HTTP to the real api2.Handler(), whose backend is
+// remotesvc client talks over HTTP to the real api.Handler(), whose backend is
 // a mocked service.ServerService. They verify that client and server agree on
 // the wire contract (paths, queries, bodies, status codes, error shape) without
 // touching a database.
@@ -157,15 +157,15 @@ func TestClientRoundTrip(t *testing.T) {
 		// Payloads
 		//
 		{
-			name:  "payloads create",
-			token: User1Token,
+			name:      "payloads create",
+			token:     User1Token,
 			svcMethod: "PayloadsCreate",
 			svcInput: service.PayloadsCreateInput{
 				Name:            "test",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
 				StoreEvents:     true,
 			},
-			svcResult: &service.Payload{
+			svcResult: &service.PayloadsCreateOutput{
 				Name:            "test",
 				Subdomain:       "abcd1234",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
@@ -173,15 +173,15 @@ func TestClientRoundTrip(t *testing.T) {
 			},
 		},
 		{
-			name:  "payloads list",
-			token: User1Token,
+			name:      "payloads list",
+			token:     User1Token,
 			svcMethod: "PayloadsList",
 			svcInput:  service.PayloadsListInput{Name: "foo", Page: 2, PerPage: 20},
-			svcResult: []service.Payload{{Name: "foo"}},
+			svcResult: service.PayloadsListOutput{{Name: "foo"}},
 		},
 		{
-			name:  "payloads update",
-			token: User1Token,
+			name:      "payloads update",
+			token:     User1Token,
 			svcMethod: "PayloadsUpdate",
 			svcInput: service.PayloadsUpdateInput{
 				Name:            "payload1",
@@ -189,29 +189,29 @@ func TestClientRoundTrip(t *testing.T) {
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategorySmtp},
 				StoreEvents:     new(false),
 			},
-			svcResult: &service.Payload{Name: "new"},
+			svcResult: &service.PayloadsUpdateOutput{Name: "new"},
 		},
 		{
-			name:  "payloads delete",
-			token: User1Token,
+			name:      "payloads delete",
+			token:     User1Token,
 			svcMethod: "PayloadsDelete",
 			svcInput:  service.PayloadsDeleteInput{Name: "payload1"},
-			svcResult: &service.Payload{Name: "payload1"},
+			svcResult: &service.PayloadsDeleteOutput{Name: "payload1"},
 		},
 		{
-			name:  "payloads clear",
-			token: User1Token,
+			name:      "payloads clear",
+			token:     User1Token,
 			svcMethod: "PayloadsClear",
 			svcInput:  service.PayloadsClearInput{Name: "foo"},
-			svcResult: []service.Payload{{Name: "foo"}},
+			svcResult: service.PayloadsClearOutput{{Name: "foo"}},
 		},
 
 		//
 		// DNS records
 		//
 		{
-			name:  "dns records create",
-			token: User1Token,
+			name:      "dns records create",
+			token:     User1Token,
 			svcMethod: "DNSRecordsCreate",
 			svcInput: service.DNSRecordsCreateInput{
 				PayloadName: "payload1",
@@ -221,36 +221,36 @@ func TestClientRoundTrip(t *testing.T) {
 				Values:      []string{"127.0.0.1"},
 				Strategy:    service.DNSRecordStrategyAll,
 			},
-			svcResult: &service.DNSRecord{Index: 1, Name: "test", Type: service.DNSRecordTypeA},
+			svcResult: &service.DNSRecordsCreateOutput{Index: 1, Name: "test", Type: service.DNSRecordTypeA},
 		},
 		{
-			name:  "dns records list",
-			token: User1Token,
+			name:      "dns records list",
+			token:     User1Token,
 			svcMethod: "DNSRecordsList",
 			svcInput:  service.DNSRecordsListInput{PayloadName: "payload1"},
-			svcResult: []service.DNSRecord{{Index: 1, Name: "test-a"}},
+			svcResult: service.DNSRecordsListOutput{{Index: 1, Name: "test-a"}},
 		},
 		{
-			name:  "dns records delete",
-			token: User1Token,
+			name:      "dns records delete",
+			token:     User1Token,
 			svcMethod: "DNSRecordsDelete",
 			svcInput:  service.DNSRecordsDeleteInput{PayloadName: "payload1", Index: 1},
-			svcResult: &service.DNSRecord{Index: 1, Name: "test-a"},
+			svcResult: &service.DNSRecordsDeleteOutput{Index: 1, Name: "test-a"},
 		},
 		{
-			name:  "dns records clear",
-			token: User1Token,
+			name:      "dns records clear",
+			token:     User1Token,
 			svcMethod: "DNSRecordsClear",
 			svcInput:  service.DNSRecordsClearInput{PayloadName: "payload1", Name: "www"},
-			svcResult: []service.DNSRecord{{Index: 1}},
+			svcResult: service.DNSRecordsClearOutput{{Index: 1}},
 		},
 
 		//
 		// HTTP routes
 		//
 		{
-			name:  "http routes create",
-			token: User1Token,
+			name:      "http routes create",
+			token:     User1Token,
 			svcMethod: "HTTPRoutesCreate",
 			svcInput: service.HTTPRoutesCreateInput{
 				PayloadName: "payload1",
@@ -261,11 +261,11 @@ func TestClientRoundTrip(t *testing.T) {
 				Body:        "dGVzdA==",
 				IsDynamic:   true,
 			},
-			svcResult: &service.HTTPRoute{Index: 1, Method: service.HTTPMethodGET, Path: "/test", Code: 200},
+			svcResult: &service.HTTPRoutesCreateOutput{Index: 1, Method: service.HTTPMethodGET, Path: "/test", Code: 200},
 		},
 		{
-			name:  "http routes update",
-			token: User1Token,
+			name:      "http routes update",
+			token:     User1Token,
 			svcMethod: "HTTPRoutesUpdate",
 			svcInput: service.HTTPRoutesUpdateInput{
 				Payload:   "payload1",
@@ -277,88 +277,88 @@ func TestClientRoundTrip(t *testing.T) {
 				Body:      new("MTIzNAo="),
 				IsDynamic: new(false),
 			},
-			svcResult: &service.HTTPRoute{Index: 1, Method: service.HTTPMethodPOST, Path: "/test2", Code: 301},
+			svcResult: &service.HTTPRoutesUpdateOutput{Index: 1, Method: service.HTTPMethodPOST, Path: "/test2", Code: 301},
 		},
 		{
-			name:  "http routes list",
-			token: User1Token,
+			name:      "http routes list",
+			token:     User1Token,
 			svcMethod: "HTTPRoutesList",
 			svcInput:  service.HTTPRoutesListInput{PayloadName: "payload1"},
-			svcResult: []service.HTTPRoute{{Index: 1, Path: "/get"}},
+			svcResult: service.HTTPRoutesListOutput{{Index: 1, Path: "/get"}},
 		},
 		{
-			name:  "http routes delete",
-			token: User1Token,
+			name:      "http routes delete",
+			token:     User1Token,
 			svcMethod: "HTTPRoutesDelete",
 			svcInput:  service.HTTPRoutesDeleteInput{PayloadName: "payload1", Index: 1},
-			svcResult: &service.HTTPRoute{Index: 1, Path: "/get"},
+			svcResult: &service.HTTPRoutesDeleteOutput{Index: 1, Path: "/get"},
 		},
 		{
-			name:  "http routes clear",
-			token: User1Token,
+			name:      "http routes clear",
+			token:     User1Token,
 			svcMethod: "HTTPRoutesClear",
 			svcInput:  service.HTTPRoutesClearInput{PayloadName: "payload1", Path: "/x"},
-			svcResult: []service.HTTPRoute{{Index: 1}},
+			svcResult: service.HTTPRoutesClearOutput{{Index: 1}},
 		},
 
 		//
 		// Events
 		//
 		{
-			name:  "events list",
-			token: User1Token,
+			name:      "events list",
+			token:     User1Token,
 			svcMethod: "EventsList",
 			svcInput:  service.EventsListInput{PayloadName: "payload1", Limit: 5, Offset: 2},
-			svcResult: []service.Event{{Index: 1, Protocol: service.EventProtocolHttp}},
+			svcResult: service.EventsListOutput{{Index: 1, Protocol: service.EventProtocolHttp}},
 		},
 		{
-			name:  "events get",
-			token: User1Token,
+			name:      "events get",
+			token:     User1Token,
 			svcMethod: "EventsGet",
 			svcInput:  service.EventsGetInput{PayloadName: "payload1", Index: 2},
-			svcResult: &service.Event{Index: 2, Protocol: service.EventProtocolHttp},
+			svcResult: &service.EventsGetOutput{Index: 2, Protocol: service.EventProtocolHttp},
 		},
 
 		//
 		// Profile
 		//
 		{
-			name:  "profile get",
-			token: User1Token,
+			name:       "profile get",
+			token:      User1Token,
 			svcMethod:  "ProfileGet",
 			svcNoInput: true,
 			svcInput:   nil,
-			svcResult:  &service.User{Name: "user1"},
+			svcResult:  &service.ProfileGetOutput{Name: "user1"},
 		},
 
 		//
 		// Users (admin only)
 		//
 		{
-			name:  "users create",
-			token: AdminToken,
+			name:      "users create",
+			token:     AdminToken,
 			svcMethod: "UsersCreate",
 			svcInput: service.UsersCreateInput{
 				Name:       "test",
 				APIToken:   new("token"),
 				TelegramID: new(int64(1234)),
 			},
-			svcResult: &service.User{Name: "test"},
+			svcResult: &service.UsersCreateOutput{Name: "test"},
 		},
 		{
-			name:  "users delete",
-			token: AdminToken,
+			name:      "users delete",
+			token:     AdminToken,
 			svcMethod: "UsersDelete",
 			svcInput:  service.UsersDeleteInput{Name: "user1"},
-			svcResult: &service.User{Name: "user1"},
+			svcResult: &service.UsersDeleteOutput{Name: "user1"},
 		},
 
 		//
 		// Audit records (admin only)
 		//
 		{
-			name:  "audit records list",
-			token: AdminToken,
+			name:      "audit records list",
+			token:     AdminToken,
 			svcMethod: "AuditRecordsList",
 			svcInput: service.AuditRecordsListInput{
 				ActorID:      new(int64(1)),
@@ -370,14 +370,14 @@ func TestClientRoundTrip(t *testing.T) {
 				Page:         1,
 				PerPage:      1,
 			},
-			svcResult: []service.AuditRecord{{ID: 1, Action: service.AuditActionCreate}},
+			svcResult: service.AuditRecordsListOutput{{ID: 1, Action: service.AuditActionCreate}},
 		},
 		{
-			name:  "audit records get",
-			token: AdminToken,
+			name:      "audit records get",
+			token:     AdminToken,
 			svcMethod: "AuditRecordsGet",
 			svcInput:  service.AuditRecordsGetInput{ID: 2},
-			svcResult: &service.AuditRecord{ID: 2, Action: service.AuditActionUpdate},
+			svcResult: &service.AuditRecordsGetOutput{ID: 2, Action: service.AuditActionUpdate},
 		},
 
 		//
@@ -385,8 +385,8 @@ func TestClientRoundTrip(t *testing.T) {
 		// client maps status -> service.Error)
 		//
 		{
-			name:  "not found",
-			token: User1Token,
+			name:      "not found",
+			token:     User1Token,
 			svcMethod: "PayloadsDelete",
 			svcInput:  service.PayloadsDeleteInput{Name: "nope"},
 			svcErr:    service.NotFoundf("payload not found"),
@@ -394,8 +394,8 @@ func TestClientRoundTrip(t *testing.T) {
 			wantMsg:   "payload not found",
 		},
 		{
-			name:  "conflict",
-			token: User1Token,
+			name:      "conflict",
+			token:     User1Token,
 			svcMethod: "PayloadsCreate",
 			svcInput:  service.PayloadsCreateInput{Name: "payload1"},
 			svcErr:    service.Conflictf("payload already exists"),
@@ -403,8 +403,8 @@ func TestClientRoundTrip(t *testing.T) {
 			wantMsg:   "payload already exists",
 		},
 		{
-			name:  "validation",
-			token: User1Token,
+			name:         "validation",
+			token:        User1Token,
 			svcMethod:    "PayloadsCreate",
 			svcInput:     service.PayloadsCreateInput{Name: ""},
 			svcErr:       service.Validation(map[string]string{"name": "cannot be blank"}),
@@ -413,8 +413,8 @@ func TestClientRoundTrip(t *testing.T) {
 			wantProblems: map[string]string{"name": "cannot be blank"},
 		},
 		{
-			name:  "internal",
-			token: User1Token,
+			name:      "internal",
+			token:     User1Token,
 			svcMethod: "PayloadsList",
 			svcInput:  service.PayloadsListInput{},
 			svcErr:    fmt.Errorf("boom"),
@@ -423,8 +423,8 @@ func TestClientRoundTrip(t *testing.T) {
 		},
 		{
 			// Real checkIsAdmin rejects a non-admin caller before the service.
-			name:  "forbidden non-admin",
-			token: User1Token,
+			name:     "forbidden non-admin",
+			token:    User1Token,
 			svcInput: service.UsersCreateInput{Name: "x"},
 			wantKind: new(service.ErrorKindForbidden),
 			wantMsg:  "Admin only",
@@ -452,7 +452,7 @@ func TestClientRoundTrip(t *testing.T) {
 				svc.On(tt.svcMethod, args...).Return(tt.svcResult, tt.svcErr)
 			}
 
-			api, err := api2.New(&api2.Config{}, slog.New(slog.DiscardHandler), svc)
+			api, err := api.New(&api.Config{}, slog.New(slog.DiscardHandler), nil, svc)
 			require.NoError(t, err)
 
 			srv := httptest.NewServer(api.Handler())

@@ -12,33 +12,30 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/nt0xa/sonar/internal/actions"
-	"github.com/nt0xa/sonar/internal/actionsdb"
 	"github.com/nt0xa/sonar/internal/cmd"
 	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/templates"
 	"github.com/nt0xa/sonar/internal/utils/errors"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
 type Telegram struct {
-	api     *tgbotapi.BotAPI
-	db      *database.DB
-	tel     telemetry.Telemetry
-	log     *slog.Logger
-	cmd     *cmd.Command
-	actions actions.Actions
-	tmpl    *templates.Templates
+	api  *tgbotapi.BotAPI
+	tel  telemetry.Telemetry
+	log  *slog.Logger
+	cmd  *cmd.Command
+	svc  service.ServerService
+	tmpl *templates.Templates
 
 	domain string
 }
 
 func New(
 	cfg *Config,
-	db *database.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
-	actions actions.Actions,
+	svc service.ServerService,
 	domain string,
 ) (*Telegram, error) {
 	client := http.DefaultClient
@@ -95,25 +92,24 @@ func New(
 	)
 
 	tg := &Telegram{
-		api:     api,
-		db:      db,
-		log:     log,
-		tel:     tel,
-		domain:  domain,
-		actions: actions,
-		tmpl:    tmpl,
+		api:    api,
+		log:    log,
+		tel:    tel,
+		domain: domain,
+		svc:    svc,
+		tmpl:   tmpl,
 	}
 
 	tg.cmd = cmd.New(
-		actions,
+		svc,
 		cmd.PreExec(tg.preExec),
 	)
 
 	return tg, nil
 }
 
-func (tg *Telegram) preExec(acts *actions.Actions, root *cobra.Command) {
-	cmd.DefaultMessengersPreExec(acts, root)
+func (tg *Telegram) preExec(root *cobra.Command) {
+	cmd.DefaultMessengersPreExec(root)
 
 	c := &cobra.Command{
 		Use:   "id",
@@ -183,35 +179,32 @@ func (tg *Telegram) processUpdateWithTelemetry(ctx context.Context, update tgbot
 func (tg *Telegram) processUpdate(ctx context.Context, msg *tgbotapi.Message) error {
 	chat := msg.Chat
 
-	// Ignore error because user=nil is unauthorized user and there are
-	// some commands available for unauthorized users (e.g. "/id")
-	chatUser, _ := tg.db.UsersGetByTelegramID(ctx, chat.ID)
-	ctx = actionsdb.SetUser(ctx, chatUser)
-	ctx = actionsdb.SetSource(ctx, "telegram")
+	// Ignore the error: an unauthenticated user keeps the original context, so
+	// commands available without auth (e.g. "/id") still work.
+	if authCtx, err := tg.svc.AuthContextByTelegramID(ctx, chat.ID); err == nil {
+		ctx = authCtx
+	}
 	ctx = setMsgInfo(ctx, chat.ID, msg.MessageID)
 
-	stdout, stderr, err := tg.cmd.ParseAndExec(ctx, msg.Text,
-		func(ctx context.Context, res actions.Result) error {
-			s, err := tg.tmpl.RenderResult(res)
-			if err != nil {
-				return err
-			}
-			tg.htmlMessage(ctx, chat.ID, &msg.MessageID, s)
-			return nil
-		},
-	)
-
+	res, err := tg.cmd.ParseAndExec(ctx, msg.Text)
 	if err != nil {
 		tg.handleError(ctx, chat.ID, &msg.MessageID, err)
 		return nil
 	}
 
-	if stdout != "" {
-		tg.htmlMessage(ctx, chat.ID, &msg.MessageID, stdout)
-	}
-
-	if stderr != "" {
-		tg.htmlMessage(ctx, chat.ID, &msg.MessageID, stderr)
+	switch v := res.(type) {
+	case string:
+		// Help/usage text produced by cobra (no leaf result).
+		if v != "" {
+			tg.htmlMessage(ctx, chat.ID, &msg.MessageID, v)
+		}
+	default:
+		s, err := tg.tmpl.RenderResult(v)
+		if err != nil {
+			tg.handleError(ctx, chat.ID, &msg.MessageID, err)
+			return nil
+		}
+		tg.htmlMessage(ctx, chat.ID, &msg.MessageID, s)
 	}
 
 	return nil

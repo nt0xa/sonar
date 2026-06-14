@@ -52,5 +52,5 @@ func (s *Service) PayloadsCreate(
 		return nil, err
 	}
 
-	return payload(*p), nil
+	return (*service.PayloadsCreateOutput)(payload(*p)), nil
 }

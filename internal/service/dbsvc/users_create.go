@@ -46,5 +46,5 @@ func (s *Service) UsersCreate(
 		return nil, err
 	}
 
-	return user(*created), nil
+	return (*service.UsersCreateOutput)(user(*created)), nil
 }

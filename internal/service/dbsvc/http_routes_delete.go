@@ -43,5 +43,5 @@ func (s *Service) HTTPRoutesDelete(
 		return nil, err
 	}
 
-	return httpRoute(*rec, p.Subdomain), nil
+	return (*service.HTTPRoutesDeleteOutput)(httpRoute(*rec, p.Subdomain)), nil
 }

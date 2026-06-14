@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/nt0xa/sonar/internal/modules/api2/apimodels"
+	"github.com/nt0xa/sonar/internal/modules/api/apimodels"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
