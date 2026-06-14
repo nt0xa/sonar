@@ -261,8 +261,6 @@ func (lrk *Lark) makeDispatcher(verificationToken, eventEncryptKey string, dedup
 					return nil
 				}
 
-				ctx = SetMessageID(ctx, *msgID)
-
 				text := msg.Text
 
 				// remove @mention from the text

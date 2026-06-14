@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/miekg/dns"
 
 	"github.com/nt0xa/sonar/internal/database"
-	"github.com/nt0xa/sonar/internal/utils/pointer"
-	"github.com/nt0xa/sonar/internal/utils/slice"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 )
 
@@ -110,7 +109,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 			record.LastAccessedAt != nil &&
 			len(record.LastAnswer) > 0 &&
 			time.Since(*record.LastAccessedAt) < time.Second*3 {
-			i := slice.FindIndex(record.Values, record.LastAnswer[0])
+			i := slices.Index(record.Values, record.LastAnswer[0])
 			res = []dns.RR{rrs[min(i+1, len(rrs)-1)]}
 		} else {
 			// Fallback to first record.
@@ -120,7 +119,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 
 	// Update last answer and last answer time.
 	lastAnswer := dnsx.RRsToStrings(res)
-	lastAccessedAt := pointer.Time(time.Now())
+	lastAccessedAt := time.Now()
 
 	if _, err := h.DB.DNSRecordsUpdate(ctx, database.DNSRecordsUpdateParams{
 		ID:             record.ID,
@@ -131,7 +130,7 @@ func (h *Records) Get(ctx context.Context, name string, qtype uint16) ([]dns.RR,
 		Values:         record.Values,
 		Strategy:       record.Strategy,
 		LastAnswer:     lastAnswer,
-		LastAccessedAt: lastAccessedAt,
+		LastAccessedAt: &lastAccessedAt,
 	}); err != nil {
 		return nil, err
 	}
