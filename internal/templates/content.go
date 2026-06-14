@@ -74,7 +74,7 @@ var usersDelete = `user "{{ .Name }}" deleted`
 
 var event = `
 {{- $e := . -}}
-<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
+<bold>[{{ $e.Index }}]</bold> - {{ $e.Protocol | toString | upper }} from {{ $e.RemoteAddr }} {{ $e.ReceivedAt.Format "on 02 Jan 2006 at 15:04:05 MST" }}`
 
 var eventsGet = event + `
 <pre>
@@ -92,7 +92,7 @@ var eventsList = fmt.Sprintf(`
 
 var auditRecord = `
 {{- $a := . -}}
-<bold>[{{ $a.ID }}]</bold> {{ $a.Action | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
+<bold>[{{ $a.ID }}]</bold> {{ $a.Action | toString | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
 
 var auditRecordsList = fmt.Sprintf(`
 {{- range . -}}
