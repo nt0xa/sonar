@@ -66,7 +66,7 @@ func (s *Service) do(ctx context.Context, method, path string, body, out any) er
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return decodeError(resp)

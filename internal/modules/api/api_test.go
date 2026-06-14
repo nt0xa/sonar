@@ -507,7 +507,7 @@ func TestAPI(t *testing.T) {
 			defer srv.Close()
 
 			resp := doRequest(t, srv, tt)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			require.Equal(t, tt.status, resp.StatusCode)
 
