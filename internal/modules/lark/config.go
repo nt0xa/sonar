@@ -1,7 +1,7 @@
 package lark
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type Config struct {
@@ -21,13 +21,18 @@ const (
 	ModeWebsocket = "websocket"
 )
 
-func (c Config) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Admin, validation.Required),
-		validation.Field(&c.AppID, validation.Required),
-		validation.Field(&c.AppSecret, validation.Required),
-		validation.Field(&c.Mode, validation.In(ModeWebhook, ModeWebsocket)),
-		validation.Field(&c.VerificationToken, validation.When(c.Mode == ModeWebhook, validation.Required)),
-		validation.Field(&c.EncryptKey, validation.When(c.Mode == ModeWebhook, validation.Required)),
-	)
+func (c Config) Validate() valid.Problems {
+	fields := []valid.Validatable{
+		valid.String("admin", c.Admin, valid.Required),
+		valid.String("app_id", c.AppID, valid.Required),
+		valid.String("app_secret", c.AppSecret, valid.Required),
+		valid.String("mode", c.Mode, valid.Required, valid.In(ModeWebhook, ModeWebsocket)),
+	}
+	if c.Mode == ModeWebhook {
+		fields = append(fields,
+			valid.String("verification_token", c.VerificationToken, valid.Required),
+			valid.String("encrypt_key", c.EncryptKey, valid.Required),
+		)
+	}
+	return valid.Validate(fields...)
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type HTTPRoutesUpdate interface {
@@ -21,11 +21,11 @@ type HTTPRoutesUpdateInput struct {
 	IsDynamic *bool
 }
 
-func (in HTTPRoutesUpdateInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("payload", in.Payload, v.Required),
-		v.OptionalString("method", in.Method, v.In(HTTPMethodValues()...)),
-		v.OptionalString("path", in.Path, v.Match(httpPathRegexp, `path must start with "/"`)),
+func (in HTTPRoutesUpdateInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("payload", in.Payload, valid.Required),
+		valid.OptionalString("method", in.Method, valid.In(HTTPMethodValues()...)),
+		valid.OptionalString("path", in.Path, valid.Match(httpPathRegexp, `path must start with "/"`)),
 	)
 }
 

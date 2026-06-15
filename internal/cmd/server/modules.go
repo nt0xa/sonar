@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/api"
 	"github.com/nt0xa/sonar/internal/modules/lark"
@@ -14,6 +12,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules/telegram"
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/pkg/telemetry"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type Controller interface {
@@ -31,27 +30,30 @@ type ModulesConfig struct {
 	Slack    slack.Config
 }
 
-func (c ModulesConfig) Validate() error {
-	rules := make([]*validation.FieldRules, 0)
-	rules = append(rules, validation.Field(&c.Enabled,
-		validation.Each(validation.In("telegram", "api", "lark", "slack"))))
+func (c ModulesConfig) Validate() valid.Problems {
+	fields := []valid.Validatable{
+		valid.Slice("enabled", c.Enabled, valid.Each(valid.In("telegram", "api", "lark", "slack"))),
+	}
 
 	// TODO: dynamic modules registration. Something like sql drivers
 	for _, name := range c.Enabled {
 		switch name {
 
 		case "telegram":
-			rules = append(rules, validation.Field(&c.Telegram))
+			fields = append(fields, valid.Struct("telegram", c.Telegram))
 
 		case "api":
-			rules = append(rules, validation.Field(&c.API))
+			fields = append(fields, valid.Struct("api", c.API))
 
 		case "lark":
-			rules = append(rules, validation.Field(&c.Lark))
+			fields = append(fields, valid.Struct("lark", c.Lark))
+
+		case "slack":
+			fields = append(fields, valid.Struct("slack", c.Slack))
 		}
 	}
 
-	return validation.ValidateStruct(&c, rules...)
+	return valid.Validate(fields...)
 }
 
 func Modules(

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 var (
@@ -84,7 +84,7 @@ func notEmpty(s string) error {
 }
 
 // dnsValueRule returns the per-value validation rule for a DNS record type.
-func dnsValueRule(t DNSRecordType) v.Rule[string] {
+func dnsValueRule(t DNSRecordType) valid.Rule[string] {
 	switch t {
 	case DNSRecordTypeA:
 		return ip4
