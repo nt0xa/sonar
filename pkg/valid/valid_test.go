@@ -50,7 +50,7 @@ func TestStruct_Valid(t *testing.T) {
 func TestStruct_Problems(t *testing.T) {
 	tests := []struct {
 		name    string
-		field   v.Field
+		field   v.Validatable
 		wantKey string
 		wantMsg string
 	}{
@@ -90,6 +90,59 @@ func TestNumber_NoCoercion(t *testing.T) {
 	}
 	if got := v.Validate(v.Number("f", 1.5, v.Max(1.0))); got["f"] != "must be <= 1" {
 		t.Fatalf("float max: got %v", got)
+	}
+}
+
+// inner is a nested Validatable.
+type inner struct {
+	Host string
+}
+
+func (i inner) Validate() v.Problems {
+	return v.Validate(v.String("host", i.Host, v.Required))
+}
+
+// Three levels of nesting to prove keys compose as a.b.c.
+type lvl3 struct{ C string }
+
+func (l lvl3) Validate() v.Problems { return v.Validate(v.String("c", l.C, v.Required)) }
+
+type lvl2 struct{ B lvl3 }
+
+func (l lvl2) Validate() v.Problems { return v.Validate(v.Struct("b", l.B)) }
+
+func TestStruct_Nested(t *testing.T) {
+	// Single nested struct: child key is namespaced under the field name.
+	got := v.Validate(v.Struct("inner", inner{Host: ""}))
+	if got["inner.host"] != "is required" {
+		t.Fatalf("got %v, want inner.host=is required", got)
+	}
+
+	// Valid nested struct contributes nothing.
+	got = v.Validate(v.Struct("inner", inner{Host: "example.com"}))
+	if !got.Ok() {
+		t.Fatalf("expected ok, got %v", got)
+	}
+
+	// Deep nesting composes: a.b.c.
+	got = v.Validate(v.Struct("a", lvl2{}))
+	if got["a.b.c"] != "is required" {
+		t.Fatalf("got %v, want a.b.c=is required", got)
+	}
+
+	// A nil value is skipped (optional nested struct).
+	if got := v.Validate(v.Struct("inner", nil)); !got.Ok() {
+		t.Fatalf("nil value should be ok, got %v", got)
+	}
+}
+
+func TestStruct_MixedLeafAndNested(t *testing.T) {
+	got := v.Validate(
+		v.String("name", "", v.Required),
+		v.Struct("inner", inner{Host: ""}),
+	)
+	if got["name"] != "is required" || got["inner.host"] != "is required" {
+		t.Fatalf("got %v, want both name and inner.host", got)
 	}
 }
 
