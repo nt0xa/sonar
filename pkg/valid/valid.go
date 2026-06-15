@@ -17,13 +17,17 @@
 // keyed to the element type.
 package valid
 
-import "errors"
+import (
+	"errors"
+	"sort"
+	"strings"
+)
 
 // Validatable is anything that validates itself, returning a flat map of keyed
 // problems (nil when ok). Both the leaf fields built by String/Number/Slice and
 // domain types (e.g. service Input types exposing Validate() Problems) satisfy
 // it, so a Validatable can be a single field in a Validate(...) call or a nested
-// struct folded in via Struct/OptionalStruct, which namespace its keys.
+// struct folded in via Struct, which namespaces its keys.
 type Validatable interface {
 	// Validate returns problems keyed relative to this value: a leaf returns
 	// {name: msg}, a nested struct returns {name.child: msg, ...}; nil when ok.
@@ -42,6 +46,22 @@ type Problems map[string]string
 
 // Ok reports whether there are no problems.
 func (p Problems) Ok() bool { return len(p) == 0 }
+
+// Error renders problems as "key: msg; key2: msg2" with keys sorted, letting a
+// non-empty Problems be returned where an error is expected. Guard with Ok() to
+// return a nil error when there are no problems.
+func (p Problems) Error() string {
+	keys := make([]string, 0, len(p))
+	for k := range p {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, len(keys))
+	for i, k := range keys {
+		parts[i] = k + ": " + p[k]
+	}
+	return strings.Join(parts, "; ")
+}
 
 // Validate runs the given fields and merges their problems into a single flat
 // map of field name -> problem. Within a field the first failing rule wins; if

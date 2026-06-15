@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type DNSRecordsList interface {
@@ -14,9 +14,9 @@ type DNSRecordsListInput struct {
 	PayloadName string
 }
 
-func (in DNSRecordsListInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("payloadName", in.PayloadName, v.Required),
+func (in DNSRecordsListInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("payloadName", in.PayloadName, valid.Required),
 	)
 }
 

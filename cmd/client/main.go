@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,10 +30,6 @@ import (
 // promotion reads the embedded value at call time.
 type lazyService struct {
 	service.Service
-}
-
-func init() {
-	validation.ErrorTag = "err"
 }
 
 func main() {
@@ -175,8 +170,8 @@ func initConfig(cfgFile string, cfg *Config) error {
 		return err
 	}
 
-	if err := cfg.ValidateWithContext(context.Background()); err != nil {
-		return err
+	if p := cfg.Validate(); !p.Ok() {
+		return fmt.Errorf("config validation failed: %w", p)
 	}
 
 	return nil

@@ -1,38 +1,32 @@
 package main
 
 import (
-	"context"
 	"net/url"
 	"regexp"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
-
-func init() {
-	validation.ErrorTag = "mapstructure"
-}
 
 type Config struct {
 	Context Context           `mapstructure:"context"`
 	Servers map[string]Server `mapstructure:"servers"`
 }
 
-type serversKey struct{}
-
-func (c Config) ValidateWithContext(ctx context.Context) error {
-	servers := make([]any, 0)
-
-	for s := range c.Servers {
-		servers = append(servers, s)
+func (c Config) Validate() valid.Problems {
+	servers := make([]string, 0, len(c.Servers))
+	for name := range c.Servers {
+		servers = append(servers, name)
 	}
 
-	ctx = context.WithValue(ctx, serversKey{}, servers)
+	fields := []valid.Validatable{
+		valid.Slice("servers", servers, valid.NotEmpty),
+		valid.String("context.server", c.Context.Server, valid.Required, valid.In(servers...)),
+	}
+	for name, srv := range c.Servers {
+		fields = append(fields, valid.Struct("servers."+name, srv))
+	}
 
-	return validation.ValidateStructWithContext(ctx, &c,
-		validation.Field(&c.Context),
-		validation.Field(&c.Servers, validation.Length(1, 0)),
-	)
+	return valid.Validate(fields...)
 }
 
 func (c *Config) Server() *Server {
@@ -47,17 +41,6 @@ type Context struct {
 	Server string `mapstructure:"server"`
 }
 
-func (c Context) ValidateWithContext(ctx context.Context) error {
-	servers, ok := ctx.Value(serversKey{}).([]any)
-	if !ok {
-		panic(`fail to find "servers" key in context`)
-	}
-
-	return validation.ValidateStructWithContext(ctx, &c,
-		validation.Field(&c.Server, validation.Required, validation.In(servers...)),
-	)
-}
-
 type Server struct {
 	Token    string  `mapstructure:"token"`
 	URL      string  `mapstructure:"url"`
@@ -65,14 +48,13 @@ type Server struct {
 	Insecure bool    `mapstructure:"insecure"`
 }
 
-func (c Server) ValidateWithContext(ctx context.Context) error {
-	return validation.ValidateStructWithContext(ctx, &c,
-		validation.Field(&c.Token,
-			validation.Required,
-			validation.Match(regexp.MustCompile("[a-f0-9]{32}")),
-		),
-		validation.Field(&c.URL, validation.Required, is.URL),
-		validation.Field(&c.Proxy, is.URL),
+var tokenRe = regexp.MustCompile("[a-f0-9]{32}")
+
+func (c Server) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("token", c.Token, valid.Required, valid.Match(tokenRe, "invalid token")),
+		valid.String("url", c.URL, valid.Required, valid.URL),
+		valid.OptionalString("proxy", c.Proxy, valid.URL),
 	)
 }
 

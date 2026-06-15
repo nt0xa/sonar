@@ -6,12 +6,10 @@ import (
 	"strings"
 
 	"github.com/nt0xa/sonar/internal/service"
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
-// validate runs an input's Validate method, wrapping any problems in a
-// service.Error so it surfaces like a server-side validation error.
-func validate(in interface{ Validate() v.Problems }) error {
+func validate(in valid.Validatable) error {
 	if p := in.Validate(); !p.Ok() {
 		return service.Validation(p)
 	}

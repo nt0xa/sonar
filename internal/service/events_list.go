@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type EventsList interface {
@@ -16,9 +16,9 @@ type EventsListInput struct {
 	Offset      uint
 }
 
-func (in EventsListInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("payloadName", in.PayloadName, v.Required),
+func (in EventsListInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("payloadName", in.PayloadName, valid.Required),
 	)
 }
 

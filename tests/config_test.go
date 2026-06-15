@@ -108,6 +108,17 @@ verification_token = "<VERIFICATION_TOKEN>"
 	assert.Equal(t, "<VERIFICATION_TOKEN>", cfg.Modules.Lark.VerificationToken)
 }
 
+func TestConfig_Invalid(t *testing.T) {
+	_, err := server.LoadConfig(
+		fstest.MapFS{},
+		func() []string { return nil },
+	)
+	require.Error(t, err)
+	// Missing required domain/ip surface as keyed problems in the message.
+	assert.Contains(t, err.Error(), "domain")
+	assert.Contains(t, err.Error(), "ip")
+}
+
 func TestConfig_Env(t *testing.T) {
 	cfg, err := server.LoadConfig(
 		fstest.MapFS{},

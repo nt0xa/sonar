@@ -6,15 +6,13 @@ import (
 	"os"
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env/v2"
 	fsprov "github.com/knadh/koanf/providers/fs"
 	"github.com/knadh/koanf/v2"
 	"github.com/nt0xa/sonar/internal/utils"
-	"github.com/nt0xa/sonar/internal/utils/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 var ConfigDefaults = map[string]any{
@@ -77,8 +75,8 @@ func LoadConfig(
 		return nil, fmt.Errorf("unmarshal failed: %w", err)
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+	if p := cfg.Validate(); !p.Ok() {
+		return nil, fmt.Errorf("validation failed: %w", p)
 	}
 
 	return &cfg, nil
@@ -96,27 +94,19 @@ type Config struct {
 	Modules   ModulesConfig
 }
 
-func (c Config) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Domain, validation.Required, is.Domain),
-		validation.Field(&c.IP, validation.Required, is.IP),
-		validation.Field(&c.DB, validation.Required),
-		validation.Field(&c.Audit),
-		validation.Field(&c.GeoIP),
-		validation.Field(&c.DNS),
-		validation.Field(&c.TLS),
-		validation.Field(&c.Modules),
+func (c Config) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("domain", c.Domain, valid.Required, valid.Domain),
+		valid.String("ip", c.IP, valid.Required, valid.IP),
+		valid.Struct("db", c.DB),
+		valid.Struct("geoip", c.GeoIP),
+		valid.Struct("tls", c.TLS),
+		valid.Struct("modules", c.Modules),
 	)
 }
 
 type AuditConfig struct {
 	Enabled bool
-}
-
-func (c AuditConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Enabled),
-	)
 }
 
 //
@@ -127,12 +117,6 @@ type TelemetryConfig struct {
 	Enabled bool
 }
 
-func (c TelemetryConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Enabled),
-	)
-}
-
 //
 // DB
 //
@@ -141,9 +125,10 @@ type DBConfig struct {
 	DSN string
 }
 
-func (c DBConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.DSN, validation.Required))
+func (c DBConfig) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("dsn", c.DSN, valid.Required),
+	)
 }
 
 //
@@ -152,10 +137,6 @@ func (c DBConfig) Validate() error {
 
 type DNSConfig struct {
 	Zone string
-}
-
-func (c DNSConfig) Validate() error {
-	return validation.ValidateStruct(&c)
 }
 
 //
@@ -168,20 +149,19 @@ type TLSConfig struct {
 	LetsEncrypt TLSLetsEncryptConfig
 }
 
-func (c TLSConfig) Validate() error {
-	rules := make([]*validation.FieldRules, 0)
-
-	rules = append(rules,
-		validation.Field(&c.Type, validation.Required, validation.In("custom", "letsencrypt")))
+func (c TLSConfig) Validate() valid.Problems {
+	fields := []valid.Validatable{
+		valid.String("type", c.Type, valid.Required, valid.In("custom", "letsencrypt")),
+	}
 
 	switch c.Type {
 	case "custom":
-		rules = append(rules, validation.Field(&c.Custom))
+		fields = append(fields, valid.Struct("custom", c.Custom))
 	case "letsencrypt":
-		rules = append(rules, validation.Field(&c.LetsEncrypt))
+		fields = append(fields, valid.Struct("letsencrypt", c.LetsEncrypt))
 	}
 
-	return validation.ValidateStruct(&c, rules...)
+	return valid.Validate(fields...)
 }
 
 // Custom
@@ -191,10 +171,10 @@ type TLSCustomConfig struct {
 	Cert string
 }
 
-func (c TLSCustomConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Key, validation.Required, validation.By(valid.File)),
-		validation.Field(&c.Cert, validation.Required, validation.By(valid.File)),
+func (c TLSCustomConfig) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("key", c.Key, valid.Required, file),
+		valid.String("cert", c.Cert, valid.Required, file),
 	)
 }
 
@@ -207,10 +187,10 @@ type TLSLetsEncryptConfig struct {
 	CAInsecure bool   `koanf:"ca_insecure"`
 }
 
-func (c TLSLetsEncryptConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Email, validation.Required),
-		validation.Field(&c.Directory, validation.Required, validation.By(valid.Directory)),
+func (c TLSLetsEncryptConfig) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("email", c.Email, valid.Required),
+		valid.String("directory", c.Directory, valid.Required, directory),
 	)
 }
 
@@ -224,10 +204,12 @@ type GeoIPConfig struct {
 	ASN     string
 }
 
-func (c GeoIPConfig) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Enabled),
-		validation.Field(&c.City, validation.When(c.Enabled, validation.Required, validation.By(valid.File))),
-		validation.Field(&c.ASN, validation.When(c.Enabled, validation.Required, validation.By(valid.File))),
+func (c GeoIPConfig) Validate() valid.Problems {
+	if !c.Enabled {
+		return nil
+	}
+	return valid.Validate(
+		valid.String("city", c.City, valid.Required, file),
+		valid.String("asn", c.ASN, valid.Required, file),
 	)
 }

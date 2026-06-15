@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type AuditRecordsGet interface {
@@ -14,9 +14,9 @@ type AuditRecordsGetInput struct {
 	ID int64
 }
 
-func (in AuditRecordsGetInput) Validate() v.Problems {
-	return v.Validate(
-		v.Number("id", in.ID, v.Required),
+func (in AuditRecordsGetInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.Number("id", in.ID, valid.Required),
 	)
 }
 
