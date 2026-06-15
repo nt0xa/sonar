@@ -19,10 +19,15 @@ package valid
 
 import "errors"
 
-// Field is a single validated struct field. Struct collects the problem reported
-// by each field.
-type Field interface {
-	Validate() (name string, err error)
+// Validatable is anything that validates itself, returning a flat map of keyed
+// problems (nil when ok). Both the leaf fields built by String/Number/Slice and
+// domain types (e.g. service Input types exposing Validate() Problems) satisfy
+// it, so a Validatable can be a single field in a Validate(...) call or a nested
+// struct folded in via Struct/OptionalStruct, which namespace its keys.
+type Validatable interface {
+	// Validate returns problems keyed relative to this value: a leaf returns
+	// {name: msg}, a nested struct returns {name.child: msg, ...}; nil when ok.
+	Validate() Problems
 }
 
 // Rule validates a value of type T, returning an error whose message becomes the
@@ -38,17 +43,17 @@ type Problems map[string]string
 // Ok reports whether there are no problems.
 func (p Problems) Ok() bool { return len(p) == 0 }
 
-// Validate runs the given fields and returns a map of field name -> problem.
-// Within a field the first failing rule wins; if two fields share a name the
-// first is kept. It returns nil when everything is valid.
-func Validate(fields ...Field) Problems {
+// Validate runs the given fields and merges their problems into a single flat
+// map of field name -> problem. Within a field the first failing rule wins; if
+// two fields produce the same key the first is kept. It returns nil when
+// everything is valid.
+func Validate(fields ...Validatable) Problems {
 	problems := Problems{}
 
 	for _, field := range fields {
-		name, err := field.Validate()
-		if err != nil {
+		for name, msg := range field.Validate() {
 			if _, exists := problems[name]; !exists {
-				problems[name] = err.Error()
+				problems[name] = msg
 			}
 		}
 	}
@@ -58,6 +63,19 @@ func Validate(fields ...Field) Problems {
 	}
 
 	return problems
+}
+
+// prefixed returns child with each key prefixed by "prefix.", or nil when child
+// has no problems. It is how nested validators namespace their keys.
+func prefixed(prefix string, child Problems) Problems {
+	if child.Ok() {
+		return nil
+	}
+	out := make(Problems, len(child))
+	for k, msg := range child {
+		out[prefix+"."+k] = msg
+	}
+	return out
 }
 
 // field is the shared implementation for all typed constructors: a name, a
@@ -72,13 +90,13 @@ func newField[T any](name string, value T, rules []Rule[T]) field[T] {
 	return field[T]{name: name, value: value, rules: rules}
 }
 
-func (f field[T]) Validate() (string, error) {
+func (f field[T]) Validate() Problems {
 	for _, rule := range f.rules {
 		if err := rule(f.value); err != nil {
-			return f.name, err
+			return Problems{f.name: err.Error()}
 		}
 	}
-	return f.name, nil
+	return nil
 }
 
 // Required asserts a comparable value is not its zero value (empty string, zero

@@ -12,7 +12,7 @@ type number interface {
 }
 
 // Number validates a numeric field.
-func Number[T number](name string, value T, rules ...Rule[T]) Field {
+func Number[T number](name string, value T, rules ...Rule[T]) Validatable {
 	return newField(name, value, rules)
 }
 
