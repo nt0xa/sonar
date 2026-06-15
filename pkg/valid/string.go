@@ -10,13 +10,13 @@ import (
 )
 
 // String validates a string (or ~string, e.g. an enum) field.
-func String[T ~string](name string, value T, rules ...Rule[T]) Field {
+func String[T ~string](name string, value T, rules ...Rule[T]) Validatable {
 	return newField(name, value, rules)
 }
 
 // OptionalString validates an optional string field addressed by a pointer. When
 // the pointer is nil the field is treated as absent (no rules run).
-func OptionalString[T ~string](name string, value *T, rules ...Rule[T]) Field {
+func OptionalString[T ~string](name string, value *T, rules ...Rule[T]) Validatable {
 	if value == nil {
 		var zero T
 		return newField(name, zero, nil)

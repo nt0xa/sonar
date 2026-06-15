@@ -7,7 +7,7 @@ import (
 
 // Slice validates a slice field. Rules operate on the whole slice (e.g.
 // NotEmpty, MinItems); use Each to apply per-element rules.
-func Slice[T any](name string, value []T, rules ...Rule[[]T]) Field {
+func Slice[T any](name string, value []T, rules ...Rule[[]T]) Validatable {
 	return newField(name, value, rules)
 }
 
