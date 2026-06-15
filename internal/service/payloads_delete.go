@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type PayloadsDelete interface {
@@ -14,9 +14,9 @@ type PayloadsDeleteInput struct {
 	Name string
 }
 
-func (in PayloadsDeleteInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("name", in.Name, v.Required),
+func (in PayloadsDeleteInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("name", in.Name, valid.Required),
 	)
 }
 

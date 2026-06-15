@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type DNSRecordsClear interface {
@@ -15,9 +15,9 @@ type DNSRecordsClearInput struct {
 	Name        string
 }
 
-func (in DNSRecordsClearInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("payloadName", in.PayloadName, v.Required),
+func (in DNSRecordsClearInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("payloadName", in.PayloadName, valid.Required),
 	)
 }
 

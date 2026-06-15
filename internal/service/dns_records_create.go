@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v "github.com/nt0xa/sonar/pkg/valid"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type DNSRecordsCreate interface {
@@ -19,13 +19,13 @@ type DNSRecordsCreateInput struct {
 	Strategy    DNSRecordStrategy
 }
 
-func (in DNSRecordsCreateInput) Validate() v.Problems {
-	return v.Validate(
-		v.String("payloadName", in.PayloadName, v.Required),
-		v.String("name", in.Name, v.Required, subdomain),
-		v.String("type", in.Type, v.Required, v.In(DNSRecordTypeValues()...)),
-		v.Slice("values", in.Values, v.NotEmpty, v.Each(dnsValueRule(in.Type))),
-		v.String("strategy", in.Strategy, v.Required, v.In(DNSRecordStrategyValues()...)),
+func (in DNSRecordsCreateInput) Validate() valid.Problems {
+	return valid.Validate(
+		valid.String("payloadName", in.PayloadName, valid.Required),
+		valid.String("name", in.Name, valid.Required, subdomain),
+		valid.String("type", in.Type, valid.Required, valid.In(DNSRecordTypeValues()...)),
+		valid.Slice("values", in.Values, valid.NotEmpty, valid.Each(dnsValueRule(in.Type))),
+		valid.String("strategy", in.Strategy, valid.Required, valid.In(DNSRecordStrategyValues()...)),
 	)
 }
 

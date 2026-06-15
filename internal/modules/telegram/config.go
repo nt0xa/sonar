@@ -1,7 +1,7 @@
 package telegram
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/nt0xa/sonar/pkg/valid"
 )
 
 type Config struct {
@@ -10,10 +10,9 @@ type Config struct {
 	Proxy string
 }
 
-func (c Config) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Admin, validation.Required),
-		validation.Field(&c.Token, validation.Required),
-		validation.Field(&c.Proxy),
+func (c Config) Validate() valid.Problems {
+	return valid.Validate(
+		valid.Number("admin", c.Admin, valid.Required),
+		valid.String("token", c.Token, valid.Required),
 	)
 }
