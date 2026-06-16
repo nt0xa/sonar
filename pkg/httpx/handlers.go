@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -14,20 +15,6 @@ import (
 
 	"github.com/nt0xa/sonar/pkg/netx"
 )
-
-func MaxBytesHandler(h http.Handler, n int64) http.Handler {
-	return &maxBytesHandler{h, n}
-}
-
-type maxBytesHandler struct {
-	h http.Handler
-	n int64
-}
-
-func (h *maxBytesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, h.n)
-	h.h.ServeHTTP(w, r)
-}
 
 type NotifyFunc func(
 	ctx context.Context,
@@ -103,7 +90,21 @@ func NotifyHandler(notify NotifyFunc, next http.Handler) http.Handler {
 // BodyReaderHandler reads body so it will appear in request log.
 func BodyReaderHandler(next http.Handler, maxMemory int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
+		if maxMemory > 0 {
+			r.Body = http.MaxBytesReader(w, r.Body, maxMemory)
+		}
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+				http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+				return
+			}
+
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		next.ServeHTTP(w, r)
