@@ -95,15 +95,12 @@ func HTTPHandler(
 	return HTTPTelemetry(
 		http.TimeoutHandler(
 			httpx.BodyReaderHandler(
-				httpx.MaxBytesHandler(
-					httpx.NotifyHandler(
-						notify,
-						httpdb.Handler(
-							&httpdb.Routes{DB: db, Origin: origin},
-							http.HandlerFunc(HTTPDefault),
-						),
+				httpx.NotifyHandler(
+					notify,
+					httpdb.Handler(
+						&httpdb.Routes{DB: db, Origin: origin},
+						http.HandlerFunc(HTTPDefault),
 					),
-					httpMaxBodyBytes,
 				),
 				httpMaxBodyBytes,
 			),

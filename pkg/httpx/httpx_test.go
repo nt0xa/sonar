@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httptrace"
 	"net/url"
 	"os"
@@ -57,25 +58,22 @@ func TestMain(m *testing.M) {
 
 	h := http.TimeoutHandler(
 		httpx.BodyReaderHandler(
-			httpx.MaxBytesHandler(
-				httpx.NotifyHandler(
-					func(
-						ctx context.Context,
-						remoteAddr net.Addr,
-						receivedAt *time.Time,
-						secure bool,
-						read, written, combined []byte,
-						meta *httpx.Meta,
-					) {
-						notifier.Notify(remoteAddr, combined, secure)
-					},
-					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Set("Content-Type", "text/html; charset=utf-8")
-						w.WriteHeader(200)
-						_, _ = w.Write([]byte("<html><body>test</body></html>"))
-					}),
-				),
-				1<<20,
+			httpx.NotifyHandler(
+				func(
+					ctx context.Context,
+					remoteAddr net.Addr,
+					receivedAt *time.Time,
+					secure bool,
+					read, written, combined []byte,
+					meta *httpx.Meta,
+				) {
+					notifier.Notify(remoteAddr, combined, secure)
+				},
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(200)
+					_, _ = w.Write([]byte("<html><body>test</body></html>"))
+				}),
 			),
 			1<<20,
 		),
@@ -400,6 +398,40 @@ func TestHTTPX(t *testing.T) {
 	}
 
 	notifier.AssertExpectations(t)
+}
+
+func TestBodyReaderHandlerLimitsBodyBeforeBuffering(t *testing.T) {
+	called := false
+	h := httpx.BodyReaderHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}), 4)
+
+	req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader("12345"))
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	assert.False(t, called)
+	assert.Equal(t, http.StatusRequestEntityTooLarge, rr.Code)
+}
+
+func TestBodyReaderHandlerReplaysLimitedBody(t *testing.T) {
+	h := httpx.BodyReaderHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Equal(t, "1234", string(body))
+		w.WriteHeader(http.StatusNoContent)
+	}), 4)
+
+	req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader("1234"))
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNoContent, rr.Code)
 }
 
 func TestKeepAlive(t *testing.T) {
