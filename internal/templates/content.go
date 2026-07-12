@@ -78,7 +78,9 @@ var event = `
 
 var eventsGet = event + `
 <pre>
-{{ $e.RW | b64dec }}
+{{ $nl := or (eq $e.Protocol "http") (eq $e.Protocol "https") (eq $e.Protocol "dns") -}}
+{{ range $i, $m := $e.Data }}{{ if and $i $nl }}
+{{ end }}{{ $m | b64dec }}{{ end }}
 </pre>`
 
 var eventsList = fmt.Sprintf(`
@@ -130,6 +132,7 @@ var notificationHeader = `
 
 var notificationBody = `
 {{- $protocol := .Event.Protocol -}}
+{{- $nl := or (eq $protocol "http") (eq $protocol "https") (eq $protocol "dns") -}}
 📡 <bold>IP:</bold> <code>{{ regexReplaceAll ":[0-9]+$" .Event.RemoteAddr "" }}</code>
 📆 <bold>Time:</bold> {{ .Event.ReceivedAt.Format "02 Jan 2006 15:04:05 MST" }}
 {{- $geoip := .Event.Meta.GeoIP }}
@@ -152,12 +155,14 @@ var notificationBody = `
 {{ if $smtp -}}
 {{ $smtp.Email.Text }}
 {{- else -}}
-{{ printf "%s" .Event.RW }}
+{{ range $i, $m := .Event.Data }}{{ if and $i $nl }}
+{{ end }}{{ printf "%s" $m }}{{ end }}
 {{- end -}}
 </pre>
 {{- else }}
 
 <pre>
-{{ printf "%s" .Event.RW }}
+{{ range $i, $m := .Event.Data }}{{ if and $i $nl }}
+{{ end }}{{ printf "%s" $m }}{{ end }}
 </pre>
 {{- end }}`

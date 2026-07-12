@@ -45,9 +45,8 @@ type OnCloseFunc func(
 	remoteAddr net.Addr,
 	receivedAt *time.Time,
 	secure bool,
-	read []byte,
-	written []byte,
-	combined []byte,
+	data [][]byte,
+	match []byte,
 	meta *Meta,
 )
 
@@ -94,9 +93,8 @@ func SessionHandler(msg Msg, log *slog.Logger, onClose OnCloseFunc) netx.Handler
 				sess.conn.RemoteAddr(),
 				&start,
 				secure,
-				sess.conn.R.Bytes(),
-				sess.conn.W.Bytes(),
-				sess.conn.RW.Bytes(),
+				sess.conn.Data,
+				[]byte(strings.Join([]string{sess.data.User, sess.data.Pass, sess.data.Retr}, " ")),
 				&Meta{
 					Session: sess.data,
 				},

@@ -76,9 +76,8 @@ type NofitifyFunc func(
 	ctx context.Context,
 	remoteAddr net.Addr,
 	receivedAt *time.Time,
-	read []byte,
-	written []byte,
-	combined []byte,
+	data [][]byte,
+	match []byte,
 	meta *Meta,
 )
 
@@ -94,7 +93,6 @@ func NotifyHandler(notify NofitifyFunc, next Handler) Handler {
 			}
 
 			var answers []Answer
-			written := ""
 
 			if len(r.Answer) > 0 {
 				for _, rr := range wr.Msg.Answer {
@@ -104,15 +102,13 @@ func NotifyHandler(notify NofitifyFunc, next Handler) Handler {
 						TTL:  rr.Header().Ttl,
 					})
 				}
-				written += wr.Msg.Answer[0].String() + "\n"
 			}
 
 			notify(ctx,
 				wr.RemoteAddr(),
 				&wr.Start,
-				[]byte(wr.Msg.Question[0].String()),
-				[]byte(written),
-				[]byte(wr.Msg.String()),
+				[][]byte{[]byte(r.String()), []byte(wr.Msg.String())},
+				[]byte(question.Name),
 				&Meta{
 					Question: question,
 					Answer:   answers,

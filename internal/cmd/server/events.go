@@ -41,6 +41,7 @@ type EventsHandler struct {
 type eventWithContext struct {
 	ctx   context.Context
 	event *database.Event
+	match []byte
 }
 
 func NewEventsHandler(
@@ -99,15 +100,15 @@ func (h *EventsHandler) worker(id int) {
 			),
 			trace.WithLinks(trace.LinkFromContext(e.ctx)),
 		)
-		h.handleEvent(ctx, e.event)
+		h.handleEvent(ctx, e.event, e.match)
 		span.End()
 	}
 }
 
-func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event) {
+func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event, match []byte) {
 	seen := make(map[string]struct{})
 
-	matches := subdomainRegexp.FindAllSubmatch(e.R, -1)
+	matches := subdomainRegexp.FindAllSubmatch(match, -1)
 	if len(matches) == 0 {
 		return
 	}
@@ -136,9 +137,7 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event) {
 				UUID:       e.UUID,
 				PayloadID:  e.PayloadID,
 				Protocol:   e.Protocol,
-				R:          e.R,
-				W:          e.W,
-				RW:         e.RW,
+				Data:       e.Data,
 				Meta:       e.Meta,
 				RemoteAddr: e.RemoteAddr,
 				ReceivedAt: e.ReceivedAt,
@@ -229,8 +228,8 @@ func (h *EventsHandler) notify(
 	}
 }
 
-func (h *EventsHandler) Emit(ctx context.Context, e *database.Event) {
-	h.events <- eventWithContext{ctx: ctx, event: e}
+func (h *EventsHandler) Emit(ctx context.Context, e *database.Event, match []byte) {
+	h.events <- eventWithContext{ctx: ctx, event: e, match: match}
 }
 
 type eventIDKey struct{}

@@ -1,6 +1,7 @@
 package ftpx_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -69,10 +70,11 @@ func TestMain(m *testing.M) {
 			remoteAddr net.Addr,
 			receivedAt *time.Time,
 			secure bool,
-			read, written, combined []byte,
+			data [][]byte,
+			match []byte,
 			meta *ftpx.Meta,
 		) {
-			notifier.Notify(remoteAddr, combined)
+			notifier.Notify(remoteAddr, bytes.Join(data, nil))
 		},
 	)
 

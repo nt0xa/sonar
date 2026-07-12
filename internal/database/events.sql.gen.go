@@ -13,19 +13,17 @@ import (
 )
 
 const eventsCreate = `-- name: EventsCreate :one
-INSERT INTO events (uuid, payload_id, protocol, r, w, rw, meta, remote_addr,
+INSERT INTO events (uuid, payload_id, protocol, data, meta, remote_addr,
   received_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
-RETURNING id, payload_id, protocol, rw, r, w, meta, remote_addr, received_at, created_at, uuid
+VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+RETURNING id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data
 `
 
 type EventsCreateParams struct {
 	UUID       uuid.UUID  `db:"uuid"`
 	PayloadID  int64      `db:"payload_id"`
 	Protocol   string     `db:"protocol"`
-	R          []byte     `db:"r"`
-	W          []byte     `db:"w"`
-	RW         []byte     `db:"rw"`
+	Data       [][]byte   `db:"data"`
 	Meta       EventsMeta `db:"meta"`
 	RemoteAddr string     `db:"remote_addr"`
 	ReceivedAt time.Time  `db:"received_at"`
@@ -36,9 +34,7 @@ func (q *Queries) EventsCreate(ctx context.Context, arg EventsCreateParams) (*Ev
 		arg.UUID,
 		arg.PayloadID,
 		arg.Protocol,
-		arg.R,
-		arg.W,
-		arg.RW,
+		arg.Data,
 		arg.Meta,
 		arg.RemoteAddr,
 		arg.ReceivedAt,
@@ -48,20 +44,18 @@ func (q *Queries) EventsCreate(ctx context.Context, arg EventsCreateParams) (*Ev
 		&i.ID,
 		&i.PayloadID,
 		&i.Protocol,
-		&i.RW,
-		&i.R,
-		&i.W,
 		&i.Meta,
 		&i.RemoteAddr,
 		&i.ReceivedAt,
 		&i.CreatedAt,
 		&i.UUID,
+		&i.Data,
 	)
 	return &i, err
 }
 
 const eventsGetByID = `-- name: EventsGetByID :one
-SELECT id, payload_id, protocol, rw, r, w, meta, remote_addr, received_at, created_at, uuid FROM events WHERE id = $1
+SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data FROM events WHERE id = $1
 `
 
 func (q *Queries) EventsGetByID(ctx context.Context, id int64) (*Event, error) {
@@ -71,14 +65,12 @@ func (q *Queries) EventsGetByID(ctx context.Context, id int64) (*Event, error) {
 		&i.ID,
 		&i.PayloadID,
 		&i.Protocol,
-		&i.RW,
-		&i.R,
-		&i.W,
 		&i.Meta,
 		&i.RemoteAddr,
 		&i.ReceivedAt,
 		&i.CreatedAt,
 		&i.UUID,
+		&i.Data,
 	)
 	return &i, err
 }
@@ -90,7 +82,7 @@ WITH numbered AS (
     ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index
   FROM events
 )
-SELECT e.id, e.payload_id, e.protocol, e.rw, e.r, e.w, e.meta, e.remote_addr, e.received_at, e.created_at, e.uuid, n.index
+SELECT e.id, e.payload_id, e.protocol, e.meta, e.remote_addr, e.received_at, e.created_at, e.uuid, e.data, n.index
 FROM events e
 JOIN numbered n ON n.id = e.id
 WHERE e.payload_id = $1::bigint AND n.index = $2::bigint
@@ -108,22 +100,20 @@ func (q *Queries) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int6
 		&i.Event.ID,
 		&i.Event.PayloadID,
 		&i.Event.Protocol,
-		&i.Event.RW,
-		&i.Event.R,
-		&i.Event.W,
 		&i.Event.Meta,
 		&i.Event.RemoteAddr,
 		&i.Event.ReceivedAt,
 		&i.Event.CreatedAt,
 		&i.Event.UUID,
+		&i.Event.Data,
 		&i.Index,
 	)
 	return &i, err
 }
 
 const eventsListByPayloadID = `-- name: EventsListByPayloadID :many
-SELECT 
-  events.id, events.payload_id, events.protocol, events.rw, events.r, events.w, events.meta, events.remote_addr, events.received_at, events.created_at, events.uuid,
+SELECT
+  events.id, events.payload_id, events.protocol, events.meta, events.remote_addr, events.received_at, events.created_at, events.uuid, events.data,
   ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index
 FROM events WHERE payload_id = $1
 ORDER BY id DESC
@@ -155,14 +145,12 @@ func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPay
 			&i.Event.ID,
 			&i.Event.PayloadID,
 			&i.Event.Protocol,
-			&i.Event.RW,
-			&i.Event.R,
-			&i.Event.W,
 			&i.Event.Meta,
 			&i.Event.RemoteAddr,
 			&i.Event.ReceivedAt,
 			&i.Event.CreatedAt,
 			&i.Event.UUID,
+			&i.Event.Data,
 			&i.Index,
 		); err != nil {
 			return nil, err
