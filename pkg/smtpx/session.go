@@ -51,9 +51,8 @@ type OnCloseFunc func(
 	remoteAddr net.Addr,
 	receivedAt *time.Time,
 	secure bool,
-	read []byte,
-	written []byte,
-	combined []byte,
+	data [][]byte,
+	match []byte,
 	meta *Meta,
 )
 
@@ -127,9 +126,8 @@ func SessionHandler(
 				sess.conn.RemoteAddr(),
 				&start,
 				secure,
-				sess.conn.R.Bytes(),
-				sess.conn.W.Bytes(),
-				sess.conn.RW.Bytes(),
+				sess.conn.Data,
+				[]byte(strings.Join(sess.data.RcptTo, " ")),
 				&Meta{
 					Session: *sess.data,
 					Email:   Parse(sess.data.Data),
@@ -317,9 +315,8 @@ func (s *session) handleStartTLS(_ string) error {
 
 	newConn := netx.NewLoggingConn(net.Conn(conn))
 
-	newConn.RW.Write(s.conn.RW.Bytes())
-	newConn.R.Write(s.conn.R.Bytes())
-	newConn.W.Write(s.conn.W.Bytes())
+	// Carry the pre-STARTTLS conversation log forward.
+	newConn.Data = append(newConn.Data, s.conn.Data...)
 
 	newConn.OnClose = s.conn.OnClose
 

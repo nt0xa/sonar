@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"slices"
 	"time"
 
 	"github.com/nt0xa/sonar/pkg/netx"
@@ -21,9 +20,8 @@ type NotifyFunc func(
 	remoteAddr net.Addr,
 	receivedAt *time.Time,
 	secure bool,
-	read []byte,
-	written []byte,
-	combined []byte,
+	data [][]byte,
+	match []byte,
 	meta *Meta,
 )
 
@@ -67,9 +65,8 @@ func NotifyHandler(notify NotifyFunc, next http.Handler) http.Handler {
 				conn.RemoteAddr(),
 				&start,
 				secure,
-				conn.R.Bytes(),
-				conn.W.Bytes(),
-				slices.Concat(conn.R.Bytes(), conn.W.Bytes()),
+				conn.Data,
+				[]byte(req.Host),
 				&Meta{
 					Request:  request,
 					Response: response,

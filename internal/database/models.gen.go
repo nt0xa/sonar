@@ -310,14 +310,12 @@ type Event struct {
 	ID         int64      `db:"id"`
 	PayloadID  int64      `db:"payload_id"`
 	Protocol   string     `db:"protocol"`
-	RW         []byte     `db:"rw"`
-	R          []byte     `db:"r"`
-	W          []byte     `db:"w"`
 	Meta       EventsMeta `db:"meta"`
 	RemoteAddr string     `db:"remote_addr"`
 	ReceivedAt time.Time  `db:"received_at"`
 	CreatedAt  time.Time  `db:"created_at"`
 	UUID       uuid.UUID  `db:"uuid"`
+	Data       [][]byte   `db:"data"`
 }
 
 type HTTPRoute struct {

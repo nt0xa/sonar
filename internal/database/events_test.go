@@ -22,9 +22,7 @@ func TestEventsCreate_Success(t *testing.T) {
 		PayloadID: 1,
 		UUID:      uuid.New(),
 		Protocol:  "dns",
-		R:         []byte{1, 3, 5},
-		W:         []byte{2, 4},
-		RW:        []byte{1, 2, 3, 4, 5},
+		Data:      [][]byte{{1, 3, 5}, {2, 4}},
 		Meta: database.EventsMeta{
 			DNS: &dnsx.Meta{
 				Question: dnsx.Question{Name: "test.example.com", Type: "A"},
@@ -46,9 +44,7 @@ func TestEventsGetByID_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.EqualValues(t, 1, o.PayloadID)
-	assert.Equal(t, []byte("read"), o.R)
-	assert.Equal(t, []byte("written"), o.W)
-	assert.Equal(t, []byte("read-and-written"), o.RW)
+	assert.Equal(t, [][]byte{[]byte("read"), []byte("written")}, o.Data)
 	assert.NotNil(t, o.Meta.DNS.Question)
 	assert.Equal(t, "test.example.com", o.Meta.DNS.Question.Name)
 	assert.Equal(t, "A", o.Meta.DNS.Question.Type)
@@ -131,9 +127,7 @@ func TestEventsRace(t *testing.T) {
 				PayloadID: 1,
 				UUID:      uuid.New(),
 				Protocol:  "dns",
-				R:         []byte{1, 3, 5},
-				W:         []byte{2, 4},
-				RW:        []byte{1, 2, 3, 4, 5},
+				Data:      [][]byte{{1, 3, 5}, {2, 4}},
 				Meta: database.EventsMeta{
 					DNS: &dnsx.Meta{
 						Question: dnsx.Question{Name: "test.example.com", Type: "A"},

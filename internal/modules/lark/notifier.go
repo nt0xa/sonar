@@ -1,6 +1,7 @@
 package lark
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"regexp"
@@ -25,7 +26,8 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	userID := *n.User.LarkID
-	body := string(n.Event.RW)
+	rw := bytes.Join(n.Event.Data, nil)
+	body := string(rw)
 
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		if text := n.Event.Meta.SMTP.Email.Text; text != "" {
@@ -57,7 +59,7 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 
 			lrk.docMessage(ctx, userID,
 				fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-				"", n.Event.RW)
+				"", rw)
 		}
 	}
 

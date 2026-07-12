@@ -145,19 +145,19 @@ func emitDNS(events *EventsHandler) dnsx.NofitifyFunc {
 		ctx context.Context,
 		remoteAddr net.Addr,
 		receivedAt *time.Time,
-		read, written, combined []byte,
+		data [][]byte,
+		match []byte,
 		meta *dnsx.Meta,
 	) {
+		// TODO: think about using different type in emit, not database.Event.
 		events.Emit(ctx, &database.Event{
 			Protocol: database.ProtoDNS,
-			R:        read,
-			W:        written,
-			RW:       combined,
+			Data:     data,
 			Meta: database.EventsMeta{
 				DNS: meta,
 			},
 			RemoteAddr: remoteAddr.String(),
 			ReceivedAt: *receivedAt,
-		})
+		}, match)
 	}
 }

@@ -21,7 +21,7 @@ func TestBuild(t *testing.T) {
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "http",
-			RW:       []byte("test"),
+			Data:     [][]byte{[]byte("test")},
 			Meta: database.EventsMeta{
 				GeoIP: &geoipx.Meta{
 					City: "London",
@@ -87,7 +87,7 @@ func TestBuildMinimal(t *testing.T) {
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol:   "dns",
-			RW:         []byte("test"),
+			Data:       [][]byte{[]byte("test")},
 			Meta:       database.EventsMeta{},
 			RemoteAddr: "10.13.37.1:1337",
 			ReceivedAt: receivedAt,
@@ -118,7 +118,7 @@ func TestBuildWithEmail(t *testing.T) {
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "smtp",
-			RW:       []byte("test"),
+			Data:     [][]byte{[]byte("test")},
 			Meta: database.EventsMeta{
 				SMTP: &smtpx.Meta{
 					Email: smtpx.Email{

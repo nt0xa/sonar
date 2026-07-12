@@ -64,10 +64,11 @@ func TestMain(m *testing.M) {
 					remoteAddr net.Addr,
 					receivedAt *time.Time,
 					secure bool,
-					read, written, combined []byte,
+					data [][]byte,
+					match []byte,
 					meta *httpx.Meta,
 				) {
-					notifier.Notify(remoteAddr, combined, secure)
+					notifier.Notify(remoteAddr, bytes.Join(data, nil), secure)
 				},
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "text/html; charset=utf-8")

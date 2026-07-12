@@ -1,0 +1,14 @@
+BEGIN;
+
+ALTER TABLE events ADD COLUMN data bytea[];
+
+UPDATE events SET data = ARRAY[r, w];
+
+ALTER TABLE events ALTER COLUMN data SET NOT NULL;
+
+ALTER TABLE events
+  DROP COLUMN r,
+  DROP COLUMN w,
+  DROP COLUMN rw;
+
+COMMIT;
