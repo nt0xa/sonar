@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -21,6 +22,8 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 
 	slackID := *n.User.SlackID
 
+	rw := bytes.Join(n.Event.Data, nil)
+
 	codeBlocks := make([]string, 0)
 
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
@@ -28,7 +31,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 			codeBlocks = append(codeBlocks, text)
 		}
 	} else {
-		codeBlocks = append(codeBlocks, string(n.Event.RW))
+		codeBlocks = append(codeBlocks, string(rw))
 	}
 
 	blocks, err := block.Build(n, codeBlocks)
@@ -64,13 +67,13 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 		}
 
 		// Upload .txt file
-		if len(n.Event.RW) >= 0 {
+		if len(rw) >= 0 {
 			_, err := s.client.UploadFileV2Context(ctx, slack.UploadFileV2Parameters{
 				Channel:         channelID,
 				ThreadTimestamp: timestamp,
 				Filename:        fmt.Sprintf("smtp-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-				FileSize:        len(n.Event.RW),
-				Content:         string(n.Event.RW),
+				FileSize:        len(rw),
+				Content:         string(rw),
 			})
 			if err != nil {
 				return fmt.Errorf("failed to upload txt file: %w", err)

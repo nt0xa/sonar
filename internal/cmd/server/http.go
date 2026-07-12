@@ -117,7 +117,8 @@ func emitHTTP(events *EventsHandler) httpx.NotifyFunc {
 		remoteAddr net.Addr,
 		receivedAt *time.Time,
 		secure bool,
-		read, written, combined []byte,
+		data [][]byte,
+		match []byte,
 		meta *httpx.Meta,
 	) {
 		var proto string
@@ -130,15 +131,13 @@ func emitHTTP(events *EventsHandler) httpx.NotifyFunc {
 
 		events.Emit(ctx, &database.Event{
 			Protocol: proto,
-			R:        read,
-			W:        written,
-			RW:       combined,
+			Data:     data,
 			Meta: database.EventsMeta{
 				HTTP:   meta,
 				Secure: secure,
 			},
 			RemoteAddr: remoteAddr.String(),
 			ReceivedAt: *receivedAt,
-		})
+		}, match)
 	}
 }

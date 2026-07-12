@@ -1,6 +1,7 @@
 package dnsx_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -58,10 +59,11 @@ func TestMain(m *testing.M) {
 				ctx context.Context,
 				remoteAddr net.Addr,
 				receivedAt *time.Time,
-				read, written, combined []byte,
+				data [][]byte,
+				match []byte,
 				meta *dnsx.Meta,
 			) {
-				notifier.Notify(remoteAddr, combined, meta.Question.Type, meta.Question.Name)
+				notifier.Notify(remoteAddr, bytes.Join(data, nil), meta.Question.Type, meta.Question.Name)
 			},
 			dnsx.RecordSetHandler(dnsx.NewRecords([]dns.RR{
 				dnsx.NewRR("*.sonar.test.", dns.TypeA, 10, "1.1.1.1"),

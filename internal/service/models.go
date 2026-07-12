@@ -90,9 +90,7 @@ type Event struct {
 	Index      int64         `json:"index"`
 	UUID       string        `json:"uuid"`
 	Protocol   EventProtocol `json:"protocol"`
-	R          string        `json:"r,omitempty"`
-	W          string        `json:"w,omitempty"`
-	RW         string        `json:"rw,omitempty"`
+	Data       []string      `json:"data,omitempty"`
 	Meta       EventMeta     `json:"meta"`
 	RemoteAddr string        `json:"remoteAddress"`
 	ReceivedAt time.Time     `json:"receivedAt"`

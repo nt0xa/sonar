@@ -1,7 +1,7 @@
 -- name: EventsCreate :one
-INSERT INTO events (uuid, payload_id, protocol, r, w, rw, meta, remote_addr,
+INSERT INTO events (uuid, payload_id, protocol, data, meta, remote_addr,
   received_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+VALUES ($1, $2, $3, $4, $5, $6, $7, now())
 RETURNING *;
 
 -- name: EventsGetByID :one

@@ -92,20 +92,19 @@ func emitSMTP(events *EventsHandler) smtpx.OnCloseFunc {
 		remoteAddr net.Addr,
 		receivedAt *time.Time,
 		secure bool,
-		read, written, combined []byte,
+		data [][]byte,
+		match []byte,
 		meta *smtpx.Meta,
 	) {
 		events.Emit(ctx, &database.Event{
 			Protocol: database.ProtoSMTP,
-			RW:       combined,
-			R:        read,
-			W:        written,
+			Data:     data,
 			Meta: database.EventsMeta{
 				SMTP:   meta,
 				Secure: secure,
 			},
 			RemoteAddr: remoteAddr.String(),
 			ReceivedAt: *receivedAt,
-		})
+		}, match)
 	}
 }

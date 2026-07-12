@@ -176,7 +176,7 @@ func TestCard(t *testing.T) {
 		Payload: &database.Payload{Name: "test"},
 		Event: &database.Event{
 			Protocol: "http",
-			RW:       []byte("test"),
+			Data:     [][]byte{[]byte("test")},
 			Meta: database.EventsMeta{
 				GeoIP: &geoipx.Meta{
 					City: "London",

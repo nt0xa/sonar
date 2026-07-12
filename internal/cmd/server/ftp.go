@@ -88,20 +88,19 @@ func emitFTP(events *EventsHandler) ftpx.OnCloseFunc {
 		remoteAddr net.Addr,
 		receivedAt *time.Time,
 		secure bool,
-		read, written, combined []byte,
+		data [][]byte,
+		match []byte,
 		meta *ftpx.Meta,
 	) {
 		events.Emit(ctx, &database.Event{
 			Protocol: database.ProtoFTP,
-			R:        read,
-			W:        written,
-			RW:       combined,
+			Data:     data,
 			Meta: database.EventsMeta{
 				FTP:    meta,
 				Secure: secure,
 			},
 			RemoteAddr: remoteAddr.String(),
 			ReceivedAt: *receivedAt,
-		})
+		}, match)
 	}
 }

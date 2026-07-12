@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"unicode/utf8"
@@ -22,6 +23,8 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 
 	chatID := *n.User.TelegramID
 
+	rw := bytes.Join(n.Event.Data, nil)
+
 	header, body, err := tg.tmpl.RenderNotification(n)
 	if err != nil {
 		return fmt.Errorf("telegram: %w", err)
@@ -30,7 +33,7 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 	if len(header+body) < maxMessageSize && utf8.ValidString(body) {
 		tg.htmlMessage(ctx, chatID, nil, header+body)
 	} else {
-		tg.docMessage(ctx, chatID, "log.txt", header, n.Event.RW)
+		tg.docMessage(ctx, chatID, "log.txt", header, rw)
 	}
 
 	// For SMTP send log.eml for better preview.
@@ -38,7 +41,7 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 		data := n.Event.Meta.SMTP.Session.Data
 		if data != "" {
 			tg.docMessage(ctx, chatID, "log.eml", header, []byte(data))
-			tg.docMessage(ctx, chatID, "log.txt", header, n.Event.RW)
+			tg.docMessage(ctx, chatID, "log.txt", header, rw)
 		}
 	}
 
