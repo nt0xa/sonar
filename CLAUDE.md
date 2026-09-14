@@ -74,7 +74,8 @@ There is fully configured development environment available in `dev/docker-compo
 **Docker Compose Services** (`dev/docker-compose.yml`):
 
 - `postgres`: Database (port 5432)
-- `pebble`: Let's Encrypt mock for testing ACME
+- `pebble-dns-check`: Let's Encrypt mock that performs a real DNS-01 challenge against the sonar server's DNS (used by the dev server)
+- `pebble-no-dns-check`: Let's Encrypt mock that accepts every challenge without resolving anything (used by the `pkg/certmgr` test)
 - `dev`: Main development container with Go tooling, runs `server` binary with hot reload via `air`
 - `docs`: Docusaurus docs site (port 3000)
 
@@ -93,7 +94,7 @@ There is fully configured development environment available in `dev/docker-compo
 ### Docker Development Environment
 
 ```bash
-make up                # Start all services (postgres, pebble, dev, docs)
+make up                # Start all services (postgres, pebble-*, dev, docs)
 make down              # Stop all services
 make restart           # Restart dev container
 make recreate          # Recreate dev container

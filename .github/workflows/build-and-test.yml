@@ -28,7 +28,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      pebble:
+      # Accepts every challenge without resolving anything
+      # (PEBBLE_VA_ALWAYS_VALID). Used by the pkg/certmgr test, whose provider
+      # doesn't publish DNS records. There is no pebble-dns-check counterpart
+      # here: nothing in CI runs the sonar DNS server for it to resolve against.
+      pebble-no-dns-check:
         image: ghcr.io/letsencrypt/pebble:latest
         env:
           PEBBLE_VA_NOSLEEP: 1
@@ -60,7 +64,7 @@ jobs:
         env:
           SONAR_DB_DSN: 'postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres_test?sslmode=disable'
           SONAR_DB_MIGRATIONS: internal/database/migrations
-          CERTMGR_CA_DIR_URL: 'https://localhost:${{ job.services.pebble.ports[14000] }}/dir'
+          CERTMGR_CA_DIR_URL: "https://localhost:${{ job.services['pebble-no-dns-check'].ports[14000] }}/dir"
 
       - name: Code coverage
         uses: codecov/codecov-action@v4

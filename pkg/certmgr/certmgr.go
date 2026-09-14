@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-acme/lego/v3/certificate"
 	"github.com/go-acme/lego/v3/challenge"
-	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/go-acme/lego/v3/log"
 	"github.com/go-acme/lego/v3/registration"
 
@@ -117,7 +116,6 @@ func (cm *CertMgr) Start() error {
 }
 
 func (cm *CertMgr) obtainCertificate(acc registration.User) (*tls.Certificate, error) {
-
 	client, err := newClient(acc, cm.options.keyType,
 		cm.options.caDirURL, cm.options.caInsecure)
 	if err != nil {
@@ -129,8 +127,7 @@ func (cm *CertMgr) obtainCertificate(acc registration.User) (*tls.Certificate, e
 		Bundle:  true,
 	}
 
-	if err := client.Challenge.SetDNS01Provider(cm.provider,
-		dns01.DisableCompletePropagationRequirement()); err != nil {
+	if err := client.Challenge.SetDNS01Provider(cm.provider); err != nil {
 		return nil, err
 	}
 
