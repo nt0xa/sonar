@@ -127,7 +127,10 @@ func (cm *CertMgr) obtainCertificate(acc registration.User) (*tls.Certificate, e
 		Bundle:  true,
 	}
 
-	if err := client.Challenge.SetDNS01Provider(cm.provider); err != nil {
+	if err := client.Challenge.SetDNS01Provider(
+		cm.provider,
+		cm.options.challengeOptions...,
+	); err != nil {
 		return nil, err
 	}
 

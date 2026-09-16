@@ -5,29 +5,32 @@ import (
 	"time"
 
 	"github.com/go-acme/lego/v3/certcrypto"
+	"github.com/go-acme/lego/v3/challenge/dns01"
 	"github.com/go-acme/lego/v3/lego"
 )
 
 type options struct {
-	keyType         certcrypto.KeyType
-	caDirURL        string
-	caInsecure      bool
-	renewInterval   time.Duration
-	renewThreshold  time.Duration
-	notifyReadyFunc func()
-	timeNow         func() time.Time
-	log             *slog.Logger
+	keyType          certcrypto.KeyType
+	caDirURL         string
+	caInsecure       bool
+	renewInterval    time.Duration
+	renewThreshold   time.Duration
+	notifyReadyFunc  func()
+	timeNow          func() time.Time
+	log              *slog.Logger
+	challengeOptions []dns01.ChallengeOption
 }
 
 var defaultOptions = options{
-	keyType:         certcrypto.EC384,
-	caDirURL:        lego.LEDirectoryProduction,
-	caInsecure:      false,
-	renewInterval:   12 * time.Hour,
-	renewThreshold:  30 * 24 * time.Hour,
-	notifyReadyFunc: func() {},
-	timeNow:         time.Now,
-	log:             slog.New(slog.DiscardHandler),
+	keyType:          certcrypto.EC384,
+	caDirURL:         lego.LEDirectoryProduction,
+	caInsecure:       false,
+	renewInterval:    12 * time.Hour,
+	renewThreshold:   30 * 24 * time.Hour,
+	notifyReadyFunc:  func() {},
+	timeNow:          time.Now,
+	log:              slog.New(slog.DiscardHandler),
+	challengeOptions: make([]dns01.ChallengeOption, 0),
 }
 
 type Option func(*options)
@@ -77,5 +80,14 @@ func Logger(l *slog.Logger) Option {
 func TestOnlyTimeNow(f func() time.Time) Option {
 	return func(opts *options) {
 		opts.timeNow = f
+	}
+}
+
+func TestOnlyDisableCompletePropagationRequirement() Option {
+	return func(opts *options) {
+		opts.challengeOptions = append(
+			opts.challengeOptions,
+			dns01.DisableCompletePropagationRequirement(),
+		)
 	}
 }
