@@ -82,12 +82,8 @@ func (s *Slack) Start() error {
 	}()
 
 	s.log.Info("Starting Slack socket client")
-	if err := socketClient.Run(); err != nil {
-		s.log.Error("Socket client error", "err", err)
-		return err
-	}
 
-	return nil
+	return socketClient.Run()
 }
 
 func (s *Slack) processCommand(ctx context.Context, cmd slack.SlashCommand) *string {

@@ -336,8 +336,8 @@ func TestHTTPX(t *testing.T) {
 
 				// Client parameters.
 				tr := &http.Transport{
-					Dial: func(network, address string) (net.Conn, error) {
-						conn, err := net.Dial(network, address)
+					DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+						conn, err := (&net.Dialer{}).DialContext(ctx, network, address)
 
 						if err != nil {
 							return nil, err
