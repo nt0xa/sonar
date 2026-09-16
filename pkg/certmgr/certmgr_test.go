@@ -24,6 +24,7 @@ var (
 		certmgr.RenewInterval(time.Second * 3),
 		certmgr.KeyType(certcrypto.EC256),
 		certmgr.RenewThreshold(30 * 24 * time.Hour),
+		certmgr.TestOnlyDisableCompletePropagationRequirement(),
 	}
 
 	storage *certstorage.Storage

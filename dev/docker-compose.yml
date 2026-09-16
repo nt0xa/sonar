@@ -11,7 +11,21 @@ services:
       POSTGRES_PASSWORD: db
       POSTGRES_DB: db_test
 
-  pebble:
+  # Performs a real DNS-01 challenge: resolves _acme-challenge TXT records
+  # against the sonar server's own DNS. Used by the dev server.
+  pebble-dns-check:
+    image: ghcr.io/letsencrypt/pebble:latest
+    command:
+      - -dnsserver
+      - dev:53
+    environment:
+      PEBBLE_VA_NOSLEEP: 1
+      PEBBLE_AUTHZREUSE: 0
+      PEBBLE_WFE_NONCEREJECT: 0
+
+  # Accepts every challenge without resolving anything (PEBBLE_VA_ALWAYS_VALID).
+  # Used by the pkg/certmgr test, whose provider doesn't publish DNS records.
+  pebble-no-dns-check:
     image: ghcr.io/letsencrypt/pebble:latest
     environment:
       PEBBLE_VA_NOSLEEP: 1
@@ -32,14 +46,14 @@ services:
     environment:
       GOMODCACHE: /cache/gomod
       GOCACHE: /cache/go
-      CERTMGR_CA_DIR_URL: https://pebble:14000/dir
+      CERTMGR_CA_DIR_URL: https://pebble-no-dns-check:14000/dir
       SONAR_DB_DSN: postgres://db:db@postgres:5432/db_test?sslmode=disable
       SONAR_DOMAIN: sonar.test
       SONAR_IP: 127.0.0.1
       SONAR_TLS_TYPE: letsencrypt
       SONAR_TLS_LETSENCRYPT_DIRECTORY: /cache/tls
       SONAR_TLS_LETSENCRYPT_EMAIL: test@example.com
-      SONAR_TLS_LETSENCRYPT_CA_DIR_URL: https://pebble:14000/dir
+      SONAR_TLS_LETSENCRYPT_CA_DIR_URL: https://pebble-dns-check:14000/dir
       SONAR_TLS_LETSENCRYPT_CA_INSECURE: true
       SONAR_GEOIP_ENABLED: true
       SONAR_GEOIP_CITY: /app/dev/GeoLite2-City.mmdb
