@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"regexp"
 	"strings"
-	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -18,6 +17,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
+	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
 type NotifyFunc func(net.Addr, []byte, map[string]any)
@@ -27,21 +27,18 @@ var (
 )
 
 type EventsHandler struct {
-	db           *database.DB
-	gdb          *geoipx.DB
-	log          *slog.Logger
-	tel          telemetry.Telemetry
-	cache        cache.Cache
-	workersCount int
-	workersWg    sync.WaitGroup
-	events       chan eventWithContext
-	notifiers    map[string]modules.Notifier
+	db        *database.DB
+	gdb       *geoipx.DB
+	log       *slog.Logger
+	tel       telemetry.Telemetry
+	cache     cache.Cache
+	notifiers map[string]modules.Notifier
+	proc      *workerpool.Processor[Event]
 }
 
-type eventWithContext struct {
-	ctx   context.Context
-	event *database.Event
-	match []byte
+type Event struct {
+	Event *database.Event
+	Match []byte
 }
 
 func NewEventsHandler(
@@ -52,63 +49,34 @@ func NewEventsHandler(
 	cache cache.Cache,
 	workers int,
 	capacity int,
-) *EventsHandler {
-	return &EventsHandler{
-		db:           db,
-		gdb:          gdb,
-		log:          log,
-		tel:          tel,
-		cache:        cache,
-		workersCount: workers,
-		events:       make(chan eventWithContext, capacity),
-		notifiers:    make(map[string]modules.Notifier),
+) (*EventsHandler, error) {
+	h := &EventsHandler{
+		db:        db,
+		gdb:       gdb,
+		log:       log,
+		tel:       tel,
+		cache:     cache,
+		notifiers: make(map[string]modules.Notifier),
 	}
+
+	proc, err := workerpool.NewProcessor(workers, capacity, h.handleEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	h.proc = proc
+
+	return h, err
 }
 
 func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
 	h.notifiers[name] = notifier
 }
 
-func (h *EventsHandler) Start() error {
-	for i := 0; i < h.workersCount; i++ {
-		h.workersWg.Add(1)
-		go h.worker(i)
-	}
-
-	return nil
-}
-
-func (h *EventsHandler) worker(id int) {
-	defer h.workersWg.Done()
-
-	for e := range h.events {
-		ctx := context.Background()
-
-		if id := getEventID(e.ctx); id != nil {
-			e.event.UUID = *id
-		} else {
-			e.event.UUID = uuid.New()
-			h.log.Warn("Event ID not found in context, generating new one")
-		}
-
-		ctx, span := h.tel.TraceStart(ctx, "event",
-			trace.WithSpanKind(trace.SpanKindConsumer),
-			trace.WithAttributes(
-				attribute.String("event.id", e.event.UUID.String()),
-				attribute.Int("event.worker.id", id),
-				attribute.String("event.protocol", e.event.Protocol),
-			),
-			trace.WithLinks(trace.LinkFromContext(e.ctx)),
-		)
-		h.handleEvent(ctx, e.event, e.match)
-		span.End()
-	}
-}
-
-func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event, match []byte) {
+func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
 	seen := make(map[string]struct{})
 
-	matches := subdomainRegexp.FindAllSubmatch(match, -1)
+	matches := subdomainRegexp.FindAllSubmatch(e.Match, -1)
 	if len(matches) == 0 {
 		return
 	}
@@ -127,20 +95,27 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event, matc
 			continue
 		}
 
-		e.PayloadID = p.ID
+		e.Event.PayloadID = p.ID
 
-		h.addGeoIPMetadata(e)
+		h.addGeoIPMetadata(e.Event)
+
+		// TODO: refactor this.
+		if id := getEventID(ctx); id != nil {
+			e.Event.UUID = *id
+		} else {
+			e.Event.UUID = uuid.New()
+		}
 
 		// Store event in database
 		if p.StoreEvents {
 			if _, err := h.db.EventsCreate(ctx, database.EventsCreateParams{
-				UUID:       e.UUID,
-				PayloadID:  e.PayloadID,
-				Protocol:   e.Protocol,
-				Data:       e.Data,
-				Meta:       e.Meta,
-				RemoteAddr: e.RemoteAddr,
-				ReceivedAt: e.ReceivedAt,
+				UUID:       e.Event.UUID,
+				PayloadID:  e.Event.PayloadID,
+				Protocol:   e.Event.Protocol,
+				Data:       e.Event.Data,
+				Meta:       e.Event.Meta,
+				RemoteAddr: e.Event.RemoteAddr,
+				ReceivedAt: e.Event.ReceivedAt,
 			}); err != nil {
 				h.log.Error("Failed to save event",
 					"err", err,
@@ -150,7 +125,7 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event, matc
 		}
 
 		// Skip if current event protocol is muted for payload.
-		if !database.ProtoCategoryContains(p.NotifyProtocols, database.ProtoToCategory(e.Protocol)) {
+		if !database.ProtoCategoryContains(p.NotifyProtocols, database.ProtoToCategory(e.Event.Protocol)) {
 			continue
 		}
 
@@ -164,7 +139,7 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e *database.Event, matc
 			go h.notify(context.Background(), ctx, &modules.Notification{
 				User:    u,
 				Payload: p,
-				Event:   e,
+				Event:   e.Event,
 			}, n)
 		}
 	}
@@ -229,7 +204,7 @@ func (h *EventsHandler) notify(
 }
 
 func (h *EventsHandler) Emit(ctx context.Context, e *database.Event, match []byte) {
-	h.events <- eventWithContext{ctx: ctx, event: e, match: match}
+	h.proc.Process(ctx, Event{Event: e, Match: match})
 }
 
 type eventIDKey struct{}

@@ -140,7 +140,7 @@ func Run(
 	// EventsHandler
 	//
 
-	events := NewEventsHandler(
+	events, err := NewEventsHandler(
 		db,
 		gdb,
 		log.With("package", "events"),
@@ -149,6 +149,9 @@ func Run(
 		10,
 		100,
 	)
+	if err != nil {
+		return fmt.Errorf("failed to create events handler: %w", err)
+	}
 
 	//
 	// DNS
@@ -320,11 +323,6 @@ func Run(
 	// Add notifiers
 	for i, n := range notifiers {
 		events.AddNotifier(fmt.Sprintf("Notifier %d", i), n)
-	}
-
-	// Process events
-	if err := events.Start(); err != nil {
-		return fmt.Errorf("failed to start events handler: %w", err)
 	}
 
 	// Wait forever
