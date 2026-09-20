@@ -49,7 +49,7 @@ func NewEventsHandler(
 	cache cache.Cache,
 	workers int,
 	capacity int,
-) (*EventsHandler, error) {
+) *EventsHandler {
 	h := &EventsHandler{
 		db:        db,
 		gdb:       gdb,
@@ -59,14 +59,9 @@ func NewEventsHandler(
 		notifiers: make(map[string]modules.Notifier),
 	}
 
-	proc, err := workerpool.NewProcessor(workers, capacity, h.handleEvent)
-	if err != nil {
-		return nil, err
-	}
+	h.proc = workerpool.NewProcessor(workers, capacity, h.handleEvent)
 
-	h.proc = proc
-
-	return h, err
+	return h
 }
 
 func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
