@@ -15,8 +15,8 @@ type task[T any] struct {
 }
 
 type Processor[T any] struct {
-	tasks   chan task[T]
-	handler func(context.Context, T)
+	tasks     chan task[T]
+	handler   func(context.Context, T)
 	workersWg sync.WaitGroup
 
 	stopOnce sync.Once
