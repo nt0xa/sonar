@@ -140,7 +140,7 @@ func Run(
 	// EventsHandler
 	//
 
-	events, err := NewEventsHandler(
+	events := NewEventsHandler(
 		db,
 		gdb,
 		log.With("package", "events"),
