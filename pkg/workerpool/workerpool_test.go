@@ -13,15 +13,18 @@ import (
 	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
-func TestProcessor_Errors(t *testing.T) {
-	_, err := workerpool.NewProcessor(0, 1, func(context.Context, int) {})
-	require.Error(t, err, "")
+func TestProcessor_Panics(t *testing.T) {
+	require.Panics(t, func() {
+		_ = workerpool.NewProcessor(0, 1, func(context.Context, int) {})
+	})
 
-	_, err = workerpool.NewProcessor(1, -1, func(context.Context, int) {})
-	require.Error(t, err)
+	require.Panics(t, func() {
+		_ = workerpool.NewProcessor(1, -1, func(context.Context, int) {})
+	})
 
-	_, err = workerpool.NewProcessor[int](1, 1, nil)
-	require.Error(t, err)
+	require.Panics(t, func() {
+		_ = workerpool.NewProcessor[int](1, 1, nil)
+	})
 }
 
 func TestProcessor_HandlesEverySubmittedItem(t *testing.T) {
@@ -30,12 +33,11 @@ func TestProcessor_HandlesEverySubmittedItem(t *testing.T) {
 		seen []int
 	)
 
-	p, err := workerpool.NewProcessor(4, 16, func(_ context.Context, v int) {
+	p := workerpool.NewProcessor(4, 16, func(_ context.Context, v int) {
 		mu.Lock()
 		defer mu.Unlock()
 		seen = append(seen, v)
 	})
-	require.NoError(t, err)
 
 	for i := range 100 {
 		p.Process(t.Context(), i)
@@ -53,12 +55,10 @@ func TestProcessor_StopDrainsBufferedItems(t *testing.T) {
 
 	// One slow worker and a deep buffer: everything is still queued when Stop
 	// is called, so a Stop that didn't drain would lose it.
-	p, err := workerpool.NewProcessor(1, 64, func(_ context.Context, _ int) {
+	p := workerpool.NewProcessor(1, 64, func(_ context.Context, _ int) {
 		time.Sleep(time.Millisecond)
 		handled.Add(1)
 	})
-
-	require.NoError(t, err)
 
 	for i := range 50 {
 		p.Process(t.Context(), i)
@@ -71,10 +71,9 @@ func TestProcessor_StopDrainsBufferedItems(t *testing.T) {
 func TestProcessor_StopGivesUpWhenContextIsDone(t *testing.T) {
 	release := make(chan struct{})
 
-	p, err := workerpool.NewProcessor(1, 4, func(_ context.Context, _ int) {
+	p := workerpool.NewProcessor(1, 4, func(_ context.Context, _ int) {
 		<-release
 	})
-	require.NoError(t, err)
 
 	p.Process(t.Context(), 1)
 
@@ -100,8 +99,7 @@ func TestProcessor_ProcessStripsCancellationButKeepsValues(t *testing.T) {
 		}
 	)
 
-	p, err := workerpool.NewProcessor(1, 1, handler)
-	require.NoError(t, err)
+	p := workerpool.NewProcessor(1, 1, handler)
 
 	ctx, cancel := context.WithCancel(context.WithValue(t.Context(), key{}, "kept"))
 	p.Process(ctx, 1)

@@ -5,13 +5,12 @@ package workerpool
 
 import (
 	"context"
-	"errors"
 	"sync"
 )
 
 type task[T any] struct {
-	ctx context.Context
-	v   T
+	ctx   context.Context
+	value T
 }
 
 type Processor[T any] struct {
@@ -27,18 +26,17 @@ func NewProcessor[T any](
 	workers int,
 	capacity int,
 	handler func(context.Context, T),
-) (*Processor[T], error) {
-
+) *Processor[T] {
 	if workers <= 0 {
-		return nil, errors.New("workerpool: workers must be > 0")
+		panic("workerpool: workers must be > 0")
 	}
 
 	if capacity < 0 {
-		return nil, errors.New("workerpool: capacity must be >= 0")
+		panic("workerpool: capacity must be >= 0")
 	}
 
 	if handler == nil {
-		return nil, errors.New("workerpool: handler must not be nil")
+		panic("workerpool: handler must not be nil")
 	}
 
 	p := Processor[T]{
@@ -52,14 +50,14 @@ func NewProcessor[T any](
 		go p.worker()
 	}
 
-	return &p, nil
+	return &p
 
 }
 func (p *Processor[T]) worker() {
 	defer p.workersWg.Done()
 
 	for task := range p.tasks {
-		p.handler(task.ctx, task.v)
+		p.handler(task.ctx, task.value)
 	}
 }
 
@@ -68,8 +66,8 @@ func (p *Processor[T]) worker() {
 // processing isn't aborted when the originating interaction's ctx ends.
 func (p *Processor[T]) Process(ctx context.Context, value T) {
 	p.tasks <- task[T]{
-		ctx: context.WithoutCancel(ctx),
-		v:   value,
+		ctx:   context.WithoutCancel(ctx),
+		value: value,
 	}
 }
 
