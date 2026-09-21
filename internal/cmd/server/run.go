@@ -15,7 +15,6 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service/auditsvc"
 	"github.com/nt0xa/sonar/internal/service/dbsvc"
@@ -101,15 +100,6 @@ func Run(
 	}
 
 	//
-	// Cache
-	//
-
-	cache, err := cache.New(ctx, db)
-	if err != nil {
-		return err
-	}
-
-	//
 	// Service
 	//
 
@@ -145,7 +135,6 @@ func Run(
 		gdb,
 		log.With("package", "events"),
 		tel,
-		cache,
 		10,
 		100,
 	)
