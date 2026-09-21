@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/google/uuid"
-	"github.com/nt0xa/sonar/internal/cache"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/pkg/geoipx"
@@ -31,7 +30,6 @@ type EventsHandler struct {
 	gdb       *geoipx.DB
 	log       *slog.Logger
 	tel       telemetry.Telemetry
-	cache     cache.Cache
 	notifiers map[string]modules.Notifier
 	proc      *workerpool.Processor[Event]
 }
@@ -46,7 +44,6 @@ func NewEventsHandler(
 	gdb *geoipx.DB,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
-	cache cache.Cache,
 	workers int,
 	capacity int,
 ) *EventsHandler {
@@ -55,7 +52,6 @@ func NewEventsHandler(
 		gdb:       gdb,
 		log:       log,
 		tel:       tel,
-		cache:     cache,
 		notifiers: make(map[string]modules.Notifier),
 	}
 
