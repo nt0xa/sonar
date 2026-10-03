@@ -6,6 +6,8 @@ package workerpool
 import (
 	"context"
 	"sync"
+
+	"golang.org/x/time/rate"
 )
 
 type task[T any] struct {
@@ -13,7 +15,9 @@ type task[T any] struct {
 	value T
 }
 
-type Processor[T any] struct {
+type Pool[T any] struct {
+	limiter *rate.Limiter
+
 	tasks     chan task[T]
 	handler   func(context.Context, T)
 	workersWg sync.WaitGroup
@@ -22,11 +26,18 @@ type Processor[T any] struct {
 	done     chan struct{}
 }
 
-func NewProcessor[T any](
+func New[T any](
 	workers int,
 	capacity int,
 	handler func(context.Context, T),
-) *Processor[T] {
+	opts ...Option,
+) *Pool[T] {
+	options := defaultOptions
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	if workers <= 0 {
 		panic("workerpool: workers must be > 0")
 	}
@@ -39,7 +50,22 @@ func NewProcessor[T any](
 		panic("workerpool: handler must not be nil")
 	}
 
-	p := Processor[T]{
+	var limiter *rate.Limiter
+
+	if options.rateLimit {
+		if options.limit <= 0 {
+			panic("workerpool: rate limit must be > 0")
+		}
+
+		if options.burst <= 0 {
+			panic("workerpool: rate limit burst must be > 0")
+		}
+
+		limiter = rate.NewLimiter(options.limit, options.burst)
+	}
+
+	p := Pool[T]{
+		limiter: limiter,
 		tasks:   make(chan task[T], capacity),
 		handler: handler,
 		done:    make(chan struct{}),
@@ -53,10 +79,14 @@ func NewProcessor[T any](
 	return &p
 
 }
-func (p *Processor[T]) worker() {
+func (p *Pool[T]) worker() {
 	defer p.workersWg.Done()
 
 	for task := range p.tasks {
+		if p.limiter != nil {
+			// Can't fail: ctx is never cancelled and limit/burst are validated in NewProcessor.
+			_ = p.limiter.Wait(task.ctx)
+		}
 		p.handler(task.ctx, task.value)
 	}
 }
@@ -64,14 +94,14 @@ func (p *Processor[T]) worker() {
 // Process enqueues value for processing. The caller's ctx is preserved for its
 // trace span and values but stripped of cancellation/deadline, so async
 // processing isn't aborted when the originating interaction's ctx ends.
-func (p *Processor[T]) Process(ctx context.Context, value T) {
+func (p *Pool[T]) Process(ctx context.Context, value T) {
 	p.tasks <- task[T]{
 		ctx:   context.WithoutCancel(ctx),
 		value: value,
 	}
 }
 
-func (p *Processor[T]) Stop(ctx context.Context) error {
+func (p *Pool[T]) Stop(ctx context.Context) error {
 	p.stopOnce.Do(func() {
 		close(p.tasks)
 
