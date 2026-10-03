@@ -3,7 +3,6 @@ package coalescer
 
 import (
 	"context"
-	"iter"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,18 +13,25 @@ import (
 // when the key's window expires. Every window that emits a batch doubles the next
 // one (up to maxWindow); a window with nothing buffered resets the key.
 type Coalescer[T any] struct {
-	keyFn KeyFn[T]
-	opts  options
+	keyFn  KeyFn[T]
+	emitFn EmitFn[T]
+	opts   options
 
 	mu      sync.Mutex
 	entries map[string]*entry[T]
-	out     chan []Item[T]
 	stopped bool
 
 	dropped atomic.Int64
 }
 
 type KeyFn[T any] = func(T) string
+
+// EmitFn receives batches. It is called with the coalescer's lock held, so it
+// must not block or call back into the coalescer; returning false drops the
+// batch (counted in Dropped). ctx is the item's ctx for single-item batches
+// and context.Background() otherwise; per-item contexts are in the batch.
+// workerpool.Pool.TryProcess fits as-is.
+type EmitFn[T any] = func(ctx context.Context, batch []Item[T]) bool
 
 // Item is a pushed value together with the context it was pushed with.
 type Item[T any] struct {
@@ -40,7 +46,7 @@ type entry[T any] struct {
 }
 
 // New creates a Coalescer, panics on invalid arguments.
-func New[T any](keyFn KeyFn[T], opts ...Option) *Coalescer[T] {
+func New[T any](keyFn KeyFn[T], emitFn EmitFn[T], opts ...Option) *Coalescer[T] {
 	options := defaultOptions
 
 	for _, opt := range opts {
@@ -51,16 +57,16 @@ func New[T any](keyFn KeyFn[T], opts ...Option) *Coalescer[T] {
 		panic("coalescer: keyFn must not be nil")
 	}
 
+	if emitFn == nil {
+		panic("coalescer: emitFn must not be nil")
+	}
+
 	if options.window <= 0 {
 		panic("coalescer: window must be > 0")
 	}
 
 	if options.maxBatch < 0 {
 		panic("coalescer: maxBatch must be >= 0")
-	}
-
-	if options.bufferSize < 0 {
-		panic("coalescer: bufferSize must be >= 0")
 	}
 
 	if options.passThrough < 1 {
@@ -71,9 +77,9 @@ func New[T any](keyFn KeyFn[T], opts ...Option) *Coalescer[T] {
 
 	return &Coalescer[T]{
 		keyFn:   keyFn,
+		emitFn:  emitFn,
 		opts:    options,
 		entries: make(map[string]*entry[T]),
-		out:     make(chan []Item[T], options.bufferSize),
 	}
 }
 
@@ -138,40 +144,24 @@ func (c *Coalescer[T]) tick(key string) {
 }
 
 func (c *Coalescer[T]) emit(batch []Item[T]) {
-	select {
-	case c.out <- batch:
-	default:
+	ctx := context.Background()
+	if len(batch) == 1 {
+		ctx = batch[0].Ctx
+	}
+
+	if !c.emitFn(ctx, batch) {
 		c.dropped.Add(int64(len(batch)))
 	}
 }
 
 // Dropped returns the number of items dropped because a key's batch was
-// full or the output buffer was full.
+// full or emitFn rejected the batch.
 func (c *Coalescer[T]) Dropped() int64 {
 	return c.dropped.Load()
 }
 
-// Next yields batches until ctx is done or Stop is called.
-func (c *Coalescer[T]) Next(ctx context.Context) iter.Seq[[]Item[T]] {
-	return func(yield func([]Item[T]) bool) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case it, ok := <-c.out:
-				if !ok {
-					return
-				}
-				if !yield(it) {
-					return
-				}
-			}
-		}
-	}
-}
-
-// Stop emits all pending batches and closes the output. Items pushed
-// after Stop are ignored. Stop is safe to call multiple times.
+// Stop emits all pending batches. Items pushed after Stop are ignored, so
+// once it returns emitFn is never called again. Stop is safe to call multiple times.
 func (c *Coalescer[T]) Stop() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -187,6 +177,4 @@ func (c *Coalescer[T]) Stop() {
 		}
 	}
 	clear(c.entries)
-
-	close(c.out)
 }
