@@ -31,7 +31,7 @@ type EventsHandler struct {
 	log       *slog.Logger
 	tel       telemetry.Telemetry
 	notifiers map[string]modules.Notifier
-	proc      *workerpool.Processor[Event]
+	proc      *workerpool.Pool[Event]
 }
 
 type Event struct {
@@ -55,7 +55,7 @@ func NewEventsHandler(
 		notifiers: make(map[string]modules.Notifier),
 	}
 
-	h.proc = workerpool.NewProcessor(workers, capacity, h.handleEvent)
+	h.proc = workerpool.New(workers, capacity, h.handleEvent)
 
 	return h
 }
