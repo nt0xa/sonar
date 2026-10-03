@@ -13,7 +13,7 @@ import (
 	"github.com/nt0xa/sonar/pkg/coalescer"
 )
 
-func TestCoalescerSmoke(t *testing.T) {
+func Test_Smoke(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return "key" },
@@ -38,7 +38,7 @@ func TestCoalescerSmoke(t *testing.T) {
 	})
 }
 
-func TestCoalescerBackoff(t *testing.T) {
+func Test_Backoff(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return "key" },
@@ -99,7 +99,7 @@ func TestCoalescerBackoff(t *testing.T) {
 	})
 }
 
-func TestCoalescerStop(t *testing.T) {
+func Test_Stop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return "key" },
@@ -127,7 +127,7 @@ func TestCoalescerStop(t *testing.T) {
 	})
 }
 
-func TestCoalescerKeys(t *testing.T) {
+func Test_Keys(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return strconv.Itoa(i % 2) },
@@ -150,7 +150,7 @@ func TestCoalescerKeys(t *testing.T) {
 	})
 }
 
-func TestCoalescerSingleItem(t *testing.T) {
+func Test_SingleItem(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return "key" },
@@ -172,7 +172,7 @@ func TestCoalescerSingleItem(t *testing.T) {
 	})
 }
 
-func TestCoalescerMaxBatch(t *testing.T) {
+func Test_MaxBatch(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return "key" },
@@ -197,7 +197,7 @@ func TestCoalescerMaxBatch(t *testing.T) {
 	})
 }
 
-func TestCoalescerBufferFull(t *testing.T) {
+func Test_BufferFull(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
 			func(i int) string { return strconv.Itoa(i) },
@@ -218,7 +218,7 @@ func TestCoalescerBufferFull(t *testing.T) {
 	})
 }
 
-func TestCoalescerInvalidOptions(t *testing.T) {
+func Test_InvalidOptions(t *testing.T) {
 	keyFn := func(i int) string { return "key" }
 
 	assert.Panics(t, func() { coalescer.New[int](nil) })
