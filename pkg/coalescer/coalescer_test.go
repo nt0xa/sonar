@@ -1,6 +1,7 @@
 package coalescer_test
 
 import (
+	"context"
 	"iter"
 	"strconv"
 	"testing"
@@ -13,6 +14,21 @@ import (
 	"github.com/nt0xa/sonar/pkg/coalescer"
 )
 
+// values strips contexts from batches.
+func values[T any](seq iter.Seq[[]coalescer.Item[T]]) iter.Seq[[]T] {
+	return func(yield func([]T) bool) {
+		for batch := range seq {
+			vs := make([]T, len(batch))
+			for i, it := range batch {
+				vs[i] = it.Value
+			}
+			if !yield(vs) {
+				return
+			}
+		}
+	}
+}
+
 func Test_Smoke(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		c := coalescer.New[int](
@@ -22,10 +38,10 @@ func Test_Smoke(t *testing.T) {
 		)
 
 		for i := range 5 {
-			c.Push(i)
+			c.Push(t.Context(), i)
 		}
 
-		next, stop := iter.Pull(c.Next(t.Context()))
+		next, stop := iter.Pull(values(c.Next(t.Context())))
 		defer stop()
 
 		v, ok := next()
@@ -51,17 +67,17 @@ func Test_Backoff(t *testing.T) {
 
 		go func() {
 			// Continuous traffic until 10s, offset to avoid window boundaries.
-			c.Push(0)
+			c.Push(t.Context(), 0)
 			time.Sleep(100 * time.Millisecond)
 			for i := 1; time.Since(start) < 10*time.Second; i++ {
-				c.Push(i)
+				c.Push(t.Context(), i)
 				time.Sleep(250 * time.Millisecond)
 			}
 
 			// Quiet period resets the key: pass-through and windows start over.
 			time.Sleep(20*time.Second - time.Since(start))
 			for i := range 4 {
-				c.Push(100 + i)
+				c.Push(t.Context(), 100+i)
 				time.Sleep(100 * time.Millisecond)
 			}
 		}()
@@ -85,7 +101,7 @@ func Test_Backoff(t *testing.T) {
 			{21 * time.Second, 1},                      // window 1s again
 		}
 
-		next, stop := iter.Pull(c.Next(t.Context()))
+		next, stop := iter.Pull(values(c.Next(t.Context())))
 		defer stop()
 
 		var got []emission
@@ -108,18 +124,18 @@ func Test_Stop(t *testing.T) {
 		)
 
 		for i := range 3 {
-			c.Push(i)
+			c.Push(t.Context(), i)
 		}
 
 		c.Stop()
 		c.Stop()
-		c.Push(3)
+		c.Push(t.Context(), 3)
 
 		// Pending timer fires after Stop.
 		time.Sleep(10 * time.Second)
 
 		var got [][]int
-		for v := range c.Next(t.Context()) {
+		for v := range values(c.Next(t.Context())) {
 			got = append(got, v)
 		}
 
@@ -135,14 +151,14 @@ func Test_Keys(t *testing.T) {
 		)
 
 		for i := range 6 {
-			c.Push(i)
+			c.Push(t.Context(), i)
 		}
 
 		time.Sleep(10 * time.Second)
 		c.Stop()
 
 		var got [][]int
-		for v := range c.Next(t.Context()) {
+		for v := range values(c.Next(t.Context())) {
 			got = append(got, v)
 		}
 
@@ -157,14 +173,14 @@ func Test_SingleItem(t *testing.T) {
 			coalescer.Window(time.Second),
 		)
 
-		c.Push(0)
+		c.Push(t.Context(), 0)
 
 		// No empty batch after the window expires.
 		time.Sleep(10 * time.Second)
 		c.Stop()
 
 		var got [][]int
-		for v := range c.Next(t.Context()) {
+		for v := range values(c.Next(t.Context())) {
 			got = append(got, v)
 		}
 
@@ -181,14 +197,14 @@ func Test_MaxBatch(t *testing.T) {
 		)
 
 		for i := range 5 {
-			c.Push(i)
+			c.Push(t.Context(), i)
 		}
 
 		time.Sleep(10 * time.Second)
 		c.Stop()
 
 		var got [][]int
-		for v := range c.Next(t.Context()) {
+		for v := range values(c.Next(t.Context())) {
 			got = append(got, v)
 		}
 
@@ -204,12 +220,12 @@ func Test_BufferFull(t *testing.T) {
 			coalescer.BufferSize(1),
 		)
 
-		c.Push(0)
-		c.Push(1)
+		c.Push(t.Context(), 0)
+		c.Push(t.Context(), 1)
 		c.Stop()
 
 		var got [][]int
-		for v := range c.Next(t.Context()) {
+		for v := range values(c.Next(t.Context())) {
 			got = append(got, v)
 		}
 
@@ -226,4 +242,41 @@ func Test_InvalidOptions(t *testing.T) {
 	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.MaxBatch(-1)) })
 	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.BufferSize(-1)) })
 	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.PassThrough(0)) })
+}
+
+func Test_Context(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		type key struct{}
+
+		c := coalescer.New[int](
+			func(i int) string { return "key" },
+			coalescer.Window(time.Second),
+		)
+
+		for i := range 3 {
+			ctx, cancel := context.WithCancel(context.WithValue(t.Context(), key{}, i))
+			c.Push(ctx, i)
+			// Cancellation of the caller's ctx must not leak into the item.
+			cancel()
+		}
+
+		time.Sleep(10 * time.Second)
+		c.Stop()
+
+		var got [][]coalescer.Item[int]
+		for b := range c.Next(t.Context()) {
+			got = append(got, b)
+		}
+
+		require.Len(t, got, 2)
+		require.Len(t, got[0], 1)
+		require.Len(t, got[1], 2)
+
+		for _, b := range got {
+			for _, it := range b {
+				assert.Equal(t, it.Value, it.Ctx.Value(key{}))
+				assert.NoError(t, it.Ctx.Err())
+			}
+		}
+	})
 }
