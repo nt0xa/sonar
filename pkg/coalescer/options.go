@@ -8,7 +8,6 @@ var defaultOptions = options{
 	window:      time.Second,
 	maxWindow:   time.Minute,
 	maxBatch:    100,
-	bufferSize:  100,
 	passThrough: 1,
 }
 
@@ -16,7 +15,6 @@ type options struct {
 	window      time.Duration
 	maxWindow   time.Duration
 	maxBatch    int
-	bufferSize  int
 	passThrough int
 }
 
@@ -42,14 +40,6 @@ func MaxWindow(d time.Duration) Option {
 func MaxBatch(n int) Option {
 	return func(opts *options) {
 		opts.maxBatch = n
-	}
-}
-
-// BufferSize sets the capacity of the output channel.
-// Batches are dropped when it is full.
-func BufferSize(n int) Option {
-	return func(opts *options) {
-		opts.bufferSize = n
 	}
 }
 

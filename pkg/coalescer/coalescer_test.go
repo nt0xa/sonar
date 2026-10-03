@@ -2,8 +2,8 @@ package coalescer_test
 
 import (
 	"context"
-	"iter"
 	"strconv"
+	"sync"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -14,25 +14,67 @@ import (
 	"github.com/nt0xa/sonar/pkg/coalescer"
 )
 
-// values strips contexts from batches.
-func values[T any](seq iter.Seq[[]coalescer.Item[T]]) iter.Seq[[]T] {
-	return func(yield func([]T) bool) {
-		for batch := range seq {
-			vs := make([]T, len(batch))
-			for i, it := range batch {
-				vs[i] = it.Value
-			}
-			if !yield(vs) {
-				return
-			}
-		}
+type emission struct {
+	at    time.Duration
+	ctx   context.Context
+	batch []coalescer.Item[int]
+}
+
+// recorder is an EmitFn that records every batch it accepts.
+type recorder struct {
+	start  time.Time
+	reject bool
+
+	mu  sync.Mutex
+	got []emission
+}
+
+func newRecorder() *recorder {
+	return &recorder{start: time.Now()}
+}
+
+func (r *recorder) emit(ctx context.Context, batch []coalescer.Item[int]) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.reject {
+		return false
 	}
+
+	r.got = append(r.got, emission{time.Since(r.start), ctx, batch})
+	return true
+}
+
+func (r *recorder) setReject(v bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.reject = v
+}
+
+func (r *recorder) emissions() []emission {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]emission(nil), r.got...)
+}
+
+func (r *recorder) values() [][]int {
+	var vs [][]int
+	for _, e := range r.emissions() {
+		b := make([]int, len(e.batch))
+		for i, it := range e.batch {
+			b[i] = it.Value
+		}
+		vs = append(vs, b)
+	}
+	return vs
 }
 
 func Test_Smoke(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 			coalescer.MaxWindow(4*time.Second),
 		)
@@ -41,53 +83,50 @@ func Test_Smoke(t *testing.T) {
 			c.Push(t.Context(), i)
 		}
 
-		next, stop := iter.Pull(values(c.Next(t.Context())))
-		defer stop()
+		assert.Equal(t, [][]int{{0}}, r.values())
 
-		v, ok := next()
-		require.True(t, ok)
-		assert.Equal(t, []int{0}, v)
-
-		v, ok = next()
-		require.True(t, ok)
-		assert.Equal(t, []int{1, 2, 3, 4}, v)
+		time.Sleep(time.Second)
+		synctest.Wait() // let the window timer finish
+		assert.Equal(t, [][]int{{0}, {1, 2, 3, 4}}, r.values())
 	})
 }
 
 func Test_Backoff(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 			coalescer.MaxWindow(4*time.Second),
 			coalescer.PassThrough(3),
 		)
 
-		start := time.Now()
+		start := r.start
 
-		go func() {
-			// Continuous traffic until 10s, offset to avoid window boundaries.
-			c.Push(t.Context(), 0)
+		// Continuous traffic until 10s, offset to avoid window boundaries.
+		c.Push(t.Context(), 0)
+		time.Sleep(100 * time.Millisecond)
+		for i := 1; time.Since(start) < 10*time.Second; i++ {
+			c.Push(t.Context(), i)
+			time.Sleep(250 * time.Millisecond)
+		}
+
+		// Quiet period resets the key: pass-through and windows start over.
+		time.Sleep(20*time.Second - time.Since(start))
+		for i := range 4 {
+			c.Push(t.Context(), 100+i)
 			time.Sleep(100 * time.Millisecond)
-			for i := 1; time.Since(start) < 10*time.Second; i++ {
-				c.Push(t.Context(), i)
-				time.Sleep(250 * time.Millisecond)
-			}
+		}
 
-			// Quiet period resets the key: pass-through and windows start over.
-			time.Sleep(20*time.Second - time.Since(start))
-			for i := range 4 {
-				c.Push(t.Context(), 100+i)
-				time.Sleep(100 * time.Millisecond)
-			}
-		}()
+		time.Sleep(time.Minute)
 
-		type emission struct {
+		type point struct {
 			at time.Duration
 			n  int
 		}
 
-		want := []emission{
+		want := []point{
 			{0, 1},                                     // pass-through
 			{100 * time.Millisecond, 1},                // pass-through
 			{350 * time.Millisecond, 1},                // pass-through
@@ -101,14 +140,9 @@ func Test_Backoff(t *testing.T) {
 			{21 * time.Second, 1},                      // window 1s again
 		}
 
-		next, stop := iter.Pull(values(c.Next(t.Context())))
-		defer stop()
-
-		var got []emission
-		for range want {
-			v, ok := next()
-			require.True(t, ok)
-			got = append(got, emission{time.Since(start), len(v)})
+		var got []point
+		for _, e := range r.emissions() {
+			got = append(got, point{e.at, len(e.batch)})
 		}
 
 		assert.Equal(t, want, got)
@@ -117,8 +151,10 @@ func Test_Backoff(t *testing.T) {
 
 func Test_Stop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 			coalescer.MaxWindow(4*time.Second),
 		)
@@ -128,25 +164,24 @@ func Test_Stop(t *testing.T) {
 		}
 
 		c.Stop()
+		assert.Equal(t, [][]int{{0}, {1, 2}}, r.values())
+
 		c.Stop()
 		c.Push(t.Context(), 3)
 
 		// Pending timer fires after Stop.
 		time.Sleep(10 * time.Second)
 
-		var got [][]int
-		for v := range values(c.Next(t.Context())) {
-			got = append(got, v)
-		}
-
-		assert.Equal(t, [][]int{{0}, {1, 2}}, got)
+		assert.Equal(t, [][]int{{0}, {1, 2}}, r.values())
 	})
 }
 
 func Test_Keys(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return strconv.Itoa(i % 2) },
+			r.emit,
 			coalescer.Window(time.Second),
 		)
 
@@ -155,21 +190,17 @@ func Test_Keys(t *testing.T) {
 		}
 
 		time.Sleep(10 * time.Second)
-		c.Stop()
 
-		var got [][]int
-		for v := range values(c.Next(t.Context())) {
-			got = append(got, v)
-		}
-
-		assert.ElementsMatch(t, [][]int{{0}, {1}, {2, 4}, {3, 5}}, got)
+		assert.ElementsMatch(t, [][]int{{0}, {1}, {2, 4}, {3, 5}}, r.values())
 	})
 }
 
 func Test_SingleItem(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 		)
 
@@ -177,21 +208,17 @@ func Test_SingleItem(t *testing.T) {
 
 		// No empty batch after the window expires.
 		time.Sleep(10 * time.Second)
-		c.Stop()
 
-		var got [][]int
-		for v := range values(c.Next(t.Context())) {
-			got = append(got, v)
-		}
-
-		assert.Equal(t, [][]int{{0}}, got)
+		assert.Equal(t, [][]int{{0}}, r.values())
 	})
 }
 
 func Test_MaxBatch(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 			coalescer.MaxBatch(2),
 		)
@@ -201,55 +228,41 @@ func Test_MaxBatch(t *testing.T) {
 		}
 
 		time.Sleep(10 * time.Second)
-		c.Stop()
 
-		var got [][]int
-		for v := range values(c.Next(t.Context())) {
-			got = append(got, v)
-		}
-
-		assert.Equal(t, [][]int{{0}, {1, 2}}, got)
+		assert.Equal(t, [][]int{{0}, {1, 2}}, r.values())
 		assert.EqualValues(t, 2, c.Dropped())
 	})
 }
 
-func Test_BufferFull(t *testing.T) {
+func Test_EmitRejected(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		c := coalescer.New[int](
-			func(i int) string { return strconv.Itoa(i) },
-			coalescer.BufferSize(1),
+		r := newRecorder()
+		c := coalescer.New(
+			func(i int) string { return "key" },
+			r.emit,
+			coalescer.Window(time.Second),
 		)
 
 		c.Push(t.Context(), 0)
+
+		r.setReject(true)
 		c.Push(t.Context(), 1)
-		c.Stop()
+		c.Push(t.Context(), 2)
+		time.Sleep(10 * time.Second)
 
-		var got [][]int
-		for v := range values(c.Next(t.Context())) {
-			got = append(got, v)
-		}
-
-		assert.Equal(t, [][]int{{0}}, got)
-		assert.EqualValues(t, 1, c.Dropped())
+		assert.Equal(t, [][]int{{0}}, r.values())
+		assert.EqualValues(t, 2, c.Dropped())
 	})
-}
-
-func Test_InvalidOptions(t *testing.T) {
-	keyFn := func(i int) string { return "key" }
-
-	assert.Panics(t, func() { coalescer.New[int](nil) })
-	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.Window(0)) })
-	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.MaxBatch(-1)) })
-	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.BufferSize(-1)) })
-	assert.Panics(t, func() { coalescer.New(keyFn, coalescer.PassThrough(0)) })
 }
 
 func Test_Context(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		type key struct{}
 
-		c := coalescer.New[int](
+		r := newRecorder()
+		c := coalescer.New(
 			func(i int) string { return "key" },
+			r.emit,
 			coalescer.Window(time.Second),
 		)
 
@@ -261,22 +274,30 @@ func Test_Context(t *testing.T) {
 		}
 
 		time.Sleep(10 * time.Second)
-		c.Stop()
 
-		var got [][]coalescer.Item[int]
-		for b := range c.Next(t.Context()) {
-			got = append(got, b)
-		}
+		require.Equal(t, [][]int{{0}, {1, 2}}, r.values())
 
-		require.Len(t, got, 2)
-		require.Len(t, got[0], 1)
-		require.Len(t, got[1], 2)
-
-		for _, b := range got {
-			for _, it := range b {
+		got := r.emissions()
+		for _, e := range got {
+			for _, it := range e.batch {
 				assert.Equal(t, it.Value, it.Ctx.Value(key{}))
 				assert.NoError(t, it.Ctx.Err())
 			}
 		}
+
+		// Single-item batch carries the item's ctx, a merged one doesn't.
+		assert.Equal(t, 0, got[0].ctx.Value(key{}))
+		assert.Nil(t, got[1].ctx.Value(key{}))
 	})
+}
+
+func Test_InvalidOptions(t *testing.T) {
+	keyFn := func(i int) string { return "key" }
+	emitFn := func(context.Context, []coalescer.Item[int]) bool { return true }
+
+	assert.Panics(t, func() { coalescer.New(nil, emitFn) })
+	assert.Panics(t, func() { coalescer.New(keyFn, nil) })
+	assert.Panics(t, func() { coalescer.New(keyFn, emitFn, coalescer.Window(0)) })
+	assert.Panics(t, func() { coalescer.New(keyFn, emitFn, coalescer.MaxBatch(-1)) })
+	assert.Panics(t, func() { coalescer.New(keyFn, emitFn, coalescer.PassThrough(0)) })
 }

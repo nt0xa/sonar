@@ -101,6 +101,17 @@ func (p *Pool[T]) Process(ctx context.Context, value T) {
 	}
 }
 
+// TryProcess is a non-blocking Process: it returns false and drops value if
+// the queue is full.
+func (p *Pool[T]) TryProcess(ctx context.Context, value T) bool {
+	select {
+	case p.tasks <- task[T]{ctx: context.WithoutCancel(ctx), value: value}:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *Pool[T]) Stop(ctx context.Context) error {
 	p.stopOnce.Do(func() {
 		close(p.tasks)

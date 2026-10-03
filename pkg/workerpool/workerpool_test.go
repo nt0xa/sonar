@@ -141,3 +141,25 @@ func Test_RateLimitIsSharedAcrossWorkers(t *testing.T) {
 		assert.Equal(t, (items-1)*interval, time.Since(start))
 	})
 }
+
+func Test_TryProcessDropsWhenFull(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		release := make(chan struct{})
+		var handled atomic.Int64
+
+		p := workerpool.New(1, 1, func(_ context.Context, _ int) {
+			<-release
+			handled.Add(1)
+		})
+
+		require.True(t, p.TryProcess(t.Context(), 0))
+		synctest.Wait() // worker is blocked holding item 0
+
+		require.True(t, p.TryProcess(t.Context(), 1))  // fills the queue
+		require.False(t, p.TryProcess(t.Context(), 2)) // dropped
+
+		close(release)
+		require.NoError(t, p.Stop(t.Context()))
+		assert.EqualValues(t, 2, handled.Load())
+	})
+}
