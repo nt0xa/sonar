@@ -19,7 +19,7 @@ type Coalescer[T any] struct {
 
 	mu      sync.Mutex
 	entries map[string]*entry[T]
-	out     chan []T
+	out     chan []Item[T]
 	stopped bool
 
 	dropped atomic.Int64
@@ -27,8 +27,14 @@ type Coalescer[T any] struct {
 
 type KeyFn[T any] = func(T) string
 
+// Item is a pushed value together with the context it was pushed with.
+type Item[T any] struct {
+	Ctx   context.Context
+	Value T
+}
+
 type entry[T any] struct {
-	buf    []T
+	buf    []Item[T]
 	window time.Duration
 	count  int
 }
@@ -67,13 +73,16 @@ func New[T any](keyFn KeyFn[T], opts ...Option) *Coalescer[T] {
 		keyFn:   keyFn,
 		opts:    options,
 		entries: make(map[string]*entry[T]),
-		out:     make(chan []T, options.bufferSize),
+		out:     make(chan []Item[T], options.bufferSize),
 	}
 }
 
-// Push adds an item, never blocks; overflow is counted in Dropped.
-func (c *Coalescer[T]) Push(item T) {
-	key := c.keyFn(item)
+// Push adds an item, never blocks; overflow is counted in Dropped. The
+// caller's ctx is preserved for its trace span and values but stripped of
+// cancellation/deadline, since the item may be emitted after ctx ends.
+func (c *Coalescer[T]) Push(ctx context.Context, value T) {
+	key := c.keyFn(value)
+	item := Item[T]{Ctx: context.WithoutCancel(ctx), Value: value}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -88,13 +97,13 @@ func (c *Coalescer[T]) Push(item T) {
 			window: c.opts.window,
 			count:  1,
 		}
-		c.emit([]T{item})
+		c.emit([]Item[T]{item})
 		time.AfterFunc(c.opts.window, func() { c.tick(key) })
 		return
 	}
 
 	if e.count < c.opts.passThrough {
-		c.emit([]T{item})
+		c.emit([]Item[T]{item})
 		e.count++
 		return
 	}
@@ -128,7 +137,7 @@ func (c *Coalescer[T]) tick(key string) {
 	time.AfterFunc(e.window, func() { c.tick(key) })
 }
 
-func (c *Coalescer[T]) emit(batch []T) {
+func (c *Coalescer[T]) emit(batch []Item[T]) {
 	select {
 	case c.out <- batch:
 	default:
@@ -143,8 +152,8 @@ func (c *Coalescer[T]) Dropped() int64 {
 }
 
 // Next yields batches until ctx is done or Stop is called.
-func (c *Coalescer[T]) Next(ctx context.Context) iter.Seq[[]T] {
-	return func(yield func([]T) bool) {
+func (c *Coalescer[T]) Next(ctx context.Context) iter.Seq[[]Item[T]] {
+	return func(yield func([]Item[T]) bool) {
 		for {
 			select {
 			case <-ctx.Done():
