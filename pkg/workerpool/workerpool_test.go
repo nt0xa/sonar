@@ -15,29 +15,17 @@ import (
 	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
-func TestProcessor_Panics(t *testing.T) {
-	require.Panics(t, func() {
-		_ = workerpool.New(0, 1, func(context.Context, int) {})
-	})
+func Test_Panics(t *testing.T) {
+	procFn := func(context.Context, int) {}
 
-	require.Panics(t, func() {
-		_ = workerpool.New(1, -1, func(context.Context, int) {})
-	})
-
-	require.Panics(t, func() {
-		_ = workerpool.New[int](1, 1, nil)
-	})
-
-	require.Panics(t, func() {
-		_ = workerpool.New(1, 1, func(context.Context, int) {}, workerpool.RateLimit(0, 1))
-	})
-
-	require.Panics(t, func() {
-		_ = workerpool.New(1, 1, func(context.Context, int) {}, workerpool.RateLimit(1, 0))
-	})
+	require.Panics(t, func() { workerpool.New(0, 1, procFn) })
+	require.Panics(t, func() { workerpool.New(1, -1, procFn) })
+	require.Panics(t, func() { workerpool.New[int](1, 1, nil) })
+	require.Panics(t, func() { workerpool.New(1, 1, procFn, workerpool.RateLimit(0, 1)) })
+	require.Panics(t, func() { workerpool.New(1, 1, procFn, workerpool.RateLimit(1, 0)) })
 }
 
-func TestProcessor_HandlesEverySubmittedItem(t *testing.T) {
+func Test_HandlesEverySubmittedItem(t *testing.T) {
 	var (
 		mu   sync.Mutex
 		seen []int
@@ -60,7 +48,7 @@ func TestProcessor_HandlesEverySubmittedItem(t *testing.T) {
 	assert.Len(t, seen, 100)
 }
 
-func TestProcessor_StopDrainsBufferedItems(t *testing.T) {
+func Test_StopDrainsBufferedItems(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		var handled atomic.Int64
 
@@ -80,7 +68,7 @@ func TestProcessor_StopDrainsBufferedItems(t *testing.T) {
 	})
 }
 
-func TestProcessor_StopGivesUpWhenContextIsDone(t *testing.T) {
+func Test_StopGivesUpWhenContextIsDone(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		release := make(chan struct{})
 
@@ -99,7 +87,7 @@ func TestProcessor_StopGivesUpWhenContextIsDone(t *testing.T) {
 	})
 }
 
-func TestProcessor_ProcessStripsCancellationButKeepsValues(t *testing.T) {
+func Test_ProcessStripsCancellationButKeepsValues(t *testing.T) {
 	type key struct{}
 
 	var (
@@ -126,7 +114,7 @@ func TestProcessor_ProcessStripsCancellationButKeepsValues(t *testing.T) {
 	assert.NoError(t, gotErr)
 }
 
-func TestProcessor_RateLimitIsSharedAcrossWorkers(t *testing.T) {
+func Test_RateLimitIsSharedAcrossWorkers(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		const (
 			items    = 5
