@@ -2,7 +2,6 @@
 package coalescer
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,19 +27,11 @@ type KeyFn[T any] = func(T) string
 
 // EmitFn receives batches. It is called with the coalescer's lock held, so it
 // must not block or call back into the coalescer; returning false drops the
-// batch (counted in Dropped). ctx is the item's ctx for single-item batches
-// and context.Background() otherwise; per-item contexts are in the batch.
-// workerpool.Pool.TryProcess fits as-is.
-type EmitFn[T any] = func(ctx context.Context, batch []Item[T]) bool
-
-// Item is a pushed value together with the context it was pushed with.
-type Item[T any] struct {
-	Ctx   context.Context
-	Value T
-}
+// batch (counted in Dropped).
+type EmitFn[T any] = func(batch []T) bool
 
 type entry[T any] struct {
-	buf    []Item[T]
+	buf    []T
 	window time.Duration
 	count  int
 }
@@ -83,12 +74,9 @@ func New[T any](keyFn KeyFn[T], emitFn EmitFn[T], opts ...Option) *Coalescer[T] 
 	}
 }
 
-// Push adds an item, never blocks; overflow is counted in Dropped. The
-// caller's ctx is preserved for its trace span and values but stripped of
-// cancellation/deadline, since the item may be emitted after ctx ends.
-func (c *Coalescer[T]) Push(ctx context.Context, value T) {
-	key := c.keyFn(value)
-	item := Item[T]{Ctx: context.WithoutCancel(ctx), Value: value}
+// Push adds an item, never blocks; overflow is counted in Dropped.
+func (c *Coalescer[T]) Push(item T) {
+	key := c.keyFn(item)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -103,13 +91,13 @@ func (c *Coalescer[T]) Push(ctx context.Context, value T) {
 			window: c.opts.window,
 			count:  1,
 		}
-		c.emit([]Item[T]{item})
+		c.emit([]T{item})
 		time.AfterFunc(c.opts.window, func() { c.tick(key) })
 		return
 	}
 
 	if e.count < c.opts.passThrough {
-		c.emit([]Item[T]{item})
+		c.emit([]T{item})
 		e.count++
 		return
 	}
@@ -143,13 +131,8 @@ func (c *Coalescer[T]) tick(key string) {
 	time.AfterFunc(e.window, func() { c.tick(key) })
 }
 
-func (c *Coalescer[T]) emit(batch []Item[T]) {
-	ctx := context.Background()
-	if len(batch) == 1 {
-		ctx = batch[0].Ctx
-	}
-
-	if !c.emitFn(ctx, batch) {
+func (c *Coalescer[T]) emit(batch []T) {
+	if !c.emitFn(batch) {
 		c.dropped.Add(int64(len(batch)))
 	}
 }
