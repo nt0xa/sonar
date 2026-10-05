@@ -1,7 +1,6 @@
 package coalescer_test
 
 import (
-	"context"
 	"strconv"
 	"sync"
 	"testing"
@@ -9,15 +8,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/pkg/coalescer"
 )
 
 type emission struct {
 	at    time.Duration
-	ctx   context.Context
-	batch []coalescer.Item[int]
+	batch []int
 }
 
 // recorder is an EmitFn that records every batch it accepts.
@@ -33,7 +30,7 @@ func newRecorder() *recorder {
 	return &recorder{start: time.Now()}
 }
 
-func (r *recorder) emit(ctx context.Context, batch []coalescer.Item[int]) bool {
+func (r *recorder) emit(batch []int) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -41,7 +38,7 @@ func (r *recorder) emit(ctx context.Context, batch []coalescer.Item[int]) bool {
 		return false
 	}
 
-	r.got = append(r.got, emission{time.Since(r.start), ctx, batch})
+	r.got = append(r.got, emission{time.Since(r.start), batch})
 	return true
 }
 
@@ -60,11 +57,7 @@ func (r *recorder) emissions() []emission {
 func (r *recorder) values() [][]int {
 	var vs [][]int
 	for _, e := range r.emissions() {
-		b := make([]int, len(e.batch))
-		for i, it := range e.batch {
-			b[i] = it.Value
-		}
-		vs = append(vs, b)
+		vs = append(vs, e.batch)
 	}
 	return vs
 }
@@ -80,7 +73,7 @@ func Test_Smoke(t *testing.T) {
 		)
 
 		for i := range 5 {
-			c.Push(t.Context(), i)
+			c.Push(i)
 		}
 
 		assert.Equal(t, [][]int{{0}}, r.values())
@@ -105,17 +98,17 @@ func Test_Backoff(t *testing.T) {
 		start := r.start
 
 		// Continuous traffic until 10s, offset to avoid window boundaries.
-		c.Push(t.Context(), 0)
+		c.Push(0)
 		time.Sleep(100 * time.Millisecond)
 		for i := 1; time.Since(start) < 10*time.Second; i++ {
-			c.Push(t.Context(), i)
+			c.Push(i)
 			time.Sleep(250 * time.Millisecond)
 		}
 
 		// Quiet period resets the key: pass-through and windows start over.
 		time.Sleep(20*time.Second - time.Since(start))
 		for i := range 4 {
-			c.Push(t.Context(), 100+i)
+			c.Push(100 + i)
 			time.Sleep(100 * time.Millisecond)
 		}
 
@@ -160,14 +153,14 @@ func Test_Stop(t *testing.T) {
 		)
 
 		for i := range 3 {
-			c.Push(t.Context(), i)
+			c.Push(i)
 		}
 
 		c.Stop()
 		assert.Equal(t, [][]int{{0}, {1, 2}}, r.values())
 
 		c.Stop()
-		c.Push(t.Context(), 3)
+		c.Push(3)
 
 		// Pending timer fires after Stop.
 		time.Sleep(10 * time.Second)
@@ -186,7 +179,7 @@ func Test_Keys(t *testing.T) {
 		)
 
 		for i := range 6 {
-			c.Push(t.Context(), i)
+			c.Push(i)
 		}
 
 		time.Sleep(10 * time.Second)
@@ -204,7 +197,7 @@ func Test_SingleItem(t *testing.T) {
 			coalescer.Window(time.Second),
 		)
 
-		c.Push(t.Context(), 0)
+		c.Push(0)
 
 		// No empty batch after the window expires.
 		time.Sleep(10 * time.Second)
@@ -224,7 +217,7 @@ func Test_MaxBatch(t *testing.T) {
 		)
 
 		for i := range 5 {
-			c.Push(t.Context(), i)
+			c.Push(i)
 		}
 
 		time.Sleep(10 * time.Second)
@@ -243,11 +236,11 @@ func Test_EmitRejected(t *testing.T) {
 			coalescer.Window(time.Second),
 		)
 
-		c.Push(t.Context(), 0)
+		c.Push(0)
 
 		r.setReject(true)
-		c.Push(t.Context(), 1)
-		c.Push(t.Context(), 2)
+		c.Push(1)
+		c.Push(2)
 		time.Sleep(10 * time.Second)
 
 		assert.Equal(t, [][]int{{0}}, r.values())
@@ -255,45 +248,9 @@ func Test_EmitRejected(t *testing.T) {
 	})
 }
 
-func Test_Context(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		type key struct{}
-
-		r := newRecorder()
-		c := coalescer.New(
-			func(i int) string { return "key" },
-			r.emit,
-			coalescer.Window(time.Second),
-		)
-
-		for i := range 3 {
-			ctx, cancel := context.WithCancel(context.WithValue(t.Context(), key{}, i))
-			c.Push(ctx, i)
-			// Cancellation of the caller's ctx must not leak into the item.
-			cancel()
-		}
-
-		time.Sleep(10 * time.Second)
-
-		require.Equal(t, [][]int{{0}, {1, 2}}, r.values())
-
-		got := r.emissions()
-		for _, e := range got {
-			for _, it := range e.batch {
-				assert.Equal(t, it.Value, it.Ctx.Value(key{}))
-				assert.NoError(t, it.Ctx.Err())
-			}
-		}
-
-		// Single-item batch carries the item's ctx, a merged one doesn't.
-		assert.Equal(t, 0, got[0].ctx.Value(key{}))
-		assert.Nil(t, got[1].ctx.Value(key{}))
-	})
-}
-
 func Test_InvalidOptions(t *testing.T) {
 	keyFn := func(i int) string { return "key" }
-	emitFn := func(context.Context, []coalescer.Item[int]) bool { return true }
+	emitFn := func([]int) bool { return true }
 
 	assert.Panics(t, func() { coalescer.New(nil, emitFn) })
 	assert.Panics(t, func() { coalescer.New(keyFn, nil) })
