@@ -101,6 +101,17 @@ func (p *Pool[T]) Process(ctx context.Context, value T) {
 	}
 }
 
+// TryProcess is like Process but returns false instead of blocking when the
+// buffer is full. Like Process, it panics if called concurrently with or after Stop.
+func (p *Pool[T]) TryProcess(ctx context.Context, value T) bool {
+	select {
+	case p.tasks <- task[T]{ctx: context.WithoutCancel(ctx), value: value}:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *Pool[T]) Stop(ctx context.Context) error {
 	p.stopOnce.Do(func() {
 		close(p.tasks)
