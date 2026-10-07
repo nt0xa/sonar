@@ -27,17 +27,6 @@ var (
 	subdomainRegexp = regexp.MustCompile("[a-fA-F0-9]{8}")
 )
 
-const (
-	// notifyWorkers bounds concurrent sends per notifier.
-	notifyWorkers = 10
-
-	// notifyPassThrough events per payload are sent in full (covers a DNS + HTTP interaction), the rest are summarized.
-	notifyPassThrough = 5
-
-	// notifyMaxBatch events per payload are held in memory per window, the rest are dropped.
-	notifyMaxBatch = 1000
-)
-
 type EventsHandler struct {
 	db        *database.DB
 	gdb       *geoipx.DB
@@ -79,8 +68,10 @@ func NewEventsHandler(
 	return h
 }
 
-func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
+// AddNotifier batches notifications per payload with opts; the notifier's rate limit is added to them.
+func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier, opts ...batcher.Option) {
 	limit, burst := notifier.RateLimit()
+	opts = append(opts, batcher.RateLimit(limit, burst))
 
 	h.notifiers[name] = batcher.New(
 		func(it notifyItem) string { return strconv.FormatInt(it.n.Payload.ID, 10) },
@@ -92,10 +83,7 @@ func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
 				h.notifyBatch(batch, notifier)
 			}
 		},
-		batcher.PassThrough(notifyPassThrough),
-		batcher.MaxBatch(notifyMaxBatch),
-		batcher.Workers(notifyWorkers),
-		batcher.RateLimit(limit, burst),
+		opts...,
 	)
 }
 

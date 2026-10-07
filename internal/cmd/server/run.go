@@ -18,6 +18,7 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service/auditsvc"
 	"github.com/nt0xa/sonar/internal/service/dbsvc"
+	"github.com/nt0xa/sonar/pkg/batcher"
 	"github.com/nt0xa/sonar/pkg/dnsx"
 	"github.com/nt0xa/sonar/pkg/ftpx"
 	"github.com/nt0xa/sonar/pkg/geoipx"
@@ -311,7 +312,11 @@ func Run(
 
 	// Add notifiers
 	for i, n := range notifiers {
-		events.AddNotifier(fmt.Sprintf("Notifier %d", i), n)
+		events.AddNotifier(fmt.Sprintf("Notifier %d", i), n,
+			batcher.PassThrough(5),
+			batcher.MaxBatch(1000),
+			batcher.Workers(10),
+		)
 	}
 
 	// Wait forever

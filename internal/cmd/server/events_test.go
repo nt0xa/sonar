@@ -14,6 +14,7 @@ import (
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/pkg/batcher"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
@@ -46,7 +47,8 @@ func Test_NotifierBatching(t *testing.T) {
 		h := NewEventsHandler(nil, nil, slog.New(slog.DiscardHandler), telemetry.NewNoop(), 1, 1)
 
 		var f fakeNotifier
-		h.AddNotifier("fake", &f)
+		const passThrough = 5
+		h.AddNotifier("fake", &f, batcher.PassThrough(passThrough))
 
 		n := &modules.Notification{
 			User:    &database.User{},
@@ -54,7 +56,7 @@ func Test_NotifierBatching(t *testing.T) {
 			Event:   &database.Event{Protocol: "dns"},
 		}
 
-		for range notifyPassThrough + 3 {
+		for range passThrough + 3 {
 			h.notifiers["fake"].Push(notifyItem{ctx: t.Context(), n: n})
 		}
 
@@ -62,7 +64,7 @@ func Test_NotifierBatching(t *testing.T) {
 		require.NoError(t, h.notifiers["fake"].Stop(t.Context()))
 		require.NoError(t, h.proc.Stop(t.Context()))
 
-		assert.Equal(t, notifyPassThrough, f.single)
+		assert.Equal(t, passThrough, f.single)
 		assert.Equal(t, []int{3}, f.batches)
 	})
 }
