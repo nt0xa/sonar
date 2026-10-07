@@ -136,7 +136,7 @@ func Run(
 		log.With("package", "events"),
 		tel,
 		10,
-		100,
+		10_000,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create events handler: %w", err)
