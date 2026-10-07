@@ -14,7 +14,6 @@ import (
 // emitted immediately, subsequent items are buffered and emitted as a batch
 // when the key's window expires. Every window that emits a batch doubles the next
 // one (up to maxWindow); a window with nothing buffered resets the key.
-// Batches are passed to the handler on a pool of worker goroutines.
 type Batcher[T any] struct {
 	keyFn KeyFn[T]
 	opts  options
@@ -36,8 +35,7 @@ type entry[T any] struct {
 	timer  *time.Timer
 }
 
-// New creates a Batcher, panics on invalid arguments. The handler runs on
-// worker goroutines and must not call Stop.
+// New creates a Batcher, panics on invalid arguments.
 func New[T any](keyFn KeyFn[T], handler func([]T), opts ...Option) *Batcher[T] {
 	options := defaultOptions
 
