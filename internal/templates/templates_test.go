@@ -3,6 +3,8 @@ package templates
 import (
 	"testing"
 
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/service"
 )
 
@@ -46,5 +48,26 @@ func TestRenderResultAllOutputs(t *testing.T) {
 		if _, err := tpl.RenderResult(c); err != nil {
 			t.Errorf("RenderResult(%T): %v", c, err)
 		}
+	}
+}
+
+func TestRenderNotificationBatch(t *testing.T) {
+	tpl := New("example.com")
+
+	payload := &database.Payload{Name: "p"}
+	ns := []*modules.Notification{
+		{Payload: payload, Event: &database.Event{Protocol: "dns"}},
+		{Payload: payload, Event: &database.Event{Protocol: "http"}},
+		{Payload: payload, Event: &database.Event{Protocol: "dns"}},
+	}
+
+	got, err := tpl.RenderNotificationBatch(ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "DNS 2 · HTTP 1"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
