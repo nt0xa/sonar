@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -87,7 +88,7 @@ func (lrk *Lark) NotifyBatch(ctx context.Context, ns []*modules.Notification) er
 	return nil
 }
 
-// RateLimit follows https://open.larksuite.com/document/server-docs/im-v1/message/create: 5 QPS per user or group.
+// RateLimit follows https://open.larksuite.com/document/server-docs/im-v1/message/create: 1000 per minute and 50 per second per app.
 func (lrk *Lark) RateLimit() (rate.Limit, int) {
-	return rate.Limit(5), 5
+	return rate.Every(time.Minute / 1000), 50
 }

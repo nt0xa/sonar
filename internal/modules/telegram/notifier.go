@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"time"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -69,7 +68,7 @@ func (tg *Telegram) NotifyBatch(ctx context.Context, ns []*modules.Notification)
 	return nil
 }
 
-// RateLimit follows https://core.telegram.org/bots/faq: at most one message per second in a chat.
+// RateLimit follows https://core.telegram.org/bots/faq: about 30 messages per second across all chats.
 func (tg *Telegram) RateLimit() (rate.Limit, int) {
-	return rate.Every(time.Second), 1
+	return rate.Limit(30), 30
 }

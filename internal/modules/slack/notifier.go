@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
@@ -107,7 +106,7 @@ func (s *Slack) NotifyBatch(ctx context.Context, ns []*modules.Notification) err
 	return nil
 }
 
-// RateLimit follows https://docs.slack.dev/reference/methods/chat.postMessage: one message per second per channel, with bursts.
+// RateLimit follows https://docs.slack.dev/reference/methods/chat.postMessage: several hundred messages per minute per workspace.
 func (s *Slack) RateLimit() (rate.Limit, int) {
-	return rate.Every(time.Second), 5
+	return rate.Limit(5), 5
 }
