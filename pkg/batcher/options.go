@@ -1,7 +1,11 @@
-package coalescer
+package batcher
 
 import (
 	"time"
+
+	"golang.org/x/time/rate"
+
+	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
 var defaultOptions = options{
@@ -10,6 +14,7 @@ var defaultOptions = options{
 	maxBatch:    100,
 	bufferSize:  100,
 	passThrough: 1,
+	workers:     1,
 }
 
 type options struct {
@@ -18,6 +23,8 @@ type options struct {
 	maxBatch    int
 	bufferSize  int
 	passThrough int
+	workers     int
+	poolOpts    []workerpool.Option
 }
 
 type Option func(*options)
@@ -45,7 +52,7 @@ func MaxBatch(n int) Option {
 	}
 }
 
-// BufferSize sets the capacity of the output channel.
+// BufferSize sets the capacity of the handler queue.
 // Batches are dropped when it is full.
 func BufferSize(n int) Option {
 	return func(opts *options) {
@@ -54,11 +61,25 @@ func BufferSize(n int) Option {
 }
 
 // PassThrough sets the number of items per key that are emitted immediately
-// before coalescing is applied. The count resets after a window in which
+// before batching is applied. The count resets after a window in which
 // nothing was buffered, so keys with at most n items per window are never
-// coalesced. Must be >= 1.
+// batched. Must be >= 1.
 func PassThrough(n int) Option {
 	return func(opts *options) {
 		opts.passThrough = n
+	}
+}
+
+// Workers sets the number of goroutines running the handler.
+func Workers(n int) Option {
+	return func(opts *options) {
+		opts.workers = n
+	}
+}
+
+// RateLimit caps how fast batches are handled across all workers.
+func RateLimit(limit rate.Limit, burst int) Option {
+	return func(opts *options) {
+		opts.poolOpts = append(opts.poolOpts, workerpool.RateLimit(limit, burst))
 	}
 }
