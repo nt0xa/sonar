@@ -5,11 +5,13 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	cardv2 "github.com/nt0xa/sonar/internal/modules/lark/card/v2"
+	"golang.org/x/time/rate"
 )
 
 // https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/create#:~:text=The%20maximum%20size%20of%20the,request%20body%20is%20150%20KB.
@@ -64,4 +66,29 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	return nil
+}
+
+func (lrk *Lark) NotifyBatch(ctx context.Context, ns []*modules.Notification) error {
+	if ns[0].User.LarkID == nil {
+		return fmt.Errorf("user %d has no lark id", ns[0].User.ID)
+	}
+
+	msg, err := lrk.tmpl.RenderNotificationBatch(ns)
+	if err != nil {
+		return fmt.Errorf("lark: %w", err)
+	}
+
+	card, err := cardv2.BuildBatch(ns[0].Payload.Name, len(ns), msg)
+	if err != nil {
+		return fmt.Errorf("failed to build card: %w", err)
+	}
+
+	lrk.sendMessage(ctx, *ns[0].User.LarkID, nil, string(card))
+
+	return nil
+}
+
+// RateLimit follows https://open.larksuite.com/document/server-docs/im-v1/message/create: 1000 per minute and 50 per second per app.
+func (lrk *Lark) RateLimit() (rate.Limit, int) {
+	return rate.Every(time.Minute / 1000), 50
 }

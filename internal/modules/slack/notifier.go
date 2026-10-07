@@ -9,6 +9,7 @@ import (
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/slack/block"
 	"github.com/slack-go/slack"
+	"golang.org/x/time/rate"
 )
 
 func (s *Slack) Name() string {
@@ -82,4 +83,30 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	return nil
+}
+
+func (s *Slack) NotifyBatch(ctx context.Context, ns []*modules.Notification) error {
+	if ns[0].User.SlackID == nil {
+		return fmt.Errorf("user %d has no slack id", ns[0].User.ID)
+	}
+
+	msg, err := s.tmpl.RenderNotificationBatch(ns)
+	if err != nil {
+		return fmt.Errorf("failed to render batch: %w", err)
+	}
+
+	if _, _, err := s.client.PostMessageContext(
+		ctx,
+		*ns[0].User.SlackID,
+		slack.MsgOptionBlocks(block.BuildBatch(ns[0].Payload.Name, len(ns), msg)...),
+	); err != nil {
+		return fmt.Errorf("failed to post message: %w", err)
+	}
+
+	return nil
+}
+
+// RateLimit follows https://docs.slack.dev/reference/methods/chat.postMessage: several hundred messages per minute per workspace.
+func (s *Slack) RateLimit() (rate.Limit, int) {
+	return rate.Limit(5), 5
 }

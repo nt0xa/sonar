@@ -1,16 +1,19 @@
-package templates
+package templates_test
 
 import (
 	"testing"
 
+	"github.com/nt0xa/sonar/internal/database"
+	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/service"
+	"github.com/nt0xa/sonar/internal/templates"
 )
 
 // TestRenderResultAllOutputs renders every service output type to guard against
 // template field/type-assertion regressions (e.g. sprig funcs like `upper`
 // receiving a defined enum type instead of a string).
 func TestRenderResultAllOutputs(t *testing.T) {
-	tpl := New("example.com")
+	tpl := templates.New("example.com")
 
 	cases := []any{
 		&service.ProfileGetOutput{Name: "user"},
@@ -46,5 +49,26 @@ func TestRenderResultAllOutputs(t *testing.T) {
 		if _, err := tpl.RenderResult(c); err != nil {
 			t.Errorf("RenderResult(%T): %v", c, err)
 		}
+	}
+}
+
+func TestRenderNotificationBatch(t *testing.T) {
+	tpl := templates.New("example.com")
+
+	payload := &database.Payload{Name: "p"}
+	ns := []*modules.Notification{
+		{Payload: payload, Event: &database.Event{Protocol: "dns"}},
+		{Payload: payload, Event: &database.Event{Protocol: "http"}},
+		{Payload: payload, Event: &database.Event{Protocol: "dns"}},
+	}
+
+	got, err := tpl.RenderNotificationBatch(ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "DNS 2 · HTTP 1"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
