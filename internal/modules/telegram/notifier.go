@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
 	"unicode/utf8"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
+	"golang.org/x/time/rate"
 )
 
 const maxMessageSize = 4096
@@ -46,4 +48,27 @@ func (tg *Telegram) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	return nil
+}
+
+func (tg *Telegram) NotifyBatch(ctx context.Context, ns []*modules.Notification) error {
+	if ns[0].User.TelegramID == nil {
+		return fmt.Errorf("user %d has no telegram id", ns[0].User.ID)
+	}
+
+	msg, err := tg.tmpl.RenderNotificationBatch(ns)
+	if err != nil {
+		return fmt.Errorf("telegram: %w", err)
+	}
+
+	tg.htmlMessage(ctx, *ns[0].User.TelegramID, nil, fmt.Sprintf(
+		"#%s 📦 <b>%d more events</b>\n%s",
+		html.EscapeString(ns[0].Payload.Name), len(ns), msg,
+	))
+
+	return nil
+}
+
+// RateLimit follows https://core.telegram.org/bots/faq: about 30 messages per second across all chats.
+func (tg *Telegram) RateLimit() (rate.Limit, int) {
+	return rate.Limit(30), 30
 }

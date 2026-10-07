@@ -114,6 +114,7 @@ resource:
 const (
 	NotificationHeaderID = "notification/header"
 	NotificationBodyID   = "notification/body"
+	NotificationBatchID  = "notification/batch"
 )
 
 var notificationHeader = `
@@ -166,3 +167,7 @@ var notificationBody = `
 {{ end }}{{ printf "%s" $m }}{{ end }}
 </pre>
 {{- end }}`
+
+var notificationBatch = `
+{{- $first := true }}
+{{- range $proto, $n := . }}{{ if not $first }} · {{ end }}{{ $proto | upper }} {{ $n }}{{ $first = false }}{{ end }}`

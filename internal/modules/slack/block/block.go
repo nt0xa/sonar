@@ -134,6 +134,20 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	return blocks, nil
 }
 
+// BuildBatch creates Slack blocks summarizing events for a payload.
+func BuildBatch(payloadName string, count int, summary string) []slack.Block {
+	return []slack.Block{
+		slack.NewHeaderBlock(&slack.TextBlockObject{
+			Type: slack.PlainTextType,
+			Text: fmt.Sprintf(":package: [%s] %d more events", payloadName, count),
+		}),
+		slack.NewSectionBlock(&slack.TextBlockObject{
+			Type: slack.MarkdownType,
+			Text: summary,
+		}, nil, nil),
+	}
+}
+
 // getHeaderEmoji returns the appropriate emoji and color for the protocol
 func getHeaderEmoji(protocol string) string {
 	switch database.ProtoToCategory(protocol) {

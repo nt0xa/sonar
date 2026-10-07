@@ -147,3 +147,16 @@ func TestBuildWithEmail(t *testing.T) {
 	require.Contains(t, emailBlock.Fields[0].Text, "sender@example.com")
 	require.Contains(t, emailBlock.Fields[1].Text, "Test Subject")
 }
+
+func TestBuildBatch(t *testing.T) {
+	blocks := block.BuildBatch("test", 3, "DNS 2 · HTTP 1")
+	require.Len(t, blocks, 2)
+
+	headerBlock, ok := blocks[0].(*slack.HeaderBlock)
+	require.True(t, ok)
+	require.Equal(t, ":package: [test] 3 more events", headerBlock.Text.Text)
+
+	summaryBlock, ok := blocks[1].(*slack.SectionBlock)
+	require.True(t, ok)
+	require.Equal(t, "DNS 2 · HTTP 1", summaryBlock.Text.Text)
+}

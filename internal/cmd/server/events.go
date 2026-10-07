@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/netip"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -14,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/pkg/batcher"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/telemetry"
 	"github.com/nt0xa/sonar/pkg/workerpool"
@@ -30,13 +32,19 @@ type EventsHandler struct {
 	gdb       *geoipx.DB
 	log       *slog.Logger
 	tel       telemetry.Telemetry
-	notifiers map[string]modules.Notifier
+	notifiers map[string]*batcher.Batcher[notifyItem]
 	proc      *workerpool.Pool[Event]
 }
 
 type Event struct {
 	Event *database.Event
 	Match []byte
+}
+
+// notifyItem is a notification with the ctx of the event that triggered it.
+type notifyItem struct {
+	ctx context.Context
+	n   *modules.Notification
 }
 
 func NewEventsHandler(
@@ -52,7 +60,7 @@ func NewEventsHandler(
 		gdb:       gdb,
 		log:       log,
 		tel:       tel,
-		notifiers: make(map[string]modules.Notifier),
+		notifiers: make(map[string]*batcher.Batcher[notifyItem]),
 	}
 
 	h.proc = workerpool.New(workers, capacity, h.handleEvent)
@@ -60,8 +68,23 @@ func NewEventsHandler(
 	return h
 }
 
-func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier) {
-	h.notifiers[name] = notifier
+// AddNotifier batches notifications per payload with opts; the notifier's rate limit is added to them.
+func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier, opts ...batcher.Option) {
+	limit, burst := notifier.RateLimit()
+	opts = append(opts, batcher.RateLimit(limit, burst))
+
+	h.notifiers[name] = batcher.New(
+		func(it notifyItem) string { return strconv.FormatInt(it.n.Payload.ID, 10) },
+		func(batch []notifyItem) {
+			// A window with a single event sends it in full rather than as a summary.
+			if len(batch) == 1 {
+				h.notify(context.Background(), batch[0].ctx, batch[0].n, notifier)
+			} else {
+				h.notifyBatch(batch, notifier)
+			}
+		},
+		opts...,
+	)
 }
 
 func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
@@ -125,13 +148,16 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
 			continue
 		}
 
-		for _, n := range h.notifiers {
+		for _, c := range h.notifiers {
 			// TODO: add deadline to context
-			go h.notify(context.Background(), ctx, &modules.Notification{
-				User:    u,
-				Payload: p,
-				Event:   e.Event,
-			}, n)
+			c.Push(notifyItem{
+				ctx: ctx,
+				n: &modules.Notification{
+					User:    u,
+					Payload: p,
+					Event:   e.Event,
+				},
+			})
 		}
 	}
 }
@@ -190,6 +216,24 @@ func (h *EventsHandler) notify(
 			"error", err,
 			"notifier", notifier.Name(),
 			"event_uuid", notification.Event.UUID.String(),
+		)
+	}
+}
+
+func (h *EventsHandler) notifyBatch(
+	batch []notifyItem,
+	notifier modules.Notifier,
+) {
+	ns := make([]*modules.Notification, len(batch))
+	for i, it := range batch {
+		ns[i] = it.n
+	}
+
+	if err := notifier.NotifyBatch(context.Background(), ns); err != nil {
+		h.log.Error("Notifier failed",
+			"error", err,
+			"notifier", notifier.Name(),
+			"events_count", len(ns),
 		)
 	}
 }

@@ -378,3 +378,50 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 
 	return json.Marshal(card)
 }
+
+// BuildBatch creates a card summarizing events for a payload.
+func BuildBatch(payloadName string, count int, summary string) ([]byte, error) {
+	return json.Marshal(Card{
+		Schema: "2.0",
+		Config: Config{
+			UpdateMulti: true,
+			Locales:     []string{"default"},
+			Style: Style{
+				TextSize: map[string]TextSize{
+					"custom": {
+						Default: "normal",
+						PC:      "normal",
+						Mobile:  "normal",
+					},
+				},
+			},
+		},
+		Header: Header{
+			Title: HeaderText{
+				Tag:     "plain_text",
+				Content: fmt.Sprintf("[%s] %d more events", payloadName, count),
+			},
+			Subtitle: HeaderText{
+				Tag:     "plain_text",
+				Content: "",
+			},
+			Template: "grey",
+			Icon: Icon{
+				Tag:   "standard_icon",
+				Token: "archive_outlined",
+			},
+			Padding: "12px 12px 12px 12px",
+		},
+		Body: Body{
+			Direction: "vertical",
+			Padding:   "12px 12px 12px 12px",
+			Elements: []Element{{
+				Tag:       "markdown",
+				Content:   summary,
+				TextAlign: "left",
+				TextSize:  "custom",
+				Margin:    "0px 0px 0px 0px",
+			}},
+		},
+	})
+}

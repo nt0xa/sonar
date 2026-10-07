@@ -204,3 +204,16 @@ func TestCard(t *testing.T) {
 
 	require.Equal(t, expected, got)
 }
+
+func TestBuildBatch(t *testing.T) {
+	data, err := card.BuildBatch("test", 3, "DNS 2 · HTTP 1")
+	require.NoError(t, err)
+
+	var got card.Card
+	require.NoError(t, json.Unmarshal(data, &got))
+
+	require.Equal(t, "[test] 3 more events", got.Header.Title.Content)
+	require.Equal(t, "archive_outlined", got.Header.Icon.Token)
+	require.Len(t, got.Body.Elements, 1)
+	require.Equal(t, "DNS 2 · HTTP 1", got.Body.Elements[0].Content)
+}

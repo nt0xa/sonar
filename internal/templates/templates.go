@@ -43,6 +43,7 @@ type Templates struct {
 	// Notification templates, still id-keyed via the PerTemplate option API.
 	notificationHeader *template
 	notificationBody   *template
+	notificationBatch  *template
 }
 
 func New(domain string, opts ...Option) *Templates {
@@ -84,6 +85,7 @@ func New(domain string, opts ...Option) *Templates {
 		auditRecordsGet:    mk(auditRecordsGet),
 		notificationHeader: makeTemplate(notificationHeader, domain, options.get(NotificationHeaderID)),
 		notificationBody:   makeTemplate(notificationBody, domain, options.get(NotificationBodyID)),
+		notificationBatch:  makeTemplate(notificationBatch, domain, options.get(NotificationBatchID)),
 	}
 }
 
@@ -150,6 +152,21 @@ func (t *Templates) RenderNotification(n *modules.Notification) (string, string,
 	}
 
 	return header, body, nil
+}
+
+// RenderNotificationBatch renders per-protocol event counts, e.g. "DNS 2 · HTTP 1".
+func (t *Templates) RenderNotificationBatch(ns []*modules.Notification) (string, error) {
+	counts := make(map[string]int)
+	for _, n := range ns {
+		counts[n.Event.Protocol]++
+	}
+
+	s, err := t.notificationBatch.render(counts)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(s), nil
 }
 
 type Template interface {
