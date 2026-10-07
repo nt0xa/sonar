@@ -237,23 +237,11 @@ func (h *EventsHandler) notifyBatch(
 	notifier modules.Notifier,
 ) {
 	ns := make([]*modules.Notification, len(batch))
-	links := make([]trace.Link, len(batch))
 	for i, it := range batch {
 		ns[i] = it.n
-		links[i] = trace.LinkFromContext(it.ctx)
 	}
 
-	ctx, span := h.tel.TraceStart(context.Background(), "notify.batch",
-		trace.WithSpanKind(trace.SpanKindInternal),
-		trace.WithAttributes(
-			attribute.Int("events.count", len(ns)),
-			attribute.String("notifier.name", notifier.Name()),
-		),
-		trace.WithLinks(links...),
-	)
-	defer span.End()
-
-	if err := notifier.NotifyBatch(ctx, ns); err != nil {
+	if err := notifier.NotifyBatch(context.Background(), ns); err != nil {
 		h.log.Error("Notifier failed",
 			"error", err,
 			"notifier", notifier.Name(),
