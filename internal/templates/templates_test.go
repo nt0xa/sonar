@@ -1,4 +1,4 @@
-package templates
+package templates_test
 
 import (
 	"testing"
@@ -6,13 +6,14 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/service"
+	"github.com/nt0xa/sonar/internal/templates"
 )
 
 // TestRenderResultAllOutputs renders every service output type to guard against
 // template field/type-assertion regressions (e.g. sprig funcs like `upper`
 // receiving a defined enum type instead of a string).
 func TestRenderResultAllOutputs(t *testing.T) {
-	tpl := New("example.com")
+	tpl := templates.New("example.com")
 
 	cases := []any{
 		&service.ProfileGetOutput{Name: "user"},
@@ -52,7 +53,7 @@ func TestRenderResultAllOutputs(t *testing.T) {
 }
 
 func TestRenderNotificationBatch(t *testing.T) {
-	tpl := New("example.com")
+	tpl := templates.New("example.com")
 
 	payload := &database.Payload{Name: "p"}
 	ns := []*modules.Notification{
