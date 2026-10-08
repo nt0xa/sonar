@@ -135,7 +135,6 @@ func Run(
 		db,
 		gdb,
 		log.With("package", "events"),
-		tel,
 		10,
 		10_000,
 	)
@@ -312,11 +311,14 @@ func Run(
 
 	// Add notifiers
 	for i, n := range notifiers {
-		events.AddNotifier(fmt.Sprintf("Notifier %d", i), n,
-			batcher.PassThrough(5),
-			batcher.MaxBatch(1000),
-			batcher.Workers(10),
-		)
+		events.AddNotifier(fmt.Sprintf("Notifier %d", i), NewNotifier(
+			n,
+			log.With("package", "notifications"),
+			tel,
+			10,
+			batcher.WithPassThrough(5),
+			batcher.WithMaxBatch(1000),
+		))
 	}
 
 	// Wait forever

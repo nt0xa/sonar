@@ -2,41 +2,37 @@
 package batcher
 
 import (
-	"context"
 	"sync"
-	"sync/atomic"
 	"time"
-
-	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
 // Batcher groups items by key. The first passThrough items for a key are
 // emitted immediately, subsequent items are buffered and emitted as a batch
 // when the key's window expires. Every window that emits a batch doubles the next
 // one (up to maxWindow); a window with nothing buffered resets the key.
-type Batcher[T any] struct {
-	keyFn KeyFn[T]
+// Batches are delivered on Batches.
+type Batcher[T any, K comparable] struct {
+	keyFn func(T) K
 	opts  options
 
 	mu      sync.Mutex
-	entries map[string]*entry[T]
-	pool    *workerpool.Pool[[]T]
-	stopped bool
-
-	dropped atomic.Int64
+	entries map[K]*entry[T]
+	out     chan []T
+	closed  bool
 }
-
-type KeyFn[T any] = func(T) string
 
 type entry[T any] struct {
 	buf    []T
 	window time.Duration
-	count  int
+	passed int
 	timer  *time.Timer
 }
 
 // New creates a Batcher, panics on invalid arguments.
-func New[T any](keyFn KeyFn[T], handler func([]T), opts ...Option) *Batcher[T] {
+func New[T any, K comparable](
+	keyFn func(T) K,
+	opts ...Option,
+) *Batcher[T, K] {
 	options := defaultOptions
 
 	for _, opt := range opts {
@@ -47,10 +43,6 @@ func New[T any](keyFn KeyFn[T], handler func([]T), opts ...Option) *Batcher[T] {
 		panic("batcher: keyFn must not be nil")
 	}
 
-	if handler == nil {
-		panic("batcher: handler must not be nil")
-	}
-
 	if options.window <= 0 {
 		panic("batcher: window must be > 0")
 	}
@@ -59,120 +51,118 @@ func New[T any](keyFn KeyFn[T], handler func([]T), opts ...Option) *Batcher[T] {
 		panic("batcher: maxBatch must be >= 0")
 	}
 
-	if options.bufferSize < 0 {
-		panic("batcher: bufferSize must be >= 0")
+	if options.outputCapacity < 0 {
+		panic("batcher: outputCapacity must be >= 0")
 	}
 
 	if options.passThrough < 1 {
 		panic("batcher: passThrough must be >= 1")
 	}
 
-	if options.workers < 1 {
-		panic("batcher: workers must be >= 1")
-	}
-
 	options.maxWindow = max(options.maxWindow, options.window)
 
-	return &Batcher[T]{
+	return &Batcher[T, K]{
 		keyFn:   keyFn,
 		opts:    options,
-		entries: make(map[string]*entry[T]),
-		pool: workerpool.New(options.workers, options.bufferSize,
-			func(_ context.Context, batch []T) { handler(batch) },
-			options.poolOpts...),
+		entries: make(map[K]*entry[T]),
+		out:     make(chan []T, options.outputCapacity),
 	}
 }
 
-// Push adds an item, never blocks; overflow is counted in Dropped.
-func (b *Batcher[T]) Push(item T) {
+// Add adds an item and never blocks. It returns false if the item was dropped
+// because the key's batch or the output channel was full, or b was closed.
+func (b *Batcher[T, K]) Add(item T) bool {
 	key := b.keyFn(item)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.stopped {
-		return
+	if b.closed {
+		return false
 	}
 
 	e, ok := b.entries[key]
 	if !ok {
 		b.entries[key] = &entry[T]{
 			window: b.opts.window,
-			count:  1,
-			timer:  time.AfterFunc(b.opts.window, func() { b.tick(key) }),
+			passed: 1,
+			timer:  time.AfterFunc(b.opts.window, func() { b.flushKey(key) }),
 		}
-		b.emit([]T{item})
-		return
+		return b.tryEmit([]T{item})
 	}
 
-	if e.count < b.opts.passThrough {
-		b.emit([]T{item})
-		e.count++
-		return
+	if e.passed < b.opts.passThrough {
+		e.passed++
+		return b.tryEmit([]T{item})
 	}
 
 	if len(e.buf) >= b.opts.maxBatch {
-		b.dropped.Add(1)
-		return
+		return false
 	}
 
 	e.buf = append(e.buf, item)
+	return true
 }
 
-func (b *Batcher[T]) tick(key string) {
+func (b *Batcher[T, K]) flushKey(key K) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.stopped {
+	if b.closed {
 		return
 	}
 
-	e := b.entries[key]
+	e, ok := b.entries[key]
+	if !ok {
+		return
+	}
 
 	if len(e.buf) == 0 {
 		delete(b.entries, key)
 		return
 	}
 
-	b.emit(e.buf)
+	b.tryEmit(e.buf)
 	e.buf = nil
 	e.window = min(e.window*2, b.opts.maxWindow)
-	e.timer = time.AfterFunc(e.window, func() { b.tick(key) })
+	e.timer = time.AfterFunc(e.window, func() { b.flushKey(key) })
 }
 
-// emit must be called with b.mu held and b.stopped false, otherwise it may send to the stopped pool.
-func (b *Batcher[T]) emit(batch []T) {
-	if !b.pool.TryProcess(context.Background(), batch) {
-		b.dropped.Add(int64(len(batch)))
+// tryEmit must be called with b.mu held and b.closed false, otherwise it may send on the closed channel.
+// It drops the batch and returns false if the channel is full.
+func (b *Batcher[T, K]) tryEmit(batch []T) bool {
+	select {
+	case b.out <- batch:
+		return true
+	default:
+		return false
 	}
 }
 
-// Dropped returns the number of items dropped because a key's batch was
-// full or the handler queue was full.
-func (b *Batcher[T]) Dropped() int64 {
-	return b.dropped.Load()
+// Batches returns the channel batches are delivered on. It is closed by Close.
+func (b *Batcher[T, K]) Batches() <-chan []T {
+	return b.out
 }
 
-// Stop emits all pending batches and waits for the handlers to finish. If ctx
-// is done first, its error is returned and handlers may still be running;
-// calling Stop again waits again. Items pushed after Stop are ignored. Stop
-// must not be called from the handler.
-func (b *Batcher[T]) Stop(ctx context.Context) error {
+// Close emits all pending batches and closes the Batches channel.
+// Items added after Close are dropped. Close is idempotent.
+func (b *Batcher[T, K]) Close() {
 	b.mu.Lock()
+	defer b.mu.Unlock()
 
-	if !b.stopped {
-		b.stopped = true
-
-		for _, e := range b.entries {
-			e.timer.Stop()
-			if len(e.buf) != 0 {
-				b.emit(e.buf)
-			}
-		}
-		clear(b.entries)
+	if b.closed {
+		return
 	}
 
-	b.mu.Unlock()
+	b.closed = true
 
-	return b.pool.Stop(ctx)
+	for _, e := range b.entries {
+		e.timer.Stop()
+		if len(e.buf) != 0 {
+			b.tryEmit(e.buf)
+		}
+	}
+	clear(b.entries)
+
+	close(b.out)
 }
