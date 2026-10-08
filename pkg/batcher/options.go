@@ -2,84 +2,63 @@ package batcher
 
 import (
 	"time"
-
-	"golang.org/x/time/rate"
-
-	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
 var defaultOptions = options{
-	window:      time.Second,
-	maxWindow:   time.Minute,
-	maxBatch:    100,
-	bufferSize:  100,
-	passThrough: 1,
-	workers:     1,
+	window:         time.Second,
+	maxWindow:      time.Minute,
+	maxBatch:       100,
+	outputCapacity: 100,
+	passThrough:    1,
 }
 
 type options struct {
-	window      time.Duration
-	maxWindow   time.Duration
-	maxBatch    int
-	bufferSize  int
-	passThrough int
-	workers     int
-	poolOpts    []workerpool.Option
+	window         time.Duration
+	maxWindow      time.Duration
+	maxBatch       int
+	outputCapacity int
+	passThrough    int
 }
 
 type Option func(*options)
 
-// Window sets the initial window for a key.
-func Window(d time.Duration) Option {
+// WithWindow sets the initial window for a key.
+func WithWindow(d time.Duration) Option {
 	return func(opts *options) {
 		opts.window = d
 	}
 }
 
-// MaxWindow sets the upper bound for the window growth.
-// It is raised to Window if smaller.
-func MaxWindow(d time.Duration) Option {
+// WithMaxWindow sets the upper bound for the window growth.
+// It is raised to WithWindow if smaller.
+func WithMaxWindow(d time.Duration) Option {
 	return func(opts *options) {
 		opts.maxWindow = d
 	}
 }
 
-// MaxBatch sets the maximum number of items buffered per key within a window.
+// WithMaxBatch sets the maximum number of items buffered per key within a window.
 // Items beyond it are dropped.
-func MaxBatch(n int) Option {
+func WithMaxBatch(n int) Option {
 	return func(opts *options) {
 		opts.maxBatch = n
 	}
 }
 
-// BufferSize sets the capacity of the handler queue.
+// WithOutputCapacity sets the capacity of the Batches channel.
 // Batches are dropped when it is full.
-func BufferSize(n int) Option {
+func WithOutputCapacity(n int) Option {
 	return func(opts *options) {
-		opts.bufferSize = n
+		opts.outputCapacity = n
 	}
 }
 
-// PassThrough sets the number of items per key that are emitted immediately
+// WithPassThrough sets the number of items per key that are emitted immediately
 // before batching is applied. The count resets after a window in which
 // nothing was buffered, so keys with at most n items per window are never
 // batched. Must be >= 1.
-func PassThrough(n int) Option {
+func WithPassThrough(n int) Option {
 	return func(opts *options) {
 		opts.passThrough = n
-	}
-}
-
-// Workers sets the number of goroutines running the handler.
-func Workers(n int) Option {
-	return func(opts *options) {
-		opts.workers = n
-	}
-}
-
-// RateLimit caps how fast batches are handled across all workers.
-func RateLimit(limit rate.Limit, burst int) Option {
-	return func(opts *options) {
-		opts.poolOpts = append(opts.poolOpts, workerpool.RateLimit(limit, burst))
 	}
 }

@@ -6,18 +6,12 @@ import (
 	"net"
 	"net/netip"
 	"regexp"
-	"strconv"
 	"strings"
-
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
-	"github.com/nt0xa/sonar/pkg/batcher"
 	"github.com/nt0xa/sonar/pkg/geoipx"
-	"github.com/nt0xa/sonar/pkg/telemetry"
 	"github.com/nt0xa/sonar/pkg/workerpool"
 )
 
@@ -31,8 +25,7 @@ type EventsHandler struct {
 	db        *database.DB
 	gdb       *geoipx.DB
 	log       *slog.Logger
-	tel       telemetry.Telemetry
-	notifiers map[string]*batcher.Batcher[notifyItem]
+	notifiers map[string]*Notifier
 	proc      *workerpool.Pool[Event]
 }
 
@@ -41,17 +34,10 @@ type Event struct {
 	Match []byte
 }
 
-// notifyItem is a notification with the ctx of the event that triggered it.
-type notifyItem struct {
-	ctx context.Context
-	n   *modules.Notification
-}
-
 func NewEventsHandler(
 	db *database.DB,
 	gdb *geoipx.DB,
 	log *slog.Logger,
-	tel telemetry.Telemetry,
 	workers int,
 	capacity int,
 ) *EventsHandler {
@@ -59,32 +45,19 @@ func NewEventsHandler(
 		db:        db,
 		gdb:       gdb,
 		log:       log,
-		tel:       tel,
-		notifiers: make(map[string]*batcher.Batcher[notifyItem]),
+		notifiers: make(map[string]*Notifier),
 	}
 
-	h.proc = workerpool.New(workers, capacity, h.handleEvent)
+	h.proc = workerpool.New(h.handleEvent,
+		workerpool.WithWorkers(workers),
+		workerpool.WithCapacity(capacity),
+	)
 
 	return h
 }
 
-// AddNotifier batches notifications per payload with opts; the notifier's rate limit is added to them.
-func (h *EventsHandler) AddNotifier(name string, notifier modules.Notifier, opts ...batcher.Option) {
-	limit, burst := notifier.RateLimit()
-	opts = append(opts, batcher.RateLimit(limit, burst))
-
-	h.notifiers[name] = batcher.New(
-		func(it notifyItem) string { return strconv.FormatInt(it.n.Payload.ID, 10) },
-		func(batch []notifyItem) {
-			// A window with a single event sends it in full rather than as a summary.
-			if len(batch) == 1 {
-				h.notify(context.Background(), batch[0].ctx, batch[0].n, notifier)
-			} else {
-				h.notifyBatch(batch, notifier)
-			}
-		},
-		opts...,
-	)
+func (h *EventsHandler) AddNotifier(name string, n *Notifier) {
+	h.notifiers[name] = n
 }
 
 func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
@@ -150,13 +123,10 @@ func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
 
 		for _, c := range h.notifiers {
 			// TODO: add deadline to context
-			c.Push(notifyItem{
-				ctx: ctx,
-				n: &modules.Notification{
-					User:    u,
-					Payload: p,
-					Event:   e.Event,
-				},
+			c.Add(ctx, &modules.Notification{
+				User:    u,
+				Payload: p,
+				Event:   e.Event,
 			})
 		}
 	}
@@ -195,51 +165,10 @@ func (h *EventsHandler) addGeoIPMetadata(e *database.Event) {
 	}
 }
 
-func (h *EventsHandler) notify(
-	ctx context.Context,
-	parentCtx context.Context,
-	notification *modules.Notification,
-	notifier modules.Notifier,
-) {
-	_, span := h.tel.TraceStart(ctx, "notify",
-		trace.WithSpanKind(trace.SpanKindInternal),
-		trace.WithAttributes(
-			attribute.String("event.id", notification.Event.UUID.String()),
-			attribute.String("notifier.name", notifier.Name()),
-		),
-		trace.WithLinks(trace.LinkFromContext(parentCtx)),
-	)
-	defer span.End()
-
-	if err := notifier.Notify(parentCtx, notification); err != nil {
-		h.log.Error("Notifier failed",
-			"error", err,
-			"notifier", notifier.Name(),
-			"event_uuid", notification.Event.UUID.String(),
-		)
-	}
-}
-
-func (h *EventsHandler) notifyBatch(
-	batch []notifyItem,
-	notifier modules.Notifier,
-) {
-	ns := make([]*modules.Notification, len(batch))
-	for i, it := range batch {
-		ns[i] = it.n
-	}
-
-	if err := notifier.NotifyBatch(context.Background(), ns); err != nil {
-		h.log.Error("Notifier failed",
-			"error", err,
-			"notifier", notifier.Name(),
-			"events_count", len(ns),
-		)
-	}
-}
-
 func (h *EventsHandler) Emit(ctx context.Context, e *database.Event, match []byte) {
-	h.proc.Process(ctx, Event{Event: e, Match: match})
+	if err := h.proc.Submit(ctx, Event{Event: e, Match: match}); err != nil {
+		h.log.Error("Failed to submit event", "err", err)
+	}
 }
 
 type eventIDKey struct{}

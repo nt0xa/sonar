@@ -44,11 +44,12 @@ func (f *fakeNotifier) NotifyBatch(_ context.Context, ns []*modules.Notification
 
 func Test_NotifierBatching(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		h := NewEventsHandler(nil, nil, slog.New(slog.DiscardHandler), telemetry.NewNoop(), 1, 1)
+		log := slog.New(slog.DiscardHandler)
+		h := NewEventsHandler(nil, nil, log, 1, 1)
 
 		var f fakeNotifier
 		const passThrough = 5
-		h.AddNotifier("fake", &f, batcher.PassThrough(passThrough))
+		h.AddNotifier("fake", NewNotifier(&f, log, telemetry.NewNoop(), 1, batcher.WithPassThrough(passThrough)))
 
 		n := &modules.Notification{
 			User:    &database.User{},
@@ -57,11 +58,12 @@ func Test_NotifierBatching(t *testing.T) {
 		}
 
 		for range passThrough + 3 {
-			h.notifiers["fake"].Push(notifyItem{ctx: t.Context(), n: n})
+			h.notifiers["fake"].Add(t.Context(), n)
 		}
 
 		time.Sleep(10 * time.Second)
-		require.NoError(t, h.notifiers["fake"].Stop(t.Context()))
+		h.notifiers["fake"].Close()
+		synctest.Wait() // the pool handles the remaining batches and stops
 		require.NoError(t, h.proc.Stop(t.Context()))
 
 		assert.Equal(t, passThrough, f.single)
