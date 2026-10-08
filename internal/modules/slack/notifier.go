@@ -50,7 +50,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 	}
 
 	// For SMTP send mail.eml for better preview
-	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
+	if !s.disableFileUploads && database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 
 		// Upload .eml file
