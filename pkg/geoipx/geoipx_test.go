@@ -71,6 +71,7 @@ func Test_Geox(t *testing.T) {
 	assert.Equal(t, "Google Inc.", info.ASN.Org)
 }
 
+// copyFile replaces dst atomically, so a reader with dst mmapped never sees it truncated.
 func copyFile(t *testing.T, src, dst string) {
 	t.Helper()
 
@@ -80,12 +81,12 @@ func copyFile(t *testing.T, src, dst string) {
 		_ = srcFile.Close()
 	}()
 
-	dstFile, err := os.Create(dst)
+	tmpFile, err := os.CreateTemp(filepath.Dir(dst), "*.tmp")
 	require.NoError(t, err)
-	defer func() {
-		_ = dstFile.Close()
-	}()
 
-	_, err = io.Copy(dstFile, srcFile)
+	_, err = io.Copy(tmpFile, srcFile)
 	require.NoError(t, err)
+	require.NoError(t, tmpFile.Close())
+
+	require.NoError(t, os.Rename(tmpFile.Name(), dst))
 }
