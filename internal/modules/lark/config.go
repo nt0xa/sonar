@@ -14,6 +14,7 @@ type Config struct {
 	TLSEnabled        bool   `koanf:"tls_enabled"`
 	ProxyURL          string `koanf:"proxy_url"`
 	ProxyInsecure     bool   `koanf:"proxy_insecure"`
+	DisableEML        bool   `koanf:"disable_eml"`
 }
 
 const (

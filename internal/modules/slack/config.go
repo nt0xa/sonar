@@ -8,6 +8,8 @@ type Config struct {
 	Admin    string `koanf:"admin"`
 	BotToken string `koanf:"bot_token"`
 	AppToken string `koanf:"app_token"`
+
+	DisableEML bool `koanf:"disable_eml"`
 }
 
 func (c Config) Validate() valid.Problems {

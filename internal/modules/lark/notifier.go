@@ -55,9 +55,11 @@ func (lrk *Lark) Notify(ctx context.Context, n *modules.Notification) error {
 	if database.ProtoToCategory(n.Event.Protocol) == database.ProtoCategorySMTP && n.Event.Meta.SMTP != nil {
 		data := n.Event.Meta.SMTP.Session.Data
 		if data != "" {
-			lrk.docMessage(ctx, userID,
-				fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
-				"", []byte(data))
+			if !lrk.cfg.DisableEML {
+				lrk.docMessage(ctx, userID,
+					fmt.Sprintf("mail-%s-%s.eml", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),
+					"", []byte(data))
+			}
 
 			lrk.docMessage(ctx, userID,
 				fmt.Sprintf("mail-%s-%s.txt", n.Payload.Name, n.Event.ReceivedAt.Format("15-04-05_02-Jan-2006")),

@@ -8,6 +8,8 @@ type Config struct {
 	Admin int64
 	Token string
 	Proxy string
+
+	DisableEML bool `koanf:"disable_eml"`
 }
 
 func (c Config) Validate() valid.Problems {

@@ -35,7 +35,7 @@ sidebar_position: 2
 
   ![SMTP notification](../assets/smtp_notification_dark.png#gh-dark-mode-only)![SMTP notification](../assets/smtp_notification_light.png#gh-light-mode-only)
 
-- Additionally you will receive `.eml` file with a content of email. This file can be opened in any email client to view the rendered content.
+- Additionally you will receive `.eml` file with a content of email. This file can be opened in any email client to view the rendered content. It can be turned off with the `disable_eml = true` option of the messenger module (see [server configuration](../install/server.md)).
 
   ![SMTP notification EML](../assets/smtp_notification_eml_dark.png#gh-dark-mode-only)![SMTP notification EML](../assets/smtp_notification_eml_light.png#gh-light-mode-only)
 
