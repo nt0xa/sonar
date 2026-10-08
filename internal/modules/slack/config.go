@@ -8,6 +8,8 @@ type Config struct {
 	Admin    string `koanf:"admin"`
 	BotToken string `koanf:"bot_token"`
 	AppToken string `koanf:"app_token"`
+
+	DisableFileUploads bool `koanf:"disable_file_uploads"`
 }
 
 func (c Config) Validate() valid.Problems {

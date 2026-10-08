@@ -182,6 +182,9 @@ bot_token = "<BOT_TOKEN>"
 # From "App-Level Tokens" on https://api.slack.com/apps/<YOUR_APP_ID>/general
 # Format: xapp-...
 app_token = "<APP_TOKEN>"
+
+# Disable uploading SMTP .eml/.txt files to the notification thread (e.g. if the app lacks the files:write scope).
+disable_file_uploads = false
 ```
 
 ## Startup

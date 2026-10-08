@@ -22,7 +22,8 @@ type Slack struct {
 	svc    service.ServerService
 	tmpl   *templates.Templates
 
-	domain string
+	domain             string
+	disableFileUploads bool
 }
 
 func New(
@@ -60,6 +61,8 @@ func New(
 		svc:    svc,
 		tmpl:   tmpl,
 		domain: domain,
+
+		disableFileUploads: cfg.DisableFileUploads,
 	}
 
 	return s, nil
