@@ -154,6 +154,8 @@ admin = "<TOKEN>"
 admin = "<USER_ID>"
 # Bot token. Use @BotFather bot to get one.
 token = "<BOT_TOKEN>"
+# Optional. Set to true to stop sending the .eml attachment with SMTP notifications.
+# disable_eml = true
 
 # Lark configuration.
 [modules.lark]
@@ -169,6 +171,8 @@ mode = "webhook"
 # Verification token. Required only for "webhook" mode. You can find it on the "Events & callbacks" page of your app
 # under the "Encryption strategy" tab.
 verification_token = "<VERIFICATION_TOKEN>"
+# Optional. Set to true to stop sending the .eml attachment with SMTP notifications.
+# disable_eml = true
 
 # Slack configuration.
 [modules.slack]
@@ -182,6 +186,8 @@ bot_token = "<BOT_TOKEN>"
 # From "App-Level Tokens" on https://api.slack.com/apps/<YOUR_APP_ID>/general
 # Format: xapp-...
 app_token = "<APP_TOKEN>"
+# Optional. Set to true to stop sending the .eml attachment with SMTP notifications.
+# disable_eml = true
 ```
 
 ## Startup

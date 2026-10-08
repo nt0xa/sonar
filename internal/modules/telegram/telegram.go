@@ -27,7 +27,8 @@ type Telegram struct {
 	svc  service.ServerService
 	tmpl *templates.Templates
 
-	domain string
+	domain     string
+	disableEML bool
 }
 
 func New(
@@ -97,6 +98,8 @@ func New(
 		domain: domain,
 		svc:    svc,
 		tmpl:   tmpl,
+
+		disableEML: cfg.DisableEML,
 	}
 
 	tg.cmd = cmd.New(

@@ -54,7 +54,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 		data := n.Event.Meta.SMTP.Session.Data
 
 		// Upload .eml file
-		if len(data) > 0 {
+		if len(data) > 0 && !s.disableEML {
 			_, err := s.client.UploadFileV2Context(ctx, slack.UploadFileV2Parameters{
 				Channel:         channelID,
 				ThreadTimestamp: timestamp,
