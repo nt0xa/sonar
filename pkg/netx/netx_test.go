@@ -19,8 +19,10 @@ import (
 )
 
 func Test_Panics(t *testing.T) {
+	h := netx.HandlerFunc(func(context.Context, net.Conn) {})
+
 	require.Panics(t, func() { netx.New("", nil) })
-	require.Panics(t, func() { netx.New("", netx.HandlerFunc(func(context.Context, net.Conn) {}), netx.WithNotifyStarted(nil)) })
+	require.Panics(t, func() { netx.New("", h, netx.WithNotifyStarted(nil)) })
 }
 
 func Test_TimeoutHandler(t *testing.T) {
