@@ -91,6 +91,7 @@ type Config struct {
 	DNS       DNSConfig
 	TLS       TLSConfig
 	Telemetry TelemetryConfig
+	RateLimit RateLimitConfig
 	Modules   ModulesConfig
 }
 
@@ -101,6 +102,7 @@ func (c Config) Validate() valid.Problems {
 		valid.Struct("db", c.DB),
 		valid.Struct("geoip", c.GeoIP),
 		valid.Struct("tls", c.TLS),
+		valid.Struct("ratelimit", c.RateLimit),
 		valid.Struct("modules", c.Modules),
 	)
 }
@@ -137,6 +139,46 @@ func (c DBConfig) Validate() valid.Problems {
 
 type DNSConfig struct {
 	Zone string
+}
+
+//
+// Rate limit
+//
+
+type RateLimitConfig struct {
+	Enabled bool
+	Allow   []string
+	HTTP    RateLimitProtoConfig
+	SMTP    RateLimitProtoConfig
+	FTP     RateLimitProtoConfig
+}
+
+func (c RateLimitConfig) Validate() valid.Problems {
+	if !c.Enabled {
+		return nil
+	}
+	return valid.Validate(
+		valid.Slice("allow", c.Allow, valid.Each(prefix)),
+		valid.Struct("http", c.HTTP),
+		valid.Struct("smtp", c.SMTP),
+		valid.Struct("ftp", c.FTP),
+	)
+}
+
+// RateLimitProtoConfig is a per-IP limit in requests per second; zero rate disables it.
+type RateLimitProtoConfig struct {
+	Rate  float64
+	Burst int
+}
+
+func (c RateLimitProtoConfig) Validate() valid.Problems {
+	if c.Rate == 0 {
+		return nil
+	}
+	return valid.Validate(
+		valid.Number("rate", c.Rate, valid.Min(0.0)),
+		valid.Number("burst", c.Burst, valid.Min(1)),
+	)
 }
 
 //
