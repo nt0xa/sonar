@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 	wg.Add(2)
 
 	options := []ftpx.Option{
-		ftpx.NotifyStartedFunc(wg.Done),
+		ftpx.WithNotifyStarted(wg.Done),
 	}
 
 	handler := netx.MaxBytesHandler(
@@ -94,7 +94,7 @@ func TestMain(m *testing.M) {
 			os.Exit(1)
 		}
 
-		options := append(options, ftpx.TLSConfig(&tls.Config{
+		options := append(options, ftpx.WithTLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}))
 		srv := ftpx.New("127.0.0.1:10022", handler, options...)

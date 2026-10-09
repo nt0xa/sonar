@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 	wg.Add(2)
 
 	options := []smtpx.Option{
-		smtpx.NotifyStartedFunc(wg.Done),
+		smtpx.WithNotifyStarted(wg.Done),
 	}
 	cert, err := tls.LoadX509KeyPair(
 		"../../test/cert.pem",
@@ -103,7 +103,7 @@ func TestMain(m *testing.M) {
 
 	go func() {
 
-		options := append(options, smtpx.TLSConfig(tlsConfig))
+		options := append(options, smtpx.WithTLSConfig(tlsConfig))
 		srv := smtpx.New("127.0.0.1:1465", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {

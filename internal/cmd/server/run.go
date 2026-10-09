@@ -162,7 +162,7 @@ func Run(
 		srv := dnsx.New(
 			":53",
 			dnsHandler,
-			dnsx.NotifyStartedFunc(waitDNS.Done),
+			dnsx.WithNotifyStarted(waitDNS.Done),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -230,7 +230,7 @@ func Run(
 				cfg.Domain,
 				emitHTTP(events),
 			),
-			httpx.TLSConfig(tlsConfig),
+			httpx.WithTLSConfig(tlsConfig),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {

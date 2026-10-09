@@ -14,13 +14,15 @@ var defaultOptions = options{
 
 type Option func(*options)
 
-func TLSConfig(c *tls.Config) Option {
+// WithTLSConfig makes the server accept TLS connections.
+func WithTLSConfig(c *tls.Config) Option {
 	return func(opts *options) {
 		opts.tlsConfig = c
 	}
 }
 
-func NotifyStartedFunc(f func()) Option {
+// WithNotifyStarted sets a function called once the server is listening.
+func WithNotifyStarted(f func()) Option {
 	return func(opts *options) {
 		opts.notifyStartedFunc = f
 	}
