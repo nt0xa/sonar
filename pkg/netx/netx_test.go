@@ -18,6 +18,11 @@ import (
 	"github.com/nt0xa/sonar/pkg/netx"
 )
 
+func Test_Panics(t *testing.T) {
+	require.Panics(t, func() { netx.New("", nil) })
+	require.Panics(t, func() { netx.New("", netx.HandlerFunc(func(context.Context, net.Conn) {}), netx.WithNotifyStarted(nil)) })
+}
+
 func Test_TimeoutHandler(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		srv, cli := net.Pipe()
@@ -94,7 +99,7 @@ func (l *errListener) Addr() net.Addr { return nil }
 func Test_ServeBacksOffOnAcceptErrorsAndStopsWhenClosed(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		l := &errListener{closed: make(chan struct{})}
-		srv := &netx.Server{Handler: netx.HandlerFunc(func(context.Context, net.Conn) {})}
+		srv := netx.New("", netx.HandlerFunc(func(context.Context, net.Conn) {}))
 
 		errc := make(chan error)
 		go func() { errc <- srv.Serve(l) }()

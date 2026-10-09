@@ -16,12 +16,10 @@ func New(addr string, handler netx.Handler, opts ...Option) *Server {
 	}
 
 	return &Server{
-		server: &netx.Server{
-			Addr:              addr,
-			TLSConfig:         options.tlsConfig,
-			NotifyStartedFunc: options.notifyStartedFunc,
-			Handler:           handler,
-		},
+		server: netx.New(addr, handler,
+			netx.WithTLSConfig(options.tlsConfig),
+			netx.WithNotifyStarted(options.notifyStartedFunc),
+		),
 	}
 }
 
