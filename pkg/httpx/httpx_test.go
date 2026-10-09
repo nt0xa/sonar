@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/pkg/httpx"
+	"github.com/nt0xa/sonar/pkg/netx"
 )
 
 var (
@@ -472,4 +473,30 @@ func TestKeepAlive(t *testing.T) {
 	require.NoError(t, err)
 
 	http.DefaultClient.CloseIdleConnections()
+}
+
+func TestListenerWrapper(t *testing.T) {
+	started := make(chan struct{})
+
+	srv := httpx.New("127.0.0.1:1081",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+		httpx.WithNotifyStarted(func() { close(started) }),
+		httpx.WithListenerWrapper(func(l net.Listener) net.Listener {
+			return &netx.RateLimitListener{
+				Listener: l,
+				Allow:    func(net.Addr) bool { return false },
+			}
+		}),
+	)
+
+	go func() { _ = srv.ListenAndServe() }()
+
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for server to start")
+	}
+
+	_, err := http.Get("http://127.0.0.1:1081")
+	assert.Error(t, err)
 }

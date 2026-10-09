@@ -25,23 +25,27 @@ func FTPHandler(
 	domain string,
 	log *slog.Logger,
 	tel telemetry.Telemetry,
+	allow func(net.Addr) bool,
 	notify ftpx.OnCloseFunc,
 ) netx.Handler {
-	return FTPTelemetry(
-		netx.MaxBytesHandler(
-			netx.TimeoutHandler(
-				netx.LoggingHandler(
-					ftpx.SessionHandler(
-						ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
-						log,
-						notify,
+	return netx.RateLimitHandler(
+		FTPTelemetry(
+			netx.MaxBytesHandler(
+				netx.TimeoutHandler(
+					netx.LoggingHandler(
+						ftpx.SessionHandler(
+							ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
+							log,
+							notify,
+						),
 					),
+					ftpIdleTimeout,
 				),
-				ftpIdleTimeout,
+				ftpMaxBytes,
 			),
-			ftpMaxBytes,
+			tel,
 		),
-		tel,
+		allow,
 	)
 }
 

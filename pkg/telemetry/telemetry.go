@@ -52,6 +52,17 @@ type Telemetry interface {
 		description string,
 		opts ...otelmetric.HistogramOption,
 	) (Int64UpDownCounter, error)
+
+	NewInt64Counter(
+		name string,
+		unit string,
+		description string,
+		opts ...otelmetric.Int64CounterOption,
+	) (Int64Counter, error)
+}
+
+type Int64Counter interface {
+	Add(ctx context.Context, incr int64, options ...otelmetric.AddOption)
 }
 
 type Int64UpDownCounter interface {
@@ -209,6 +220,26 @@ func (t *telemetry) NewInt64UpDownCounter(
 	opts ...otelmetric.HistogramOption,
 ) (Int64UpDownCounter, error) {
 	counter, err := t.meter.Int64UpDownCounter(
+		name,
+		otelmetric.WithDescription(description),
+		otelmetric.WithUnit(unit),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create counter: %w", err)
+	}
+
+	return counter, nil
+}
+
+// NewInt64Counter implements Telemetry.
+func (t *telemetry) NewInt64Counter(
+	name string,
+	unit string,
+	description string,
+	opts ...otelmetric.Int64CounterOption,
+) (Int64Counter, error) {
+	counter, err := t.meter.Int64Counter(
 		name,
 		otelmetric.WithDescription(description),
 		otelmetric.WithUnit(unit),

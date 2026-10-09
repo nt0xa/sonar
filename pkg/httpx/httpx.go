@@ -28,6 +28,9 @@ type server struct {
 	// If notifyStartedFunc is set it is called once the server has started listening.
 	notifyStartedFunc func()
 
+	// listenerWrapper wraps the listener before serving.
+	listenerWrapper func(net.Listener) net.Listener
+
 	server *http.Server
 }
 
@@ -59,6 +62,7 @@ func New(addr string, h http.Handler, opts ...Option) Server {
 		handler:           h,
 		notifyStartedFunc: options.notifyStartedFunc,
 		tlsConfig:         options.tlsConfig,
+		listenerWrapper:   options.listenerWrapper,
 		server:            srv,
 	}
 }
@@ -85,6 +89,6 @@ func (srv *server) ListenAndServe() error {
 	}
 
 	return srv.server.Serve(&netx.LoggingListener{
-		Listener: listener,
+		Listener: srv.listenerWrapper(listener),
 	})
 }

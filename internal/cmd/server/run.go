@@ -201,6 +201,11 @@ func Run(
 	// HTTP
 	//
 
+	// HTTP and HTTPS share one limiter, applied before the TLS handshake.
+	httpRateLimit := RateLimitListenerWrapper(
+		RateLimitAllowFunc(&cfg.RateLimit, cfg.RateLimit.HTTP, tel, "http"),
+	)
+
 	go func() {
 		srv := httpx.New(
 			":80",
@@ -210,6 +215,7 @@ func Run(
 				cfg.Domain,
 				emitHTTP(events),
 			),
+			httpx.WithListenerWrapper(httpRateLimit),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -231,6 +237,7 @@ func Run(
 				emitHTTP(events),
 			),
 			httpx.WithTLSConfig(tlsConfig),
+			httpx.WithListenerWrapper(httpRateLimit),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -251,6 +258,7 @@ func Run(
 				log.With("package", "smtpx"),
 				tel,
 				tlsConfig,
+				RateLimitAllowFunc(&cfg.RateLimit, cfg.RateLimit.SMTP, tel, "smtp"),
 				emitSMTP(events),
 			),
 		)
@@ -272,6 +280,7 @@ func Run(
 				cfg.Domain,
 				log.With("package", "ftpx"),
 				tel,
+				RateLimitAllowFunc(&cfg.RateLimit, cfg.RateLimit.FTP, tel, "ftp"),
 				emitFTP(events),
 			),
 		)
