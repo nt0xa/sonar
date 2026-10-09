@@ -55,20 +55,22 @@ func TestMain(m *testing.M) {
 
 	handler := netx.MaxBytesHandler(
 		netx.TimeoutHandler(
-			ftpx.SessionHandler(
-				ftpx.Msg{},
-				slog.New(slog.DiscardHandler),
-				func(
-					ctx context.Context,
-					remoteAddr net.Addr,
-					receivedAt *time.Time,
-					secure bool,
-					data [][]byte,
-					match []byte,
-					meta *ftpx.Meta,
-				) {
-					notifier.Notify(remoteAddr, bytes.Join(data, nil))
-				},
+			netx.LoggingHandler(
+				ftpx.SessionHandler(
+					ftpx.Msg{},
+					slog.New(slog.DiscardHandler),
+					func(
+						ctx context.Context,
+						remoteAddr net.Addr,
+						receivedAt *time.Time,
+						secure bool,
+						data [][]byte,
+						match []byte,
+						meta *ftpx.Meta,
+					) {
+						notifier.Notify(remoteAddr, bytes.Join(data, nil))
+					},
+				),
 			),
 			5*time.Second,
 		),

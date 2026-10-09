@@ -33,8 +33,9 @@ type NotifierMock struct {
 func (m *NotifierMock) Notify(
 	remoteAddr net.Addr,
 	data []byte,
+	secure bool,
 ) {
-	m.Called(remoteAddr.String(), string(data))
+	m.Called(remoteAddr.String(), string(data), secure)
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -73,21 +74,23 @@ func TestMain(m *testing.M) {
 
 	handler := netx.MaxBytesHandler(
 		netx.TimeoutHandler(
-			smtpx.SessionHandler(
-				smtpx.Msg{},
-				slog.New(slog.DiscardHandler),
-				tlsConfig,
-				func(
-					ctx context.Context,
-					remoteAddr net.Addr,
-					receivedAt *time.Time,
-					secure bool,
-					data [][]byte,
-					match []byte,
-					meta *smtpx.Meta,
-				) {
-					notifier.Notify(remoteAddr, bytes.Join(data, nil))
-				},
+			netx.LoggingHandler(
+				smtpx.SessionHandler(
+					smtpx.Msg{},
+					slog.New(slog.DiscardHandler),
+					tlsConfig,
+					func(
+						ctx context.Context,
+						remoteAddr net.Addr,
+						receivedAt *time.Time,
+						secure bool,
+						data [][]byte,
+						match []byte,
+						meta *smtpx.Meta,
+					) {
+						notifier.Notify(remoteAddr, bytes.Join(data, nil), secure)
+					},
+				),
 			),
 			5*time.Second,
 		),
@@ -191,6 +194,19 @@ func TestSMTP(t *testing.T) {
 
 			contains := []string{tt.from, tt.to, tt.subj, tt.body}
 
+			startTLS := tt.startTLS && !tt.tls
+
+			// The reply sent right before the upgrade must stay in the log.
+			if startTLS {
+				contains = append(contains, "Ready to start TLS")
+			}
+
+			// TODO: implicit TLS isn't detected as secure because the session sees the wrapped conn.
+			var secure any = startTLS
+			if tt.tls {
+				secure = mock.Anything
+			}
+
 			notifier.
 				On("Notify",
 					conn.LocalAddr().String(),
@@ -201,7 +217,8 @@ func TestSMTP(t *testing.T) {
 							}
 						}
 						return true
-					})).
+					}),
+					secure).
 				Return().
 				Once()
 
@@ -210,7 +227,7 @@ func TestSMTP(t *testing.T) {
 			require.NoError(st, err)
 
 			// Send "STARTTLS" if required
-			if tt.startTLS && !tt.tls {
+			if startTLS {
 				err = c.StartTLS(tlsConfig)
 				require.NoError(st, err)
 			}

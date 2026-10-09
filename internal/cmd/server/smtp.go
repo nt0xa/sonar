@@ -31,11 +31,13 @@ func SMTPHandler(
 	return SMTPTelemetry(
 		netx.MaxBytesHandler(
 			netx.TimeoutHandler(
-				smtpx.SessionHandler(
-					smtpx.Msg{Greet: domain, Ehlo: domain},
-					log,
-					tlsConfig,
-					notify,
+				netx.LoggingHandler(
+					smtpx.SessionHandler(
+						smtpx.Msg{Greet: domain, Ehlo: domain},
+						log,
+						tlsConfig,
+						notify,
+					),
 				),
 				smtpIdleTimeout,
 			),

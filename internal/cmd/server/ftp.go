@@ -30,10 +30,12 @@ func FTPHandler(
 	return FTPTelemetry(
 		netx.MaxBytesHandler(
 			netx.TimeoutHandler(
-				ftpx.SessionHandler(
-					ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
-					log,
-					notify,
+				netx.LoggingHandler(
+					ftpx.SessionHandler(
+						ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
+						log,
+						notify,
+					),
 				),
 				ftpIdleTimeout,
 			),

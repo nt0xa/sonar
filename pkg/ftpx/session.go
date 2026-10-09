@@ -62,7 +62,7 @@ type session struct {
 	onClose OnCloseFunc
 
 	// conn is a current TCP connection.
-	conn *netx.LoggingConn
+	conn net.Conn
 
 	// scanner is a connection reader scanner.
 	scanner *bufio.Scanner
@@ -72,38 +72,41 @@ type session struct {
 	data Data
 }
 
+// SessionHandler handles an FTP session; it must be wrapped with netx.LoggingHandler.
 func SessionHandler(msg Msg, log *slog.Logger, onClose OnCloseFunc) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
-		newConn := netx.NewLoggingConn(conn)
+		rec := netx.LoggingConnFromContext(ctx)
+		if rec == nil {
+			log.Error("session handler is not wrapped with netx.LoggingHandler")
+			return
+		}
 
 		sess := &session{
 			log:      log,
 			messages: msg,
 			onClose:  onClose,
-			conn:     newConn,
-			scanner:  bufio.NewScanner(newConn),
+			conn:     conn,
+			scanner:  bufio.NewScanner(conn),
 		}
 
 		start := time.Now()
 
-		newConn.OnClose = func() {
-			_, secure := sess.conn.Conn.(*tls.Conn)
-
-			sess.onClose(ctx,
-				sess.conn.RemoteAddr(),
-				&start,
-				secure,
-				sess.conn.Data,
-				[]byte(strings.Join([]string{sess.data.User, sess.data.Pass, sess.data.Retr}, " ")),
-				&Meta{
-					Session: sess.data,
-				},
-			)
-		}
-
 		if err := sess.start(ctx); err != nil {
 			sess.log.Warn("session error", "err", err)
 		}
+
+		_, secure := rec.Conn.(*tls.Conn)
+
+		sess.onClose(ctx,
+			conn.RemoteAddr(),
+			&start,
+			secure,
+			rec.Data,
+			[]byte(strings.Join([]string{sess.data.User, sess.data.Pass, sess.data.Retr}, " ")),
+			&Meta{
+				Session: sess.data,
+			},
+		)
 	})
 }
 

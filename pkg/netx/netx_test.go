@@ -115,3 +115,54 @@ func Test_ServeBacksOffOnAcceptErrorsAndStopsWhenClosed(t *testing.T) {
 		assert.ErrorIs(t, <-errc, net.ErrClosed)
 	})
 }
+
+func Test_LoggingHandler(t *testing.T) {
+	srv, cli := net.Pipe()
+	defer func() { _ = cli.Close() }()
+
+	go func() {
+		_, _ = cli.Write([]byte("ping"))
+		_, _ = io.ReadFull(cli, make([]byte, 4))
+	}()
+
+	assert.Nil(t, netx.LoggingConnFromContext(t.Context()))
+
+	netx.LoggingHandler(netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		rec := netx.LoggingConnFromContext(ctx)
+		require.NotNil(t, rec)
+		assert.Same(t, rec, conn)
+
+		_, err := io.ReadFull(conn, make([]byte, 4))
+		require.NoError(t, err)
+
+		_, err = conn.Write([]byte("pong"))
+		require.NoError(t, err)
+
+		assert.Equal(t, [][]byte{[]byte("ping"), []byte("pong")}, rec.Data)
+	})).Handle(t.Context(), srv)
+}
+
+func Test_LoggingConnUpgradeKeepsLog(t *testing.T) {
+	srv1, cli1 := net.Pipe()
+	srv2, cli2 := net.Pipe()
+	defer func() { _ = cli1.Close(); _ = cli2.Close() }()
+
+	go func() {
+		_, _ = cli1.Write([]byte("one"))
+		_ = cli1.Close()
+	}()
+	go func() { _, _ = cli2.Write([]byte("two")) }()
+
+	c := netx.NewLoggingConn(srv1)
+
+	_, err := io.ReadFull(c, make([]byte, 3))
+	require.NoError(t, err)
+
+	c.Upgrade(srv2)
+
+	_, err = io.ReadFull(c, make([]byte, 3))
+	require.NoError(t, err)
+
+	assert.Same(t, srv2, c.Conn)
+	assert.Equal(t, [][]byte{[]byte("one"), []byte("two")}, c.Data)
+}
