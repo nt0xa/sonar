@@ -50,32 +50,31 @@ func TestMain(m *testing.M) {
 	wg.Add(2)
 
 	options := []ftpx.Option{
-		ftpx.NotifyStartedFunc(wg.Done),
-		ftpx.ListenerWrapper(func(l net.Listener) net.Listener {
-			return &netx.TimeoutListener{
-				Listener: &netx.MaxBytesListener{
-					Listener: l,
-					MaxBytes: 1 << 20,
-				},
-				IdleTimeout: 5 * time.Second,
-			}
-		}),
+		ftpx.WithNotifyStarted(wg.Done),
 	}
 
-	handler := ftpx.SessionHandler(
-		ftpx.Msg{},
-		slog.New(slog.DiscardHandler),
-		func(
-			ctx context.Context,
-			remoteAddr net.Addr,
-			receivedAt *time.Time,
-			secure bool,
-			data [][]byte,
-			match []byte,
-			meta *ftpx.Meta,
-		) {
-			notifier.Notify(remoteAddr, bytes.Join(data, nil))
-		},
+	handler := netx.MaxBytesHandler(
+		netx.TimeoutHandler(
+			netx.LoggingHandler(
+				ftpx.SessionHandler(
+					ftpx.Msg{},
+					slog.New(slog.DiscardHandler),
+					func(
+						ctx context.Context,
+						remoteAddr net.Addr,
+						receivedAt *time.Time,
+						secure bool,
+						data [][]byte,
+						match []byte,
+						meta *ftpx.Meta,
+					) {
+						notifier.Notify(remoteAddr, bytes.Join(data, nil))
+					},
+				),
+			),
+			5*time.Second,
+		),
+		1<<20,
 	)
 
 	go func() {
@@ -97,7 +96,7 @@ func TestMain(m *testing.M) {
 			os.Exit(1)
 		}
 
-		options := append(options, ftpx.TLSConfig(&tls.Config{
+		options := append(options, ftpx.WithTLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}))
 		srv := ftpx.New("127.0.0.1:10022", handler, options...)

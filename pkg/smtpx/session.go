@@ -81,7 +81,10 @@ type session struct {
 	onClose OnCloseFunc
 
 	// conn is a current TCP connection.
-	conn *netx.LoggingConn
+	conn net.Conn
+
+	// rec records the conversation.
+	rec *netx.LoggingConn
 
 	// scanner is a connection reader scanner.
 	scanner *bufio.Scanner
@@ -94,6 +97,7 @@ type session struct {
 	data *Data
 }
 
+// SessionHandler handles an SMTP session; it must be wrapped with netx.LoggingHandler.
 func SessionHandler(
 	msgs Msg,
 	log *slog.Logger,
@@ -101,15 +105,20 @@ func SessionHandler(
 	onClose OnCloseFunc,
 ) netx.Handler {
 	return netx.HandlerFunc(func(ctx context.Context, conn net.Conn) {
-		newConn := netx.NewLoggingConn(conn)
+		rec := netx.LoggingConnFromContext(ctx)
+		if rec == nil {
+			log.Error("session handler is not wrapped with netx.LoggingHandler")
+			return
+		}
 
 		sess := &session{
 			messages:  msgs,
 			log:       log,
 			tlsConfig: tlsConfig,
 			onClose:   onClose,
-			conn:      newConn,
-			scanner:   bufio.NewScanner(newConn),
+			conn:      conn,
+			rec:       rec,
+			scanner:   bufio.NewScanner(conn),
 			state:     stateHelo,
 			data: &Data{
 				RcptTo: make([]string, 0),
@@ -118,26 +127,24 @@ func SessionHandler(
 
 		start := time.Now()
 
-		newConn.OnClose = func() {
-			_, secure := sess.conn.Conn.(*tls.Conn)
-
-			sess.onClose(
-				ctx,
-				sess.conn.RemoteAddr(),
-				&start,
-				secure,
-				sess.conn.Data,
-				[]byte(strings.Join(sess.data.RcptTo, " ")),
-				&Meta{
-					Session: *sess.data,
-					Email:   Parse(sess.data.Data),
-				},
-			)
-		}
-
 		if err := sess.start(ctx); err != nil {
 			sess.log.Warn("session error", "err", err)
 		}
+
+		_, secure := rec.Conn.(*tls.Conn)
+
+		sess.onClose(
+			ctx,
+			conn.RemoteAddr(),
+			&start,
+			secure,
+			rec.Data,
+			[]byte(strings.Join(sess.data.RcptTo, " ")),
+			&Meta{
+				Session: *sess.data,
+				Email:   Parse(sess.data.Data),
+			},
+		)
 	})
 }
 
@@ -307,21 +314,16 @@ func (s *session) handleStartTLS(_ string) error {
 		return err
 	}
 
-	conn := tls.Server(s.conn.Conn, s.tlsConfig)
+	conn := tls.Server(s.rec.Conn, s.tlsConfig)
 
 	if err := conn.Handshake(); err != nil {
 		return err
 	}
 
-	newConn := netx.NewLoggingConn(net.Conn(conn))
+	// Put TLS under the recorder so the log stays plaintext.
+	s.rec.Upgrade(conn)
 
-	// Carry the pre-STARTTLS conversation log forward.
-	newConn.Data = append(newConn.Data, s.conn.Data...)
-
-	newConn.OnClose = s.conn.OnClose
-
-	s.conn = newConn
-	s.scanner = bufio.NewScanner(newConn)
+	s.scanner = bufio.NewScanner(s.conn)
 	s.state = stateHelo
 
 	return nil

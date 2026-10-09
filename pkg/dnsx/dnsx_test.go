@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 
 	handlerProvider = dnsx.ChallengeHandler(handler)
 
-	srv := dnsx.New("127.0.0.1:1053", handlerProvider, dnsx.NotifyStartedFunc(wg.Done))
+	srv := dnsx.New("127.0.0.1:1053", handlerProvider, dnsx.WithNotifyStarted(wg.Done))
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

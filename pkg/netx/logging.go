@@ -2,6 +2,7 @@ package netx
 
 import (
 	"bufio"
+	"context"
 	"net"
 	"sync"
 )
@@ -18,6 +19,22 @@ func (l *LoggingListener) Accept() (net.Conn, error) {
 	}
 
 	return NewLoggingConn(conn), nil
+}
+
+type loggingConnKey struct{}
+
+// LoggingHandler records the conversation; next gets the recorder via LoggingConnFromContext.
+func LoggingHandler(next Handler) Handler {
+	return HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		c := NewLoggingConn(conn)
+		next.Handle(context.WithValue(ctx, loggingConnKey{}, c), c)
+	})
+}
+
+// LoggingConnFromContext returns the recorder set by LoggingHandler, or nil.
+func LoggingConnFromContext(ctx context.Context) *LoggingConn {
+	c, _ := ctx.Value(loggingConnKey{}).(*LoggingConn)
+	return c
 }
 
 // LoggingConn wraps net.Conn to save conversation log.
@@ -48,6 +65,12 @@ func NewLoggingConn(conn net.Conn) *LoggingConn {
 	c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 
 	return c
+}
+
+// Upgrade replaces the underlying connection, e.g. with TLS on top of it, keeping the log.
+func (c *LoggingConn) Upgrade(conn net.Conn) {
+	c.Conn = conn
+	c.rw = bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 }
 
 // append stores a copy of b as the next message in the conversation log.

@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 
 	"go.opentelemetry.io/otel/trace"
 
@@ -163,7 +162,7 @@ func Run(
 		srv := dnsx.New(
 			":53",
 			dnsHandler,
-			dnsx.NotifyStartedFunc(waitDNS.Done),
+			dnsx.WithNotifyStarted(waitDNS.Done),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -231,7 +230,7 @@ func Run(
 				cfg.Domain,
 				emitHTTP(events),
 			),
-			httpx.TLSConfig(tlsConfig),
+			httpx.WithTLSConfig(tlsConfig),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -254,7 +253,6 @@ func Run(
 				tlsConfig,
 				emitSMTP(events),
 			),
-			smtpx.ListenerWrapper(SMTPListenerWrapper(1<<20, time.Second*5)), // TODO: change to handler
 		)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -276,7 +274,6 @@ func Run(
 				tel,
 				emitFTP(events),
 			),
-			ftpx.ListenerWrapper(SMTPListenerWrapper(1<<20, time.Second*5)),
 		)
 
 		if err := srv.ListenAndServe(); err != nil {

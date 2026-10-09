@@ -1,29 +1,28 @@
-package smtpx
+package netx
 
 import "crypto/tls"
 
-type options struct {
-	tlsConfig         *tls.Config
-	notifyStartedFunc func()
+var defaultOptions = options{
+	notifyStarted: func() {},
 }
 
-var defaultOptions = options{
-	tlsConfig:         nil,
-	notifyStartedFunc: func() {},
+type options struct {
+	tlsConfig     *tls.Config
+	notifyStarted func()
 }
 
 type Option func(*options)
 
 // WithTLSConfig makes the server accept TLS connections.
-func WithTLSConfig(c *tls.Config) Option {
+func WithTLSConfig(cfg *tls.Config) Option {
 	return func(opts *options) {
-		opts.tlsConfig = c
+		opts.tlsConfig = cfg
 	}
 }
 
 // WithNotifyStarted sets a function called once the server is listening.
 func WithNotifyStarted(f func()) Option {
 	return func(opts *options) {
-		opts.notifyStartedFunc = f
+		opts.notifyStarted = f
 	}
 }

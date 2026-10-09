@@ -10,7 +10,8 @@ type options struct {
 
 type Option func(*options)
 
-func NotifyStartedFunc(f func()) Option {
+// WithNotifyStarted sets a function called once the server is listening.
+func WithNotifyStarted(f func()) Option {
 	return func(opts *options) {
 		opts.notifyStartedFunc = f
 	}
