@@ -1,31 +1,25 @@
 package netx
 
 import (
+	"context"
 	"net"
 	"time"
 )
 
-type TimeoutListener struct {
-	net.Listener
-	IdleTimeout time.Duration
-}
+// TimeoutHandler fails reads and writes after idleTimeout of inactivity.
+func TimeoutHandler(next Handler, idleTimeout time.Duration) Handler {
+	return HandlerFunc(func(ctx context.Context, conn net.Conn) {
+		c := &TimeoutConn{
+			Conn:        conn,
+			idleTimeout: idleTimeout,
+		}
 
-func (l *TimeoutListener) Accept() (net.Conn, error) {
-	conn, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
-	}
+		if err := c.updateDeadline(); err != nil {
+			return
+		}
 
-	c := &TimeoutConn{
-		Conn:        conn,
-		idleTimeout: l.IdleTimeout,
-	}
-
-	if err := c.SetDeadline(time.Now().Add(l.IdleTimeout)); err != nil {
-		return nil, err
-	}
-
-	return c, nil
+		next.Handle(ctx, c)
+	})
 }
 
 type TimeoutConn struct {

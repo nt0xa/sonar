@@ -33,8 +33,9 @@ type NotifierMock struct {
 func (m *NotifierMock) Notify(
 	remoteAddr net.Addr,
 	data []byte,
+	secure bool,
 ) {
-	m.Called(remoteAddr.String(), string(data))
+	m.Called(remoteAddr.String(), string(data), secure)
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -56,16 +57,7 @@ func TestMain(m *testing.M) {
 	wg.Add(2)
 
 	options := []smtpx.Option{
-		smtpx.NotifyStartedFunc(wg.Done),
-		smtpx.ListenerWrapper(func(l net.Listener) net.Listener {
-			return &netx.TimeoutListener{
-				Listener: &netx.MaxBytesListener{
-					Listener: l,
-					MaxBytes: 1 << 20,
-				},
-				IdleTimeout: 5 * time.Second,
-			}
-		}),
+		smtpx.WithNotifyStarted(wg.Done),
 	}
 	cert, err := tls.LoadX509KeyPair(
 		"../../test/cert.pem",
@@ -80,21 +72,29 @@ func TestMain(m *testing.M) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	handler := smtpx.SessionHandler(
-		smtpx.Msg{},
-		slog.New(slog.DiscardHandler),
-		tlsConfig,
-		func(
-			ctx context.Context,
-			remoteAddr net.Addr,
-			receivedAt *time.Time,
-			secure bool,
-			data [][]byte,
-			match []byte,
-			meta *smtpx.Meta,
-		) {
-			notifier.Notify(remoteAddr, bytes.Join(data, nil))
-		},
+	handler := netx.MaxBytesHandler(
+		netx.TimeoutHandler(
+			netx.LoggingHandler(
+				smtpx.SessionHandler(
+					smtpx.Msg{},
+					slog.New(slog.DiscardHandler),
+					tlsConfig,
+					func(
+						ctx context.Context,
+						remoteAddr net.Addr,
+						receivedAt *time.Time,
+						secure bool,
+						data [][]byte,
+						match []byte,
+						meta *smtpx.Meta,
+					) {
+						notifier.Notify(remoteAddr, bytes.Join(data, nil), secure)
+					},
+				),
+			),
+			5*time.Second,
+		),
+		1<<20,
 	)
 
 	go func() {
@@ -106,7 +106,7 @@ func TestMain(m *testing.M) {
 
 	go func() {
 
-		options := append(options, smtpx.TLSConfig(tlsConfig))
+		options := append(options, smtpx.WithTLSConfig(tlsConfig))
 		srv := smtpx.New("127.0.0.1:1465", handler, options...)
 
 		if err := srv.ListenAndServe(); err != nil {
@@ -194,6 +194,19 @@ func TestSMTP(t *testing.T) {
 
 			contains := []string{tt.from, tt.to, tt.subj, tt.body}
 
+			startTLS := tt.startTLS && !tt.tls
+
+			// The reply sent right before the upgrade must stay in the log.
+			if startTLS {
+				contains = append(contains, "Ready to start TLS")
+			}
+
+			// TODO: implicit TLS isn't detected as secure because the session sees the wrapped conn.
+			var secure any = startTLS
+			if tt.tls {
+				secure = mock.Anything
+			}
+
 			notifier.
 				On("Notify",
 					conn.LocalAddr().String(),
@@ -204,7 +217,8 @@ func TestSMTP(t *testing.T) {
 							}
 						}
 						return true
-					})).
+					}),
+					secure).
 				Return().
 				Once()
 
@@ -213,7 +227,7 @@ func TestSMTP(t *testing.T) {
 			require.NoError(st, err)
 
 			// Send "STARTTLS" if required
-			if tt.startTLS && !tt.tls {
+			if startTLS {
 				err = c.StartTLS(tlsConfig)
 				require.NoError(st, err)
 			}

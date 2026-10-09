@@ -83,7 +83,7 @@ func TestMain(m *testing.M) {
 	)
 
 	options := []httpx.Option{
-		httpx.NotifyStartedFunc(wg.Done),
+		httpx.WithNotifyStarted(wg.Done),
 	}
 
 	go func() {
@@ -103,7 +103,7 @@ func TestMain(m *testing.M) {
 			os.Exit(1)
 		}
 
-		options := append(options, httpx.TLSConfig(&tls.Config{
+		options := append(options, httpx.WithTLSConfig(&tls.Config{
 			Certificates: []tls.Certificate{cert},
 		}))
 		srv := httpx.New("127.0.0.1:1443", h, options...)
