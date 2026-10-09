@@ -16,17 +16,10 @@ import (
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
-func FTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
-	return func(l net.Listener) net.Listener {
-		return &netx.TimeoutListener{
-			Listener: &netx.MaxBytesListener{
-				Listener: l,
-				MaxBytes: maxBytes,
-			},
-			IdleTimeout: idleTimeout,
-		}
-	}
-}
+const (
+	ftpMaxBytes    = 1 << 20
+	ftpIdleTimeout = time.Second * 5
+)
 
 func FTPHandler(
 	domain string,
@@ -35,10 +28,16 @@ func FTPHandler(
 	notify ftpx.OnCloseFunc,
 ) netx.Handler {
 	return FTPTelemetry(
-		ftpx.SessionHandler(
-			ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
-			log,
-			notify,
+		netx.MaxBytesHandler(
+			netx.TimeoutHandler(
+				ftpx.SessionHandler(
+					ftpx.Msg{Greet: fmt.Sprintf("%s Server ready", domain)},
+					log,
+					notify,
+				),
+				ftpIdleTimeout,
+			),
+			ftpMaxBytes,
 		),
 		tel,
 	)

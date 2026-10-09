@@ -57,15 +57,6 @@ func TestMain(m *testing.M) {
 
 	options := []smtpx.Option{
 		smtpx.NotifyStartedFunc(wg.Done),
-		smtpx.ListenerWrapper(func(l net.Listener) net.Listener {
-			return &netx.TimeoutListener{
-				Listener: &netx.MaxBytesListener{
-					Listener: l,
-					MaxBytes: 1 << 20,
-				},
-				IdleTimeout: 5 * time.Second,
-			}
-		}),
 	}
 	cert, err := tls.LoadX509KeyPair(
 		"../../test/cert.pem",
@@ -80,21 +71,27 @@ func TestMain(m *testing.M) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	handler := smtpx.SessionHandler(
-		smtpx.Msg{},
-		slog.New(slog.DiscardHandler),
-		tlsConfig,
-		func(
-			ctx context.Context,
-			remoteAddr net.Addr,
-			receivedAt *time.Time,
-			secure bool,
-			data [][]byte,
-			match []byte,
-			meta *smtpx.Meta,
-		) {
-			notifier.Notify(remoteAddr, bytes.Join(data, nil))
-		},
+	handler := netx.MaxBytesHandler(
+		netx.TimeoutHandler(
+			smtpx.SessionHandler(
+				smtpx.Msg{},
+				slog.New(slog.DiscardHandler),
+				tlsConfig,
+				func(
+					ctx context.Context,
+					remoteAddr net.Addr,
+					receivedAt *time.Time,
+					secure bool,
+					data [][]byte,
+					match []byte,
+					meta *smtpx.Meta,
+				) {
+					notifier.Notify(remoteAddr, bytes.Join(data, nil))
+				},
+			),
+			5*time.Second,
+		),
+		1<<20,
 	)
 
 	go func() {

@@ -20,7 +20,6 @@ func New(addr string, handler netx.Handler, opts ...Option) *Server {
 			Addr:              addr,
 			TLSConfig:         options.tlsConfig,
 			NotifyStartedFunc: options.notifyStartedFunc,
-			ListenerWrapper:   options.listenerWrapper,
 			Handler:           handler,
 		},
 	}

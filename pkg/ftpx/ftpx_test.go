@@ -51,31 +51,28 @@ func TestMain(m *testing.M) {
 
 	options := []ftpx.Option{
 		ftpx.NotifyStartedFunc(wg.Done),
-		ftpx.ListenerWrapper(func(l net.Listener) net.Listener {
-			return &netx.TimeoutListener{
-				Listener: &netx.MaxBytesListener{
-					Listener: l,
-					MaxBytes: 1 << 20,
-				},
-				IdleTimeout: 5 * time.Second,
-			}
-		}),
 	}
 
-	handler := ftpx.SessionHandler(
-		ftpx.Msg{},
-		slog.New(slog.DiscardHandler),
-		func(
-			ctx context.Context,
-			remoteAddr net.Addr,
-			receivedAt *time.Time,
-			secure bool,
-			data [][]byte,
-			match []byte,
-			meta *ftpx.Meta,
-		) {
-			notifier.Notify(remoteAddr, bytes.Join(data, nil))
-		},
+	handler := netx.MaxBytesHandler(
+		netx.TimeoutHandler(
+			ftpx.SessionHandler(
+				ftpx.Msg{},
+				slog.New(slog.DiscardHandler),
+				func(
+					ctx context.Context,
+					remoteAddr net.Addr,
+					receivedAt *time.Time,
+					secure bool,
+					data [][]byte,
+					match []byte,
+					meta *ftpx.Meta,
+				) {
+					notifier.Notify(remoteAddr, bytes.Join(data, nil))
+				},
+			),
+			5*time.Second,
+		),
+		1<<20,
 	)
 
 	go func() {

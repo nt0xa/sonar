@@ -16,17 +16,10 @@ import (
 	"github.com/nt0xa/sonar/pkg/telemetry"
 )
 
-func SMTPListenerWrapper(maxBytes int64, idleTimeout time.Duration) func(net.Listener) net.Listener {
-	return func(l net.Listener) net.Listener {
-		return &netx.TimeoutListener{
-			Listener: &netx.MaxBytesListener{
-				Listener: l,
-				MaxBytes: maxBytes,
-			},
-			IdleTimeout: idleTimeout,
-		}
-	}
-}
+const (
+	smtpMaxBytes    = 1 << 20
+	smtpIdleTimeout = time.Second * 5
+)
 
 func SMTPHandler(
 	domain string,
@@ -36,11 +29,17 @@ func SMTPHandler(
 	notify smtpx.OnCloseFunc,
 ) netx.Handler {
 	return SMTPTelemetry(
-		smtpx.SessionHandler(
-			smtpx.Msg{Greet: domain, Ehlo: domain},
-			log,
-			tlsConfig,
-			notify,
+		netx.MaxBytesHandler(
+			netx.TimeoutHandler(
+				smtpx.SessionHandler(
+					smtpx.Msg{Greet: domain, Ehlo: domain},
+					log,
+					tlsConfig,
+					notify,
+				),
+				smtpIdleTimeout,
+			),
+			smtpMaxBytes,
 		),
 		tel,
 	)
