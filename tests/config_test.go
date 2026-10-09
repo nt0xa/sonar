@@ -38,6 +38,18 @@ enabled = true
 [audit]
 enabled = true
 
+[ratelimit]
+enabled = true
+allow = ["10.0.0.0/8", "2001:db8::/32"]
+
+[ratelimit.http]
+rate = 10
+burst = 20
+
+[ratelimit.smtp]
+rate = 0.5
+burst = 5
+
 [modules]
 enabled = ["api", "telegram", "lark"]
 
@@ -84,6 +96,15 @@ verification_token = "<VERIFICATION_TOKEN>"
 	// Telemetry
 	assert.Equal(t, true, cfg.Telemetry.Enabled)
 	assert.Equal(t, true, cfg.Audit.Enabled)
+
+	// Rate limit
+	assert.Equal(t, true, cfg.RateLimit.Enabled)
+	assert.Equal(t, []string{"10.0.0.0/8", "2001:db8::/32"}, cfg.RateLimit.Allow)
+	assert.Equal(t, 10.0, cfg.RateLimit.HTTP.Rate)
+	assert.Equal(t, 20, cfg.RateLimit.HTTP.Burst)
+	assert.Equal(t, 0.5, cfg.RateLimit.SMTP.Rate)
+	assert.Equal(t, 5, cfg.RateLimit.SMTP.Burst)
+	assert.Zero(t, cfg.RateLimit.FTP.Rate)
 
 	// Test Modules config
 	assert.ElementsMatch(t, []string{
@@ -145,6 +166,12 @@ func TestConfig_Env(t *testing.T) {
 				"SONAR_MODULES_LARK_VERIFICATION_TOKEN=<VERIFICATION_TOKEN>",
 				"SONAR_TELEMETRY_ENABLED=true",
 				"SONAR_AUDIT_ENABLED=true",
+				"SONAR_RATELIMIT_ENABLED=true",
+				"SONAR_RATELIMIT_ALLOW=10.0.0.0/8,2001:db8::/32",
+				"SONAR_RATELIMIT_HTTP_RATE=10",
+				"SONAR_RATELIMIT_HTTP_BURST=20",
+				"SONAR_RATELIMIT_SMTP_RATE=0.5",
+				"SONAR_RATELIMIT_SMTP_BURST=5",
 			}
 		},
 	)
@@ -171,6 +198,15 @@ func TestConfig_Env(t *testing.T) {
 	assert.Equal(t, true, cfg.Telemetry.Enabled)
 	assert.Equal(t, true, cfg.Audit.Enabled)
 
+	// Rate limit
+	assert.Equal(t, true, cfg.RateLimit.Enabled)
+	assert.Equal(t, []string{"10.0.0.0/8", "2001:db8::/32"}, cfg.RateLimit.Allow)
+	assert.Equal(t, 10.0, cfg.RateLimit.HTTP.Rate)
+	assert.Equal(t, 20, cfg.RateLimit.HTTP.Burst)
+	assert.Equal(t, 0.5, cfg.RateLimit.SMTP.Rate)
+	assert.Equal(t, 5, cfg.RateLimit.SMTP.Burst)
+	assert.Zero(t, cfg.RateLimit.FTP.Rate)
+
 	// Test Modules config
 	assert.ElementsMatch(t, []string{
 		"api",
@@ -192,4 +228,47 @@ func TestConfig_Env(t *testing.T) {
 	assert.Equal(t, "<KEY>", cfg.Modules.Lark.EncryptKey)
 	assert.Equal(t, "webhook", cfg.Modules.Lark.Mode)
 	assert.Equal(t, "<VERIFICATION_TOKEN>", cfg.Modules.Lark.VerificationToken)
+}
+
+func TestConfig_InvalidRateLimit(t *testing.T) {
+	tests := []struct {
+		name string
+		env  []string
+		err  string
+	}{
+		{"bad allow", []string{"SONAR_RATELIMIT_ALLOW=10.0.0.1"}, "ratelimit.allow: element #0: must be a valid CIDR prefix"},
+		{"negative rate", []string{"SONAR_RATELIMIT_HTTP_RATE=-1", "SONAR_RATELIMIT_HTTP_BURST=1"}, "ratelimit.http.rate: must be >= 0"},
+		{"missing burst", []string{"SONAR_RATELIMIT_SMTP_RATE=1"}, "ratelimit.smtp.burst: must be >= 1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := loadRateLimitConfig(append(tt.env, "SONAR_RATELIMIT_ENABLED=true"))
+			require.Error(t, err)
+			assert.Equal(t, "validation failed: "+tt.err, err.Error())
+		})
+	}
+}
+
+func TestConfig_DisabledRateLimitIsNotValidated(t *testing.T) {
+	cfg, err := loadRateLimitConfig([]string{"SONAR_RATELIMIT_ALLOW=10.0.0.1"})
+	require.NoError(t, err)
+	assert.False(t, cfg.RateLimit.Enabled)
+}
+
+func loadRateLimitConfig(env []string) (*server.Config, error) {
+	return server.LoadConfig(
+		fstest.MapFS{},
+		func() []string {
+			return append([]string{
+				"SONAR_IP=127.0.0.1",
+				"SONAR_DOMAIN=example.com",
+				"SONAR_DB_DSN=<DB_DSN>",
+				"SONAR_TLS_TYPE=letsencrypt",
+				"SONAR_TLS_LETSENCRYPT_EMAIL=<EMAIL>",
+				"SONAR_TLS_LETSENCRYPT_DIRECTORY=.",
+				"SONAR_MODULES_API_ADMIN=<TOKEN>",
+			}, env...)
+		},
+	)
 }

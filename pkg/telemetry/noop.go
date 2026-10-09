@@ -55,6 +55,16 @@ func (d *noopTelemetry) NewInt64UpDownCounter(
 	return new(noopMetric), nil
 }
 
+// NewInt64Counter implements Telemetry.
+func (d *noopTelemetry) NewInt64Counter(
+	name string,
+	unit string,
+	description string,
+	opts ...metric.Int64CounterOption,
+) (Int64Counter, error) {
+	return new(noopMetric), nil
+}
+
 type noopMetric struct{}
 
 // Add implements Int64UpDownCounter.
@@ -65,3 +75,4 @@ func (n *noopMetric) Record(ctx context.Context, incr int64, options ...metric.R
 
 var _ Int64Histogram = (*noopMetric)(nil)
 var _ Int64UpDownCounter = (*noopMetric)(nil)
+var _ Int64Counter = (*noopMetric)(nil)

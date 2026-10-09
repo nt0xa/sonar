@@ -26,24 +26,28 @@ func SMTPHandler(
 	log *slog.Logger,
 	tel telemetry.Telemetry,
 	tlsConfig *tls.Config,
+	allow func(net.Addr) bool,
 	notify smtpx.OnCloseFunc,
 ) netx.Handler {
-	return SMTPTelemetry(
-		netx.MaxBytesHandler(
-			netx.TimeoutHandler(
-				netx.LoggingHandler(
-					smtpx.SessionHandler(
-						smtpx.Msg{Greet: domain, Ehlo: domain},
-						log,
-						tlsConfig,
-						notify,
+	return netx.RateLimitHandler(
+		SMTPTelemetry(
+			netx.MaxBytesHandler(
+				netx.TimeoutHandler(
+					netx.LoggingHandler(
+						smtpx.SessionHandler(
+							smtpx.Msg{Greet: domain, Ehlo: domain},
+							log,
+							tlsConfig,
+							notify,
+						),
 					),
+					smtpIdleTimeout,
 				),
-				smtpIdleTimeout,
+				smtpMaxBytes,
 			),
-			smtpMaxBytes,
+			tel,
 		),
-		tel,
+		allow,
 	)
 }
 
