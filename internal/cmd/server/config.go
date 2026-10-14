@@ -16,6 +16,7 @@ import (
 )
 
 var ConfigDefaults = map[string]any{
+	"admin_username":             "admin",
 	"tls.type":                   "letsencrypt",
 	"tls.letsencrypt.directory":  "./tls",
 	"tls.letsencrypt.ca_dir_url": "https://acme-v02.api.letsencrypt.org/directory",
@@ -83,21 +84,23 @@ func LoadConfig(
 }
 
 type Config struct {
-	Domain    string
-	IP        string
-	GeoIP     GeoIPConfig
-	DB        DBConfig
-	Audit     AuditConfig
-	DNS       DNSConfig
-	TLS       TLSConfig
-	Telemetry TelemetryConfig
-	RateLimit RateLimitConfig
-	Modules   ModulesConfig
+	Domain        string
+	AdminUsername string `koanf:"admin_username"`
+	IP            string
+	GeoIP         GeoIPConfig
+	DB            DBConfig
+	Audit         AuditConfig
+	DNS           DNSConfig
+	TLS           TLSConfig
+	Telemetry     TelemetryConfig
+	RateLimit     RateLimitConfig
+	Modules       ModulesConfig
 }
 
 func (c Config) Validate() valid.Problems {
 	return valid.Validate(
 		valid.String("domain", c.Domain, valid.Required, valid.Domain),
+		valid.String("admin_username", c.AdminUsername, valid.Required, valid.NotBlank, valid.MinLength(3)),
 		valid.String("ip", c.IP, valid.Required, valid.IP),
 		valid.Struct("db", c.DB),
 		valid.Struct("geoip", c.GeoIP),

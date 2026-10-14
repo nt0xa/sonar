@@ -87,6 +87,9 @@ ip = "<PUBLIC_IP>"
 # Your configured domain name.
 domain = "<DOMAIN>"
 
+# Name of the admin user, "admin" by default.
+# admin_username = "admin"
+
 [db]
 # Database connection string. Use values from `docker-compose.yml`.
 dsn = "postgres://sonar:<POSTGRES_PASSWORD>@db:5432/sonar?sslmode=disable"

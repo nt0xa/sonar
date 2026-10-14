@@ -47,6 +47,7 @@ type Querier interface {
 	PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) (*Payload, error)
 	UsersCreate(ctx context.Context, arg UsersCreateParams) (*User, error)
 	UsersDelete(ctx context.Context, id int64) error
+	UsersGetAdmin(ctx context.Context) (*User, error)
 	UsersGetByAPIToken(ctx context.Context, token string) (*User, error)
 	UsersGetByID(ctx context.Context, id int64) (*User, error)
 	UsersGetByLarkID(ctx context.Context, id string) (*User, error)
