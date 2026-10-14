@@ -543,6 +543,29 @@ func TestAPI(t *testing.T) {
 	}
 }
 
+func TestAPI_CallerRemoteIP(t *testing.T) {
+	svc := &service_mock.ServerService{}
+	registerAuth(svc)
+
+	hasRemoteIP := mock.MatchedBy(func(ctx context.Context) bool {
+		c, ok := service.CallerFrom(ctx)
+		return ok && c.RemoteIP != nil && *c.RemoteIP == "127.0.0.1"
+	})
+	svc.On("ProfileGet", hasRemoteIP).Return(&service.ProfileGetOutput{Name: "user1"}, nil)
+
+	api, err := api.New(&api.Config{Admin: AdminToken}, slog.New(slog.DiscardHandler), nil, svc)
+	require.NoError(t, err)
+
+	srv := httptest.NewServer(api.Handler())
+	defer srv.Close()
+
+	resp := doRequest(t, srv, testCase{method: "GET", path: "/profile", token: User1Token})
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	svc.AssertExpectations(t)
+}
+
 func doRequest(t *testing.T, srv *httptest.Server, tt testCase) *http.Response {
 	t.Helper()
 
