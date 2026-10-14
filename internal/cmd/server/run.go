@@ -347,10 +347,10 @@ func createOrUpdateAdminUser(
 	ctx, span := tel.TraceStart(ctx, "db.init.admin")
 	defer span.End()
 
-	if u, err := db.UsersGetByName(ctx, "admin"); errors.Is(err, database.ErrNoRows) {
+	if u, err := db.UsersGetAdmin(ctx); errors.Is(err, database.ErrNoRows) {
 		// There is no admin yet - create one
 		if _, err := db.UsersCreate(ctx, database.UsersCreateParams{
-			Name:       "admin",
+			Name:       cfg.AdminUsername,
 			IsAdmin:    true,
 			CreatedBy:  nil,
 			TelegramID: &cfg.Modules.Telegram.Admin,
@@ -364,7 +364,7 @@ func createOrUpdateAdminUser(
 		// Admin user exists - update
 		if _, err := db.UsersUpdate(ctx, database.UsersUpdateParams{
 			ID:         u.ID,
-			Name:       "admin",
+			Name:       cfg.AdminUsername,
 			IsAdmin:    true,
 			CreatedBy:  nil,
 			TelegramID: &cfg.Modules.Telegram.Admin,

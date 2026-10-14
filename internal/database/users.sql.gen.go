@@ -59,6 +59,27 @@ func (q *Queries) UsersDelete(ctx context.Context, id int64) error {
 	return err
 }
 
+const usersGetAdmin = `-- name: UsersGetAdmin :one
+SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE is_admin = TRUE AND created_by IS NULL ORDER BY id LIMIT 1
+`
+
+func (q *Queries) UsersGetAdmin(ctx context.Context) (*User, error) {
+	row := q.db.QueryRow(ctx, usersGetAdmin)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.IsAdmin,
+		&i.CreatedBy,
+		&i.TelegramID,
+		&i.SlackID,
+		&i.LarkID,
+		&i.APIToken,
+	)
+	return &i, err
+}
+
 const usersGetByAPIToken = `-- name: UsersGetByAPIToken :one
 SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users WHERE api_token = $1::text
 `

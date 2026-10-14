@@ -37,5 +37,8 @@ SELECT * FROM users WHERE lark_id = @id::text;
 -- name: UsersGetBySlackID :one
 SELECT * FROM users WHERE slack_id = @id::text;
 
+-- name: UsersGetAdmin :one
+SELECT * FROM users WHERE is_admin = TRUE AND created_by IS NULL ORDER BY id LIMIT 1;
+
 -- name: UsersDelete :exec
 DELETE FROM users WHERE id = $1;

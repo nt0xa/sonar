@@ -16,6 +16,7 @@ func TestConfig_TOML(t *testing.T) {
 		"config.toml": {Data: []byte(`
 ip = "127.0.0.1"
 domain = "example.com"
+admin_username = "bob"
 
 [db]
 dsn = "<DB_DSN>"
@@ -79,6 +80,7 @@ verification_token = "<VERIFICATION_TOKEN>"
 	// Basic
 	assert.Equal(t, "127.0.0.1", cfg.IP)
 	assert.Equal(t, "example.com", cfg.Domain)
+	assert.Equal(t, "bob", cfg.AdminUsername)
 
 	// DB
 	assert.Equal(t, "<DB_DSN>", cfg.DB.DSN)
@@ -147,6 +149,7 @@ func TestConfig_Env(t *testing.T) {
 			return []string{
 				"SONAR_IP=127.0.0.1",
 				"SONAR_DOMAIN=example.com",
+				"SONAR_ADMIN_USERNAME=bob",
 				"SONAR_DB_DSN=<DB_DSN>",
 				"SONAR_DNS_ZONE=<ZONE_FILE>",
 				"SONAR_TLS_TYPE=letsencrypt",
@@ -180,6 +183,7 @@ func TestConfig_Env(t *testing.T) {
 	// Basic
 	assert.Equal(t, "127.0.0.1", cfg.IP)
 	assert.Equal(t, "example.com", cfg.Domain)
+	assert.Equal(t, "bob", cfg.AdminUsername)
 
 	// DB
 	assert.Equal(t, "<DB_DSN>", cfg.DB.DSN)
@@ -230,6 +234,31 @@ func TestConfig_Env(t *testing.T) {
 	assert.Equal(t, "<VERIFICATION_TOKEN>", cfg.Modules.Lark.VerificationToken)
 }
 
+func TestConfig_DefaultAdminUsername(t *testing.T) {
+	cfg, err := loadEnvConfig(nil)
+	require.NoError(t, err)
+	assert.Equal(t, "admin", cfg.AdminUsername)
+}
+
+func TestConfig_InvalidAdminUsername(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		err   string
+	}{
+		{"short", "ab", "must be at least 3 characters"},
+		{"blank", "   ", "must not be blank"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := loadEnvConfig([]string{"SONAR_ADMIN_USERNAME=" + tt.value})
+			require.Error(t, err)
+			assert.Equal(t, "validation failed: admin_username: "+tt.err, err.Error())
+		})
+	}
+}
+
 func TestConfig_InvalidRateLimit(t *testing.T) {
 	tests := []struct {
 		name string
@@ -243,7 +272,7 @@ func TestConfig_InvalidRateLimit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := loadRateLimitConfig(append(tt.env, "SONAR_RATELIMIT_ENABLED=true"))
+			_, err := loadEnvConfig(append(tt.env, "SONAR_RATELIMIT_ENABLED=true"))
 			require.Error(t, err)
 			assert.Equal(t, "validation failed: "+tt.err, err.Error())
 		})
@@ -251,12 +280,12 @@ func TestConfig_InvalidRateLimit(t *testing.T) {
 }
 
 func TestConfig_DisabledRateLimitIsNotValidated(t *testing.T) {
-	cfg, err := loadRateLimitConfig([]string{"SONAR_RATELIMIT_ALLOW=10.0.0.1"})
+	cfg, err := loadEnvConfig([]string{"SONAR_RATELIMIT_ALLOW=10.0.0.1"})
 	require.NoError(t, err)
 	assert.False(t, cfg.RateLimit.Enabled)
 }
 
-func loadRateLimitConfig(env []string) (*server.Config, error) {
+func loadEnvConfig(env []string) (*server.Config, error) {
 	return server.LoadConfig(
 		fstest.MapFS{},
 		func() []string {

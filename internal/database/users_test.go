@@ -84,6 +84,16 @@ func TestUsersGetByName_NotExist(t *testing.T) {
 	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
+func TestUsersGetAdmin_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	o, err := db.UsersGetAdmin(t.Context())
+	assert.NoError(t, err)
+	assert.EqualValues(t, 3, o.ID)
+	assert.Equal(t, "admin", o.Name)
+}
+
 func TestUsersDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
