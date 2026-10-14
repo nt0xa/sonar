@@ -16,6 +16,9 @@ type Caller struct {
 	TelegramID *int64
 	LarkID     *string
 	SlackID    *string
+
+	// RemoteIP is the client IP address, set for API requests only.
+	RemoteIP *string
 }
 
 type callerCtxKey struct{}

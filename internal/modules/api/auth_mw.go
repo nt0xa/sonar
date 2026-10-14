@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,12 @@ func (api *API) checkAuth(next http.Handler) http.Handler {
 		if err != nil {
 			api.handleError(w, r, httpError{Status: 401, Message: "Invalid token"})
 			return
+		}
+
+		if c, ok := service.CallerFrom(ctx); ok {
+			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			c.RemoteIP = &ip
+			ctx = service.WithCaller(ctx, c)
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))

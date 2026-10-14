@@ -80,6 +80,10 @@ func actorMetadata(c service.Caller) database.AuditActorMetadata {
 	meta := database.AuditActorMetadata{}
 
 	switch c.Source {
+	case service.AuditSourceApi:
+		if c.RemoteIP != nil {
+			meta["remoteIp"] = *c.RemoteIP
+		}
 	case service.AuditSourceTelegram:
 		if c.TelegramID != nil {
 			meta["telegramId"] = *c.TelegramID
