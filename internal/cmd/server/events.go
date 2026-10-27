@@ -30,6 +30,8 @@ type EventsHandler struct {
 }
 
 type Event struct {
+	// ctx carries the interaction's values (event ID, trace) but not its cancellation.
+	ctx   context.Context
 	Event *database.Event
 	Match []byte
 }
@@ -60,7 +62,8 @@ func (h *EventsHandler) AddNotifier(name string, n *Notifier) {
 	h.notifiers[name] = n
 }
 
-func (h *EventsHandler) handleEvent(ctx context.Context, e Event) {
+func (h *EventsHandler) handleEvent(e Event) {
+	ctx := e.ctx
 	seen := make(map[string]struct{})
 
 	matches := subdomainRegexp.FindAllSubmatch(e.Match, -1)
@@ -166,7 +169,8 @@ func (h *EventsHandler) addGeoIPMetadata(e *database.Event) {
 }
 
 func (h *EventsHandler) Emit(ctx context.Context, e *database.Event, match []byte) {
-	if err := h.proc.Submit(ctx, Event{Event: e, Match: match}); err != nil {
+	// ctx may already be cancelled, e.g. httpx emits after the request is done.
+	if err := h.proc.Submit(Event{ctx: context.WithoutCancel(ctx), Event: e, Match: match}); err != nil {
 		h.log.Error("Failed to submit event", "err", err)
 	}
 }

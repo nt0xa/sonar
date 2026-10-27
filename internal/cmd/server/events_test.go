@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"log/slog"
 	"sync"
@@ -69,4 +70,22 @@ func Test_NotifierBatching(t *testing.T) {
 		assert.Equal(t, passThrough, f.single)
 		assert.Equal(t, []int{3}, f.batches)
 	})
+}
+
+func Test_EmitWithCancelledContext(t *testing.T) {
+	const n = 100
+
+	var buf bytes.Buffer
+	h := NewEventsHandler(nil, nil, slog.New(slog.NewTextHandler(&buf, nil)), 1, n)
+
+	// httpx emits from conn.OnClose, when req.Context() is already cancelled.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	for range n {
+		h.Emit(ctx, &database.Event{Protocol: "http"}, nil)
+	}
+
+	require.NoError(t, h.proc.Stop(t.Context()))
+	assert.Empty(t, buf.String())
 }

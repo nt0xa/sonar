@@ -67,17 +67,17 @@ func (n *Notifier) Close() {
 
 func (n *Notifier) forward() {
 	for batch := range n.batcher.Batches() {
-		if err := n.pool.Submit(context.Background(), batch); err != nil {
+		if err := n.pool.Submit(batch); err != nil {
 			n.log.Error("Failed to submit notifications", "err", err, "notifier", n.notifier.Name())
 		}
 	}
 	_ = n.pool.Stop(context.Background())
 }
 
-func (n *Notifier) send(ctx context.Context, batch []notifyItem) {
+func (n *Notifier) send(batch []notifyItem) {
 	// A window with a single event sends it in full rather than as a summary.
 	if len(batch) == 1 {
-		n.notify(ctx, batch[0].ctx, batch[0].n)
+		n.notify(context.Background(), batch[0].ctx, batch[0].n)
 	} else {
 		n.notifyBatch(batch)
 	}

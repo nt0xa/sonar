@@ -14,17 +14,12 @@ import (
 // ErrStopped is returned by Submit when the pool is stopped.
 var ErrStopped = errors.New("workerpool: stopped")
 
-type task[T any] struct {
-	ctx   context.Context
-	value T
-}
-
 type Pool[T any] struct {
 	limiter *rate.Limiter
 
-	tasks     chan task[T]
-	handler   func(context.Context, T)
-	wg sync.WaitGroup
+	tasks   chan T
+	handler func(T)
+	wg      sync.WaitGroup
 
 	// mu is held for reading by submitters and for writing by Stop to close tasks.
 	mu       sync.RWMutex
@@ -36,7 +31,7 @@ type Pool[T any] struct {
 
 // New creates a Pool, panics on invalid arguments.
 func New[T any](
-	handler func(context.Context, T),
+	handler func(T),
 	opts ...Option,
 ) *Pool[T] {
 	options := defaultOptions
@@ -73,7 +68,7 @@ func New[T any](
 
 	p := Pool[T]{
 		limiter:  limiter,
-		tasks:    make(chan task[T], options.capacity),
+		tasks:    make(chan T, options.capacity),
 		handler:  handler,
 		stopping: make(chan struct{}),
 		done:     make(chan struct{}),
@@ -90,20 +85,18 @@ func New[T any](
 func (p *Pool[T]) worker() {
 	defer p.wg.Done()
 
-	for task := range p.tasks {
+	for value := range p.tasks {
 		if p.limiter != nil {
-			// Can't fail: task.ctx is never cancelled and limit/burst are validated in New.
-			_ = p.limiter.Wait(task.ctx)
+			// Can't fail: ctx is never cancelled and limit/burst are validated in New.
+			_ = p.limiter.Wait(context.Background())
 		}
-		p.handler(task.ctx, task.value)
+		p.handler(value)
 	}
 }
 
-// Submit enqueues value, blocking while the buffer is full. ctx's values reach
-// the handler but its cancellation doesn't, so processing isn't aborted when the
-// caller's ctx ends. It returns ErrStopped if the pool is stopped, or ctx's error
-// if ctx is done before value is enqueued.
-func (p *Pool[T]) Submit(ctx context.Context, value T) error {
+// Submit enqueues value, blocking while the buffer is full. It returns ErrStopped
+// if the pool is stopped.
+func (p *Pool[T]) Submit(value T) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -112,18 +105,16 @@ func (p *Pool[T]) Submit(ctx context.Context, value T) error {
 	}
 
 	select {
-	case p.tasks <- task[T]{ctx: context.WithoutCancel(ctx), value: value}:
+	case p.tasks <- value:
 		return nil
 	case <-p.stopping:
 		return ErrStopped
-	case <-ctx.Done():
-		return ctx.Err()
 	}
 }
 
 // TrySubmit is like Submit but doesn't block: it returns false if the buffer is
 // full or the pool is stopped.
-func (p *Pool[T]) TrySubmit(ctx context.Context, value T) bool {
+func (p *Pool[T]) TrySubmit(value T) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -132,7 +123,7 @@ func (p *Pool[T]) TrySubmit(ctx context.Context, value T) bool {
 	}
 
 	select {
-	case p.tasks <- task[T]{ctx: context.WithoutCancel(ctx), value: value}:
+	case p.tasks <- value:
 		return true
 	default:
 		return false
