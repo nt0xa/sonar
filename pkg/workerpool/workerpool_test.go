@@ -16,7 +16,7 @@ import (
 )
 
 func Test_Panics(t *testing.T) {
-	procFn := func(context.Context, int) {}
+	procFn := func(int) {}
 
 	require.Panics(t, func() { workerpool.New(procFn, workerpool.WithWorkers(0)) })
 	require.Panics(t, func() { workerpool.New(procFn, workerpool.WithCapacity(-1)) })
@@ -31,14 +31,14 @@ func Test_HandlesEverySubmittedItem(t *testing.T) {
 		seen []int
 	)
 
-	p := workerpool.New(func(_ context.Context, v int) {
+	p := workerpool.New(func(v int) {
 		mu.Lock()
 		defer mu.Unlock()
 		seen = append(seen, v)
 	}, workerpool.WithWorkers(4), workerpool.WithCapacity(16))
 
 	for i := range 100 {
-		require.NoError(t, p.Submit(t.Context(), i))
+		require.NoError(t, p.Submit(i))
 	}
 
 	require.NoError(t, p.Stop(t.Context()))
@@ -54,13 +54,13 @@ func Test_StopDrainsBufferedItems(t *testing.T) {
 
 		// One slow worker and a deep buffer: everything is still queued when Stop
 		// is called, so a Stop that didn't drain would lose it.
-		p := workerpool.New(func(_ context.Context, _ int) {
+		p := workerpool.New(func(_ int) {
 			time.Sleep(time.Millisecond)
 			handled.Add(1)
 		}, workerpool.WithCapacity(64))
 
 		for i := range 50 {
-			require.NoError(t, p.Submit(t.Context(), i))
+			require.NoError(t, p.Submit(i))
 		}
 
 		require.NoError(t, p.Stop(t.Context()))
@@ -72,11 +72,11 @@ func Test_StopGivesUpWhenContextIsDone(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		release := make(chan struct{})
 
-		p := workerpool.New(func(_ context.Context, _ int) {
+		p := workerpool.New(func(_ int) {
 			<-release
 		}, workerpool.WithCapacity(4))
 
-		require.NoError(t, p.Submit(t.Context(), 1))
+		require.NoError(t, p.Submit(1))
 
 		ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 		defer cancel()
@@ -87,61 +87,13 @@ func Test_StopGivesUpWhenContextIsDone(t *testing.T) {
 	})
 }
 
-func Test_SubmitStripsCancellationButKeepsValues(t *testing.T) {
-	type key struct{}
-
-	var (
-		done    = make(chan struct{})
-		gotVal  any
-		gotErr  error
-		handler = func(ctx context.Context, _ int) {
-			gotVal = ctx.Value(key{})
-			gotErr = ctx.Err()
-			close(done)
-		}
-	)
-
-	p := workerpool.New(handler, workerpool.WithCapacity(1))
-
-	ctx, cancel := context.WithCancel(context.WithValue(t.Context(), key{}, "kept"))
-	require.NoError(t, p.Submit(ctx, 1))
-	cancel() // the originating interaction ends before the item is handled
-
-	<-done
-	require.NoError(t, p.Stop(t.Context()))
-
-	assert.Equal(t, "kept", gotVal)
-	assert.NoError(t, gotErr)
-}
-
-func Test_SubmitGivesUpWhenContextIsDone(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		release := make(chan struct{})
-
-		p := workerpool.New(func(_ context.Context, _ int) {
-			<-release
-		})
-
-		require.NoError(t, p.Submit(t.Context(), 1))
-		synctest.Wait() // the worker takes 1 and blocks
-
-		ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
-		defer cancel()
-
-		assert.ErrorIs(t, p.Submit(ctx, 2), context.DeadlineExceeded)
-
-		close(release)
-		require.NoError(t, p.Stop(t.Context()))
-	})
-}
-
 func Test_SubmitAfterStop(t *testing.T) {
-	p := workerpool.New(func(context.Context, int) {}, workerpool.WithCapacity(1))
+	p := workerpool.New(func(int) {}, workerpool.WithCapacity(1))
 
 	require.NoError(t, p.Stop(t.Context()))
 
-	assert.ErrorIs(t, p.Submit(t.Context(), 1), workerpool.ErrStopped)
-	assert.False(t, p.TrySubmit(t.Context(), 1))
+	assert.ErrorIs(t, p.Submit(1), workerpool.ErrStopped)
+	assert.False(t, p.TrySubmit(1))
 }
 
 func Test_StopUnblocksPendingSubmit(t *testing.T) {
@@ -151,14 +103,14 @@ func Test_StopUnblocksPendingSubmit(t *testing.T) {
 			errCh   = make(chan error)
 		)
 
-		p := workerpool.New(func(_ context.Context, _ int) {
+		p := workerpool.New(func(_ int) {
 			<-release
 		})
 
-		require.NoError(t, p.Submit(t.Context(), 1))
+		require.NoError(t, p.Submit(1))
 		synctest.Wait() // the worker takes 1 and blocks
 
-		go func() { errCh <- p.Submit(t.Context(), 2) }()
+		go func() { errCh <- p.Submit(2) }()
 		synctest.Wait() // Submit blocks: no free worker, no buffer
 
 		stopped := make(chan error)
@@ -182,7 +134,7 @@ func Test_RateLimitIsSharedAcrossWorkers(t *testing.T) {
 
 		// Burst 1 and several workers: the limiter must pace all of them together,
 		// not each one separately.
-		p := workerpool.New(func(_ context.Context, _ int) {
+		p := workerpool.New(func(_ int) {
 			handled.Add(1)
 		},
 			workerpool.WithWorkers(4),
@@ -193,7 +145,7 @@ func Test_RateLimitIsSharedAcrossWorkers(t *testing.T) {
 		start := time.Now()
 
 		for i := range items {
-			require.NoError(t, p.Submit(t.Context(), i))
+			require.NoError(t, p.Submit(i))
 		}
 
 		require.NoError(t, p.Stop(t.Context()))
@@ -210,16 +162,16 @@ func Test_TrySubmitDropsWhenFull(t *testing.T) {
 			handled []int
 		)
 
-		p := workerpool.New(func(_ context.Context, v int) {
+		p := workerpool.New(func(v int) {
 			<-release
 			handled = append(handled, v)
 		}, workerpool.WithCapacity(1))
 
-		assert.True(t, p.TrySubmit(t.Context(), 1))
+		assert.True(t, p.TrySubmit(1))
 		synctest.Wait() // the worker takes 1 and blocks
 
-		assert.True(t, p.TrySubmit(t.Context(), 2))  // buffered
-		assert.False(t, p.TrySubmit(t.Context(), 3)) // buffer full
+		assert.True(t, p.TrySubmit(2))  // buffered
+		assert.False(t, p.TrySubmit(3)) // buffer full
 
 		close(release)
 		require.NoError(t, p.Stop(t.Context()))
