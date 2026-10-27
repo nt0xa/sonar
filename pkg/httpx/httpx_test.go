@@ -25,6 +25,7 @@ import (
 
 	"github.com/nt0xa/sonar/pkg/httpx"
 	"github.com/nt0xa/sonar/pkg/netx"
+	"github.com/nt0xa/sonar/pkg/testutil"
 )
 
 var (
@@ -95,12 +96,9 @@ func TestMain(m *testing.M) {
 	}()
 
 	go func() {
-		cert, err := tls.LoadX509KeyPair(
-			"../../test/cert.pem",
-			"../../test/key.pem",
-		)
+		cert, err := testutil.SelfSignedCert()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "fail to read cert and key: %s", err)
+			fmt.Fprintf(os.Stderr, "fail to generate cert: %s", err)
 			os.Exit(1)
 		}
 

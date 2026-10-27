@@ -1,4 +1,4 @@
-package sonar_test
+package server_test
 
 import (
 	"testing"
