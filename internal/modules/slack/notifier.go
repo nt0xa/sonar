@@ -35,7 +35,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 		codeBlocks = append(codeBlocks, string(rw))
 	}
 
-	blocks, err := block.Build(n, codeBlocks)
+	blocks, text, err := block.Build(n, codeBlocks)
 	if err != nil {
 		return fmt.Errorf("failed to build blocks: %w", err)
 	}
@@ -44,6 +44,7 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 		ctx,
 		slackID,
 		slack.MsgOptionBlocks(blocks...),
+		slack.MsgOptionText(text, true),
 		slack.MsgOptionDisableLinkUnfurl(),
 		slack.MsgOptionDisableMediaUnfurl(),
 	)
@@ -97,10 +98,13 @@ func (s *Slack) NotifyBatch(ctx context.Context, ns []*modules.Notification) err
 		return fmt.Errorf("failed to render batch: %w", err)
 	}
 
+	blocks, text := block.BuildBatch(ns[0].Payload.Name, len(ns), msg)
+
 	if _, _, err := s.client.PostMessageContext(
 		ctx,
 		*ns[0].User.SlackID,
-		slack.MsgOptionBlocks(block.BuildBatch(ns[0].Payload.Name, len(ns), msg)...),
+		slack.MsgOptionBlocks(blocks...),
+		slack.MsgOptionText(text, true),
 		slack.MsgOptionDisableLinkUnfurl(),
 		slack.MsgOptionDisableMediaUnfurl(),
 	); err != nil {
