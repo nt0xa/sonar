@@ -11,11 +11,14 @@ import (
 	"github.com/slack-go/slack"
 )
 
-// Build creates Slack blocks from a notification
-func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) {
+// maxCodeBlockLen mirrors Slack's 3000 char limit for section text.
+const maxCodeBlockLen = 3000
+
+// Build creates Slack blocks and notification fallback text from a notification.
+func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, string, error) {
 	host, _, err := net.SplitHostPort(n.Event.RemoteAddr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to split host port: %w", err)
+		return nil, "", fmt.Errorf("failed to split host port: %w", err)
 	}
 
 	blocks := make([]slack.Block, 0)
@@ -24,22 +27,24 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	blocks = append(blocks, slack.NewHeaderBlock(
 		&slack.TextBlockObject{
 			Type: slack.PlainTextType,
-			Text: fmt.Sprintf("%s [%s] %s",
-				getHeaderEmoji(n.Event.Protocol),
+			Text: fmt.Sprintf("[%s] %s %s",
 				n.Payload.Name,
+				getHeaderEmoji(n.Event.Protocol),
 				strings.ToUpper(n.Event.Protocol)),
 		},
 	))
 
 	// IP and Time section
 	ipField := &slack.TextBlockObject{
-		Type: slack.MarkdownType,
-		Text: fmt.Sprintf(":satellite_antenna: *IP*\n%s", host),
+		Type:     slack.MarkdownType,
+		Verbatim: true,
+		Text:     fmt.Sprintf("*IP*\n%s", host),
 	}
 
 	timeField := &slack.TextBlockObject{
-		Type: slack.MarkdownType,
-		Text: fmt.Sprintf(":calendar: *Time*\n%s", n.Event.ReceivedAt.Format("02 Jan 2006 15:04:05 MST")),
+		Type:     slack.MarkdownType,
+		Verbatim: true,
+		Text:     fmt.Sprintf("*Time*\n%s", n.Event.ReceivedAt.Format("02 Jan 2006 15:04:05 MST")),
 	}
 
 	blocks = append(blocks, slack.NewSectionBlock(
@@ -50,7 +55,7 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 
 	// GeoIP information if available
 	if geoip := n.Event.Meta.GeoIP; geoip != nil {
-		location := fmt.Sprintf(":round_pushpin: *Location*\n%s %s",
+		location := fmt.Sprintf("*Location*\n%s %s",
 			templates.FlagEmoji(geoip.Country.ISOCode),
 			geoip.Country.Name,
 		)
@@ -60,13 +65,15 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 		}
 
 		locationField := &slack.TextBlockObject{
-			Type: slack.MarkdownType,
-			Text: location,
+			Type:     slack.MarkdownType,
+			Verbatim: true,
+			Text:     location,
 		}
 
 		orgField := &slack.TextBlockObject{
-			Type: slack.MarkdownType,
-			Text: fmt.Sprintf(":office: *Org*\n%s (AS%d)",
+			Type:     slack.MarkdownType,
+			Verbatim: true,
+			Text: fmt.Sprintf("*Org*\n%s (AS%d)",
 				geoip.ASN.Org,
 				geoip.ASN.Number,
 			),
@@ -91,15 +98,17 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 			}
 
 			fromField = &slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: fmt.Sprintf(":bust_in_silhouette: *From*\n%s", strings.Join(emails, "\n")),
+				Type:     slack.MarkdownType,
+				Verbatim: true,
+				Text:     fmt.Sprintf("*From*\n%s", strings.Join(emails, "\n")),
 			}
 		}
 
 		if email.Subject != "" {
 			subjectField = &slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: fmt.Sprintf(":memo: *Subject*\n%s", email.Subject),
+				Type:     slack.MarkdownType,
+				Verbatim: true,
+				Text:     fmt.Sprintf("*Subject*\n%s", email.Subject),
 			}
 		}
 
@@ -121,31 +130,46 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, error) 
 	}
 
 	for _, blockContent := range codeBlocks {
-		blocks = append(blocks, slack.NewSectionBlock(
-			&slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: fmt.Sprintf("```\n%s```", blockContent),
+		blocks = append(blocks, slack.NewRichTextBlock("", &slack.RichTextPreformatted{
+			RichTextSection: slack.RichTextSection{
+				Type: slack.RTEPreformatted,
+				Elements: []slack.RichTextSectionElement{
+					slack.NewRichTextSectionTextElement(truncate(blockContent, maxCodeBlockLen), nil),
+				},
 			},
-			nil,
-			nil,
-		))
+		}))
 	}
 
-	return blocks, nil
+	text := fmt.Sprintf("[%s] %s from %s", n.Payload.Name, strings.ToUpper(n.Event.Protocol), host)
+
+	return blocks, text, nil
 }
 
-// BuildBatch creates Slack blocks summarizing events for a payload.
-func BuildBatch(payloadName string, count int, summary string) []slack.Block {
+// BuildBatch creates Slack blocks and notification fallback text summarizing events for a payload.
+func BuildBatch(payloadName string, count int, summary string) ([]slack.Block, string) {
+	text := fmt.Sprintf("[%s] %d more events", payloadName, count)
+
 	return []slack.Block{
 		slack.NewHeaderBlock(&slack.TextBlockObject{
 			Type: slack.PlainTextType,
-			Text: fmt.Sprintf(":package: [%s] %d more events", payloadName, count),
+			Text: text,
 		}),
 		slack.NewSectionBlock(&slack.TextBlockObject{
-			Type: slack.MarkdownType,
-			Text: summary,
+			Type:     slack.MarkdownType,
+			Verbatim: true,
+			Text:     summary,
 		}, nil, nil),
+	}, text
+}
+
+// truncate cuts s to at most n runes, ending with "..." when cut.
+func truncate(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
 	}
+
+	return string(r[:n-3]) + "..."
 }
 
 // getHeaderEmoji returns the appropriate emoji and color for the protocol
