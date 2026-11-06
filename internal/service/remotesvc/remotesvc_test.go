@@ -50,12 +50,11 @@ func (rs *recordingServer) client() *remotesvc.Service {
 
 func TestPayloadsCreate(t *testing.T) {
 	rs := newServer(t)
-	rs.reply = `{"name":"foo","subdomain":"abc","storeEvents":true}`
+	rs.reply = `{"name":"foo","subdomain":"abc"}`
 
 	out, err := rs.client().PayloadsCreate(context.Background(), service.PayloadsCreateInput{
 		Name:            "foo",
 		NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns},
-		StoreEvents:     true,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -72,11 +71,11 @@ func TestPayloadsCreate(t *testing.T) {
 	if err := json.Unmarshal(rs.body, &sent); err != nil {
 		t.Fatalf("request body not JSON: %v", err)
 	}
-	if sent["name"] != "foo" || sent["storeEvents"] != true {
+	if _, ok := sent["storeEvents"]; sent["name"] != "foo" || ok {
 		t.Errorf("unexpected request body: %s", rs.body)
 	}
 
-	if out.Name != "foo" || out.Subdomain != "abc" || !out.StoreEvents {
+	if out.Name != "foo" || out.Subdomain != "abc" {
 		t.Errorf("unexpected output: %+v", out)
 	}
 }

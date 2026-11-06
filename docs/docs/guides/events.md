@@ -4,12 +4,6 @@ sidebar_position: 6
 
 # Events
 
-:::warning
-
-You can only view events for payloads with events logging enabled, see: [Enable events](/sonar/guides/payloads#create-payload-and-enable-event-logging)
-
-:::
-
 ```
 View events
 

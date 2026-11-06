@@ -338,7 +338,6 @@ type Payload struct {
 	Name            string    `db:"name"`
 	CreatedAt       time.Time `db:"created_at"`
 	NotifyProtocols []string  `db:"notify_protocols"`
-	StoreEvents     bool      `db:"store_events"`
 }
 
 type User struct {

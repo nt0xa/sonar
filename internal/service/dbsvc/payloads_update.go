@@ -33,7 +33,6 @@ func (s *Service) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateI
 		Subdomain:       p.Subdomain,
 		Name:            p.Name,
 		NotifyProtocols: p.NotifyProtocols,
-		StoreEvents:     p.StoreEvents,
 	}
 
 	if in.NewName != "" {
@@ -46,10 +45,6 @@ func (s *Service) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateI
 			notifyProtocols[i] = string(np)
 		}
 		params.NotifyProtocols = notifyProtocols
-	}
-
-	if in.StoreEvents != nil {
-		params.StoreEvents = *in.StoreEvents
 	}
 
 	p, err = s.db.PayloadsUpdate(ctx, params)

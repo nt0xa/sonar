@@ -19,7 +19,6 @@ func (api *API) PayloadsUpdate(w http.ResponseWriter, r *http.Request) {
 		Name:            r.PathValue("name"),
 		NewName:         req.Name,
 		NotifyProtocols: req.NotifyProtocols,
-		StoreEvents:     req.StoreEvents,
 	})
 	if err != nil {
 		api.handleError(w, r, err)

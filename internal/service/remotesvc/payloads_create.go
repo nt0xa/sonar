@@ -15,7 +15,6 @@ func (s *Service) PayloadsCreate(
 	req := apimodels.PayloadsCreateRequest{
 		Name:            in.Name,
 		NotifyProtocols: in.NotifyProtocols,
-		StoreEvents:     in.StoreEvents,
 	}
 
 	var out service.PayloadsCreateOutput

@@ -86,16 +86,14 @@ func TestAPI(t *testing.T) {
 			svcInput: service.PayloadsCreateInput{
 				Name:            "test",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
-				StoreEvents:     true,
 			},
 			svcResult: &service.PayloadsCreateOutput{
 				Name:            "test",
 				Subdomain:       "abcd1234",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
-				StoreEvents:     true,
 			},
 			status:   http.StatusCreated,
-			wantBody: &service.Payload{Name: "test", Subdomain: "abcd1234", NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp}, StoreEvents: true},
+			wantBody: &service.Payload{Name: "test", Subdomain: "abcd1234", NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp}},
 		},
 		{
 			name:      "payloads list",
@@ -120,7 +118,6 @@ func TestAPI(t *testing.T) {
 				Name:            "payload1",
 				NewName:         "new",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategorySmtp},
-				StoreEvents:     new(false),
 			},
 			svcResult: &service.PayloadsUpdateOutput{Name: "new"},
 			status:    http.StatusOK,

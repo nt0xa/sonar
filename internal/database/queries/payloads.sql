@@ -1,6 +1,6 @@
 -- name: PayloadsCreate :one
-INSERT INTO payloads (user_id, subdomain, name, notify_protocols, store_events, created_at)
-VALUES ($1, $2, $3, $4, $5, now())
+INSERT INTO payloads (user_id, subdomain, name, notify_protocols, created_at)
+VALUES ($1, $2, $3, $4, now())
 RETURNING *;
 
 -- name: PayloadsUpdate :one
@@ -8,8 +8,7 @@ UPDATE payloads SET
   subdomain = $2,
   user_id = $3,
   name = $4,
-  notify_protocols = $5,
-  store_events = $6
+  notify_protocols = $5
 WHERE id = $1
 RETURNING *;
 

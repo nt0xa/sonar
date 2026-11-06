@@ -35,7 +35,6 @@ type Payload struct {
 	Name            string          `json:"name"`
 	Subdomain       string          `json:"subdomain"`
 	NotifyProtocols []ProtoCategory `json:"notifyProtocols"`
-	StoreEvents     bool            `json:"storeEvents"`
 	CreatedAt       time.Time       `json:"createdAt"`
 }
 

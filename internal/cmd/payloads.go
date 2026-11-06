@@ -15,7 +15,8 @@ func (c *Command) payloadsCreate(cmd *cobra.Command) runFunc {
 	in.NotifyProtocols = service.ProtoCategoryValues()
 
 	cmd.Flags().VarP(&protoSlice{p: &in.NotifyProtocols}, "protocols", "p", "Protocols to notify")
-	cmd.Flags().BoolVarP(&in.StoreEvents, "events", "e", false, "Store events in database")
+	cmd.Flags().BoolP("events", "e", false, "Store events in database")
+	_ = cmd.Flags().MarkDeprecated("events", "events are always stored")
 
 	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(service.ProtoCategoryNames()))
 
@@ -59,10 +60,7 @@ func (c *Command) payloadsList(cmd *cobra.Command) runFunc {
 }
 
 func (c *Command) payloadsUpdate(cmd *cobra.Command) runFunc {
-	var (
-		in          service.PayloadsUpdateInput
-		storeEvents bool
-	)
+	var in service.PayloadsUpdateInput
 
 	cmd.Use = "mod NAME"
 	cmd.Args = cobra.ExactArgs(1)
@@ -70,19 +68,15 @@ func (c *Command) payloadsUpdate(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.NewName, "name", "n", "", "Payload name")
 	// Unset (-p omitted) leaves in.NotifyProtocols nil, which the service treats
-	// as "unchanged"; --events needs an explicit Changed check since its bool
-	// zero value is meaningful.
+	// as "unchanged".
 	cmd.Flags().VarP(&protoSlice{p: &in.NotifyProtocols}, "protocols", "p", "Protocols to notify")
-	cmd.Flags().BoolVarP(&storeEvents, "events", "e", false, "Store events in database")
+	cmd.Flags().BoolP("events", "e", false, "Store events in database")
+	_ = cmd.Flags().MarkDeprecated("events", "events are always stored")
 
 	_ = cmd.RegisterFlagCompletionFunc("protocols", completeMany(service.ProtoCategoryNames()))
 
 	return func(cmd *cobra.Command, args []string) error {
 		in.Name = args[0]
-
-		if cmd.Flags().Changed("events") {
-			in.StoreEvents = &storeEvents
-		}
 
 		if err := validate(in); err != nil {
 			return err

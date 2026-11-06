@@ -19,8 +19,7 @@ enable/disable some protocols for payload, add DNS records, etc.) and to disting
 add DNS records, etc.) and to distinguish alerts.
 - You can enable/disable alerts for specific protocols for the payload.
 information about all alerts for the payload using CLI tool or API.
-- You can enable event logging for the payload. In this case all events will be stored in the Sonar server database and you will be able
-to get full information about all alerts for the payload using the CLI tool or API.
+- All events are stored in the Sonar server database, so you can get full information about them using the CLI tool or API.
 
 ## Create payload
 
@@ -31,7 +30,6 @@ Usage:
   /new NAME [flags]
 
 Flags:
-  -e, --events              Store events in database
   -h, --help                help for new
   -p, --protocols strings   Protocols to notify (default [dns,http,smtp,ftp])
 ```
@@ -57,17 +55,6 @@ unique subdomain (`d14a68e4` in example).
 ```
 
 ![Payload creation with protocols](../assets/create_payload_protocols_telegram_dark.png#gh-dark-mode-only)![Payload creation with protocols](../assets/create_payload_protocols_telegram_light.png#gh-light-mode-only)
-
-### Create payload and enable event logging
-
-```
-/new <NAME> -e
-```
-
-- By default events are not stored in the database. Event storage is usetul it you want to
-automate something and retrieve all events for your subdomain using API or CLI tool.
-
-![Payload creation with events logging](../assets/create_payload_events_telegram_dark.png#gh-dark-mode-only)![Payload creation with events logging](../assets/create_payload_events_telegram_light.png#gh-light-mode-only)
 
 
 ## List payloads
@@ -107,7 +94,6 @@ Usage:
   /mod NAME [flags]
 
 Flags:
-  -e, --events              Store events in database
   -h, --help                help for mod
   -n, --name string         Payload name
   -p, --protocols strings   Protocols to notify
@@ -120,14 +106,6 @@ Flags:
 ```
 
 ![Modify payload's protocols](../assets/modify_payload_telegram_dark.png#gh-dark-mode-only)![Modify payload's protocols](../assets/modify_payload_telegram_light.png#gh-light-mode-only)
-
-### Enable events logging for the payload
-
-```
-/mod <NAME> -e
-```
-
-![Enable events logging for payload](../assets/modify_payload_events_telegram_dark.png#gh-dark-mode-only)![Enable events logging for payload](../assets/modify_payload_events_telegram_light.png#gh-light-mode-only)
 
 ## Delete payload
 

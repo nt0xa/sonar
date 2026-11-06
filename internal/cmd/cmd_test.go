@@ -32,7 +32,6 @@ func TestCmd(t *testing.T) {
 			service.PayloadsCreateInput{
 				Name:            "test",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategoryHttp},
-				StoreEvents:     true,
 			},
 			&service.PayloadsCreateOutput{Name: "test"},
 		},
@@ -45,7 +44,7 @@ func TestCmd(t *testing.T) {
 		{
 			"mod old -n new -e",
 			"PayloadsUpdate",
-			service.PayloadsUpdateInput{Name: "old", NewName: "new", StoreEvents: new(true)},
+			service.PayloadsUpdateInput{Name: "old", NewName: "new"},
 			&service.PayloadsUpdateOutput{Name: "new"},
 		},
 		{
