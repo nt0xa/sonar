@@ -32,7 +32,6 @@ Sonar can be managed either by sending messages to the chat with the bot in Mess
 - `project_test` — payload's name
 - `d14a68e4.sonar.test` — payload's unique subdomain
 - `dns, ftp, http, smtp` — protocols for which notifications are enabled (by default all protocols are enabled)
-- `false` — shows if all interaction events are stored in database (disabled by default)
 
 :::
 

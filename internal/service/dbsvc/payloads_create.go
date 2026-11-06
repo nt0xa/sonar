@@ -46,7 +46,6 @@ func (s *Service) PayloadsCreate(
 		Subdomain:       subdomain,
 		Name:            in.Name,
 		NotifyProtocols: notifyProtocols,
-		StoreEvents:     in.StoreEvents,
 	})
 	if err != nil {
 		return nil, err

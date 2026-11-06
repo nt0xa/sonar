@@ -165,13 +165,11 @@ func TestClientRoundTrip(t *testing.T) {
 			svcInput: service.PayloadsCreateInput{
 				Name:            "test",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
-				StoreEvents:     true,
 			},
 			svcResult: &service.PayloadsCreateOutput{
 				Name:            "test",
 				Subdomain:       "abcd1234",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategoryDns, service.ProtoCategorySmtp},
-				StoreEvents:     true,
 			},
 		},
 		{
@@ -189,7 +187,6 @@ func TestClientRoundTrip(t *testing.T) {
 				Name:            "payload1",
 				NewName:         "new",
 				NotifyProtocols: []service.ProtoCategory{service.ProtoCategorySmtp},
-				StoreEvents:     new(false),
 			},
 			svcResult: &service.PayloadsUpdateOutput{Name: "new"},
 		},

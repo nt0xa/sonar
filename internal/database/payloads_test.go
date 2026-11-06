@@ -20,13 +20,11 @@ func TestPayloadsCreate_Success(t *testing.T) {
 		Subdomain:       "8a8b58beaf",
 		Name:            "test",
 		NotifyProtocols: []string{"dns", "http", "smtp"},
-		StoreEvents:     true,
 	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
 	assert.Equal(t, []string{"dns", "http", "smtp"}, o.NotifyProtocols)
-	assert.Equal(t, true, o.StoreEvents)
 }
 
 func TestPayloadsCreate_Duplicate(t *testing.T) {
@@ -217,7 +215,6 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 		Subdomain:       o.Subdomain,
 		Name:            "payload1_updated",
 		NotifyProtocols: []string{"dns"},
-		StoreEvents:     false,
 	})
 	require.NoError(t, err)
 
@@ -225,7 +222,6 @@ func TestPayloadsUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, updated.Name, o2.Name)
 	assert.Equal(t, updated.NotifyProtocols, o2.NotifyProtocols)
-	assert.Equal(t, updated.StoreEvents, o2.StoreEvents)
 }
 
 func TestPayloadsDeleteByNamePart_All_Success(t *testing.T) {

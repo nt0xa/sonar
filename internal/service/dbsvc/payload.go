@@ -15,7 +15,6 @@ func payload(m database.Payload) *service.Payload {
 		Subdomain:       m.Subdomain,
 		Name:            m.Name,
 		NotifyProtocols: notifyProtocols,
-		StoreEvents:     m.StoreEvents,
 		CreatedAt:       m.CreatedAt,
 	}
 }

@@ -97,21 +97,19 @@ func (h *EventsHandler) handleEvent(e Event) {
 		}
 
 		// Store event in database
-		if p.StoreEvents {
-			if _, err := h.db.EventsCreate(ctx, database.EventsCreateParams{
-				UUID:       e.Event.UUID,
-				PayloadID:  e.Event.PayloadID,
-				Protocol:   e.Event.Protocol,
-				Data:       e.Event.Data,
-				Meta:       e.Event.Meta,
-				RemoteAddr: e.Event.RemoteAddr,
-				ReceivedAt: e.Event.ReceivedAt,
-			}); err != nil {
-				h.log.Error("Failed to save event",
-					"err", err,
-					"event", e,
-				)
-			}
+		if _, err := h.db.EventsCreate(ctx, database.EventsCreateParams{
+			UUID:       e.Event.UUID,
+			PayloadID:  e.Event.PayloadID,
+			Protocol:   e.Event.Protocol,
+			Data:       e.Event.Data,
+			Meta:       e.Event.Meta,
+			RemoteAddr: e.Event.RemoteAddr,
+			ReceivedAt: e.Event.ReceivedAt,
+		}); err != nil {
+			h.log.Error("Failed to save event",
+				"err", err,
+				"event", e,
+			)
 		}
 
 		// Skip if current event protocol is muted for payload.

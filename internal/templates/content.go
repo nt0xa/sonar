@@ -22,7 +22,7 @@ var profileGet = `<bold>Name:</bold> <code>{{ .Name }}</code>
 
 var payload = `
 {{- $p := . -}}
-<bold>[{{ $p.Name }}]</bold> - <code>{{ $p.Subdomain }}.{{ domain }}</code> ({{ $p.NotifyProtocols | join ", " }}) ({{ $p.StoreEvents }})`
+<bold>[{{ $p.Name }}]</bold> - <code>{{ $p.Subdomain }}.{{ domain }}</code> ({{ $p.NotifyProtocols | join ", " }})`
 
 var payloadsList = fmt.Sprintf(`{{ range . }}%s
 {{ else }}nothing found{{ end }}`, payload)

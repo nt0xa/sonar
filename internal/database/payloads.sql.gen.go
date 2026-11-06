@@ -10,9 +10,9 @@ import (
 )
 
 const payloadsCreate = `-- name: PayloadsCreate :one
-INSERT INTO payloads (user_id, subdomain, name, notify_protocols, store_events, created_at)
-VALUES ($1, $2, $3, $4, $5, now())
-RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
+INSERT INTO payloads (user_id, subdomain, name, notify_protocols, created_at)
+VALUES ($1, $2, $3, $4, now())
+RETURNING id, user_id, subdomain, name, created_at, notify_protocols
 `
 
 type PayloadsCreateParams struct {
@@ -20,7 +20,6 @@ type PayloadsCreateParams struct {
 	Subdomain       string   `db:"subdomain"`
 	Name            string   `db:"name"`
 	NotifyProtocols []string `db:"notify_protocols"`
-	StoreEvents     bool     `db:"store_events"`
 }
 
 func (q *Queries) PayloadsCreate(ctx context.Context, arg PayloadsCreateParams) (*Payload, error) {
@@ -29,7 +28,6 @@ func (q *Queries) PayloadsCreate(ctx context.Context, arg PayloadsCreateParams) 
 		arg.Subdomain,
 		arg.Name,
 		arg.NotifyProtocols,
-		arg.StoreEvents,
 	)
 	var i Payload
 	err := row.Scan(
@@ -39,13 +37,12 @@ func (q *Queries) PayloadsCreate(ctx context.Context, arg PayloadsCreateParams) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }
 
 const payloadsDelete = `-- name: PayloadsDelete :one
-DELETE FROM payloads WHERE id = $1 RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
+DELETE FROM payloads WHERE id = $1 RETURNING id, user_id, subdomain, name, created_at, notify_protocols
 `
 
 func (q *Queries) PayloadsDelete(ctx context.Context, id int64) (*Payload, error) {
@@ -58,13 +55,12 @@ func (q *Queries) PayloadsDelete(ctx context.Context, id int64) (*Payload, error
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }
 
 const payloadsDeleteByNamePart = `-- name: PayloadsDeleteByNamePart :many
-DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%' RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
+DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%' RETURNING id, user_id, subdomain, name, created_at, notify_protocols
 `
 
 func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name string) ([]*Payload, error) {
@@ -83,7 +79,6 @@ func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, na
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
-			&i.StoreEvents,
 		); err != nil {
 			return nil, err
 		}
@@ -96,7 +91,7 @@ func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, na
 }
 
 const payloadsFindByUserAndName = `-- name: PayloadsFindByUserAndName :many
-SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads
+SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads
 WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%'
 ORDER BY id DESC LIMIT $3 OFFSET $4
 `
@@ -129,7 +124,6 @@ func (q *Queries) PayloadsFindByUserAndName(ctx context.Context, arg PayloadsFin
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
-			&i.StoreEvents,
 		); err != nil {
 			return nil, err
 		}
@@ -142,7 +136,7 @@ func (q *Queries) PayloadsFindByUserAndName(ctx context.Context, arg PayloadsFin
 }
 
 const payloadsFindByUserID = `-- name: PayloadsFindByUserID :many
-SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*Payload, error) {
@@ -161,7 +155,6 @@ func (q *Queries) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*Pa
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
-			&i.StoreEvents,
 		); err != nil {
 			return nil, err
 		}
@@ -198,7 +191,7 @@ func (q *Queries) PayloadsGetAllSubdomains(ctx context.Context) ([]string, error
 }
 
 const payloadsGetByID = `-- name: PayloadsGetByID :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads WHERE id = $1
+SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE id = $1
 `
 
 func (q *Queries) PayloadsGetByID(ctx context.Context, id int64) (*Payload, error) {
@@ -211,13 +204,12 @@ func (q *Queries) PayloadsGetByID(ctx context.Context, id int64) (*Payload, erro
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }
 
 const payloadsGetBySubdomain = `-- name: PayloadsGetBySubdomain :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads WHERE subdomain = $1
+SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE subdomain = $1
 `
 
 func (q *Queries) PayloadsGetBySubdomain(ctx context.Context, subdomain string) (*Payload, error) {
@@ -230,13 +222,12 @@ func (q *Queries) PayloadsGetBySubdomain(ctx context.Context, subdomain string) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }
 
 const payloadsGetByUserAndName = `-- name: PayloadsGetByUserAndName :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols, store_events FROM payloads WHERE user_id = $1 AND name = $2
+SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE user_id = $1 AND name = $2
 `
 
 func (q *Queries) PayloadsGetByUserAndName(ctx context.Context, userID int64, name string) (*Payload, error) {
@@ -249,7 +240,6 @@ func (q *Queries) PayloadsGetByUserAndName(ctx context.Context, userID int64, na
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }
@@ -259,10 +249,9 @@ UPDATE payloads SET
   subdomain = $2,
   user_id = $3,
   name = $4,
-  notify_protocols = $5,
-  store_events = $6
+  notify_protocols = $5
 WHERE id = $1
-RETURNING id, user_id, subdomain, name, created_at, notify_protocols, store_events
+RETURNING id, user_id, subdomain, name, created_at, notify_protocols
 `
 
 type PayloadsUpdateParams struct {
@@ -271,7 +260,6 @@ type PayloadsUpdateParams struct {
 	UserID          int64    `db:"user_id"`
 	Name            string   `db:"name"`
 	NotifyProtocols []string `db:"notify_protocols"`
-	StoreEvents     bool     `db:"store_events"`
 }
 
 func (q *Queries) PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) (*Payload, error) {
@@ -281,7 +269,6 @@ func (q *Queries) PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) 
 		arg.UserID,
 		arg.Name,
 		arg.NotifyProtocols,
-		arg.StoreEvents,
 	)
 	var i Payload
 	err := row.Scan(
@@ -291,7 +278,6 @@ func (q *Queries) PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
-		&i.StoreEvents,
 	)
 	return &i, err
 }

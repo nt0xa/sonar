@@ -8,13 +8,11 @@ import "github.com/nt0xa/sonar/internal/service"
 type PayloadsCreateRequest struct {
 	Name            string                  `json:"name"`
 	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols"`
-	StoreEvents     bool                    `json:"storeEvents"`
 }
 
 type PayloadsUpdateRequest struct {
 	Name            string                  `json:"name"`
 	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols,omitempty"`
-	StoreEvents     *bool                   `json:"storeEvents"`
 }
 
 type DNSRecordsCreateRequest struct {

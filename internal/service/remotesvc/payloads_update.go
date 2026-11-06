@@ -16,7 +16,6 @@ func (s *Service) PayloadsUpdate(
 	req := apimodels.PayloadsUpdateRequest{
 		Name:            in.NewName,
 		NotifyProtocols: in.NotifyProtocols,
-		StoreEvents:     in.StoreEvents,
 	}
 
 	var out service.PayloadsUpdateOutput

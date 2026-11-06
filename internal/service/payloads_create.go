@@ -13,7 +13,6 @@ type PayloadsCreate interface {
 type PayloadsCreateInput struct {
 	Name            string
 	NotifyProtocols []ProtoCategory
-	StoreEvents     bool
 }
 
 func (in PayloadsCreateInput) Validate() valid.Problems {
