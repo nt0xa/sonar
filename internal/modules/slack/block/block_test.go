@@ -77,6 +77,7 @@ func TestBuild(t *testing.T) {
 	rwBlock, ok := blocks[3].(*slack.SectionBlock)
 	require.True(t, ok)
 	require.Contains(t, rwBlock.Text.Text, "test")
+	require.True(t, rwBlock.Text.Verbatim)
 }
 
 func TestBuildMinimal(t *testing.T) {
@@ -107,7 +108,7 @@ func TestBuildMinimal(t *testing.T) {
 	// Verify header block uses DNS emoji
 	headerBlock, ok := blocks[0].(*slack.HeaderBlock)
 	require.True(t, ok)
-	require.Contains(t, headerBlock.Text.Text, "DNS")
+	require.Equal(t, "[test] :mag: DNS", headerBlock.Text.Text)
 }
 
 func TestBuildWithEmail(t *testing.T) {
@@ -154,7 +155,7 @@ func TestBuildBatch(t *testing.T) {
 
 	headerBlock, ok := blocks[0].(*slack.HeaderBlock)
 	require.True(t, ok)
-	require.Equal(t, ":package: [test] 3 more events", headerBlock.Text.Text)
+	require.Equal(t, "[test] 3 more events", headerBlock.Text.Text)
 
 	summaryBlock, ok := blocks[1].(*slack.SectionBlock)
 	require.True(t, ok)

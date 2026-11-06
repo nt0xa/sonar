@@ -44,6 +44,8 @@ func (s *Slack) Notify(ctx context.Context, n *modules.Notification) error {
 		ctx,
 		slackID,
 		slack.MsgOptionBlocks(blocks...),
+		slack.MsgOptionDisableLinkUnfurl(),
+		slack.MsgOptionDisableMediaUnfurl(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to post message: %w", err)
@@ -99,6 +101,8 @@ func (s *Slack) NotifyBatch(ctx context.Context, ns []*modules.Notification) err
 		ctx,
 		*ns[0].User.SlackID,
 		slack.MsgOptionBlocks(block.BuildBatch(ns[0].Payload.Name, len(ns), msg)...),
+		slack.MsgOptionDisableLinkUnfurl(),
+		slack.MsgOptionDisableMediaUnfurl(),
 	); err != nil {
 		return fmt.Errorf("failed to post message: %w", err)
 	}
