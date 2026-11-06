@@ -68,6 +68,14 @@ var httpRoutesClear = `{{ len . }} http routes deleted`
 var usersCreate = `user "{{ .Name }}" created`
 var usersDelete = `user "{{ .Name }}" deleted`
 
+var usersList = `
+{{- range . -}}
+<bold>{{ .Name }}</bold>{{ if .IsAdmin }} (admin){{ end }}
+{{- if .TelegramID }} telegram:<code>{{ .TelegramID }}</code>{{ end }}
+{{- if .SlackID }} slack:<code>{{ .SlackID }}</code>{{ end }}
+{{- if .LarkID }} lark:<code>{{ .LarkID }}</code>{{ end }}
+{{ else }}nothing found{{ end -}}`
+
 //
 // Events
 //

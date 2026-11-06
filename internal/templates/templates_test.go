@@ -37,6 +37,7 @@ func TestRenderResultAllOutputs(t *testing.T) {
 
 		&service.UsersCreateOutput{Name: "user"},
 		&service.UsersDeleteOutput{Name: "user"},
+		service.UsersListOutput{{Name: "user", IsAdmin: true, TelegramID: new(int64(1))}},
 
 		&service.EventsGetOutput{Index: 1, Protocol: service.EventProtocolHttp},
 		service.EventsListOutput{{Index: 1, Protocol: service.EventProtocolDns}},

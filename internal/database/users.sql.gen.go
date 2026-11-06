@@ -208,10 +208,20 @@ func (q *Queries) UsersGetByTelegramID(ctx context.Context, id int64) (*User, er
 
 const usersList = `-- name: UsersList :many
 SELECT id, name, created_at, is_admin, created_by, telegram_id, slack_id, lark_id, api_token FROM users
+WHERE name ILIKE '%' || $1::text || '%'
+ORDER BY id
+LIMIT $3
+OFFSET $2
 `
 
-func (q *Queries) UsersList(ctx context.Context) ([]*User, error) {
-	rows, err := q.db.Query(ctx, usersList)
+type UsersListParams struct {
+	Name       string `db:"name"`
+	PageOffset int64  `db:"page_offset"`
+	PageLimit  int64  `db:"page_limit"`
+}
+
+func (q *Queries) UsersList(ctx context.Context, arg UsersListParams) ([]*User, error) {
+	rows, err := q.db.Query(ctx, usersList, arg.Name, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

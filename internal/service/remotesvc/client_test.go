@@ -120,6 +120,8 @@ func dispatch(ctx context.Context, c *remotesvc.Service, in any) (any, error) {
 		return c.UsersCreate(ctx, p)
 	case service.UsersDeleteInput:
 		return c.UsersDelete(ctx, p)
+	case service.UsersListInput:
+		return c.UsersList(ctx, p)
 
 	// Audit records
 	case service.AuditRecordsListInput:
@@ -351,6 +353,13 @@ func TestClientRoundTrip(t *testing.T) {
 			svcMethod: "UsersDelete",
 			svcInput:  service.UsersDeleteInput{Name: "user1"},
 			svcResult: &service.UsersDeleteOutput{Name: "user1"},
+		},
+		{
+			name:      "users list",
+			token:     AdminToken,
+			svcMethod: "UsersList",
+			svcInput:  service.UsersListInput{Name: "user", Page: 2, PerPage: 5},
+			svcResult: service.UsersListOutput{{Name: "user1"}},
 		},
 
 		//

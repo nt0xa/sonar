@@ -9,6 +9,7 @@ type Service interface {
 
 	UsersCreate
 	UsersDelete
+	UsersList
 
 	ProfileGet
 

@@ -74,3 +74,26 @@ func (c *Command) usersDelete(cmd *cobra.Command) runFunc {
 		return setResult(cmd.Context(), out)
 	}
 }
+
+func (c *Command) usersList(cmd *cobra.Command) runFunc {
+	var in service.UsersListInput
+
+	cmd.Use = "list [SUBSTR]"
+	cmd.Args = cobra.MaximumNArgs(1)
+
+	cmd.Flags().UintVarP(&in.Page, "page", "p", 1, "Page")
+	cmd.Flags().UintVarP(&in.PerPage, "per-page", "s", 10, "Per page")
+
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			in.Name = args[0]
+		}
+
+		out, err := c.svc.UsersList(cmd.Context(), in)
+		if err != nil {
+			return err
+		}
+
+		return setResult(cmd.Context(), out)
+	}
+}
