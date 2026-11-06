@@ -102,6 +102,7 @@ func (c *Command) Root() *cobra.Command {
 	users.AddCommand(
 		command("new", "Create new user", c.usersCreate),
 		command("del", "Delete user", c.usersDelete),
+		command("list", "List users", c.usersList),
 	)
 	root.AddCommand(users)
 

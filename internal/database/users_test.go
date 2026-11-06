@@ -127,6 +127,31 @@ func TestUsersUpdate_Success(t *testing.T) {
 	assert.Equal(t, updated, o2)
 }
 
+func TestUsersList_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	names := func(us []*database.User) []string {
+		out := make([]string, len(us))
+		for i, u := range us {
+			out[i] = u.Name
+		}
+		return out
+	}
+
+	all, err := db.UsersList(t.Context(), database.UsersListParams{PageLimit: 10})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"user1", "user2", "admin"}, names(all))
+
+	filtered, err := db.UsersList(t.Context(), database.UsersListParams{Name: "USER", PageLimit: 10})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"user1", "user2"}, names(filtered))
+
+	paged, err := db.UsersList(t.Context(), database.UsersListParams{PageLimit: 1, PageOffset: 1})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"user2"}, names(paged))
+}
+
 func TestUsersGetByParams_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)

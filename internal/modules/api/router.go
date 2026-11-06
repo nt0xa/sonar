@@ -34,6 +34,7 @@ func (api *API) Handler() http.Handler {
 		return api.checkIsAdmin(h)
 	}
 
+	mux.Handle("GET /users", admin(api.UsersList))
 	mux.Handle("POST /users", admin(api.UsersCreate))
 	mux.Handle("DELETE /users/{name}", admin(api.UsersDelete))
 

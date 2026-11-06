@@ -54,7 +54,7 @@ type Querier interface {
 	UsersGetByName(ctx context.Context, name string) (*User, error)
 	UsersGetBySlackID(ctx context.Context, id string) (*User, error)
 	UsersGetByTelegramID(ctx context.Context, id int64) (*User, error)
-	UsersList(ctx context.Context) ([]*User, error)
+	UsersList(ctx context.Context, arg UsersListParams) ([]*User, error)
 	UsersUpdate(ctx context.Context, arg UsersUpdateParams) (*User, error)
 }
 

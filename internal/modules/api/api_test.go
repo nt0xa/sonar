@@ -358,6 +358,18 @@ func TestAPI(t *testing.T) {
 			status:    http.StatusOK,
 			wantBody:  &service.User{Name: "user1"},
 		},
+		{
+			name:      "users list",
+			method:    "GET",
+			path:      "/users",
+			query:     "name=user&page=2&perPage=5",
+			token:     AdminToken,
+			svcMethod: "UsersList",
+			svcInput:  service.UsersListInput{Name: "user", Page: 2, PerPage: 5},
+			svcResult: service.UsersListOutput{{Name: "user1"}},
+			status:    http.StatusOK,
+			wantBody:  []service.User{{Name: "user1"}},
+		},
 
 		//
 		// Audit records (admin only)
@@ -435,6 +447,14 @@ func TestAPI(t *testing.T) {
 			path:    "/users",
 			token:   User1Token,
 			body:    `{"name":"x"}`,
+			status:  http.StatusForbidden,
+			wantMsg: "Admin only",
+		},
+		{
+			name:    "forbidden non-admin users list",
+			method:  "GET",
+			path:    "/users",
+			token:   User1Token,
 			status:  http.StatusForbidden,
 			wantMsg: "Admin only",
 		},

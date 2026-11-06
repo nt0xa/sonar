@@ -17,7 +17,11 @@ WHERE id = $1
 RETURNING *;
 
 -- name: UsersList :many
-SELECT * FROM users;
+SELECT * FROM users
+WHERE name ILIKE '%' || @name::text || '%'
+ORDER BY id
+LIMIT @page_limit
+OFFSET @page_offset;
 
 -- name: UsersGetByID :one
 SELECT * FROM users WHERE id = $1;

@@ -161,6 +161,12 @@ func TestCmd(t *testing.T) {
 			service.UsersDeleteInput{Name: "bob"},
 			&service.UsersDeleteOutput{Name: "bob"},
 		},
+		{
+			"users list bo -p 2 -s 20",
+			"UsersList",
+			service.UsersListInput{Name: "bo", Page: 2, PerPage: 20},
+			service.UsersListOutput{{Name: "bob"}},
+		},
 
 		// Audit (admin)
 		{

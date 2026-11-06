@@ -35,6 +35,7 @@ type Templates struct {
 	httpRoutesClear  *template
 	usersCreate      *template
 	usersDelete      *template
+	usersList        *template
 	eventsGet        *template
 	eventsList       *template
 	auditRecordsList *template
@@ -79,6 +80,7 @@ func New(domain string, opts ...Option) *Templates {
 		httpRoutesClear:    mk(httpRoutesClear),
 		usersCreate:        mk(usersCreate),
 		usersDelete:        mk(usersDelete),
+		usersList:          mk(usersList),
 		eventsGet:          mk(eventsGet),
 		eventsList:         mk(eventsList),
 		auditRecordsList:   mk(auditRecordsList),
@@ -125,6 +127,8 @@ func (t *Templates) RenderResult(out any) (string, error) {
 		tpl = t.usersCreate
 	case *service.UsersDeleteOutput:
 		tpl = t.usersDelete
+	case service.UsersListOutput:
+		tpl = t.usersList
 	case *service.EventsGetOutput:
 		tpl = t.eventsGet
 	case service.EventsListOutput:
