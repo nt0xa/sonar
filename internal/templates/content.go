@@ -11,9 +11,12 @@ import (
 var profileGet = `<bold>Name:</bold> <code>{{ .Name }}</code>
 {{ if .TelegramID }}<bold>Telegram ID:</bold> <code>{{ .TelegramID }}</code>
 {{ end -}}
+{{ if .SlackID }}<bold>Slack ID:</bold> <code>{{ .SlackID }}</code>
+{{ end -}}
 {{ if .LarkID }}<bold>Lark ID:</bold> <code>{{ .LarkID }}</code>
 {{ end -}}
-<bold>API token:</bold> <code>{{ .APIToken }}</code>
+{{ if .APIToken }}<bold>API token:</bold> <code>{{ .APIToken }}</code>
+{{ end -}}
 <bold>Admin:</bold> <code>{{ .IsAdmin }}</code>`
 
 //
