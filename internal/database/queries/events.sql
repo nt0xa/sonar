@@ -18,14 +18,14 @@ SELECT * FROM events WHERE id = $1;
 SELECT * FROM events
 WHERE payload_id = @payload_id AND index < @before
 ORDER BY index DESC
-LIMIT @page_limit
+LIMIT @count
 OFFSET @page_offset;
 
 -- name: EventsListByPayloadIDAfter :many
 SELECT * FROM events
 WHERE payload_id = @payload_id AND index > @after
 ORDER BY index ASC
-LIMIT @page_limit;
+LIMIT @count;
 
 -- name: EventsGetByPayloadAndIndex :one
 SELECT * FROM events WHERE payload_id = $1 AND index = $2;

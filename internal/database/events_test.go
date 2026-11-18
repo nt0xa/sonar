@@ -92,15 +92,15 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 		params database.EventsListByPayloadIDParams
 		want   []int64 // indexes
 	}{
-		{"all", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 100},
+		{"all", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, Count: 100},
 			[]int64{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
-		{"limit", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 3},
+		{"count", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, Count: 3},
 			[]int64{10, 9, 8}},
-		{"offset", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 5, PageOffset: 5},
+		{"offset", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, Count: 5, PageOffset: 5},
 			[]int64{5, 4, 3, 2, 1}},
-		{"before", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 5, PageLimit: 3},
+		{"before", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 5, Count: 3},
 			[]int64{4, 3, 2}},
-		{"before first", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 1, PageLimit: 3},
+		{"before first", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 1, Count: 3},
 			[]int64{}},
 	}
 
@@ -122,11 +122,11 @@ func TestEventsListByPayloadIDAfter_Success(t *testing.T) {
 		params database.EventsListByPayloadIDAfterParams
 		want   []int64 // indexes
 	}{
-		{"from start", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 0, PageLimit: 3},
+		{"from start", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 0, Count: 3},
 			[]int64{1, 2, 3}},
-		{"after", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 7, PageLimit: 5},
+		{"after", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 7, Count: 5},
 			[]int64{8, 9, 10}},
-		{"after last", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 10, PageLimit: 5},
+		{"after last", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 10, Count: 5},
 			[]int64{}},
 	}
 

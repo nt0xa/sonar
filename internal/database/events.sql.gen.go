@@ -118,7 +118,7 @@ type EventsListByPayloadIDParams struct {
 	PayloadID  int64 `db:"payload_id"`
 	Before     int64 `db:"before"`
 	PageOffset int64 `db:"page_offset"`
-	PageLimit  int64 `db:"page_limit"`
+	Count      int64 `db:"count"`
 }
 
 func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*Event, error) {
@@ -126,7 +126,7 @@ func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPay
 		arg.PayloadID,
 		arg.Before,
 		arg.PageOffset,
-		arg.PageLimit,
+		arg.Count,
 	)
 	if err != nil {
 		return nil, err
@@ -167,11 +167,11 @@ LIMIT $3
 type EventsListByPayloadIDAfterParams struct {
 	PayloadID int64 `db:"payload_id"`
 	After     int64 `db:"after"`
-	PageLimit int64 `db:"page_limit"`
+	Count     int64 `db:"count"`
 }
 
 func (q *Queries) EventsListByPayloadIDAfter(ctx context.Context, arg EventsListByPayloadIDAfterParams) ([]*Event, error) {
-	rows, err := q.db.Query(ctx, eventsListByPayloadIDAfter, arg.PayloadID, arg.After, arg.PageLimit)
+	rows, err := q.db.Query(ctx, eventsListByPayloadIDAfter, arg.PayloadID, arg.After, arg.Count)
 	if err != nil {
 		return nil, err
 	}

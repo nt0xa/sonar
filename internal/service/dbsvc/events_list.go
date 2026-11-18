@@ -48,7 +48,7 @@ func (s *Service) EventsList(
 		recs, err = s.db.EventsListByPayloadIDAfter(ctx, database.EventsListByPayloadIDAfterParams{
 			PayloadID: p.ID,
 			After:     after,
-			PageLimit: count,
+			Count:     count,
 		})
 	} else {
 		before := int64(math.MaxInt64)
@@ -58,7 +58,7 @@ func (s *Service) EventsList(
 		recs, err = s.db.EventsListByPayloadID(ctx, database.EventsListByPayloadIDParams{
 			PayloadID:  p.ID,
 			Before:     before,
-			PageLimit:  count,
+			Count:      count,
 			PageOffset: int64(in.Offset),
 		})
 	}
