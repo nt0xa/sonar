@@ -12,14 +12,14 @@ import (
 	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
-func event(m database.Event, index int64) *service.Event {
+func event(m database.Event) *service.Event {
 	data := make([]string, len(m.Data))
 	for i, msg := range m.Data {
 		data[i] = base64.StdEncoding.EncodeToString(msg)
 	}
 
 	return &service.Event{
-		Index:      index,
+		Index:      m.Index,
 		UUID:       m.UUID.String(),
 		Protocol:   service.EventProtocol(m.Protocol),
 		Data:       data,

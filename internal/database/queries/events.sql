@@ -1,29 +1,29 @@
 -- name: EventsCreate :one
-INSERT INTO events (uuid, payload_id, protocol, data, meta, remote_addr,
+WITH seq AS (
+  UPDATE payloads SET last_event_index = last_event_index + 1
+  WHERE id = $2
+  RETURNING last_event_index
+)
+INSERT INTO events (uuid, payload_id, index, protocol, data, meta, remote_addr,
   received_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+VALUES ($1, $2, (SELECT last_event_index FROM seq), $3, $4, $5, $6, $7, now())
 RETURNING *;
 
 -- name: EventsGetByID :one
 SELECT * FROM events WHERE id = $1;
 
 -- name: EventsListByPayloadID :many
-SELECT 
-  sqlc.embed(events),
-  ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index
-FROM events WHERE payload_id = $1
-ORDER BY id DESC
-LIMIT $2
-OFFSET $3;
+SELECT * FROM events
+WHERE payload_id = @payload_id AND index < @before
+ORDER BY index DESC
+LIMIT @count
+OFFSET @page_offset;
+
+-- name: EventsListByPayloadIDAfter :many
+SELECT * FROM events
+WHERE payload_id = @payload_id AND index > @after
+ORDER BY index ASC
+LIMIT @count;
 
 -- name: EventsGetByPayloadAndIndex :one
-WITH numbered AS (
-  SELECT
-    id,
-    ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index
-  FROM events
-)
-SELECT sqlc.embed(e), n.index
-FROM events e
-JOIN numbered n ON n.id = e.id
-WHERE e.payload_id = @payload_id::bigint AND n.index = @index::bigint;
+SELECT * FROM events WHERE payload_id = $1 AND index = $2;
