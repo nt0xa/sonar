@@ -23,9 +23,6 @@ func (s *Service) EventsList(
 	if in.Before != nil {
 		q.Set("before", strconv.FormatInt(*in.Before, 10))
 	}
-	if in.Reverse {
-		q.Set("reverse", "true")
-	}
 	if in.Offset != 0 {
 		q.Set("offset", strconv.FormatUint(uint64(in.Offset), 10))
 	}

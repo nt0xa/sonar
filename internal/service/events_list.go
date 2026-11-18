@@ -14,14 +14,13 @@ type EventsList interface {
 // EventsListMaxCount is the maximum number of events returned per request.
 const EventsListMaxCount = 100
 
-// EventsListInput selects Count events after/before an index, or the latest
-// (first with Reverse). Results are newest first unless Reverse is set.
+// EventsListInput lists Count events after an index oldest first, or before an
+// index (latest by default) newest first.
 type EventsListInput struct {
 	PayloadName string
 	Count       uint
 	After       *int64
 	Before      *int64
-	Reverse     bool
 	Offset      uint // Deprecated: use Before.
 }
 
@@ -29,8 +28,7 @@ func (in EventsListInput) Validate() valid.Problems {
 	return valid.Validate(
 		valid.String("payloadName", in.PayloadName, valid.Required),
 		valid.Number("count", in.Count, valid.Max[uint](EventsListMaxCount)),
-		valid.Number("offset", in.Offset, conflicts[uint]("after, before or reverse",
-			in.After != nil || in.Before != nil || in.Reverse)),
+		valid.Number("offset", in.Offset, conflicts[uint]("after or before", in.After != nil || in.Before != nil)),
 		valid.OptionalNumber("after", in.After, valid.Min[int64](0)),
 		valid.OptionalNumber("before", in.Before, valid.Min[int64](1), conflicts[int64]("after", in.After != nil)),
 	)

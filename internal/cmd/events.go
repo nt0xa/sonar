@@ -17,9 +17,8 @@ func (c *Command) eventsList(cmd *cobra.Command) runFunc {
 
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().UintVarP(&in.Count, "count", "c", 10, "Count of events")
-	cmd.Flags().Int64VarP(&after, "after", "a", 0, "Events after INDEX")
-	cmd.Flags().Int64VarP(&before, "before", "b", 0, "Events before INDEX")
-	cmd.Flags().BoolVarP(&in.Reverse, "reverse", "r", false, "List events oldest first")
+	cmd.Flags().Int64VarP(&after, "after", "a", 0, "Events after INDEX, oldest first")
+	cmd.Flags().Int64VarP(&before, "before", "b", 0, "Events before INDEX, newest first")
 	cmd.Flags().UintVarP(&in.Count, "limit", "l", 10, "Count of events")
 	cmd.Flags().UintVarP(&in.Offset, "offset", "o", 0, "Offset")
 	_ = cmd.Flags().MarkDeprecated("limit", "use --count instead")

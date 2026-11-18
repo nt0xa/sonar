@@ -34,18 +34,6 @@ func queryInt64Ptr(r *http.Request, key string) (*int64, error) {
 	return &v, nil
 }
 
-func queryBool(r *http.Request, key string) (bool, error) {
-	s := r.URL.Query().Get(key)
-	if s == "" {
-		return false, nil
-	}
-	v, err := strconv.ParseBool(s)
-	if err != nil {
-		return false, httpError{Status: http.StatusBadRequest, Message: key + " must be a boolean"}
-	}
-	return v, nil
-}
-
 func queryTimePtr(r *http.Request, key string) (*time.Time, error) {
 	s := r.URL.Query().Get(key)
 	if s == "" {

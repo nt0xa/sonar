@@ -29,12 +29,11 @@ Usage:
   /events list [flags]
 
 Flags:
-  -a, --after int        Events after INDEX
-  -b, --before int       Events before INDEX
+  -a, --after int        Events after INDEX, oldest first
+  -b, --before int       Events before INDEX, newest first
   -c, --count uint       Count of events (default 10)
   -h, --help             help for list
   -p, --payload string   Payload name
-  -r, --reverse          List events oldest first
 ```
 
 ### Get last 10 events for payload
@@ -56,12 +55,12 @@ Flags:
 ### Get first N events for payload
 
 ```
-/events list -p <NAME> -c <N> -r
+/events list -p <NAME> -c <N> -a 0
 ```
 
 ![List first N events for payload](../assets/events_list_first_telegram_dark.png#gh-dark-mode-only)![List first N events for payload](../assets/events_list_first_telegram_light.png#gh-light-mode-only)
 
-`--count` is at most 100. To page through events, pass the index of the last event you received as `--after` or `--before`. `--after` and `--before` cannot be used together.
+`--count` is at most 100. `--after` lists events oldest first, `--before` newest first; to page through events, pass the index of the last event you received as the next `--after` or `--before`. They cannot be used together.
 
 ### Get N events after Mth event
 

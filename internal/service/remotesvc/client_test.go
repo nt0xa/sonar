@@ -321,7 +321,7 @@ func TestClientRoundTrip(t *testing.T) {
 			name:      "events list before",
 			token:     User1Token,
 			svcMethod: "EventsList",
-			svcInput:  service.EventsListInput{PayloadName: "payload1", Before: new(int64(3)), Reverse: true},
+			svcInput:  service.EventsListInput{PayloadName: "payload1", Before: new(int64(3))},
 			svcResult: service.EventsListOutput{{Index: 2, Protocol: service.EventProtocolHttp}},
 		},
 		{

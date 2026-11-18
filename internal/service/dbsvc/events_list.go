@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"slices"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -35,19 +34,11 @@ func (s *Service) EventsList(
 
 	count := int64(cmp.Or(in.Count, 10))
 
-	// Events after a cursor, or the first ones with Reverse, are selected oldest
-	// first; the rest newest first. Results are then put in display order.
-	asc := in.After != nil || (in.Reverse && in.Before == nil)
-
 	var recs []*database.Event
-	if asc {
-		var after int64
-		if in.After != nil {
-			after = *in.After
-		}
+	if in.After != nil {
 		recs, err = s.db.EventsListByPayloadIDAfter(ctx, database.EventsListByPayloadIDAfterParams{
 			PayloadID: p.ID,
-			After:     after,
+			After:     *in.After,
 			Count:     count,
 		})
 	} else {
@@ -64,10 +55,6 @@ func (s *Service) EventsList(
 	}
 	if err != nil {
 		return nil, err
-	}
-
-	if asc != in.Reverse {
-		slices.Reverse(recs)
 	}
 
 	out := make([]service.Event, len(recs))

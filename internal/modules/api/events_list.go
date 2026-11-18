@@ -20,20 +20,13 @@ func (api *API) EventsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reverse, err := queryBool(r, "reverse")
-	if err != nil {
-		api.handleError(w, r, err)
-		return
-	}
-
 	events, err := api.svc.EventsList(r.Context(), service.EventsListInput{
 		PayloadName: r.PathValue("payload"),
 		// "limit" and "offset" are deprecated, kept for pre-cursor clients.
-		Count:   cmp.Or(queryUint(r, "count"), queryUint(r, "limit")),
-		After:   after,
-		Before:  before,
-		Reverse: reverse,
-		Offset:  queryUint(r, "offset"),
+		Count:  cmp.Or(queryUint(r, "count"), queryUint(r, "limit")),
+		After:  after,
+		Before: before,
+		Offset: queryUint(r, "offset"),
 	})
 	if err != nil {
 		api.handleError(w, r, err)

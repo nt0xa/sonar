@@ -147,9 +147,9 @@ func TestCmd(t *testing.T) {
 			service.EventsListOutput{{Index: 4}},
 		},
 		{
-			"events list -p test --before 3 -r",
+			"events list -p test --before 3",
 			"EventsList",
-			service.EventsListInput{PayloadName: "test", Count: 10, Before: new(int64(3)), Reverse: true},
+			service.EventsListInput{PayloadName: "test", Count: 10, Before: new(int64(3))},
 			service.EventsListOutput{{Index: 2}},
 		},
 		{
