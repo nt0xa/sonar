@@ -1,6 +1,4 @@
 -- name: EventsCreate :one
--- Bumping the payload's counter locks its row, so indexes are assigned and
--- committed in order.
 WITH seq AS (
   UPDATE payloads SET last_event_index = last_event_index + 1
   WHERE id = $2

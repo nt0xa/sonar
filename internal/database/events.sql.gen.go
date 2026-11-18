@@ -34,8 +34,6 @@ type EventsCreateParams struct {
 	ReceivedAt time.Time  `db:"received_at"`
 }
 
-// Bumping the payload's counter locks its row, so indexes are assigned and
-// committed in order.
 func (q *Queries) EventsCreate(ctx context.Context, arg EventsCreateParams) (*Event, error) {
 	row := q.db.QueryRow(ctx, eventsCreate,
 		arg.UUID,
