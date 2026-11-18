@@ -141,6 +141,18 @@ func TestCmd(t *testing.T) {
 			service.EventsListOutput{{Index: 1}},
 		},
 		{
+			"events list -p test -a 0",
+			"EventsList",
+			service.EventsListInput{PayloadName: "test", Limit: 10, After: new(int64(0))},
+			service.EventsListOutput{{Index: 1}},
+		},
+		{
+			"events list -p test --before 3",
+			"EventsList",
+			service.EventsListInput{PayloadName: "test", Limit: 10, Before: new(int64(3))},
+			service.EventsListOutput{{Index: 2}},
+		},
+		{
 			"events get 3 -p test",
 			"EventsGet",
 			service.EventsGetInput{PayloadName: "test", Index: 3},

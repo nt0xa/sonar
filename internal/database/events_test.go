@@ -1,6 +1,8 @@
 package database_test
 
 import (
+	"math"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -33,7 +35,27 @@ func TestEventsCreate_Success(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotZero(t, o.ID)
+	assert.EqualValues(t, 11, o.Index)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
+}
+
+func TestEventsCreate_IndexNotReused(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	_, err := db.DB().ExecContext(t.Context(), "DELETE FROM events WHERE payload_id = 1 AND index = 10")
+	require.NoError(t, err)
+
+	o, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
+		PayloadID:  1,
+		UUID:       uuid.New(),
+		Protocol:   "dns",
+		Data:       [][]byte{},
+		ReceivedAt: time.Now(),
+		RemoteAddr: "127.0.0.1:1337",
+	})
+	require.NoError(t, err)
+	assert.EqualValues(t, 11, o.Index)
 }
 
 func TestEventsGetByID_Success(t *testing.T) {
@@ -65,38 +87,56 @@ func TestEventsListByPayloadID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	// All events for payload 1
-	l, err := db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
-		PayloadID: 1,
-		Limit:     100,
-		Offset:    0,
-	})
-	assert.NoError(t, err)
-	require.Len(t, l, 10)
-	assert.EqualValues(t, 11, l[0].Event.ID)
-	assert.EqualValues(t, 1, l[len(l)-1].Event.ID)
+	tests := []struct {
+		name   string
+		params database.EventsListByPayloadIDParams
+		want   []int64 // indexes
+	}{
+		{"all", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 100},
+			[]int64{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
+		{"limit", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 3},
+			[]int64{10, 9, 8}},
+		{"offset", database.EventsListByPayloadIDParams{PayloadID: 1, Before: math.MaxInt64, PageLimit: 5, PageOffset: 5},
+			[]int64{5, 4, 3, 2, 1}},
+		{"before", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 5, PageLimit: 3},
+			[]int64{4, 3, 2}},
+		{"before first", database.EventsListByPayloadIDParams{PayloadID: 1, Before: 1, PageLimit: 3},
+			[]int64{}},
+	}
 
-	// Limit
-	l, err = db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
-		PayloadID: 1,
-		Limit:     3,
-		Offset:    0,
-	})
-	assert.NoError(t, err)
-	require.Len(t, l, 3)
-	assert.EqualValues(t, 11, l[0].Event.ID)
-	assert.EqualValues(t, 8, l[len(l)-1].Event.ID)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l, err := db.EventsListByPayloadID(t.Context(), tt.params)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, indexes(l))
+		})
+	}
+}
 
-	// Offset
-	l, err = db.EventsListByPayloadID(t.Context(), database.EventsListByPayloadIDParams{
-		PayloadID: 1,
-		Limit:     5,
-		Offset:    5,
-	})
-	assert.NoError(t, err)
-	require.Len(t, l, 5)
-	assert.EqualValues(t, 5, l[0].Event.ID)
-	assert.EqualValues(t, 1, l[len(l)-1].Event.ID)
+func TestEventsListByPayloadIDAfter_Success(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	tests := []struct {
+		name   string
+		params database.EventsListByPayloadIDAfterParams
+		want   []int64 // indexes
+	}{
+		{"from start", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 0, PageLimit: 3},
+			[]int64{1, 2, 3}},
+		{"after", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 7, PageLimit: 5},
+			[]int64{8, 9, 10}},
+		{"after last", database.EventsListByPayloadIDAfterParams{PayloadID: 1, After: 10, PageLimit: 5},
+			[]int64{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l, err := db.EventsListByPayloadIDAfter(t.Context(), tt.params)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, indexes(l))
+		})
+	}
 }
 
 func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
@@ -105,7 +145,11 @@ func TestEventsGetByPayloadAndIndex_Success(t *testing.T) {
 
 	o, err := db.EventsGetByPayloadAndIndex(t.Context(), 1, 1)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1, o.Event.ID)
+	assert.EqualValues(t, 1, o.ID)
+
+	o, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 10)
+	assert.NoError(t, err)
+	assert.EqualValues(t, 11, o.ID)
 
 	_, err = db.EventsGetByPayloadAndIndex(t.Context(), 1, 1337)
 	assert.Error(t, err)
@@ -115,7 +159,11 @@ func TestEventsRace(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	var wg sync.WaitGroup
+	var (
+		wg  sync.WaitGroup
+		mu  sync.Mutex
+		got []int64
+	)
 	count := 10
 
 	for range count {
@@ -123,7 +171,7 @@ func TestEventsRace(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			_, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
+			o, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 				PayloadID: 1,
 				UUID:      uuid.New(),
 				Protocol:  "dns",
@@ -136,9 +184,24 @@ func TestEventsRace(t *testing.T) {
 				ReceivedAt: time.Now(),
 				RemoteAddr: "127.0.0.1:1337",
 			})
-			assert.NoError(t, err)
+			if assert.NoError(t, err) {
+				mu.Lock()
+				got = append(got, o.Index)
+				mu.Unlock()
+			}
 		}()
 	}
 
 	wg.Wait()
+
+	slices.Sort(got)
+	assert.Equal(t, []int64{11, 12, 13, 14, 15, 16, 17, 18, 19, 20}, got)
+}
+
+func indexes(l []*database.Event) []int64 {
+	out := make([]int64, len(l))
+	for i, e := range l {
+		out[i] = e.Index
+	}
+	return out
 }

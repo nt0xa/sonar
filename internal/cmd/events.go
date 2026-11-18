@@ -7,7 +7,10 @@ import (
 )
 
 func (c *Command) eventsList(cmd *cobra.Command) runFunc {
-	var in service.EventsListInput
+	var (
+		in            service.EventsListInput
+		after, before int64
+	)
 
 	cmd.Use = "list"
 	cmd.Args = cobra.NoArgs
@@ -15,11 +18,20 @@ func (c *Command) eventsList(cmd *cobra.Command) runFunc {
 	cmd.Flags().StringVarP(&in.PayloadName, "payload", "p", "", "Payload name")
 	cmd.Flags().UintVarP(&in.Limit, "limit", "l", 10, "Limit")
 	cmd.Flags().UintVarP(&in.Offset, "offset", "o", 0, "Offset")
+	cmd.Flags().Int64VarP(&after, "after", "a", 0, "Events with index greater than this, oldest first")
+	cmd.Flags().Int64VarP(&before, "before", "b", 0, "Events with index less than this, newest first")
 
 	_ = cmd.MarkFlagRequired("payload")
 	_ = cmd.RegisterFlagCompletionFunc("payload", c.completePayloadName)
 
 	return func(cmd *cobra.Command, args []string) error {
+		if cmd.Flags().Changed("after") {
+			in.After = &after
+		}
+		if cmd.Flags().Changed("before") {
+			in.Before = &before
+		}
+
 		if err := validate(in); err != nil {
 			return err
 		}

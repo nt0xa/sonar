@@ -20,6 +20,12 @@ func (s *Service) EventsList(
 	if in.Offset != 0 {
 		q.Set("offset", strconv.FormatUint(uint64(in.Offset), 10))
 	}
+	if in.After != nil {
+		q.Set("after", strconv.FormatInt(*in.After, 10))
+	}
+	if in.Before != nil {
+		q.Set("before", strconv.FormatInt(*in.Before, 10))
+	}
 
 	path := withQuery("/events/"+url.PathEscape(in.PayloadName), q)
 

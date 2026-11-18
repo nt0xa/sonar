@@ -12,7 +12,7 @@ import (
 const payloadsCreate = `-- name: PayloadsCreate :one
 INSERT INTO payloads (user_id, subdomain, name, notify_protocols, created_at)
 VALUES ($1, $2, $3, $4, now())
-RETURNING id, user_id, subdomain, name, created_at, notify_protocols
+RETURNING id, user_id, subdomain, name, created_at, notify_protocols, last_event_index
 `
 
 type PayloadsCreateParams struct {
@@ -37,12 +37,13 @@ func (q *Queries) PayloadsCreate(ctx context.Context, arg PayloadsCreateParams) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }
 
 const payloadsDelete = `-- name: PayloadsDelete :one
-DELETE FROM payloads WHERE id = $1 RETURNING id, user_id, subdomain, name, created_at, notify_protocols
+DELETE FROM payloads WHERE id = $1 RETURNING id, user_id, subdomain, name, created_at, notify_protocols, last_event_index
 `
 
 func (q *Queries) PayloadsDelete(ctx context.Context, id int64) (*Payload, error) {
@@ -55,12 +56,13 @@ func (q *Queries) PayloadsDelete(ctx context.Context, id int64) (*Payload, error
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }
 
 const payloadsDeleteByNamePart = `-- name: PayloadsDeleteByNamePart :many
-DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%' RETURNING id, user_id, subdomain, name, created_at, notify_protocols
+DELETE FROM payloads WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%' RETURNING id, user_id, subdomain, name, created_at, notify_protocols, last_event_index
 `
 
 func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, name string) ([]*Payload, error) {
@@ -79,6 +81,7 @@ func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, na
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
+			&i.LastEventIndex,
 		); err != nil {
 			return nil, err
 		}
@@ -91,7 +94,7 @@ func (q *Queries) PayloadsDeleteByNamePart(ctx context.Context, userID int64, na
 }
 
 const payloadsFindByUserAndName = `-- name: PayloadsFindByUserAndName :many
-SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads
+SELECT id, user_id, subdomain, name, created_at, notify_protocols, last_event_index FROM payloads
 WHERE user_id = $1 AND name ILIKE '%' || $2::text || '%'
 ORDER BY id DESC LIMIT $3 OFFSET $4
 `
@@ -124,6 +127,7 @@ func (q *Queries) PayloadsFindByUserAndName(ctx context.Context, arg PayloadsFin
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
+			&i.LastEventIndex,
 		); err != nil {
 			return nil, err
 		}
@@ -136,7 +140,7 @@ func (q *Queries) PayloadsFindByUserAndName(ctx context.Context, arg PayloadsFin
 }
 
 const payloadsFindByUserID = `-- name: PayloadsFindByUserID :many
-SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, user_id, subdomain, name, created_at, notify_protocols, last_event_index FROM payloads WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*Payload, error) {
@@ -155,6 +159,7 @@ func (q *Queries) PayloadsFindByUserID(ctx context.Context, userID int64) ([]*Pa
 			&i.Name,
 			&i.CreatedAt,
 			&i.NotifyProtocols,
+			&i.LastEventIndex,
 		); err != nil {
 			return nil, err
 		}
@@ -191,7 +196,7 @@ func (q *Queries) PayloadsGetAllSubdomains(ctx context.Context) ([]string, error
 }
 
 const payloadsGetByID = `-- name: PayloadsGetByID :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE id = $1
+SELECT id, user_id, subdomain, name, created_at, notify_protocols, last_event_index FROM payloads WHERE id = $1
 `
 
 func (q *Queries) PayloadsGetByID(ctx context.Context, id int64) (*Payload, error) {
@@ -204,12 +209,13 @@ func (q *Queries) PayloadsGetByID(ctx context.Context, id int64) (*Payload, erro
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }
 
 const payloadsGetBySubdomain = `-- name: PayloadsGetBySubdomain :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE subdomain = $1
+SELECT id, user_id, subdomain, name, created_at, notify_protocols, last_event_index FROM payloads WHERE subdomain = $1
 `
 
 func (q *Queries) PayloadsGetBySubdomain(ctx context.Context, subdomain string) (*Payload, error) {
@@ -222,12 +228,13 @@ func (q *Queries) PayloadsGetBySubdomain(ctx context.Context, subdomain string) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }
 
 const payloadsGetByUserAndName = `-- name: PayloadsGetByUserAndName :one
-SELECT id, user_id, subdomain, name, created_at, notify_protocols FROM payloads WHERE user_id = $1 AND name = $2
+SELECT id, user_id, subdomain, name, created_at, notify_protocols, last_event_index FROM payloads WHERE user_id = $1 AND name = $2
 `
 
 func (q *Queries) PayloadsGetByUserAndName(ctx context.Context, userID int64, name string) (*Payload, error) {
@@ -240,6 +247,7 @@ func (q *Queries) PayloadsGetByUserAndName(ctx context.Context, userID int64, na
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }
@@ -251,7 +259,7 @@ UPDATE payloads SET
   name = $4,
   notify_protocols = $5
 WHERE id = $1
-RETURNING id, user_id, subdomain, name, created_at, notify_protocols
+RETURNING id, user_id, subdomain, name, created_at, notify_protocols, last_event_index
 `
 
 type PayloadsUpdateParams struct {
@@ -278,6 +286,7 @@ func (q *Queries) PayloadsUpdate(ctx context.Context, arg PayloadsUpdateParams) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.NotifyProtocols,
+		&i.LastEventIndex,
 	)
 	return &i, err
 }

@@ -3,6 +3,7 @@
   subdomain: c1da9f3d
   name: payload1
   notify_protocols: '{dns, http, smtp}'
+  last_event_index: 10
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 2
@@ -10,6 +11,7 @@
   subdomain: 6564e0c7
   name: payload2
   notify_protocols: '{dns, http, smtp}'
+  last_event_index: 1
   created_at: RAW=NOW() AT TIME ZONE 'UTC'
 
 - id: 3

@@ -13,10 +13,15 @@ import (
 )
 
 const eventsCreate = `-- name: EventsCreate :one
-INSERT INTO events (uuid, payload_id, protocol, data, meta, remote_addr,
+WITH seq AS (
+  UPDATE payloads SET last_event_index = last_event_index + 1
+  WHERE id = $2
+  RETURNING last_event_index
+)
+INSERT INTO events (uuid, payload_id, index, protocol, data, meta, remote_addr,
   received_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, now())
-RETURNING id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data
+VALUES ($1, $2, (SELECT last_event_index FROM seq), $3, $4, $5, $6, $7, now())
+RETURNING id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data, index
 `
 
 type EventsCreateParams struct {
@@ -29,6 +34,8 @@ type EventsCreateParams struct {
 	ReceivedAt time.Time  `db:"received_at"`
 }
 
+// Bumping the payload's counter locks its row, so indexes are assigned and
+// committed in order.
 func (q *Queries) EventsCreate(ctx context.Context, arg EventsCreateParams) (*Event, error) {
 	row := q.db.QueryRow(ctx, eventsCreate,
 		arg.UUID,
@@ -50,12 +57,13 @@ func (q *Queries) EventsCreate(ctx context.Context, arg EventsCreateParams) (*Ev
 		&i.CreatedAt,
 		&i.UUID,
 		&i.Data,
+		&i.Index,
 	)
 	return &i, err
 }
 
 const eventsGetByID = `-- name: EventsGetByID :one
-SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data FROM events WHERE id = $1
+SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data, index FROM events WHERE id = $1
 `
 
 func (q *Queries) EventsGetByID(ctx context.Context, id int64) (*Event, error) {
@@ -71,86 +79,116 @@ func (q *Queries) EventsGetByID(ctx context.Context, id int64) (*Event, error) {
 		&i.CreatedAt,
 		&i.UUID,
 		&i.Data,
+		&i.Index,
 	)
 	return &i, err
 }
 
 const eventsGetByPayloadAndIndex = `-- name: EventsGetByPayloadAndIndex :one
-WITH numbered AS (
-  SELECT
-    id,
-    ROW_NUMBER() OVER (PARTITION BY payload_id ORDER BY id ASC) AS index
-  FROM events
-)
-SELECT e.id, e.payload_id, e.protocol, e.meta, e.remote_addr, e.received_at, e.created_at, e.uuid, e.data, n.index
-FROM events e
-JOIN numbered n ON n.id = e.id
-WHERE e.payload_id = $1::bigint AND n.index = $2::bigint
+SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data, index FROM events WHERE payload_id = $1 AND index = $2
 `
 
-type EventsGetByPayloadAndIndexRow struct {
-	Event Event `db:"event"`
-	Index int64 `db:"index"`
-}
-
-func (q *Queries) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*EventsGetByPayloadAndIndexRow, error) {
+func (q *Queries) EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*Event, error) {
 	row := q.db.QueryRow(ctx, eventsGetByPayloadAndIndex, payloadID, index)
-	var i EventsGetByPayloadAndIndexRow
+	var i Event
 	err := row.Scan(
-		&i.Event.ID,
-		&i.Event.PayloadID,
-		&i.Event.Protocol,
-		&i.Event.Meta,
-		&i.Event.RemoteAddr,
-		&i.Event.ReceivedAt,
-		&i.Event.CreatedAt,
-		&i.Event.UUID,
-		&i.Event.Data,
+		&i.ID,
+		&i.PayloadID,
+		&i.Protocol,
+		&i.Meta,
+		&i.RemoteAddr,
+		&i.ReceivedAt,
+		&i.CreatedAt,
+		&i.UUID,
+		&i.Data,
 		&i.Index,
 	)
 	return &i, err
 }
 
 const eventsListByPayloadID = `-- name: EventsListByPayloadID :many
-SELECT
-  events.id, events.payload_id, events.protocol, events.meta, events.remote_addr, events.received_at, events.created_at, events.uuid, events.data,
-  ROW_NUMBER() OVER(PARTITION BY payload_id ORDER BY id ASC) AS index
-FROM events WHERE payload_id = $1
-ORDER BY id DESC
-LIMIT $2
+SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data, index FROM events
+WHERE payload_id = $1 AND index < $2
+ORDER BY index DESC
+LIMIT $4
 OFFSET $3
 `
 
 type EventsListByPayloadIDParams struct {
-	PayloadID int64 `db:"payload_id"`
-	Limit     int64 `db:"limit"`
-	Offset    int64 `db:"offset"`
+	PayloadID  int64 `db:"payload_id"`
+	Before     int64 `db:"before"`
+	PageOffset int64 `db:"page_offset"`
+	PageLimit  int64 `db:"page_limit"`
 }
 
-type EventsListByPayloadIDRow struct {
-	Event Event `db:"event"`
-	Index int64 `db:"index"`
-}
-
-func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*EventsListByPayloadIDRow, error) {
-	rows, err := q.db.Query(ctx, eventsListByPayloadID, arg.PayloadID, arg.Limit, arg.Offset)
+func (q *Queries) EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*Event, error) {
+	rows, err := q.db.Query(ctx, eventsListByPayloadID,
+		arg.PayloadID,
+		arg.Before,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []*EventsListByPayloadIDRow{}
+	items := []*Event{}
 	for rows.Next() {
-		var i EventsListByPayloadIDRow
+		var i Event
 		if err := rows.Scan(
-			&i.Event.ID,
-			&i.Event.PayloadID,
-			&i.Event.Protocol,
-			&i.Event.Meta,
-			&i.Event.RemoteAddr,
-			&i.Event.ReceivedAt,
-			&i.Event.CreatedAt,
-			&i.Event.UUID,
-			&i.Event.Data,
+			&i.ID,
+			&i.PayloadID,
+			&i.Protocol,
+			&i.Meta,
+			&i.RemoteAddr,
+			&i.ReceivedAt,
+			&i.CreatedAt,
+			&i.UUID,
+			&i.Data,
+			&i.Index,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const eventsListByPayloadIDAfter = `-- name: EventsListByPayloadIDAfter :many
+SELECT id, payload_id, protocol, meta, remote_addr, received_at, created_at, uuid, data, index FROM events
+WHERE payload_id = $1 AND index > $2
+ORDER BY index ASC
+LIMIT $3
+`
+
+type EventsListByPayloadIDAfterParams struct {
+	PayloadID int64 `db:"payload_id"`
+	After     int64 `db:"after"`
+	PageLimit int64 `db:"page_limit"`
+}
+
+func (q *Queries) EventsListByPayloadIDAfter(ctx context.Context, arg EventsListByPayloadIDAfterParams) ([]*Event, error) {
+	rows, err := q.db.Query(ctx, eventsListByPayloadIDAfter, arg.PayloadID, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Event{}
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.PayloadID,
+			&i.Protocol,
+			&i.Meta,
+			&i.RemoteAddr,
+			&i.ReceivedAt,
+			&i.CreatedAt,
+			&i.UUID,
+			&i.Data,
 			&i.Index,
 		); err != nil {
 			return nil, err
