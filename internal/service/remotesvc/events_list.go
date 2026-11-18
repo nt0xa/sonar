@@ -14,17 +14,20 @@ func (s *Service) EventsList(
 	in service.EventsListInput,
 ) (service.EventsListOutput, error) {
 	q := url.Values{}
-	if in.Limit != 0 {
-		q.Set("limit", strconv.FormatUint(uint64(in.Limit), 10))
-	}
-	if in.Offset != 0 {
-		q.Set("offset", strconv.FormatUint(uint64(in.Offset), 10))
+	if in.Count != 0 {
+		q.Set("count", strconv.FormatUint(uint64(in.Count), 10))
 	}
 	if in.After != nil {
 		q.Set("after", strconv.FormatInt(*in.After, 10))
 	}
 	if in.Before != nil {
 		q.Set("before", strconv.FormatInt(*in.Before, 10))
+	}
+	if in.Reverse {
+		q.Set("reverse", "true")
+	}
+	if in.Offset != 0 {
+		q.Set("offset", strconv.FormatUint(uint64(in.Offset), 10))
 	}
 
 	path := withQuery("/events/"+url.PathEscape(in.PayloadName), q)

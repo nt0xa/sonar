@@ -29,12 +29,12 @@ Usage:
   /events list [flags]
 
 Flags:
-  -a, --after int        Events with index greater than this, oldest first
-  -b, --before int       Events with index less than this, newest first
+  -a, --after int        Events after INDEX
+  -b, --before int       Events before INDEX
+  -c, --count uint       Count of events (default 10)
   -h, --help             help for list
-  -l, --limit uint       Limit (default 10)
-  -o, --offset uint      Offset
   -p, --payload string   Payload name
+  -r, --reverse          List events oldest first
 ```
 
 ### Get last 10 events for payload
@@ -48,7 +48,7 @@ Flags:
 ### Get last N events for payload
 
 ```
-/events list -p <NAME> -l <N>
+/events list -p <NAME> -c <N>
 ```
 
 ![List last N events for payload](../assets/events_list_n_telegram_dark.png#gh-dark-mode-only)![List last N events for payload](../assets/events_list_n_telegram_light.png#gh-light-mode-only)
@@ -56,17 +56,17 @@ Flags:
 ### Get first N events for payload
 
 ```
-/events list -p <NAME> -l <N> -a 0
+/events list -p <NAME> -c <N> -r
 ```
 
 ![List first N events for payload](../assets/events_list_first_telegram_dark.png#gh-dark-mode-only)![List first N events for payload](../assets/events_list_first_telegram_light.png#gh-light-mode-only)
 
-`--limit` is at most 100. To page through events, pass the index of the last event you received as `--after` (oldest first) or `--before` (newest first). `--after` and `--before` cannot be combined with each other or with `--offset`.
+`--count` is at most 100. To page through events, pass the index of the last event you received as `--after` or `--before`. `--after` and `--before` cannot be used together.
 
 ### Get N events after Mth event
 
 ```
-/events list -p <NAME> -l <N> -a <M>
+/events list -p <NAME> -c <N> -a <M>
 ```
 
 ![List N events after Mth event for payload](../assets/events_list_mn_telegram_dark.png#gh-dark-mode-only)![List N events after Mth event for payload](../assets/events_list_mn_telegram_light.png#gh-light-mode-only)
@@ -74,7 +74,7 @@ Flags:
 ### Get N events before Mth event
 
 ```
-/events list -p <NAME> -l <N> -b <M>
+/events list -p <NAME> -c <N> -b <M>
 ```
 
 ![List N events before Mth event for payload](../assets/events_list_mn2_telegram_dark.png#gh-dark-mode-only)![List N events before Mth event for payload](../assets/events_list_mn2_telegram_light.png#gh-light-mode-only)
