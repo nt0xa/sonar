@@ -1,3 +1,5 @@
+BEGIN;
+
 ALTER TABLE payloads ADD COLUMN last_event_index bigint NOT NULL DEFAULT 0;
 
 ALTER TABLE events ADD COLUMN index bigint;
@@ -10,3 +12,5 @@ ALTER TABLE events ADD CONSTRAINT events_payload_id_index_key UNIQUE (payload_id
 UPDATE payloads p SET last_event_index = e.index
 FROM (SELECT payload_id, MAX(index) AS index FROM events GROUP BY payload_id) e
 WHERE e.payload_id = p.id;
+
+COMMIT;
