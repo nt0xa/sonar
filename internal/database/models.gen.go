@@ -316,6 +316,7 @@ type Event struct {
 	CreatedAt  time.Time  `db:"created_at"`
 	UUID       uuid.UUID  `db:"uuid"`
 	Data       [][]byte   `db:"data"`
+	Index      int64      `db:"index"`
 }
 
 type HTTPRoute struct {
@@ -338,6 +339,7 @@ type Payload struct {
 	Name            string    `db:"name"`
 	CreatedAt       time.Time `db:"created_at"`
 	NotifyProtocols []string  `db:"notify_protocols"`
+	LastEventIndex  int64     `db:"last_event_index"`
 }
 
 type User struct {

@@ -24,8 +24,9 @@ type Querier interface {
 	DNSRecordsUpdate(ctx context.Context, arg DNSRecordsUpdateParams) (*DNSRecord, error)
 	EventsCreate(ctx context.Context, arg EventsCreateParams) (*Event, error)
 	EventsGetByID(ctx context.Context, id int64) (*Event, error)
-	EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*EventsGetByPayloadAndIndexRow, error)
-	EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*EventsListByPayloadIDRow, error)
+	EventsGetByPayloadAndIndex(ctx context.Context, payloadID int64, index int64) (*Event, error)
+	EventsListByPayloadID(ctx context.Context, arg EventsListByPayloadIDParams) ([]*Event, error)
+	EventsListByPayloadIDAfter(ctx context.Context, arg EventsListByPayloadIDAfterParams) ([]*Event, error)
 	HTTPRoutesCreate(ctx context.Context, arg HTTPRoutesCreateParams) (*HTTPRoute, error)
 	HTTPRoutesDelete(ctx context.Context, id int64) error
 	HTTPRoutesDeleteAllByPayloadID(ctx context.Context, payloadID int64) ([]*HTTPRoute, error)

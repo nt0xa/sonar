@@ -128,3 +128,13 @@ func Required[T comparable](v T) error {
 	}
 	return nil
 }
+
+// Check fails with msg when ok is false, regardless of the value.
+func Check[T any](ok bool, msg string) Rule[T] {
+	return func(T) error {
+		if !ok {
+			return errors.New(msg)
+		}
+		return nil
+	}
+}

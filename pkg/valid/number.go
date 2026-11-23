@@ -16,6 +16,16 @@ func Number[T number](name string, value T, rules ...Rule[T]) Validatable {
 	return newField(name, value, rules)
 }
 
+// OptionalNumber validates an optional numeric field addressed by a pointer. When
+// the pointer is nil the field is treated as absent (no rules run).
+func OptionalNumber[T number](name string, value *T, rules ...Rule[T]) Validatable {
+	if value == nil {
+		var zero T
+		return newField(name, zero, nil)
+	}
+	return newField(name, *value, rules)
+}
+
 // Min asserts the number is at least n.
 func Min[T number](n T) Rule[T] {
 	return func(v T) error {

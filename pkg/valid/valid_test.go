@@ -38,6 +38,8 @@ func TestStruct_Valid(t *testing.T) {
 		valid.Number("count", 10, valid.Required, valid.Min(1), valid.Max(100)),
 		valid.OptionalString("path", &path, valid.Match(pathRe, "bad path")),
 		valid.OptionalString("missing", (*string)(nil), valid.Required),
+		valid.OptionalNumber("absent", (*int64)(nil), valid.Required),
+		valid.Number("checked", 1, valid.Check[int](true, "unused")),
 	)
 	if !got.Ok() {
 		t.Fatalf("expected ok, got %v", got)
@@ -69,6 +71,8 @@ func TestStruct_Problems(t *testing.T) {
 		{"each in", valid.Slice("colors", []color{colorRed, "x"}, valid.Each(valid.In(colorValues()...))), "colors", "element #1: must be one of: red, blue"},
 		{"each min", valid.Slice("ports", []int{0, 5}, valid.Each(valid.Min(1))), "ports", "element #0: must be >= 1"},
 		{"optional ptr", valid.OptionalString("path", new("x"), valid.Match(pathRe, "bad path")), "path", "bad path"},
+		{"optional number", valid.OptionalNumber("n", new(int64(5)), valid.Min[int64](10)), "n", "must be >= 10"},
+		{"check", valid.Number("n", 1, valid.Check[int](false, "bad combination")), "n", "bad combination"},
 	}
 
 	for _, tt := range tests {

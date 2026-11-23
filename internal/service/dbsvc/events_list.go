@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"math"
 
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/service"
@@ -31,13 +32,27 @@ func (s *Service) EventsList(
 		return nil, err
 	}
 
-	limit := cmp.Or(in.Limit, 10)
+	count := int64(cmp.Or(in.Count, 10))
 
-	recs, err := s.db.EventsListByPayloadID(ctx, database.EventsListByPayloadIDParams{
-		PayloadID: p.ID,
-		Limit:     int64(limit),
-		Offset:    int64(in.Offset),
-	})
+	var recs []*database.Event
+	if in.After != nil {
+		recs, err = s.db.EventsListByPayloadIDAfter(ctx, database.EventsListByPayloadIDAfterParams{
+			PayloadID: p.ID,
+			After:     *in.After,
+			Count:     count,
+		})
+	} else {
+		before := int64(math.MaxInt64)
+		if in.Before != nil {
+			before = *in.Before
+		}
+		recs, err = s.db.EventsListByPayloadID(ctx, database.EventsListByPayloadIDParams{
+			PayloadID:  p.ID,
+			Before:     before,
+			Count:      count,
+			PageOffset: int64(in.Offset),
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +60,7 @@ func (s *Service) EventsList(
 	out := make([]service.Event, len(recs))
 
 	for i, r := range recs {
-		out[i] = *event(r.Event, r.Index)
+		out[i] = *event(*r)
 	}
 
 	return out, nil
