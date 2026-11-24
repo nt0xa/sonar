@@ -16,13 +16,6 @@ import (
 func New(svc service.Service, version string) *mcp.Server {
 	s := mcp.NewServer(&mcp.Implementation{Name: "sonar", Version: version}, nil)
 
-	// Profile
-
-	addTool(s, "profile_get", "Get current user info", readOnly,
-		func(ctx context.Context, _ struct{}) (any, error) {
-			return svc.ProfileGet(ctx)
-		})
-
 	// Payloads
 
 	addTool(s, "payloads_list", "List payloads", readOnly,

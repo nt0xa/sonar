@@ -98,7 +98,6 @@ Available tools:
 
 | Tool | Description |
 | --- | --- |
-| `profile_get` | Get current user info |
 | `payloads_list`, `payloads_create`, `payloads_update`, `payloads_delete`, `payloads_clear` | Manage payloads |
 | `dns_records_list`, `dns_records_create`, `dns_records_delete`, `dns_records_clear` | Manage DNS records |
 | `http_routes_list`, `http_routes_create`, `http_routes_update`, `http_routes_delete`, `http_routes_clear` | Manage HTTP routes |
