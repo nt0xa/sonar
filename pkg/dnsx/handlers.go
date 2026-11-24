@@ -94,14 +94,12 @@ func NotifyHandler(notify NofitifyFunc, next Handler) Handler {
 
 			var answers []Answer
 
-			if len(r.Answer) > 0 {
-				for _, rr := range wr.Msg.Answer {
-					answers = append(answers, Answer{
-						Name: strings.Trim(rr.Header().Name, "."),
-						Type: QtypeString(rr.Header().Rrtype),
-						TTL:  rr.Header().Ttl,
-					})
-				}
+			for _, rr := range wr.Msg.Answer {
+				answers = append(answers, Answer{
+					Name: strings.Trim(rr.Header().Name, "."),
+					Type: QtypeString(rr.Header().Rrtype),
+					TTL:  rr.Header().Ttl,
+				})
 			}
 
 			notify(ctx,
