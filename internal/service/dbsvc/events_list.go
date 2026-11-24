@@ -60,7 +60,7 @@ func (s *Service) EventsList(
 	out := make([]service.Event, len(recs))
 
 	for i, r := range recs {
-		out[i] = *Event(*r)
+		out[i] = *event(*r)
 	}
 
 	return out, nil

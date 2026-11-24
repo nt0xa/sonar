@@ -12,8 +12,7 @@ import (
 	"github.com/nt0xa/sonar/pkg/smtpx"
 )
 
-// Event converts a database event into its service representation.
-func Event(m database.Event) *service.Event {
+func event(m database.Event) *service.Event {
 	data := make([]string, len(m.Data))
 	for i, msg := range m.Data {
 		data[i] = base64.StdEncoding.EncodeToString(msg)

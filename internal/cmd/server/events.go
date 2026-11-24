@@ -12,8 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
-	"github.com/nt0xa/sonar/internal/service"
-	"github.com/nt0xa/sonar/internal/service/dbsvc"
+	"github.com/nt0xa/sonar/internal/service/auditsvc"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/workerpool"
 )
@@ -145,10 +144,7 @@ func (h *EventsHandler) handleEvent(e Event) {
 
 // writeAudit records the creation of ev; failures are logged, not propagated.
 func (h *EventsHandler) writeAudit(ctx context.Context, p *database.Payload, ev *database.Event) {
-	raw, err := json.Marshal(struct {
-		PayloadSubdomain string `json:"payloadSubdomain"`
-		*service.Event
-	}{p.Subdomain, dbsvc.Event(*ev)})
+	raw, err := json.Marshal(auditsvc.NewEvent(p, ev))
 	if err != nil {
 		h.log.Warn("skip audit: failed to marshal event", "err", err)
 		return

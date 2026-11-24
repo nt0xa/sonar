@@ -121,6 +121,8 @@ func Test_EventAudit(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	ctx, id := withEventID(ctx)
+
 	h := NewEventsHandler(db, nil, slog.New(slog.DiscardHandler), true, 1, 1)
 	h.handleEvent(Event{
 		ctx:   ctx,
@@ -131,17 +133,27 @@ func Test_EventAudit(t *testing.T) {
 	recs, err := db.AuditRecordsList(ctx, database.AuditRecordsListParams{
 		ResourceType: "event",
 		Action:       "create",
-		PageLimit:    1,
+		PageLimit:    100,
 	})
 	require.NoError(t, err)
-	require.Len(t, recs, 1)
 
-	rec := recs[0]
+	// Other writers may share the database, so look for this event's record.
+	var (
+		rec      *database.AuditRecord
+		resource map[string]any
+	)
+	for _, r := range recs {
+		var res map[string]any
+		require.NoError(t, json.Unmarshal(r.Resource, &res))
+		if res["uuid"] == id.String() {
+			rec, resource = r, res
+			break
+		}
+	}
+	require.NotNil(t, rec, "no audit record for event %s", id)
+
 	assert.Equal(t, database.AuditRecordSourceTypeSystem, rec.Source)
 	assert.Nil(t, rec.ActorID)
-
-	var resource map[string]any
-	require.NoError(t, json.Unmarshal(rec.Resource, &resource))
 	assert.Equal(t, subdomain, resource["payloadSubdomain"])
 	assert.Equal(t, "dns", resource["protocol"])
 	assert.Equal(t, "127.0.0.1:53", resource["remoteAddress"])
