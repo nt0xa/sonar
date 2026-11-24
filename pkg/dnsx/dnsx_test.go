@@ -13,35 +13,33 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nt0xa/sonar/pkg/dnsx"
 )
 
 var (
-	notifier        = &NotifierMock{}
+	notifications   = make(chan notification, 10)
 	handlerProvider dnsx.HandlerProvider
 )
 
-type NotifierMock struct {
-	mock.Mock
+type notification struct {
+	remoteAddr  net.Addr
+	data        []byte
+	qtype, name string
 }
 
-func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, qtype, name string) {
-	m.Called(remoteAddr, data, qtype, name)
-}
+// waitNotification returns the next notification, which is sent after the response.
+func waitNotification(t *testing.T) notification {
+	t.Helper()
 
-// collectT adapts assert.CollectT to mock.TestingT.
-type collectT struct{ *assert.CollectT }
-
-func (collectT) Logf(string, ...any) {}
-
-// assertNotified waits for expected Notify calls, which run after the response is sent.
-func assertNotified(t *testing.T) {
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		notifier.AssertExpectations(collectT{c})
-	}, 5*time.Second, 10*time.Millisecond)
+	select {
+	case n := <-notifications:
+		return n
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for notification")
+		return notification{}
+	}
 }
 
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
@@ -75,7 +73,7 @@ func TestMain(m *testing.M) {
 				match []byte,
 				meta *dnsx.Meta,
 			) {
-				notifier.Notify(remoteAddr, bytes.Join(data, nil), meta.Question.Type, meta.Question.Name)
+				notifications <- notification{remoteAddr, bytes.Join(data, nil), meta.Question.Type, meta.Question.Name}
 			},
 			dnsx.RecordSetHandler(dnsx.NewRecords([]dns.RR{
 				dnsx.NewRR("*.sonar.test.", dns.TypeA, 10, "1.1.1.1"),
@@ -107,8 +105,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestDNS(t *testing.T) {
-	t.Parallel()
-
 	var tests = []struct {
 		name    string
 		qtype   uint16
@@ -157,19 +153,6 @@ func TestDNS(t *testing.T) {
 			}
 
 			for i := 0; i < len(tt.results); i++ {
-				notifier.
-					On("Notify",
-						mock.MatchedBy(func(data net.Addr) bool {
-							return data.String() == remoteAddr.String()
-						}),
-						mock.MatchedBy(func(data []byte) bool {
-							return strings.Contains(string(data), name)
-						}),
-						dns.Type(tt.qtype).String(),
-						strings.Trim(tt.name, "."),
-					).
-					Return()
-
 				in, _, err := c.Exchange(msg, "127.0.0.1:1053")
 				require.NoError(t, err)
 				require.NotNil(t, in)
@@ -180,11 +163,15 @@ func TestDNS(t *testing.T) {
 					assert.Contains(t, a.String(), tt.results[i][j])
 					assert.Equal(t, tt.name, a.Header().Name)
 				}
+
+				n := waitNotification(t)
+				assert.Equal(t, remoteAddr.String(), n.remoteAddr.String())
+				assert.Contains(t, string(n.data), name)
+				assert.Equal(t, dns.Type(tt.qtype).String(), n.qtype)
+				assert.Equal(t, strings.Trim(tt.name, "."), n.name)
 			}
 		})
 	}
-
-	assertNotified(t)
 }
 
 func TestProvider(t *testing.T) {
@@ -227,19 +214,11 @@ func TestProvider(t *testing.T) {
 		err = handlerProvider.CleanUp("sonar.test", "", "")
 		require.NoError(t, err)
 
-		notifier.On(
-			"Notify",
-			mock.Anything,
-			mock.Anything,
-			mock.Anything,
-			mock.Anything,
-		).Return()
-
 		in, _, err = c.Exchange(msg, "127.0.0.1:1053")
 		require.NoError(t, err)
 		require.NotNil(t, in)
 		require.Len(t, in.Answer, 0)
-	}
 
-	assertNotified(t)
+		waitNotification(t)
+	}
 }
