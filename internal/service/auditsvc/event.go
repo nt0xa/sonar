@@ -2,8 +2,7 @@ package auditsvc
 
 import (
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 
 	"github.com/nt0xa/sonar/internal/database"
 )

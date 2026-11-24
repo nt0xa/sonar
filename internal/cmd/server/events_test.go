@@ -3,16 +3,16 @@ package server
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"os"
 	"sync"
 	"testing"
 	"testing/synctest"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
@@ -107,7 +107,7 @@ func Test_EventAudit(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := t.Context()
-	subdomain := hex.EncodeToString(uuid.New().NodeID()[:4])
+	subdomain := fmt.Sprintf("%08x", rand.Uint32())
 
 	u, err := db.UsersCreate(ctx, database.UsersCreateParams{Name: "audit-event-" + subdomain})
 	require.NoError(t, err)

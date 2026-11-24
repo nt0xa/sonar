@@ -50,7 +50,9 @@ sql:
               type: "Time"
               pointer: true
           - db_type: uuid
-            go_type: github.com/google/uuid.UUID
+            go_type:
+              import: "uuid"
+              type: "UUID"
           - db_type: pg_catalog.int4
             go_type:
               type: "int"

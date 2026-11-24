@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ func TestAuditRecordsCreate_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, rec)
 	assert.NotZero(t, rec.ID)
-	assert.NotEqual(t, uuid.Nil, rec.UUID)
+	assert.NotEqual(t, uuid.Nil(), rec.UUID)
 	assert.WithinDuration(t, time.Now(), rec.CreatedAt, 5*time.Second)
 	assert.Equal(t, database.AuditRecordActionTypeCreate, rec.Action)
 	assert.Equal(t, database.AuditRecordResourceTypeDNSRecord, rec.ResourceType)
