@@ -105,7 +105,7 @@ var eventsList = fmt.Sprintf(`
 
 var auditRecord = `
 {{- $a := . -}}
-<bold>[{{ $a.ID }}]</bold> {{ $a.Action | toString | upper }} {{ $a.ResourceType }} via {{ $a.Source }} by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
+<bold>[{{ $a.ID }}]</bold> {{ $a.Action | toString | upper }} {{ $a.ResourceType }} via {{ $a.Source }} {{ if ne (toString $a.Source) "system" }}by {{ if $a.ActorName }}{{ $a.ActorName }}{{ else }}unknown{{ end }} {{ end }}{{ $a.CreatedAt.Format "02 Jan 2006 15:04:05 MST" }}`
 
 var auditRecordsList = fmt.Sprintf(`
 {{- range . -}}
