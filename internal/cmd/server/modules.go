@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/nt0xa/sonar/internal/modules"
 	"github.com/nt0xa/sonar/internal/modules/api"
@@ -28,6 +29,11 @@ type ModulesConfig struct {
 	API      api.Config
 	Lark     lark.Config
 	Slack    slack.Config
+}
+
+// IsEnabled reports whether the module with the given name is enabled.
+func (c ModulesConfig) IsEnabled(name string) bool {
+	return slices.Contains(c.Enabled, name)
 }
 
 func (c ModulesConfig) Validate() valid.Problems {

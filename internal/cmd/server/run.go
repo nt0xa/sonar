@@ -347,16 +347,34 @@ func createOrUpdateAdminUser(
 	ctx, span := tel.TraceStart(ctx, "db.init.admin")
 	defer span.End()
 
+	// Leave IDs of disabled modules unset.
+	var (
+		telegramID                *int64
+		apiToken, larkID, slackID *string
+	)
+	if cfg.Modules.IsEnabled("telegram") {
+		telegramID = &cfg.Modules.Telegram.Admin
+	}
+	if cfg.Modules.IsEnabled("api") {
+		apiToken = &cfg.Modules.API.Admin
+	}
+	if cfg.Modules.IsEnabled("lark") {
+		larkID = &cfg.Modules.Lark.Admin
+	}
+	if cfg.Modules.IsEnabled("slack") {
+		slackID = &cfg.Modules.Slack.Admin
+	}
+
 	if u, err := db.UsersGetAdmin(ctx); errors.Is(err, database.ErrNoRows) {
 		// There is no admin yet - create one
 		if _, err := db.UsersCreate(ctx, database.UsersCreateParams{
 			Name:       cfg.AdminUsername,
 			IsAdmin:    true,
 			CreatedBy:  nil,
-			TelegramID: &cfg.Modules.Telegram.Admin,
-			APIToken:   &cfg.Modules.API.Admin,
-			LarkID:     &cfg.Modules.Lark.Admin,
-			SlackID:    &cfg.Modules.Slack.Admin,
+			TelegramID: telegramID,
+			APIToken:   apiToken,
+			LarkID:     larkID,
+			SlackID:    slackID,
 		}); err != nil {
 			return fmt.Errorf("failed to create admin user: %w", err)
 		}
@@ -367,10 +385,10 @@ func createOrUpdateAdminUser(
 			Name:       cfg.AdminUsername,
 			IsAdmin:    true,
 			CreatedBy:  nil,
-			TelegramID: &cfg.Modules.Telegram.Admin,
-			APIToken:   &cfg.Modules.API.Admin,
-			LarkID:     &cfg.Modules.Lark.Admin,
-			SlackID:    &cfg.Modules.Slack.Admin,
+			TelegramID: telegramID,
+			APIToken:   apiToken,
+			LarkID:     larkID,
+			SlackID:    slackID,
 		}); err != nil {
 			return fmt.Errorf("failed to update admin user: %w", err)
 		}
