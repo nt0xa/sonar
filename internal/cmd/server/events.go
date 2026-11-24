@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database"
@@ -143,6 +144,10 @@ func (h *EventsHandler) handleEvent(e Event) {
 
 // writeAudit records the creation of ev; failures are logged, not propagated.
 func (h *EventsHandler) writeAudit(ctx context.Context, p *database.Payload, ev *database.Event) {
+	// Bound the write so a slow database can't hold the worker indefinitely.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	if err := auditsvc.WriteRecord(ctx, h.db, auditsvc.Record{
 		Action:       database.AuditRecordActionTypeCreate,
 		ResourceType: database.AuditRecordResourceTypeEvent,
