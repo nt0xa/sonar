@@ -49,12 +49,17 @@ func (s *Service) HTTPRoutesCreate(
 		return nil, service.Validation(map[string]string{"body": "invalid base64 data"})
 	}
 
+	headers := in.Headers
+	if headers == nil {
+		headers = map[string][]string{}
+	}
+
 	rec, err := s.db.HTTPRoutesCreate(ctx, database.HTTPRoutesCreateParams{
 		PayloadID: p.ID,
 		Method:    string(in.Method),
 		Path:      in.Path,
 		Code:      in.Code,
-		Headers:   in.Headers,
+		Headers:   headers,
 		Body:      body,
 		IsDynamic: in.IsDynamic,
 	})
