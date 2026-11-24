@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/service/remotesvc"
 )
@@ -77,6 +80,33 @@ func TestPayloadsCreate(t *testing.T) {
 
 	if out.Name != "foo" || out.Subdomain != "abc" {
 		t.Errorf("unexpected output: %+v", out)
+	}
+}
+
+func TestPayloadsUpdate_NotifyProtocols(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		in   []service.ProtoCategory
+		want string
+	}{
+		{"nil keeps current", nil, `null`},
+		{"empty clears", []service.ProtoCategory{}, `[]`},
+		{"set", []service.ProtoCategory{service.ProtoCategoryDns}, `["dns"]`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			rs := newServer(t)
+			rs.reply = `{"name":"foo"}`
+
+			_, err := rs.client().PayloadsUpdate(context.Background(), service.PayloadsUpdateInput{
+				Name:            "foo",
+				NotifyProtocols: tt.in,
+			})
+			require.NoError(t, err)
+
+			var sent map[string]json.RawMessage
+			require.NoError(t, json.Unmarshal(rs.body, &sent))
+			assert.JSONEq(t, tt.want, string(sent["notifyProtocols"]))
+		})
 	}
 }
 

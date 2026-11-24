@@ -14,15 +14,20 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/gookit/color"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/maps"
 
 	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/mcpserver"
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/service/remotesvc"
 	"github.com/nt0xa/sonar/internal/templates"
 )
+
+// version is set by goreleaser's default ldflags (-X main.version=...).
+var version = "dev"
 
 // lazyService lets the command tree be built before the config (and thus the
 // remote service URL/token) is known: the embedded service.Service is nil at
@@ -69,6 +74,7 @@ func main() {
 			root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 			jsonFlag(root, &jsonOutput)
 			contextCmd(root, &cfg)
+			mcpCmd(root, svc, &cfg)
 		}),
 	)
 
@@ -144,6 +150,29 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	})
 
 	root.AddCommand(cmd)
+}
+
+func mcpCmd(root *cobra.Command, svc service.Service, cfg *Config) {
+	stdio := func(cmd *cobra.Command, args []string) error {
+		domain := cfg.Server().BaseURL().Hostname()
+		return mcpserver.New(svc, domain, version).Run(cmd.Context(), &mcp.StdioTransport{})
+	}
+
+	mcpRoot := &cobra.Command{
+		Use:   "mcp",
+		Short: "Start MCP server (stdio by default)",
+		Args:  cobra.NoArgs,
+		RunE:  stdio,
+	}
+
+	mcpRoot.AddCommand(&cobra.Command{
+		Use:   "stdio",
+		Short: "Start MCP server over stdio",
+		Args:  cobra.NoArgs,
+		RunE:  stdio,
+	})
+
+	root.AddCommand(mcpRoot)
 }
 
 func initConfig(cfgFile string, cfg *Config) error {

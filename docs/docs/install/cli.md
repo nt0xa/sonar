@@ -66,3 +66,46 @@ url = "https://<DOMAIN>:31337"
 # The server that is currently active.
 server = "myserver1"
 ```
+
+## MCP server
+
+`sonar mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio, so AI assistants can manage
+payloads, DNS records and HTTP routes and read events. It uses the same configuration file as the CLI
+and talks to the server from the current context.
+
+Add it to your MCP client, for example Claude Code:
+
+```shell-session
+$ claude mcp add sonar -- sonar mcp
+```
+
+Or any client that uses the common JSON config format:
+
+```json
+{
+  "mcpServers": {
+    "sonar": {
+      "command": "sonar",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+To use a different configuration file, pass `--config`: `sonar mcp --config /path/to/config.toml`.
+
+Available tools:
+
+| Tool | Description |
+| --- | --- |
+| `payloads_list`, `payloads_create`, `payloads_update`, `payloads_delete`, `payloads_clear` | Manage payloads |
+| `dns_records_list`, `dns_records_create`, `dns_records_delete`, `dns_records_clear` | Manage DNS records |
+| `http_routes_list`, `http_routes_create`, `http_routes_update`, `http_routes_delete`, `http_routes_clear` | Manage HTTP routes |
+| `events_list`, `events_get` | View events |
+
+Notes:
+
+- Admin commands (users and audit records) are not available over MCP.
+- Payloads created over MCP don't send messenger notifications unless `notifyProtocols` is set.
+- In results, `subdomain` and `payloadSubdomain` contain the full payload hostname (e.g. `abc123.sonar.example.com`), built from the server URL in your config.
+- Bodies and raw event data are returned as text, or as a hexdump if they are binary. `events_list` omits raw data; use `events_get` for it.
