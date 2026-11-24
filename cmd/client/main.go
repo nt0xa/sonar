@@ -153,14 +153,25 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 }
 
 func mcpCmd(root *cobra.Command, svc service.Service) {
-	root.AddCommand(&cobra.Command{
+	stdio := func(cmd *cobra.Command, args []string) error {
+		return mcpserver.New(svc, version).Run(cmd.Context(), &mcp.StdioTransport{})
+	}
+
+	mcpRoot := &cobra.Command{
 		Use:   "mcp",
+		Short: "Start MCP server (stdio by default)",
+		Args:  cobra.NoArgs,
+		RunE:  stdio,
+	}
+
+	mcpRoot.AddCommand(&cobra.Command{
+		Use:   "stdio",
 		Short: "Start MCP server over stdio",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return mcpserver.New(svc, version).Run(cmd.Context(), &mcp.StdioTransport{})
-		},
+		RunE:  stdio,
 	})
+
+	root.AddCommand(mcpRoot)
 }
 
 func initConfig(cfgFile string, cfg *Config) error {
