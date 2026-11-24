@@ -9,16 +9,19 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"runtime/debug"
 	"slices"
 	"strings"
 
 	"github.com/adrg/xdg"
 	"github.com/gookit/color"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/exp/maps"
 
 	"github.com/nt0xa/sonar/internal/cmd"
+	"github.com/nt0xa/sonar/internal/mcpserver"
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/service/remotesvc"
 	"github.com/nt0xa/sonar/internal/templates"
@@ -69,6 +72,7 @@ func main() {
 			root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 			jsonFlag(root, &jsonOutput)
 			contextCmd(root, &cfg)
+			mcpCmd(root, svc)
 		}),
 	)
 
@@ -144,6 +148,21 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	})
 
 	root.AddCommand(cmd)
+}
+
+func mcpCmd(root *cobra.Command, svc service.Service) {
+	root.AddCommand(&cobra.Command{
+		Use:   "mcp",
+		Short: "Start MCP server over stdio",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			version := "(devel)"
+			if bi, ok := debug.ReadBuildInfo(); ok {
+				version = bi.Main.Version
+			}
+			return mcpserver.New(svc, version).Run(cmd.Context(), &mcp.StdioTransport{})
+		},
+	})
 }
 
 func initConfig(cfgFile string, cfg *Config) error {
