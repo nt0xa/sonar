@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/nt0xa/sonar/internal/service"
 	"github.com/nt0xa/sonar/internal/service/remotesvc"
 )
@@ -82,9 +85,9 @@ func TestPayloadsCreate(t *testing.T) {
 
 func TestPayloadsUpdate_NotifyProtocols(t *testing.T) {
 	for _, tt := range []struct {
-		name  string
-		in    []service.ProtoCategory
-		wantJ string
+		name string
+		in   []service.ProtoCategory
+		want string
 	}{
 		{"nil keeps current", nil, `null`},
 		{"empty clears", []service.ProtoCategory{}, `[]`},
@@ -98,17 +101,11 @@ func TestPayloadsUpdate_NotifyProtocols(t *testing.T) {
 				Name:            "foo",
 				NotifyProtocols: tt.in,
 			})
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			require.NoError(t, err)
 
 			var sent map[string]json.RawMessage
-			if err := json.Unmarshal(rs.body, &sent); err != nil {
-				t.Fatalf("request body not JSON: %v", err)
-			}
-			if got := string(sent["notifyProtocols"]); got != tt.wantJ {
-				t.Errorf("notifyProtocols = %s, want %s", got, tt.wantJ)
-			}
+			require.NoError(t, json.Unmarshal(rs.body, &sent))
+			assert.JSONEq(t, tt.want, string(sent["notifyProtocols"]))
 		})
 	}
 }
