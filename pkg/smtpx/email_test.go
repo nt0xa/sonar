@@ -9,10 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func TestEmailParse(t *testing.T) {
 	tests := []struct {
 		file  string
@@ -40,7 +36,7 @@ func TestEmailParse(t *testing.T) {
 				},
 				Cc:   nil,
 				Bcc:  nil,
-				Date: ptr(time.Date(2025, 8, 5, 15, 48, 5, 0, time.UTC)),
+				Date: new(time.Date(2025, 8, 5, 15, 48, 5, 0, time.UTC)),
 				Text: "Test email",
 			},
 		},
@@ -61,7 +57,7 @@ func TestEmailParse(t *testing.T) {
 				},
 				Cc:   nil,
 				Bcc:  nil,
-				Date: ptr(time.Date(2025, 3, 4, 10, 39, 22, 0, time.UTC)),
+				Date: new(time.Date(2025, 3, 4, 10, 39, 22, 0, time.UTC)),
 				Text: `Here's your GitHub launch code!
 
 Continue signing up for GitHub by entering the code below:
@@ -97,7 +93,7 @@ San Francisco, CA 94107`,
 				},
 				Cc:   nil,
 				Bcc:  nil,
-				Date: ptr(time.Date(2025, 3, 4, 10, 39, 22, 0, time.UTC)),
+				Date: new(time.Date(2025, 3, 4, 10, 39, 22, 0, time.UTC)),
 				Text: `Here's your GitHub launch code!
 
 Continue signing up for GitHub by entering the code below:
@@ -136,7 +132,7 @@ GitHub, Inc. ・88 Colin P Kelly Jr Street ・San Francisco, CA 94107`,
 				},
 				Cc:   nil,
 				Bcc:  nil,
-				Date: ptr(time.Date(2025, 8, 7, 14, 44, 11, 0, time.UTC)),
+				Date: new(time.Date(2025, 8, 7, 14, 44, 11, 0, time.UTC)),
 				Text: `[image: Google]
 A new sign-in on Google Pixel 7
 
@@ -171,7 +167,7 @@ Google Account and services.
 				},
 				Cc:   nil,
 				Bcc:  nil,
-				Date: ptr(time.Date(2025, 8, 7, 14, 44, 11, 0, time.UTC)),
+				Date: new(time.Date(2025, 8, 7, 14, 44, 11, 0, time.UTC)),
 				Text: `A new sign-in on Google Pixel 7 
 [user1.asdfgh@gmail.com] 
 We noticed a new sign-in to your Google Account on a Google Pixel 7 device. If this was you, you don’t need to do anything. If not, we’ll help you secure your account.[Check activity](https://accounts.google.com/AccountChooser?Email=user1.asdfgh@gmail.com&continue=https://myaccount.google.com/alert/nt/1754577851000?rfn%3D325%26rfnc%3D1%26eid%3D7123123412341234123%26et%3D0)

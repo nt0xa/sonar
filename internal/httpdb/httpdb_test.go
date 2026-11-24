@@ -317,22 +317,22 @@ func FileField(name string, data string) FormField {
 // Response matchers
 //
 
-type Matcher func(*testing.T, interface{})
+type Matcher func(*testing.T, any)
 
 func Regex(re *regexp.Regexp) Matcher {
-	return func(t *testing.T, value interface{}) {
+	return func(t *testing.T, value any) {
 		assert.Regexp(t, re, value)
 	}
 }
 
-func Equal(expected interface{}) Matcher {
-	return func(t *testing.T, value interface{}) {
+func Equal(expected any) Matcher {
+	return func(t *testing.T, value any) {
 		assert.EqualValues(t, expected, value)
 	}
 }
 
-func Contains(s interface{}) Matcher {
-	return func(t *testing.T, value interface{}) {
+func Contains(s any) Matcher {
+	return func(t *testing.T, value any) {
 		require.NotNil(t, value)
 		assert.Contains(t, value, s)
 	}

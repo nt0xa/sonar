@@ -131,11 +131,9 @@ func Build(n *modules.Notification, codeBlocks []string) ([]slack.Block, string,
 
 	for _, blockContent := range codeBlocks {
 		blocks = append(blocks, slack.NewRichTextBlock("", &slack.RichTextPreformatted{
-			RichTextSection: slack.RichTextSection{
-				Type: slack.RTEPreformatted,
-				Elements: []slack.RichTextSectionElement{
-					slack.NewRichTextSectionTextElement(truncate(blockContent, maxCodeBlockLen), nil),
-				},
+			Type: slack.RTEPreformatted,
+			Elements: []slack.RichTextSectionElement{
+				slack.NewRichTextSectionTextElement(truncate(blockContent, maxCodeBlockLen), nil),
 			},
 		}))
 	}
