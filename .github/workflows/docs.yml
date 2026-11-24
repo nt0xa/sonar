@@ -1,6 +1,9 @@
-name: Deploy docs to GitHub Pages
+name: Docs
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -11,7 +14,6 @@ defaults:
 
 jobs:
   build:
-    name: Build docs 
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,13 +33,19 @@ jobs:
         run: npm run build
 
       - name: Upload Build Artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v4
         with:
           path: docs/build
 
   deploy:
-    name: Deploy to GitHub Pages
+    if: github.event_name == 'push'
     needs: build
+
+    # Queue deploys instead of failing when merges land close together.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
 
     permissions:
       pages: write

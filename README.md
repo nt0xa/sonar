@@ -1,6 +1,6 @@
 # Sonar
 
-[![Build and test](https://github.com/nt0xa/sonar/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/nt0xa/sonar/actions/workflows/build-and-test.yml?query=branch%3Amain)
+[![CI](https://github.com/nt0xa/sonar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nt0xa/sonar/actions/workflows/ci.yml?query=branch%3Amain)
 [![Release](https://img.shields.io/github/v/release/nt0xa/sonar)](https://github.com/nt0xa/sonar/releases/latest)
 [![Code coverage](https://img.shields.io/codecov/c/github/nt0xa/sonar/main)](https://app.codecov.io/gh/nt0xa/sonar/tree/main)
 [![Docs](https://img.shields.io/badge/docs-online-blue)](https://nt0xa.github.io/sonar/)
