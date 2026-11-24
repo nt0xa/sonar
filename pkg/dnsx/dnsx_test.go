@@ -32,6 +32,18 @@ func (m *NotifierMock) Notify(remoteAddr net.Addr, data []byte, qtype, name stri
 	m.Called(remoteAddr, data, qtype, name)
 }
 
+// collectT adapts assert.CollectT to mock.TestingT.
+type collectT struct{ *assert.CollectT }
+
+func (collectT) Logf(string, ...any) {}
+
+// assertNotified waits for expected Notify calls, which run after the response is sent.
+func assertNotified(t *testing.T) {
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		notifier.AssertExpectations(collectT{c})
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
@@ -172,7 +184,7 @@ func TestDNS(t *testing.T) {
 		})
 	}
 
-	notifier.AssertExpectations(t)
+	assertNotified(t)
 }
 
 func TestProvider(t *testing.T) {
@@ -229,5 +241,5 @@ func TestProvider(t *testing.T) {
 		require.Len(t, in.Answer, 0)
 	}
 
-	notifier.AssertExpectations(t)
+	assertNotified(t)
 }
