@@ -1,0 +1,11 @@
+DELETE FROM audit_records WHERE resource_type = 'event'::audit_record_resource_type OR source = 'system'::audit_record_source_type;
+ALTER TABLE audit_records ALTER resource_type TYPE text;
+ALTER TYPE audit_record_resource_type RENAME TO audit_record_resource_type_old;
+CREATE TYPE audit_record_resource_type AS ENUM ('payload', 'user', 'dns_record', 'http_route');
+ALTER TABLE audit_records ALTER resource_type TYPE audit_record_resource_type USING resource_type::audit_record_resource_type;
+DROP TYPE audit_record_resource_type_old;
+ALTER TABLE audit_records ALTER source TYPE text;
+ALTER TYPE audit_record_source_type RENAME TO audit_record_source_type_old;
+CREATE TYPE audit_record_source_type AS ENUM ('api', 'telegram', 'lark', 'slack');
+ALTER TABLE audit_records ALTER source TYPE audit_record_source_type USING source::audit_record_source_type;
+DROP TYPE audit_record_source_type_old;

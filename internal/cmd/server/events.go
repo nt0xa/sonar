@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net"
 	"net/netip"
@@ -11,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/nt0xa/sonar/internal/database"
 	"github.com/nt0xa/sonar/internal/modules"
+	"github.com/nt0xa/sonar/internal/service"
+	"github.com/nt0xa/sonar/internal/service/dbsvc"
 	"github.com/nt0xa/sonar/pkg/geoipx"
 	"github.com/nt0xa/sonar/pkg/workerpool"
 )
@@ -25,6 +28,7 @@ type EventsHandler struct {
 	db        *database.DB
 	gdb       *geoipx.DB
 	log       *slog.Logger
+	audit     bool
 	notifiers map[string]*Notifier
 	proc      *workerpool.Pool[Event]
 }
@@ -40,6 +44,7 @@ func NewEventsHandler(
 	db *database.DB,
 	gdb *geoipx.DB,
 	log *slog.Logger,
+	audit bool,
 	workers int,
 	capacity int,
 ) *EventsHandler {
@@ -47,6 +52,7 @@ func NewEventsHandler(
 		db:        db,
 		gdb:       gdb,
 		log:       log,
+		audit:     audit,
 		notifiers: make(map[string]*Notifier),
 	}
 
@@ -112,6 +118,10 @@ func (h *EventsHandler) handleEvent(e Event) {
 			)
 		}
 
+		if h.audit {
+			h.writeAudit(ctx, p, e.Event)
+		}
+
 		// Skip if current event protocol is muted for payload.
 		if !database.ProtoCategoryContains(p.NotifyProtocols, database.ProtoToCategory(e.Event.Protocol)) {
 			continue
@@ -130,6 +140,28 @@ func (h *EventsHandler) handleEvent(e Event) {
 				Event:   e.Event,
 			})
 		}
+	}
+}
+
+// writeAudit records the creation of ev; failures are logged, not propagated.
+func (h *EventsHandler) writeAudit(ctx context.Context, p *database.Payload, ev *database.Event) {
+	raw, err := json.Marshal(struct {
+		PayloadSubdomain string `json:"payloadSubdomain"`
+		*service.Event
+	}{p.Subdomain, dbsvc.Event(*ev)})
+	if err != nil {
+		h.log.Warn("skip audit: failed to marshal event", "err", err)
+		return
+	}
+
+	if _, err := h.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
+		Action:        database.AuditRecordActionTypeCreate,
+		ResourceType:  database.AuditRecordResourceTypeEvent,
+		Source:        database.AuditRecordSourceTypeSystem,
+		ActorMetadata: database.AuditActorMetadata{},
+		Resource:      raw,
+	}); err != nil {
+		h.log.Warn("failed to write audit record", "err", err, "resourceType", "event")
 	}
 }
 

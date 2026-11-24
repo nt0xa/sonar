@@ -118,7 +118,7 @@ email = "<EMAIL>"
 enabled = false
 
 [audit]
-# Audit records for create/update/delete actions.
+# Audit records for create/update/delete actions and captured interaction events.
 # Disabled by default.
 enabled = false
 

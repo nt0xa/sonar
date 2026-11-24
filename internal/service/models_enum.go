@@ -99,6 +99,8 @@ const (
 	AuditResourceTypeDnsRecord AuditResourceType = "dns_record"
 	// AuditResourceTypeHttpRoute is a AuditResourceType of type http_route.
 	AuditResourceTypeHttpRoute AuditResourceType = "http_route"
+	// AuditResourceTypeEvent is a AuditResourceType of type event.
+	AuditResourceTypeEvent AuditResourceType = "event"
 )
 
 var ErrInvalidAuditResourceType = fmt.Errorf("not a valid AuditResourceType, try [%s]", strings.Join(_AuditResourceTypeNames, ", "))
@@ -108,6 +110,7 @@ var _AuditResourceTypeNames = []string{
 	string(AuditResourceTypeUser),
 	string(AuditResourceTypeDnsRecord),
 	string(AuditResourceTypeHttpRoute),
+	string(AuditResourceTypeEvent),
 }
 
 // AuditResourceTypeNames returns a list of possible string values of AuditResourceType.
@@ -124,6 +127,7 @@ func AuditResourceTypeValues() []AuditResourceType {
 		AuditResourceTypeUser,
 		AuditResourceTypeDnsRecord,
 		AuditResourceTypeHttpRoute,
+		AuditResourceTypeEvent,
 	}
 }
 
@@ -144,6 +148,7 @@ var _AuditResourceTypeValue = map[string]AuditResourceType{
 	"user":       AuditResourceTypeUser,
 	"dns_record": AuditResourceTypeDnsRecord,
 	"http_route": AuditResourceTypeHttpRoute,
+	"event":      AuditResourceTypeEvent,
 }
 
 // ParseAuditResourceType attempts to convert a string to a AuditResourceType.
@@ -184,6 +189,8 @@ const (
 	AuditSourceLark AuditSource = "lark"
 	// AuditSourceSlack is a AuditSource of type slack.
 	AuditSourceSlack AuditSource = "slack"
+	// AuditSourceSystem is a AuditSource of type system.
+	AuditSourceSystem AuditSource = "system"
 )
 
 var ErrInvalidAuditSource = fmt.Errorf("not a valid AuditSource, try [%s]", strings.Join(_AuditSourceNames, ", "))
@@ -193,6 +200,7 @@ var _AuditSourceNames = []string{
 	string(AuditSourceTelegram),
 	string(AuditSourceLark),
 	string(AuditSourceSlack),
+	string(AuditSourceSystem),
 }
 
 // AuditSourceNames returns a list of possible string values of AuditSource.
@@ -209,6 +217,7 @@ func AuditSourceValues() []AuditSource {
 		AuditSourceTelegram,
 		AuditSourceLark,
 		AuditSourceSlack,
+		AuditSourceSystem,
 	}
 }
 
@@ -229,6 +238,7 @@ var _AuditSourceValue = map[string]AuditSource{
 	"telegram": AuditSourceTelegram,
 	"lark":     AuditSourceLark,
 	"slack":    AuditSourceSlack,
+	"system":   AuditSourceSystem,
 }
 
 // ParseAuditSource attempts to convert a string to a AuditSource.
