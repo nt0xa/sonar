@@ -128,6 +128,10 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 			Body        string              `json:"body,omitempty" jsonschema:"Response body (plain text)"`
 			IsDynamic   bool                `json:"isDynamic,omitempty" jsonschema:"Interpret body and headers as Go templates"`
 		}) (*service.HTTPRoute, error) {
+			// The server fails on null headers; send {} like the CLI does.
+			if in.Headers == nil {
+				in.Headers = map[string][]string{}
+			}
 			return c.HTTPRoutesCreate(ctx, service.HTTPRoutesCreateInput{
 				PayloadName: in.PayloadName,
 				Method:      cmp.Or(in.Method, service.HTTPMethodGET),
