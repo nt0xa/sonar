@@ -107,4 +107,5 @@ Notes:
 
 - Admin commands (users and audit records) are not available over MCP.
 - Payloads created over MCP don't send messenger notifications unless `notifyProtocols` is set.
-- HTTP route bodies are passed as plain text; bodies and raw event data in results are base64-encoded.
+- In results, `subdomain` and `payloadSubdomain` contain the full payload hostname (e.g. `abc123.sonar.example.com`), built from the server URL in your config.
+- Bodies and raw event data are returned as text, or as a hexdump if they are binary. `events_list` omits raw data; use `events_get` for it.

@@ -19,7 +19,7 @@ func callTool(t *testing.T, svc service.Service, name string, args map[string]an
 	ctx := context.Background()
 
 	st, ct := mcp.NewInMemoryTransports()
-	ss, err := mcpserver.New(svc, "test").Connect(ctx, st, nil)
+	ss, err := mcpserver.New(svc, "sonar.test", "test").Connect(ctx, st, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = ss.Close() })
 

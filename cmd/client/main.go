@@ -74,7 +74,7 @@ func main() {
 			root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 			jsonFlag(root, &jsonOutput)
 			contextCmd(root, &cfg)
-			mcpCmd(root, svc)
+			mcpCmd(root, svc, &cfg)
 		}),
 	)
 
@@ -152,9 +152,10 @@ func contextCmd(root *cobra.Command, cfg *Config) {
 	root.AddCommand(cmd)
 }
 
-func mcpCmd(root *cobra.Command, svc service.Service) {
+func mcpCmd(root *cobra.Command, svc service.Service, cfg *Config) {
 	stdio := func(cmd *cobra.Command, args []string) error {
-		return mcpserver.New(svc, version).Run(cmd.Context(), &mcp.StdioTransport{})
+		domain := cfg.Server().BaseURL().Hostname()
+		return mcpserver.New(svc, domain, version).Run(cmd.Context(), &mcp.StdioTransport{})
 	}
 
 	mcpRoot := &cobra.Command{
