@@ -70,6 +70,7 @@ const (
 	AuditRecordResourceTypeUser      AuditRecordResourceType = "user"
 	AuditRecordResourceTypeDNSRecord AuditRecordResourceType = "dns_record"
 	AuditRecordResourceTypeHTTPRoute AuditRecordResourceType = "http_route"
+	AuditRecordResourceTypeEvent     AuditRecordResourceType = "event"
 )
 
 func (e *AuditRecordResourceType) Scan(src interface{}) error {
@@ -113,6 +114,7 @@ func AllAuditRecordResourceTypeValues() []AuditRecordResourceType {
 		AuditRecordResourceTypeUser,
 		AuditRecordResourceTypeDNSRecord,
 		AuditRecordResourceTypeHTTPRoute,
+		AuditRecordResourceTypeEvent,
 	}
 }
 
@@ -123,6 +125,7 @@ const (
 	AuditRecordSourceTypeTelegram AuditRecordSourceType = "telegram"
 	AuditRecordSourceTypeLark     AuditRecordSourceType = "lark"
 	AuditRecordSourceTypeSlack    AuditRecordSourceType = "slack"
+	AuditRecordSourceTypeSystem   AuditRecordSourceType = "system"
 )
 
 func (e *AuditRecordSourceType) Scan(src interface{}) error {
@@ -166,6 +169,7 @@ func AllAuditRecordSourceTypeValues() []AuditRecordSourceType {
 		AuditRecordSourceTypeTelegram,
 		AuditRecordSourceTypeLark,
 		AuditRecordSourceTypeSlack,
+		AuditRecordSourceTypeSystem,
 	}
 }
 

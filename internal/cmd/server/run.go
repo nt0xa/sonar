@@ -134,6 +134,7 @@ func Run(
 		db,
 		gdb,
 		log.With("package", "events"),
+		cfg.Audit.Enabled,
 		10,
 		10_000,
 	)

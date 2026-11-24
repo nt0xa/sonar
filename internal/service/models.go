@@ -25,10 +25,10 @@ type HTTPMethod string
 // ENUM(create, update, delete)
 type AuditAction string
 
-// ENUM(payload, user, dns_record, http_route)
+// ENUM(payload, user, dns_record, http_route, event)
 type AuditResourceType string
 
-// ENUM(api, telegram, lark, slack)
+// ENUM(api, telegram, lark, slack, system)
 type AuditSource string
 
 type Payload struct {

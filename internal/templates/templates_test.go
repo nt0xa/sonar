@@ -1,6 +1,7 @@
 package templates_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nt0xa/sonar/internal/database"
@@ -71,5 +72,31 @@ func TestRenderNotificationBatch(t *testing.T) {
 	want := "DNS 2 · HTTP 1"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestRenderAuditRecordActor(t *testing.T) {
+	tpl := templates.New("example.com")
+
+	cases := []struct {
+		rec  service.AuditRecord
+		want string
+	}{
+		{service.AuditRecord{ID: 1, Action: service.AuditActionCreate, ResourceType: service.AuditResourceTypePayload, Source: service.AuditSourceApi, ActorName: "user1"},
+			"CREATE payload via api by user1 01 Jan 0001"},
+		{service.AuditRecord{ID: 1, Action: service.AuditActionCreate, ResourceType: service.AuditResourceTypePayload, Source: service.AuditSourceApi},
+			"CREATE payload via api by unknown 01 Jan 0001"},
+		{service.AuditRecord{ID: 1, Action: service.AuditActionCreate, ResourceType: service.AuditResourceTypeEvent, Source: service.AuditSourceSystem},
+			"CREATE event via system 01 Jan 0001"},
+	}
+
+	for _, c := range cases {
+		got, err := tpl.RenderResult(service.AuditRecordsListOutput{c.rec})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(got, c.want) {
+			t.Errorf("got %q, want it to contain %q", got, c.want)
+		}
 	}
 }
