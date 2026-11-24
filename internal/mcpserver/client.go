@@ -27,28 +27,28 @@ func (c client) PayloadsList(ctx context.Context, in service.PayloadsListInput) 
 	return mapSlice(out, c.payload), nil
 }
 
-func (c client) PayloadsCreate(ctx context.Context, in service.PayloadsCreateInput) (service.Payload, error) {
+func (c client) PayloadsCreate(ctx context.Context, in service.PayloadsCreateInput) (*service.Payload, error) {
 	out, err := c.svc.PayloadsCreate(ctx, in)
 	if err != nil {
-		return service.Payload{}, err
+		return nil, err
 	}
-	return c.payload(service.Payload(*out)), nil
+	return new(c.payload(service.Payload(*out))), nil
 }
 
-func (c client) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (service.Payload, error) {
+func (c client) PayloadsUpdate(ctx context.Context, in service.PayloadsUpdateInput) (*service.Payload, error) {
 	out, err := c.svc.PayloadsUpdate(ctx, in)
 	if err != nil {
-		return service.Payload{}, err
+		return nil, err
 	}
-	return c.payload(service.Payload(*out)), nil
+	return new(c.payload(service.Payload(*out))), nil
 }
 
-func (c client) PayloadsDelete(ctx context.Context, in service.PayloadsDeleteInput) (service.Payload, error) {
+func (c client) PayloadsDelete(ctx context.Context, in service.PayloadsDeleteInput) (*service.Payload, error) {
 	out, err := c.svc.PayloadsDelete(ctx, in)
 	if err != nil {
-		return service.Payload{}, err
+		return nil, err
 	}
-	return c.payload(service.Payload(*out)), nil
+	return new(c.payload(service.Payload(*out))), nil
 }
 
 func (c client) PayloadsClear(ctx context.Context, in service.PayloadsClearInput) ([]service.Payload, error) {
@@ -69,20 +69,20 @@ func (c client) DNSRecordsList(ctx context.Context, in service.DNSRecordsListInp
 	return mapSlice(out, c.dnsRecord), nil
 }
 
-func (c client) DNSRecordsCreate(ctx context.Context, in service.DNSRecordsCreateInput) (service.DNSRecord, error) {
+func (c client) DNSRecordsCreate(ctx context.Context, in service.DNSRecordsCreateInput) (*service.DNSRecord, error) {
 	out, err := c.svc.DNSRecordsCreate(ctx, in)
 	if err != nil {
-		return service.DNSRecord{}, err
+		return nil, err
 	}
-	return c.dnsRecord(service.DNSRecord(*out)), nil
+	return new(c.dnsRecord(service.DNSRecord(*out))), nil
 }
 
-func (c client) DNSRecordsDelete(ctx context.Context, in service.DNSRecordsDeleteInput) (service.DNSRecord, error) {
+func (c client) DNSRecordsDelete(ctx context.Context, in service.DNSRecordsDeleteInput) (*service.DNSRecord, error) {
 	out, err := c.svc.DNSRecordsDelete(ctx, in)
 	if err != nil {
-		return service.DNSRecord{}, err
+		return nil, err
 	}
-	return c.dnsRecord(service.DNSRecord(*out)), nil
+	return new(c.dnsRecord(service.DNSRecord(*out))), nil
 }
 
 func (c client) DNSRecordsClear(ctx context.Context, in service.DNSRecordsClearInput) ([]service.DNSRecord, error) {
@@ -103,33 +103,33 @@ func (c client) HTTPRoutesList(ctx context.Context, in service.HTTPRoutesListInp
 	return mapSlice(out, c.httpRoute), nil
 }
 
-func (c client) HTTPRoutesCreate(ctx context.Context, in service.HTTPRoutesCreateInput) (service.HTTPRoute, error) {
+func (c client) HTTPRoutesCreate(ctx context.Context, in service.HTTPRoutesCreateInput) (*service.HTTPRoute, error) {
 	in.Body = encode(in.Body)
 	out, err := c.svc.HTTPRoutesCreate(ctx, in)
 	if err != nil {
-		return service.HTTPRoute{}, err
+		return nil, err
 	}
-	return c.httpRoute(service.HTTPRoute(*out)), nil
+	return new(c.httpRoute(service.HTTPRoute(*out))), nil
 }
 
-func (c client) HTTPRoutesUpdate(ctx context.Context, in service.HTTPRoutesUpdateInput) (service.HTTPRoute, error) {
+func (c client) HTTPRoutesUpdate(ctx context.Context, in service.HTTPRoutesUpdateInput) (*service.HTTPRoute, error) {
 	if in.Body != nil {
 		b := encode(*in.Body)
 		in.Body = &b
 	}
 	out, err := c.svc.HTTPRoutesUpdate(ctx, in)
 	if err != nil {
-		return service.HTTPRoute{}, err
+		return nil, err
 	}
-	return c.httpRoute(service.HTTPRoute(*out)), nil
+	return new(c.httpRoute(service.HTTPRoute(*out))), nil
 }
 
-func (c client) HTTPRoutesDelete(ctx context.Context, in service.HTTPRoutesDeleteInput) (service.HTTPRoute, error) {
+func (c client) HTTPRoutesDelete(ctx context.Context, in service.HTTPRoutesDeleteInput) (*service.HTTPRoute, error) {
 	out, err := c.svc.HTTPRoutesDelete(ctx, in)
 	if err != nil {
-		return service.HTTPRoute{}, err
+		return nil, err
 	}
-	return c.httpRoute(service.HTTPRoute(*out)), nil
+	return new(c.httpRoute(service.HTTPRoute(*out))), nil
 }
 
 func (c client) HTTPRoutesClear(ctx context.Context, in service.HTTPRoutesClearInput) ([]service.HTTPRoute, error) {
@@ -154,12 +154,12 @@ func (c client) EventsList(ctx context.Context, in service.EventsListInput) ([]s
 	}), nil
 }
 
-func (c client) EventsGet(ctx context.Context, in service.EventsGetInput) (service.Event, error) {
+func (c client) EventsGet(ctx context.Context, in service.EventsGetInput) (*service.Event, error) {
 	out, err := c.svc.EventsGet(ctx, in)
 	if err != nil {
-		return service.Event{}, err
+		return nil, err
 	}
-	return event(service.Event(*out)), nil
+	return new(event(service.Event(*out))), nil
 }
 
 // Conversions

@@ -35,7 +35,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 		func(ctx context.Context, in struct {
 			Name            string                  `json:"name" jsonschema:"Payload name"`
 			NotifyProtocols []service.ProtoCategory `json:"notifyProtocols,omitempty" jsonschema:"Protocols to notify connected messengers (Telegram, Slack, Lark) about: dns, http, smtp, ftp (default none). Only affects messenger notifications; events are always stored"`
-		}) (service.Payload, error) {
+		}) (*service.Payload, error) {
 			if in.NotifyProtocols == nil {
 				in.NotifyProtocols = []service.ProtoCategory{}
 			}
@@ -47,14 +47,14 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 			Name            string                  `json:"name" jsonschema:"Payload name"`
 			NewName         string                  `json:"newName,omitempty" jsonschema:"New payload name"`
 			NotifyProtocols []service.ProtoCategory `json:"notifyProtocols,omitempty" jsonschema:"Protocols to notify connected messengers (Telegram, Slack, Lark) about: dns, http, smtp, ftp (omit to keep current, [] for none). Only affects messenger notifications; events are always stored"`
-		}) (service.Payload, error) {
+		}) (*service.Payload, error) {
 			return c.PayloadsUpdate(ctx, service.PayloadsUpdateInput(in))
 		})
 
 	addTool(s, "payloads_delete", "Delete payload", destructive,
 		func(ctx context.Context, in struct {
 			Name string `json:"name" jsonschema:"Payload name"`
-		}) (service.Payload, error) {
+		}) (*service.Payload, error) {
 			return c.PayloadsDelete(ctx, service.PayloadsDeleteInput(in))
 		})
 
@@ -82,7 +82,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 			Type        service.DNSRecordType     `json:"type,omitempty" jsonschema:"Record type: A, AAAA, MX, TXT, CNAME, NS, CAA (default A)"`
 			TTL         int                       `json:"ttl,omitempty" jsonschema:"Record TTL in seconds (default 60)"`
 			Strategy    service.DNSRecordStrategy `json:"strategy,omitempty" jsonschema:"Strategy for multiple values: all, round-robin, rebind (default all)"`
-		}) (service.DNSRecord, error) {
+		}) (*service.DNSRecord, error) {
 			return c.DNSRecordsCreate(ctx, service.DNSRecordsCreateInput{
 				PayloadName: in.PayloadName,
 				Name:        in.Name,
@@ -97,7 +97,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 		func(ctx context.Context, in struct {
 			PayloadName string `json:"payloadName" jsonschema:"Payload name"`
 			Index       int64  `json:"index" jsonschema:"DNS record index"`
-		}) (service.DNSRecord, error) {
+		}) (*service.DNSRecord, error) {
 			return c.DNSRecordsDelete(ctx, service.DNSRecordsDeleteInput(in))
 		})
 
@@ -127,7 +127,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 			Headers     map[string][]string `json:"headers,omitempty" jsonschema:"Response headers"`
 			Body        string              `json:"body,omitempty" jsonschema:"Response body (plain text)"`
 			IsDynamic   bool                `json:"isDynamic,omitempty" jsonschema:"Interpret body and headers as Go templates"`
-		}) (service.HTTPRoute, error) {
+		}) (*service.HTTPRoute, error) {
 			return c.HTTPRoutesCreate(ctx, service.HTTPRoutesCreateInput{
 				PayloadName: in.PayloadName,
 				Method:      cmp.Or(in.Method, service.HTTPMethodGET),
@@ -149,7 +149,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 			Headers     map[string][]string `json:"headers,omitempty" jsonschema:"Response headers (replace existing)"`
 			Body        *string             `json:"body,omitempty" jsonschema:"Response body (plain text)"`
 			IsDynamic   *bool               `json:"isDynamic,omitempty" jsonschema:"Interpret body and headers as Go templates"`
-		}) (service.HTTPRoute, error) {
+		}) (*service.HTTPRoute, error) {
 			return c.HTTPRoutesUpdate(ctx, service.HTTPRoutesUpdateInput{
 				Payload:   in.PayloadName,
 				Index:     in.Index,
@@ -166,7 +166,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 		func(ctx context.Context, in struct {
 			PayloadName string `json:"payloadName" jsonschema:"Payload name"`
 			Index       int64  `json:"index" jsonschema:"HTTP route index"`
-		}) (service.HTTPRoute, error) {
+		}) (*service.HTTPRoute, error) {
 			return c.HTTPRoutesDelete(ctx, service.HTTPRoutesDeleteInput(in))
 		})
 
@@ -199,7 +199,7 @@ func New(svc service.Service, domain, version string) *mcp.Server {
 		func(ctx context.Context, in struct {
 			PayloadName string `json:"payloadName" jsonschema:"Payload name"`
 			Index       int64  `json:"index" jsonschema:"Event index"`
-		}) (service.Event, error) {
+		}) (*service.Event, error) {
 			return c.EventsGet(ctx, service.EventsGetInput(in))
 		})
 
