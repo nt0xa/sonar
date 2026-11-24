@@ -3,6 +3,7 @@ package auditsvc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -32,6 +33,41 @@ func (s *Service) Wait() {
 	s.wg.Wait()
 }
 
+// Record is a single audit entry; Resource is stored as JSON.
+type Record struct {
+	Action        database.AuditRecordActionType
+	ResourceType  database.AuditRecordResourceType
+	Source        database.AuditRecordSourceType
+	ActorID       *int64
+	ActorName     string
+	ActorMetadata database.AuditActorMetadata
+	Resource      any
+}
+
+// WriteRecord synchronously stores r in the audit log.
+func WriteRecord(ctx context.Context, db *database.DB, r Record) error {
+	raw, err := json.Marshal(r.Resource)
+	if err != nil {
+		return fmt.Errorf("marshal resource: %w", err)
+	}
+
+	meta := r.ActorMetadata
+	if meta == nil {
+		meta = database.AuditActorMetadata{}
+	}
+
+	_, err = db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
+		Action:        r.Action,
+		ResourceType:  r.ResourceType,
+		Source:        r.Source,
+		ActorID:       r.ActorID,
+		ActorName:     r.ActorName,
+		ActorMetadata: meta,
+		Resource:      raw,
+	})
+	return err
+}
+
 // writeAudit records a single audit entry in the background. It is best-effort:
 // the write runs in its own goroutine on a detached context so the caller is
 // never blocked on it and a finished request can't cancel it, and any failure
@@ -54,22 +90,15 @@ func (s *Service) writeAudit(
 	go func() {
 		defer s.wg.Done()
 
-		raw, err := json.Marshal(resource)
-		if err != nil {
-			s.log.Warn("skip audit: failed to marshal resource", "err", err, "resourceType", resourceType)
-			return
-		}
-
-		_, err = s.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
+		if err := WriteRecord(ctx, s.db, Record{
 			Action:        action,
 			ResourceType:  resourceType,
 			Source:        database.AuditRecordSourceType(c.Source),
 			ActorID:       &c.UserID,
 			ActorName:     c.UserName,
 			ActorMetadata: actorMetadata(c),
-			Resource:      raw,
-		})
-		if err != nil {
+			Resource:      resource,
+		}); err != nil {
 			s.log.Warn("failed to write audit record", "err", err, "resourceType", resourceType, "action", action)
 		}
 	}()

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net"
 	"net/netip"
@@ -144,18 +143,11 @@ func (h *EventsHandler) handleEvent(e Event) {
 
 // writeAudit records the creation of ev; failures are logged, not propagated.
 func (h *EventsHandler) writeAudit(ctx context.Context, p *database.Payload, ev *database.Event) {
-	raw, err := json.Marshal(auditsvc.NewEvent(p, ev))
-	if err != nil {
-		h.log.Warn("skip audit: failed to marshal event", "err", err)
-		return
-	}
-
-	if _, err := h.db.AuditRecordsCreate(ctx, database.AuditRecordsCreateParams{
-		Action:        database.AuditRecordActionTypeCreate,
-		ResourceType:  database.AuditRecordResourceTypeEvent,
-		Source:        database.AuditRecordSourceTypeSystem,
-		ActorMetadata: database.AuditActorMetadata{},
-		Resource:      raw,
+	if err := auditsvc.WriteRecord(ctx, h.db, auditsvc.Record{
+		Action:       database.AuditRecordActionTypeCreate,
+		ResourceType: database.AuditRecordResourceTypeEvent,
+		Source:       database.AuditRecordSourceTypeSystem,
+		Resource:     auditsvc.NewEvent(p, ev),
 	}); err != nil {
 		h.log.Warn("failed to write audit record", "err", err, "resourceType", "event")
 	}
