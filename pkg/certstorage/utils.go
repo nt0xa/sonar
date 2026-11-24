@@ -9,7 +9,7 @@ import (
 	"github.com/go-acme/lego/v3/certcrypto"
 )
 
-func pemEncode(data interface{}) ([]byte, error) {
+func pemEncode(data any) ([]byte, error) {
 	var pemBytes bytes.Buffer
 
 	pemKey := certcrypto.PEMBlock(data)

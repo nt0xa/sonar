@@ -75,7 +75,7 @@ func Modules(
 	notifiers := make([]modules.Notifier, 0)
 
 	var (
-		m   interface{}
+		m   any
 		err error
 	)
 

@@ -14,8 +14,7 @@ func StructKeys(s any, tagName string) []string {
 		return nil
 	}
 
-	for i := 0; i < ct.NumField(); i++ {
-		field := ct.Field(i)
+	for field := range ct.Fields() {
 		tag := field.Tag.Get(tagName)
 		if tag == "" {
 			tag = strings.ToLower(field.Name)

@@ -148,11 +148,3 @@ func rotate(rrs []dns.RR) []dns.RR {
 	newRRs[len(rrs)-1] = rrs[0]
 	return newRRs
 }
-
-// min returns minimum of a and b.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

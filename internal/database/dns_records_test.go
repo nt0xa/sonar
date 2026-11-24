@@ -11,10 +11,6 @@ import (
 	"github.com/nt0xa/sonar/internal/database"
 )
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func TestDNSRecordsCreate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
@@ -51,7 +47,7 @@ func TestDNSRecordsGetByID_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
+	o, err := db.DNSRecordsGetByID(t.Context(), new(int64(1)))
 	assert.NoError(t, err)
 	assert.Equal(t, "test-a", o.Name)
 }
@@ -60,7 +56,7 @@ func TestDNSRecordsGetByID_NotExist(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	_, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1337)))
+	_, err := db.DNSRecordsGetByID(t.Context(), new(int64(1337)))
 	assert.Error(t, err)
 	assert.EqualError(t, err, pgx.ErrNoRows.Error())
 }
@@ -76,7 +72,7 @@ func TestDNSRecordsGetByPayloadNameAndType_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, o)
-	assert.Equal(t, ptr(int64(1)), o.ID)
+	assert.Equal(t, new(int64(1)), o.ID)
 }
 
 func TestDNSRecordsGetByPayloadNameAndType_NotExist(t *testing.T) {
@@ -96,7 +92,7 @@ func TestDNSRecordsDelete_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	err := db.DNSRecordsDelete(t.Context(), ptr(int64(1)))
+	err := db.DNSRecordsDelete(t.Context(), new(int64(1)))
 	assert.NoError(t, err)
 }
 
@@ -104,7 +100,7 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 
-	o, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
+	o, err := db.DNSRecordsGetByID(t.Context(), new(int64(1)))
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
@@ -121,7 +117,7 @@ func TestDNSRecordsUpdate_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	o2, err := db.DNSRecordsGetByID(t.Context(), ptr(int64(1)))
+	o2, err := db.DNSRecordsGetByID(t.Context(), new(int64(1)))
 	require.NoError(t, err)
 	assert.Equal(t, updated.Name, o2.Name)
 	assert.Equal(t, updated.Values, o2.Values)

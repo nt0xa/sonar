@@ -167,9 +167,7 @@ func TestEventsRace(t *testing.T) {
 	count := 10
 
 	for range count {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 
 			o, err := db.EventsCreate(t.Context(), database.EventsCreateParams{
 				PayloadID: 1,
@@ -189,7 +187,7 @@ func TestEventsRace(t *testing.T) {
 				got = append(got, o.Index)
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

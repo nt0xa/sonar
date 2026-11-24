@@ -86,10 +86,7 @@ func (s *Service) writeAudit(
 
 	ctx = context.WithoutCancel(ctx)
 
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-
+	s.wg.Go(func() {
 		if err := WriteRecord(ctx, s.db, Record{
 			Action:        action,
 			ResourceType:  resourceType,
@@ -101,7 +98,7 @@ func (s *Service) writeAudit(
 		}); err != nil {
 			s.log.Warn("failed to write audit record", "err", err, "resourceType", resourceType, "action", action)
 		}
-	}()
+	})
 }
 
 // actorMetadata returns source-specific identifiers for the actor.

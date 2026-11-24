@@ -17,7 +17,7 @@ func TestUsersCreate_Success(t *testing.T) {
 
 	o, err := db.UsersCreate(t.Context(), database.UsersCreateParams{
 		Name:       "test",
-		TelegramID: ptr[int64](1234),
+		TelegramID: new(int64(1234)),
 	})
 	require.NoError(t, err)
 	assert.WithinDuration(t, time.Now(), o.CreatedAt, 5*time.Second)
@@ -43,7 +43,7 @@ func TestUsersCreate_DuplicateParam(t *testing.T) {
 
 	_, err := db.UsersCreate(t.Context(), database.UsersCreateParams{
 		Name:       "test",
-		TelegramID: ptr[int64](1337),
+		TelegramID: new(int64(1337)),
 	})
 	assert.Error(t, err)
 }
@@ -110,13 +110,13 @@ func TestUsersUpdate_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, o)
 
-	o.TelegramID = ptr[int64](1234)
+	o.TelegramID = new(int64(1234))
 
 	updated, err := db.UsersUpdate(t.Context(), database.UsersUpdateParams{
 		ID:         o.ID,
 		Name:       "user1_updated",
 		IsAdmin:    o.IsAdmin,
-		TelegramID: ptr[int64](1234),
+		TelegramID: new(int64(1234)),
 		CreatedBy:  o.CreatedBy,
 	})
 	require.NoError(t, err)

@@ -260,15 +260,15 @@ func Build(n *modules.Notification, rw []byte) ([]byte, error) {
 		}
 
 		if len(email.From) > 0 {
-			var s string
+			var s strings.Builder
 
 			for _, f := range email.From {
-				s += f.Address + "\n"
+				s.WriteString(f.Address + "\n")
 			}
 
 			row.Columns[0].Elements = []Markdown{{
 				Tag:       "markdown",
-				Content:   fmt.Sprintf("<font color=\"grey\">From</font>\n%s", strings.TrimSpace(s)),
+				Content:   fmt.Sprintf("<font color=\"grey\">From</font>\n%s", strings.TrimSpace(s.String())),
 				TextAlign: "left",
 				TextSize:  "custom",
 				Margin:    "0px 0px 0px 0px",
