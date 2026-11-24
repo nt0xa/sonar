@@ -11,8 +11,9 @@ type PayloadsCreateRequest struct {
 }
 
 type PayloadsUpdateRequest struct {
-	Name            string                  `json:"name"`
-	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols,omitempty"`
+	Name string `json:"name"`
+	// Null leaves notify protocols unchanged; [] clears them.
+	NotifyProtocols []service.ProtoCategory `json:"notifyProtocols"`
 }
 
 type DNSRecordsCreateRequest struct {

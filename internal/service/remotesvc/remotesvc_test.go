@@ -80,6 +80,39 @@ func TestPayloadsCreate(t *testing.T) {
 	}
 }
 
+func TestPayloadsUpdate_NotifyProtocols(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		in    []service.ProtoCategory
+		wantJ string
+	}{
+		{"nil keeps current", nil, `null`},
+		{"empty clears", []service.ProtoCategory{}, `[]`},
+		{"set", []service.ProtoCategory{service.ProtoCategoryDns}, `["dns"]`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			rs := newServer(t)
+			rs.reply = `{"name":"foo"}`
+
+			_, err := rs.client().PayloadsUpdate(context.Background(), service.PayloadsUpdateInput{
+				Name:            "foo",
+				NotifyProtocols: tt.in,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			var sent map[string]json.RawMessage
+			if err := json.Unmarshal(rs.body, &sent); err != nil {
+				t.Fatalf("request body not JSON: %v", err)
+			}
+			if got := string(sent["notifyProtocols"]); got != tt.wantJ {
+				t.Errorf("notifyProtocols = %s, want %s", got, tt.wantJ)
+			}
+		})
+	}
+}
+
 func TestPayloadsList_Query(t *testing.T) {
 	rs := newServer(t)
 	rs.reply = `[{"name":"foo"}]`
