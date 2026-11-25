@@ -40,11 +40,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Publish release notes
-      uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@v7
       with:
         publish: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v6
