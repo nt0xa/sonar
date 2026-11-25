@@ -1,27 +1,41 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
+change-template: '- $CHANGE_TITLE ($CHANGE_REFERENCE) $CHANGE_AUTHORS'
+change-title-escapes: '\<*_&'
+no-changes-template: '- No changes'
 template: |
-  # What's Changed
+  ## What's changed
 
   $CHANGES
+
+  **Full changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG
+
 categories:
+  # Changelog sections: a PR is listed only in the first one it matches.
   - title: 'Features'
-    label: 'feature'
-  - title: 'Bug Fixes'
-    label: 'fix'
-  - title: 'Documentation'
-    label: 'documentation'
+    exclusive: true
+    when:
+      label: 'feature'
+  - title: 'Bug fixes'
+    exclusive: true
+    when:
+      labels: ['fix', 'bug']
   - title: 'Maintenance'
-    label: 'maintenance'
-    
-version-resolver:
-  major:
-    labels:
-      - 'major'
-  minor:
-    labels:
-      - 'minor'
-  patch:
-    labels:
-      - 'patch'
-  default: patch
+    exclusive: true
+    when:
+      labels: ['maintenance', 'refactor', 'test', 'dependencies']
+  - title: 'Documentation'
+    when:
+      label: 'documentation'
+
+  # Version bump from the major/minor/patch labels, patch by default.
+  - type: 'version-resolver'
+    semver-increment: 'major'
+    when:
+      label: 'major'
+  - type: 'version-resolver'
+    semver-increment: 'minor'
+    when:
+      label: 'minor'
+  - type: 'version-resolver'
+    semver-increment: 'patch'
