@@ -4,13 +4,16 @@ change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
 change-title-escapes: '\<*_&'
 no-changes-template: '- No changes'
 template: |
-  ## What's changed
-
   $CHANGES
 
   **Full changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_TAG
 
 categories:
+  # Leave out changes that don't matter to users (CI, release tooling).
+  - type: 'pre-exclude'
+    when:
+      label: 'skip-changelog'
+
   # Changelog sections: a PR is listed only in the first one it matches.
   - title: 'Features'
     exclusive: true
